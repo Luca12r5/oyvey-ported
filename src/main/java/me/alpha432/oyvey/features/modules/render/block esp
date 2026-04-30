@@ -1,0 +1,42 @@
+package com.example.chestesp;
+
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.ChestBlockEntity;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.*;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
+
+public class ChestESPMod implements ClientModInitializer {
+
+    @Override
+    public void onInitializeClient() {
+        // Registriert ein Render-Event
+        WorldRenderEvents.AFTER_ENTITIES.register((context) -> {
+            MinecraftClient client = MinecraftClient.getInstance();
+            if (client.world == null) return;
+
+            MatrixStack matrices = context.matrixStack();
+            VertexConsumerProvider.Immediate vertexConsumers = client.getBufferBuilders().getEntityVertexConsumers();
+
+            for (BlockEntity be : client.world.blockEntities) {
+                if (be instanceof ChestBlockEntity) {
+                    BlockPos pos = be.getPos();
+                    Box box = new Box(pos).expand(0.002); // kleine Erweiterung für sichtbare Linien
+
+                    // Zeichnet eine farbige Umrandung
+                    drawBox(matrices, vertexConsumers, box, 1.0f, 1.0f, 0.0f, 1.0f); // Gelb
+                }
+            }
+        });
+    }
+
+    private void drawBox(MatrixStack matrices, VertexConsumerProvider vertexConsumers, Box box,
+                         float r, float g, float b, float a) {
+        VertexConsumer buffer = vertexConsumers.getBuffer(RenderLayer.getLines());
+        WorldRenderer.drawBox(matrices, buffer, box, r, g, b, a);
+    }
+}
