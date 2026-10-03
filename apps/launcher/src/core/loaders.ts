@@ -50,9 +50,12 @@ export async function loaderVersions(f: FetchLike, type: LoaderType, gameVersion
   }
   // NeoForge versions are "<minor>.<patch>.<build>" for game "1.<minor>.<patch>".
   const r = await fetchJson<{ versions: string[] }>(f, `${NEOFORGE_MAVEN}/api/maven/versions/releases/net/neoforged/neoforge`);
+  // Classic: game 1.<minor>.<patch> -> NeoForge <minor>.<patch>.x
+  // Year-based (2026+): game <year>.<drop>[.<patch>] -> NeoForge <year>.<drop>.<patch>.x
   const m = /^1\.(\d+)(?:\.(\d+))?$/.exec(gameVersion);
-  if (!m) return [];
-  const prefix = `${m[1]}.${m[2] ?? '0'}.`;
+  const y = /^(\d{2})\.(\d+)(?:\.(\d+))?$/.exec(gameVersion);
+  if (!m && !y) return [];
+  const prefix = m ? `${m[1]}.${m[2] ?? '0'}.` : `${y![1]}.${y![2]}.${y![3] ?? '0'}.`;
   return r.versions.filter((v) => v.startsWith(prefix)).sort(cmpVersion).reverse().map((v) => ({ version: v, stable: !/beta|alpha/i.test(v) }));
 }
 

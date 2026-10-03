@@ -82,7 +82,7 @@ step(`Launch: ${redactArgs(args, token).slice(0, 6).join(' ')} … (${args.lengt
 // Markers that the client finished loading and shows the title screen.
 const READY = [/Sound engine started/, /Created: \d+x\d+x\d+ minecraft:textures\/atlas\/blocks\.png-atlas/, /Created: \d+x\d+ textures-atlas/, /Reloading ResourceManager/];
 const lines: string[] = [];
-let ready = false, legoLoaded = false, modCount: string | null = null;
+let ready = false, legoLoaded = false, modCount: string | null = null, noBackend = false;
 const clean = createLogCleaner();
 const game = await startGame(javaPath, args, gameDir, join(root, 'logs'), (raw) => {
   const line = clean(raw);
@@ -93,6 +93,8 @@ const game = await startGame(javaPath, args, gameDir, join(root, 'logs'), (raw) 
   const m = /Loading (\d+) mods/.exec(line);
   if (m) { modCount = m[1]!; step(line.trim()); }
   if (/Exception|ERROR|FATAL|Mixin apply failed/.test(line) && !/Failed to (verify|fetch|load) (authentication|profile|user properties)|realms|telemetry|YggdrasilUserApi|Couldn't connect|AL lib|OpenAL|sound/i.test(line)) console.log(`  ! ${line.slice(0, 300)}`);
+  // Minecraft 26.x tries OpenGL, then Vulkan; if neither works it shows a dialog and waits.
+  if (/Failed to create backend Vulkan/.test(line) && lines.some((l) => /Failed to create backend OpenGL/.test(l))) noBackend = true;
   if (!ready && READY.some((r) => r.test(line))) { ready = true; step(`ready: ${line.trim().slice(0, 160)}`); }
 });
 
@@ -100,6 +102,7 @@ const outcome = await new Promise<{ ok: boolean; why: string }>((resolve) => {
   const timer = setTimeout(() => resolve({ ok: false, why: `timeout after ${timeoutMs / 1000}s` }), timeoutMs);
   void game.exited.then((r) => { clearTimeout(timer); resolve({ ok: false, why: `game exited early with code ${r.code}${r.crashReport ? `, crash report ${r.crashReport}` : ''}` }); });
   const poll = setInterval(() => {
+    if (noBackend) { clearInterval(poll); clearTimeout(timer); resolve({ ok: false, why: 'no usable graphics backend (OpenGL and Vulkan both failed)' }); return; }
     if (!ready) return;
     clearInterval(poll);
     // Stay alive a while on the title screen: catches render-time crashes of mods.

@@ -48,6 +48,8 @@ jobs:
             args: --version 1.21.11 --loader fabric --lego legoclient.jar --fps
           - name: latest release (vanilla)
             args: --version latest
+          - name: latest release + Fabric
+            args: --version latest --loader fabric
           - name: 1.8.9 (vanilla)
             args: --version 1.8.9
           - name: 1.12.2 (vanilla)
@@ -73,7 +75,7 @@ jobs:
       - name: Display libraries
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 x11-xserver-utils libxxf86vm1 libxrandr2 libxcursor1 libxi6 libxtst6 > /dev/null
+          sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-vulkan-drivers libvulkan1 x11-xserver-utils libxxf86vm1 libxrandr2 libxcursor1 libxi6 libxtst6 > /dev/null
       - name: Install and start Minecraft
         working-directory: apps/launcher
-        run: xvfb-run -a -s "-screen 0 1280x800x24" node --disable-warning=ExperimentalWarning test/real-launch.ts ${{ matrix.args }}
+        run: xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX +render -noreset" node --disable-warning=ExperimentalWarning test/real-launch.ts ${{ matrix.args }}

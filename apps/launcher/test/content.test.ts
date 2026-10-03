@@ -68,15 +68,19 @@ test('loader availability and version lists', async () => {
   assert.equal(loaderSupports('neoforge', '1.20.1'), false);
   assert.equal(loaderSupports('neoforge', '1.20.4'), true);
   assert.equal(loaderSupports('fabric', '25w14a'), true);
+  assert.equal(loaderSupports('fabric', '26.3'), true);
+  assert.equal(loaderSupports('neoforge', '26.1-snapshot-2'), true);
+  assert.equal(loaderSupports('fabric', 'b1.7.3'), false);
   assert.equal(loaderSupports('neoforge', '1.19.4'), false);
   const f = fakeFetch({
     'https://maven.minecraftforge.net/releases/net/minecraftforge/forge/maven-metadata.json': { '1.20.1': ['1.20.1-47.0.0', '1.20.1-47.2.0'], '1.20.2': ['1.20.2-48.0.0'] },
-    'https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge': { versions: ['20.4.10', '21.1.9', '21.1.77', '21.1.100-beta', '21.10.3'] },
+    'https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge': { versions: ['20.4.10', '21.1.9', '21.1.77', '21.1.100-beta', '21.10.3', '26.3.0.5', '26.3.0.12'] },
     'https://meta.quiltmc.org/v3/versions/loader/1.21': [{ loader: { version: '0.26.0' } }, { loader: { version: '0.26.1-beta.1' } }],
   });
   assert.deepEqual(await loaderVersions(f, 'forge', '1.20.1'), [{ version: '47.2.0', stable: true }, { version: '47.0.0', stable: true }]);
   assert.deepEqual((await loaderVersions(f, 'neoforge', '1.21.1')).map((x) => x.version), ['21.1.100-beta', '21.1.77', '21.1.9']);
   assert.deepEqual((await loaderVersions(f, 'neoforge', '1.21.10')).map((x) => x.version), ['21.10.3']);
+  assert.deepEqual((await loaderVersions(f, 'neoforge', '26.3')).map((x) => x.version), ['26.3.0.12', '26.3.0.5']);
   assert.deepEqual(await loaderVersions(f, 'quilt', '1.21'), [{ version: '0.26.0', stable: true }, { version: '0.26.1-beta.1', stable: false }]);
   assert.equal(installerInfo('forge', '1.20.1', '47.2.0').url, 'https://maven.minecraftforge.net/releases/net/minecraftforge/forge/1.20.1-47.2.0/forge-1.20.1-47.2.0-installer.jar');
   assert.equal(installerInfo('neoforge', '1.21.1', '21.1.77').versionId, 'neoforge-21.1.77');
@@ -89,6 +93,7 @@ test('version ids of other launchers are understood', () => {
   assert.deepEqual(parseVersionId('1.12.2-forge1.12.2-14.23.5.2860'), { gameVersion: '1.12.2', loaderType: 'forge', loader: '14.23.5.2860' });
   assert.deepEqual(parseVersionId('neoforge-21.1.77'), { gameVersion: '1.21.1', loaderType: 'neoforge', loader: '21.1.77' });
   assert.deepEqual(parseVersionId('neoforge-20.4.10'), { gameVersion: '1.20.4', loaderType: 'neoforge', loader: '20.4.10' });
+  assert.deepEqual(parseVersionId('26.3'), { gameVersion: '26.3', loaderType: null, loader: null });
   assert.deepEqual(parseVersionId('1.8.9'), { gameVersion: '1.8.9', loaderType: null, loader: null });
   assert.deepEqual(parseVersionId('OptiFine-something'), { gameVersion: null, loaderType: null, loader: null });
 });

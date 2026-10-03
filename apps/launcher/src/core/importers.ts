@@ -46,7 +46,7 @@ export function parseVersionId(id: string): { gameVersion: string | null; loader
   if (m) return { gameVersion: m[1]!, loaderType: 'forge', loader: m[2]!.startsWith(`${m[1]}-`) ? m[2]!.slice(m[1]!.length + 1) : m[2]! };
   m = /^neoforge-(\d+)\.(\d+)\.(.+)$/.exec(id);
   if (m) return { gameVersion: `1.${m[1]}${m[2] === '0' ? '' : `.${m[2]}`}`, loaderType: 'neoforge', loader: `${m[1]}.${m[2]}.${m[3]}` };
-  if (/^\d+\.\d+(\.\d+)?$/.test(id) || /^\d\dw\d\d[a-z]$/.test(id)) return { gameVersion: id, loaderType: null, loader: null };
+  if (/^\d+\.\d+(\.\d+)?$/.test(id) || /^\d\dw\d\d[a-z]$/.test(id) || /^\d{2}\.\d+(\.\d+)?-(snapshot|pre|rc)-\d+$/.test(id)) return { gameVersion: id, loaderType: null, loader: null };
   return { gameVersion: null, loaderType: null, loader: null };
 }
 
