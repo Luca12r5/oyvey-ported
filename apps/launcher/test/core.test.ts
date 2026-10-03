@@ -4,12 +4,12 @@ import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { crc32 } from 'node:zlib';
 import { buildArguments, mavenPath, mergeVersions, redactArgs, resolveLibraries, ruleAllows, type Env, type VersionJson } from '../src/core/mojang.ts';
 import { downloadAll, IntegrityError } from '../src/core/download.ts';
 import { extract, nativeFilter } from '../src/core/zip.ts';
 import { parseJvmArgs, validateProfile } from '../src/core/settings.ts';
 import { diagnose } from '../src/core/launch.ts';
+import { fakeFetch, storedZip } from './helpers.ts';
 
 const win: Env = { os: 'windows', arch: 'x64', osVersion: '10.0', features: { has_custom_resolution: true } };
 const linux: Env = { os: 'linux', arch: 'x64', osVersion: '6.1', features: {} };
@@ -93,19 +93,6 @@ test('launch arguments are fully substituted and the token can be redacted', () 
   assert.ok(!redactArgs(args, 'SECRET').some((a) => a.includes('SECRET')));
 });
 
-function fakeFetch(files: Record<string, Buffer>): typeof fetch {
-  return (async (url: string | URL, init?: RequestInit) => {
-    const data = files[String(url)];
-    if (!data) return new Response('nope', { status: 404 });
-    const range = (init?.headers as Record<string, string> | undefined)?.Range;
-    if (range) {
-      const start = Number(/bytes=(\d+)-/.exec(range)![1]);
-      return new Response(new Uint8Array(data.subarray(start)), { status: 206 });
-    }
-    return new Response(new Uint8Array(data), { status: 200 });
-  }) as typeof fetch;
-}
-
 test('downloads verify hashes, resume partial files and refuse http', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'lego-dl-'));
   const good = Buffer.from('hello minecraft'.repeat(100));
@@ -124,28 +111,6 @@ test('downloads verify hashes, resume partial files and refuse http', async () =
   assert.equal(existsSync(join(dir, 'bad.jar')), false, 'tampered file never lands at the destination');
   await assert.rejects(downloadAll(f, [{ url: 'http://cdn/a.jar', dest: join(dir, 'x.jar'), sha1 }], { retries: 0 }), IntegrityError);
 });
-
-function storedZip(entries: Record<string, string>): Buffer {
-  const locals: Buffer[] = [];
-  const centrals: Buffer[] = [];
-  let offset = 0;
-  for (const [name, content] of Object.entries(entries)) {
-    const data = Buffer.from(content);
-    const nameBuf = Buffer.from(name);
-    const crc = crc32(data);
-    const lh = Buffer.alloc(30);
-    lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(20, 4); lh.writeUInt32LE(crc, 14); lh.writeUInt32LE(data.length, 18); lh.writeUInt32LE(data.length, 22); lh.writeUInt16LE(nameBuf.length, 26);
-    const ch = Buffer.alloc(46);
-    ch.writeUInt32LE(0x02014b50, 0); ch.writeUInt16LE(20, 4); ch.writeUInt16LE(20, 6); ch.writeUInt32LE(crc, 16); ch.writeUInt32LE(data.length, 20); ch.writeUInt32LE(data.length, 24); ch.writeUInt16LE(nameBuf.length, 28); ch.writeUInt32LE(offset, 42);
-    locals.push(lh, nameBuf, data);
-    centrals.push(ch, nameBuf);
-    offset += 30 + nameBuf.length + data.length;
-  }
-  const cd = Buffer.concat(centrals);
-  const end = Buffer.alloc(22);
-  end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(Object.keys(entries).length, 8); end.writeUInt16LE(Object.keys(entries).length, 10); end.writeUInt32LE(cd.length, 12); end.writeUInt32LE(offset, 16);
-  return Buffer.concat([...locals, cd, end]);
-}
 
 test('native extraction keeps libraries only and blocks zip slip', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'lego-zip-'));

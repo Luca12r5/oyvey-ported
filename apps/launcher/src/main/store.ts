@@ -6,7 +6,7 @@
 import { app, safeStorage } from 'electron';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { defaultSettings, type Settings } from '../core/settings.ts';
+import { defaultSettings, migrateProfile, type Settings } from '../core/settings.ts';
 import type { MinecraftSession } from '../core/msauth.ts';
 
 export interface Account {
@@ -29,7 +29,7 @@ export async function loadSettings(): Promise<Settings> {
   try {
     const s = JSON.parse(await readFile(settingsFile(), 'utf8')) as Partial<Settings>;
     const d = defaultSettings();
-    return { ...d, ...s, profiles: s.profiles?.length ? s.profiles : d.profiles };
+    return { ...d, ...s, profiles: s.profiles?.length ? s.profiles.map((p) => migrateProfile(p)) : d.profiles };
   } catch {
     return defaultSettings();
   }
@@ -39,32 +39,40 @@ export async function saveSettings(s: Settings): Promise<void> {
   await atomicWrite(settingsFile(), JSON.stringify(s, null, 2));
 }
 
-let memoryAccount: Account | null = null;
+export interface AccountStore {
+  accounts: Account[];
+  /** Minecraft uuid of the active account. */
+  active: string | null;
+}
+
+let memory: AccountStore = { accounts: [], active: null };
+let loaded = false;
 
 export function encryptionAvailable(): boolean {
   return safeStorage.isEncryptionAvailable();
 }
 
-export async function loadAccount(): Promise<Account | null> {
-  if (memoryAccount) return memoryAccount;
-  if (!encryptionAvailable()) return null;
+/** Loads all accounts (older single-account files are migrated). */
+export async function loadAccounts(): Promise<AccountStore> {
+  if (loaded) return memory;
+  loaded = true;
+  if (!encryptionAvailable()) return memory;
   try {
     const buf = await readFile(accountFile());
-    memoryAccount = JSON.parse(safeStorage.decryptString(buf)) as Account;
-    return memoryAccount;
+    if (buf.length === 0) return memory;
+    const data = JSON.parse(safeStorage.decryptString(buf)) as AccountStore | Account;
+    memory = 'accounts' in data ? data : { accounts: [data], active: data.mc.uuid };
   } catch {
-    return null;
+    memory = { accounts: [], active: null };
   }
+  return memory;
 }
 
-export async function saveAccount(a: Account | null): Promise<void> {
-  memoryAccount = a;
+export async function saveAccounts(store: AccountStore): Promise<void> {
+  memory = store;
+  loaded = true;
   if (!encryptionAvailable()) return;
-  if (!a) {
-    await atomicWrite(accountFile(), Buffer.alloc(0));
-    return;
-  }
-  await atomicWrite(accountFile(), safeStorage.encryptString(JSON.stringify(a)));
+  await atomicWrite(accountFile(), safeStorage.encryptString(JSON.stringify(store)));
 }
 
 export const paths = {

@@ -1,6 +1,7 @@
 // Bundles main, preload and renderer with esbuild and copies static assets.
 //   LEGO_MS_CLIENT_ID   Azure app (client) id approved for the Minecraft API
 //   LEGO_BACKEND_URL    default LEGO server, e.g. https://api.example.com
+//   LEGO_CURSEFORGE_KEY optional CurseForge API key for CurseForge modpack imports
 import { build } from 'esbuild';
 import { cpSync, mkdirSync, rmSync, copyFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -14,6 +15,7 @@ mkdirSync(join(out, 'renderer', 'fonts'), { recursive: true });
 const define = {
   __MS_CLIENT_ID__: JSON.stringify(process.env.LEGO_MS_CLIENT_ID ?? ''),
   __BACKEND_URL__: JSON.stringify(process.env.LEGO_BACKEND_URL ?? ''),
+  __CURSEFORGE_KEY__: JSON.stringify(process.env.LEGO_CURSEFORGE_KEY ?? ''),
 };
 const common = { bundle: true, sourcemap: true, logLevel: 'warning', define, legalComments: 'none' };
 

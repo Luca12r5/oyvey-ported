@@ -1,11 +1,20 @@
 // Launcher settings and game profiles (stored as JSON in the user data dir).
 
+export const LOADER_TYPES = ['fabric', 'quilt', 'forge', 'neoforge'] as const;
+export type LoaderType = (typeof LOADER_TYPES)[number];
+
 export interface GameProfile {
   id: string;
   name: string;
   gameVersion: string;
-  /** Fabric loader version, or null for vanilla. */
+  /** Mod loader type, or null for vanilla. */
+  loaderType: LoaderType | null;
+  /** Loader version; null = newest stable for the game version. */
   loader: string | null;
+  /** Install the performance mods (Sodium, Lithium, FerriteCore, ImmediatelyFast, EntityCulling) where available. */
+  performancePack: boolean;
+  /** Profile icon id from the launcher's icon set. */
+  icon: string;
   /** Install the LEGO client + Fabric API into this profile. */
   legoClient: boolean;
   memoryMb: number;
@@ -29,18 +38,47 @@ export interface Settings {
   uiScale: number;
   autoUpdate: 'ask' | 'auto' | 'off';
   rarityColors: Record<string, string>;
+  /** Overrides the theme accent (null = theme colour). */
+  accentColor: string | null;
+  /** Animated launcher background id and quality 0..1. */
+  background: string;
+  backgroundQuality: number;
+  snow: boolean;
+  /** Show snapshots and historical versions in version pickers. */
+  showSnapshots: boolean;
+  showHistorical: boolean;
+  /** Optional CurseForge API key (needed only to import CurseForge modpacks). */
+  curseforgeKey: string;
 }
 
 export const DEFAULT_PROFILE: GameProfile = {
-  id: 'lego-default', name: 'LEGO Client', gameVersion: '1.21.11', loader: null, legoClient: true,
+  id: 'lego-default', name: 'LEGO Client', gameVersion: '1.21.11', loaderType: 'fabric', loader: null, performancePack: true, icon: 'brick', legoClient: true,
   memoryMb: 4096, jvmArgs: '', resolution: null, gameDir: null, createdAt: 0, lastPlayed: null,
 };
 
+/** The LEGO client is built for exactly this game version and loader. */
+export const LEGO_CLIENT_GAME_VERSION = '1.21.11';
+
+/** Brings profiles saved by older launcher versions to the current shape. */
+export function migrateProfile(p: Partial<GameProfile> & { loader?: string | null }): GameProfile {
+  const loaderType = p.loaderType !== undefined ? p.loaderType : p.loader || p.legoClient ? 'fabric' : null;
+  return {
+    ...DEFAULT_PROFILE,
+    ...p,
+    loaderType: (LOADER_TYPES as readonly string[]).includes(String(loaderType)) ? (loaderType as LoaderType) : null,
+    loader: p.loader ?? null,
+    performancePack: p.performancePack ?? false,
+    icon: p.icon ?? 'grass',
+    legoClient: !!p.legoClient && (p.gameVersion ?? DEFAULT_PROFILE.gameVersion) === LEGO_CLIENT_GAME_VERSION,
+  } as GameProfile;
+}
+
 export function defaultSettings(): Settings {
   return {
-    themeId: 'nightfall', customThemes: [], language: 'de', backendUrl: 'https://api.lego-launcher.example',
+    themeId: 'lego-graphite', customThemes: [], language: 'de', backendUrl: 'https://api.lego-launcher.example',
     selectedProfile: DEFAULT_PROFILE.id, profiles: [{ ...DEFAULT_PROFILE, createdAt: Date.now() }],
     closeOnLaunch: false, reducedMotion: false, uiScale: 1, autoUpdate: 'ask', rarityColors: {},
+    accentColor: null, background: 'nebula', backgroundQuality: 0.6, snow: false, showSnapshots: false, showHistorical: false, curseforgeKey: '',
   };
 }
 
@@ -63,7 +101,9 @@ export function validateProfile(p: Partial<GameProfile>, totalMemMb: number): st
   const e: string[] = [];
   if (!p.name || p.name.length > 40) e.push('Name 1-40 Zeichen');
   if (!p.gameVersion || !/^[0-9a-z.\-_ ]{2,32}$/i.test(p.gameVersion)) e.push('Ungültige Minecraft-Version');
-  if (p.loader !== null && p.loader !== undefined && !/^[0-9][0-9a-z.+\-]*$/i.test(p.loader)) e.push('Ungültige Fabric-Version');
+  if (p.loader !== null && p.loader !== undefined && !/^[0-9][0-9a-z.+\-]*$/i.test(p.loader)) e.push('Ungültige Loader-Version');
+  if (p.loaderType !== null && p.loaderType !== undefined && !(LOADER_TYPES as readonly string[]).includes(p.loaderType)) e.push('Ungültiger Mod-Loader');
+  if (p.legoClient && (p.gameVersion !== LEGO_CLIENT_GAME_VERSION || p.loaderType !== 'fabric')) e.push(`Der LEGO Client gibt es nur für Fabric ${LEGO_CLIENT_GAME_VERSION}`);
   if (!p.memoryMb || p.memoryMb < 1024 || p.memoryMb > Math.max(2048, totalMemMb - 1024)) e.push(`RAM 1024-${Math.max(2048, totalMemMb - 1024)} MB`);
   if (p.jvmArgs && parseJvmArgs(p.jvmArgs).rejected.length) e.push(`Nicht erlaubte JVM-Argumente: ${parseJvmArgs(p.jvmArgs).rejected.join(' ')}`);
   if (p.resolution && (p.resolution.width < 320 || p.resolution.height < 240 || p.resolution.width > 7680 || p.resolution.height > 4320)) e.push('Auflösung 320x240 bis 7680x4320');

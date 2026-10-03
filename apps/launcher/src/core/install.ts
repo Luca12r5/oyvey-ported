@@ -2,18 +2,19 @@
 // Mojang Java runtime, the Fabric loader profile, Fabric API and the LEGO
 // client mod. Every download is hash-verified (see download.ts).
 
-import { mkdir, readFile, readdir, rm, writeFile, chmod, stat } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, readFile, readdir, rm, writeFile, chmod, stat, copyFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import { downloadAll, type DownloadTask, type Progress } from './download.ts';
 import { fetchJson, type FetchLike } from './net.ts';
 import {
-  mergeVersions, resolveLibraries, RESOURCES, VERSION_MANIFEST, mavenPath,
+  mergeVersions, resolveLibraries, RESOURCES, VERSION_MANIFEST,
   type Env, type Manifest, type VersionJson,
 } from './mojang.ts';
 import { extract, nativeFilter } from './zip.ts';
+import { fillMavenHashes, installForgeLike, metaProfile, newestLoader } from './loaders.ts';
+import type { LoaderType } from './settings.ts';
 
 export const JAVA_RUNTIME_INDEX = 'https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json';
-export const FABRIC_META = 'https://meta.fabricmc.net/v2';
 export const MODRINTH = 'https://api.modrinth.com/v2';
 
 export interface Layout {
@@ -60,54 +61,31 @@ export async function vanillaVersion(f: FetchLike, l: Layout, id: string): Promi
   return (await readJsonFile<VersionJson>(file))!;
 }
 
-export interface FabricLoader { version: string; stable: boolean }
+export { loaderVersions, newestLoader } from './loaders.ts';
 
-export async function fabricLoaders(f: FetchLike, gameVersion: string): Promise<FabricLoader[]> {
-  const list = await fetchJson<{ loader: FabricLoader }[]>(f, `${FABRIC_META}/versions/loader/${encodeURIComponent(gameVersion)}`);
-  return list.map((x) => x.loader);
-}
-
-/** Fabric profile JSON (inheritsFrom vanilla). Cached under versions/. */
-export async function fabricProfile(f: FetchLike, l: Layout, gameVersion: string, loader: string): Promise<VersionJson> {
-  const id = `fabric-loader-${loader}-${gameVersion}`;
-  const file = join(l.versions, id, `${id}.json`);
-  const cached = await readJsonFile<VersionJson>(file);
-  if (cached) return cached;
-  const p = await fetchJson<VersionJson>(f, `${FABRIC_META}/versions/loader/${encodeURIComponent(gameVersion)}/${encodeURIComponent(loader)}/profile/json`);
-  await mkdir(join(l.versions, id), { recursive: true });
-  await writeFile(file, JSON.stringify(p, null, 2));
-  return p;
-}
-
-/**
- * Fabric meta lists maven coordinates; newer responses include sha1/size.
- * Where a hash is missing we fetch the maven ".sha1" companion file so the
- * jar is still verified.
- */
-async function fillMavenHashes(f: FetchLike, v: VersionJson): Promise<void> {
-  for (const lib of v.libraries) {
-    if (lib.downloads || lib.sha1 || lib.url === undefined) continue;
-    const url = `${lib.url.replace(/\/?$/, '/')}${mavenPath(lib.name)}.sha1`;
-    const res = await f(url, { signal: AbortSignal.timeout(15_000) });
-    if (res.ok) {
-      const text = (await res.text()).trim().split(/\s+/)[0] ?? '';
-      if (/^[0-9a-f]{40}$/i.test(text)) lib.sha1 = text.toLowerCase();
-    }
-    if (!lib.sha1) throw new Error(`No checksum available for ${lib.name}`);
-  }
-}
-
-interface AssetIndex { objects: Record<string, { hash: string; size: number }> }
+interface AssetIndex { objects: Record<string, { hash: string; size: number }>; virtual?: boolean; map_to_resources?: boolean }
 
 /** `clientId` is the vanilla version id that owns the client jar (the merged Fabric profile has its own id). */
-export async function installVersion(f: FetchLike, l: Layout, version: VersionJson, clientId: string, env: Env, report: StepReporter, signal?: AbortSignal): Promise<{ clientJar: string; nativesDir: string; loggingConfig: string | null }> {
+export async function installVersion(f: FetchLike, l: Layout, version: VersionJson, clientId: string, env: Env, report: StepReporter, signal?: AbortSignal, gameDir?: string): Promise<{ clientJar: string; nativesDir: string; loggingConfig: string | null; virtualAssets: string | null }> {
+  let virtualAssets: string | null = null;
   const baseId = clientId;
   const clientJar = join(l.versions, baseId, `${baseId}.jar`);
   const tasks: DownloadTask[] = [];
   if (!version.downloads?.client) throw new Error('version has no client download');
   tasks.push({ url: version.downloads.client.url, dest: clientJar, sha1: version.downloads.client.sha1, size: version.downloads.client.size, label: `${baseId}.jar` });
   const libs = resolveLibraries(version, env);
-  for (const lib of libs) tasks.push({ url: lib.url, dest: join(l.libraries, lib.path), sha1: lib.sha1, size: lib.size, label: lib.path.split('/').pop() });
+  for (const lib of libs) {
+    // Forge/NeoForge generate some jars locally (empty URL); they must already exist.
+    if (!lib.url) {
+      try {
+        await stat(join(l.libraries, lib.path));
+      } catch {
+        throw new Error(`Bibliothek fehlt (vom Loader-Installer erzeugt): ${lib.path}`);
+      }
+      continue;
+    }
+    tasks.push({ url: lib.url, dest: join(l.libraries, lib.path), sha1: lib.sha1, size: lib.size, label: lib.path.split('/').pop() });
+  }
 
   let loggingConfig: string | null = null;
   if (version.logging?.client) {
@@ -129,6 +107,17 @@ export async function installVersion(f: FetchLike, l: Layout, version: VersionJs
     }));
     report('Assets');
     await downloadAll(f, assetTasks, { concurrency: 16, onProgress: (p) => report('Assets', p), signal });
+    // Very old versions (pre-1.7) read assets from a "virtual" tree or the resources folder.
+    if (index.virtual || index.map_to_resources) {
+      const target = index.virtual ? join(l.assets, 'virtual', ai.id) : join(gameDir ?? l.root, 'resources');
+      for (const [name, o] of Object.entries(index.objects)) {
+        const dest = join(target, name);
+        if (!dest.startsWith(target)) continue;
+        await mkdir(dirname(dest), { recursive: true });
+        await copyFile(join(l.assets, 'objects', o.hash.slice(0, 2), o.hash), dest);
+      }
+      virtualAssets = target;
+    }
   }
 
   // Extract native libraries into a per-version directory.
@@ -138,7 +127,7 @@ export async function installVersion(f: FetchLike, l: Layout, version: VersionJs
   for (const lib of libs.filter((x) => x.native)) {
     await extract(join(l.libraries, lib.path), nativesDir, nativeFilter(lib.excludes));
   }
-  return { clientJar, nativesDir, loggingConfig };
+  return { clientJar, nativesDir, loggingConfig, virtualAssets };
 }
 
 // ---- Java runtime --------------------------------------------------------
@@ -228,11 +217,22 @@ export async function listUserMods(modsDir: string): Promise<string[]> {
   }
 }
 
-/** Resolves a version id (vanilla or Fabric) to a fully merged version JSON. */
-export async function resolveProfileVersion(f: FetchLike, l: Layout, gameVersion: string, loader: string | null): Promise<{ merged: VersionJson; base: VersionJson }> {
-  const base = await vanillaVersion(f, l, gameVersion);
-  if (!loader) return { merged: base, base };
-  const fabric = await fabricProfile(f, l, gameVersion, loader);
-  await fillMavenHashes(f, fabric);
-  return { merged: mergeVersions(base, fabric), base };
+/**
+ * Resolves the version JSON for a profile. For Forge/NeoForge the vanilla
+ * version must already be installed and `javaPath` must point to a JRE,
+ * because the official installer runs headless.
+ */
+export async function resolveLoaderVersion(
+  f: FetchLike, l: Layout, base: VersionJson, loaderType: LoaderType | null, loader: string | null, javaPath: string | null, onLine: (s: string) => void = () => {},
+): Promise<VersionJson> {
+  if (!loaderType) return base;
+  const version = loader ?? (await newestLoader(f, loaderType, base.id));
+  if (loaderType === 'fabric' || loaderType === 'quilt') {
+    const p = await metaProfile(f, l, loaderType, base.id, version);
+    await fillMavenHashes(f, p);
+    return mergeVersions(base, p);
+  }
+  if (!javaPath) throw new Error('Java wird für den Loader-Installer benötigt.');
+  const p = await installForgeLike(f, l, loaderType, base.id, version, javaPath, onLine);
+  return mergeVersions(base, p);
 }

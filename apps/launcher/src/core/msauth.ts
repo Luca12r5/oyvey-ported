@@ -40,6 +40,8 @@ export interface MinecraftSession {
   name: string;
   xuid: string | null;
   skinUrl: string | null;
+  skinVariant?: 'classic' | 'slim';
+  capeUrl?: string | null;
 }
 
 export class AuthError extends Error {
@@ -155,7 +157,7 @@ export async function minecraftFromMicrosoft(f: FetchLike, msAccessToken: string
     throw new AuthError('no_license', 'This Microsoft account does not own Minecraft: Java Edition.');
   }
 
-  let profile: { id: string; name: string; skins?: { state: string; url: string }[] };
+  let profile: { id: string; name: string; skins?: { state: string; url: string; variant?: string }[]; capes?: { state: string; url: string }[] };
   try {
     profile = await fetchJson(f, 'https://api.minecraftservices.com/minecraft/profile', { headers: auth });
   } catch (e) {
@@ -169,6 +171,8 @@ export async function minecraftFromMicrosoft(f: FetchLike, msAccessToken: string
     name: profile.name,
     xuid: xsts.DisplayClaims.xui[0]?.xid ?? null,
     skinUrl: profile.skins?.find((s) => s.state === 'ACTIVE')?.url ?? null,
+    skinVariant: profile.skins?.find((s) => s.state === 'ACTIVE')?.variant?.toLowerCase() === 'slim' ? 'slim' : 'classic',
+    capeUrl: profile.capes?.find((c) => c.state === 'ACTIVE')?.url ?? null,
   };
 }
 

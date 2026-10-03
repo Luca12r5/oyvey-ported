@@ -158,6 +158,8 @@ export interface LaunchContext {
   javaPath: string;
   gameDir: string;
   assetsDir: string;
+  /** Virtual asset tree for pre-1.7 versions. */
+  gameAssetsDir?: string;
   librariesDir: string;
   nativesDir: string;
   clientJar: string;
@@ -194,7 +196,7 @@ export function buildArguments(ctx: LaunchContext): string[] {
     version_name: v.id,
     game_directory: ctx.gameDir,
     assets_root: ctx.assetsDir,
-    game_assets: ctx.assetsDir,
+    game_assets: ctx.gameAssetsDir ?? ctx.assetsDir,
     assets_index_name: v.assetIndex?.id ?? v.assets ?? 'legacy',
     auth_uuid: ctx.player.uuid,
     auth_access_token: ctx.player.accessToken,

@@ -93,6 +93,8 @@ const FAMILY_STYLE: Record<ThemeFamily, FamilyStyle> = {
 type Seed = [string, string, ThemeFamily, string, string, string, string, string, Partial<FamilyStyle>?];
 
 const SEEDS: Seed[] = [
+  // Default: neutral graphite with a magenta/violet play accent
+  ['lego-graphite', 'LEGO Graphite', 'minimal', '#141519', '#1e1f25', '#ececf1', '#d946ef', '#8b5cf6', { radius: 10, shadow: 'glow', background: 'gradient', intensity: 0.45, font: 'sans', motion: 'smooth' }],
   // Dark Gaming
   ['nightfall', 'Nightfall', 'dark-gaming', '#0b1020', '#141b33', '#e6ebff', '#4f7cff', '#22d3ee'],
   ['obsidian-ops', 'Obsidian Ops', 'dark-gaming', '#0d0d12', '#17171f', '#ececf1', '#ff4655', '#ffb547'],
@@ -254,7 +256,7 @@ function build(seed: Seed): Theme {
 }
 
 export const THEMES: readonly Theme[] = Object.freeze(SEEDS.map(build));
-export const DEFAULT_THEME_ID = 'nightfall';
+export const DEFAULT_THEME_ID = 'lego-graphite';
 
 export function getTheme(id: string): Theme | undefined {
   return THEMES.find((t) => t.id === id);

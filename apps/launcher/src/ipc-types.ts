@@ -1,12 +1,17 @@
 // Contract between renderer (via preload) and main process.
 
-import type { GameProfile, Settings } from './core/settings.ts';
+import type { GameProfile, LoaderType, Settings } from './core/settings.ts';
+import type { InstalledMod, ProjectType, SearchHit } from './core/modrinth.ts';
+import type { FoundInstance } from './core/importers.ts';
+
+export interface AccountInfo { uuid: string; name: string; active: boolean }
 
 export interface AuthState {
   signedIn: boolean;
   name: string | null;
   uuid: string | null;
   skinUrl: string | null;
+  accounts: AccountInfo[];
   lego: { connected: boolean; userId: string | null; roles: string[]; error: string | null };
   secureStorage: boolean;
 }
@@ -27,6 +32,14 @@ export interface AppInfo {
   gameDir: string;
 }
 
+export interface SkinData { skin: string | null; variant: 'classic' | 'slim'; cape: string | null }
+
+export interface ModEntry extends Partial<InstalledMod> {
+  filename: string;
+  enabled: boolean;
+  managedByLauncher: boolean;
+}
+
 export interface LauncherApi {
   info(): Promise<AppInfo>;
   window(action: 'minimize' | 'maximize' | 'close'): void;
@@ -37,14 +50,26 @@ export interface LauncherApi {
   authState(): Promise<AuthState>;
   signIn(): Promise<DeviceCodeInfo>;
   cancelSignIn(): void;
-  signOut(): Promise<AuthState>;
+  signOut(uuid?: string): Promise<AuthState>;
+  switchAccount(uuid: string): Promise<AuthState>;
   reconnectLego(): Promise<AuthState>;
+  skin(uuid?: string): Promise<SkinData>;
   versions(): Promise<{ id: string; type: string; releaseTime: string }[]>;
-  fabricLoaders(gameVersion: string): Promise<{ version: string; stable: boolean }[]>;
+  loaderVersions(type: LoaderType, gameVersion: string): Promise<{ version: string; stable: boolean }[]>;
   launch(profileId: string): Promise<{ ok: boolean; error?: string }>;
   cancelLaunch(): void;
   gameRunning(): Promise<boolean>;
-  openFolder(kind: 'game' | 'logs' | 'mods' | 'screenshots', profileId?: string): Promise<void>;
+  openFolder(kind: 'game' | 'logs' | 'mods' | 'screenshots' | 'resourcepacks' | 'shaderpacks', profileId?: string): Promise<void>;
+  mods(profileId: string): Promise<ModEntry[]>;
+  searchProjects(profileId: string, query: string, type: ProjectType, offset: number): Promise<{ hits: SearchHit[]; total: number }>;
+  installProject(profileId: string, projectId: string, type: ProjectType, title: string, iconUrl: string | null): Promise<string[]>;
+  removeMod(profileId: string, filename: string): Promise<void>;
+  toggleMod(profileId: string, filename: string, enabled: boolean): Promise<void>;
+  installModpack(projectId: string, title: string): Promise<{ profileId: string }>;
+  importFile(): Promise<{ profileId: string; missing: string[] } | null>;
+  scanInstances(): Promise<FoundInstance[]>;
+  pickFolder(): Promise<FoundInstance | null>;
+  importInstance(inst: FoundInstance, includeWorlds: boolean): Promise<{ profileId: string; copied: string[] }>;
   lego<T = unknown>(method: string, path: string, body?: unknown): Promise<T>;
   openExternal(url: string): Promise<void>;
   diagnostics(): Promise<string>;

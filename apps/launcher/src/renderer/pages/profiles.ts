@@ -28,7 +28,7 @@ export async function profilesPage(el: HTMLElement): Promise<void> {
 }
 
 async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
-  const base: GameProfile = p ?? { id: '', name: 'Neues Profil', gameVersion: '1.21.11', loader: null, legoClient: true, memoryMb: 4096, jvmArgs: '', resolution: null, gameDir: null, createdAt: 0, lastPlayed: null };
+  const base: GameProfile = p ?? { id: '', name: 'Neues Profil', gameVersion: '1.21.11', loaderType: 'fabric', loader: null, performancePack: true, icon: 'grass', legoClient: true, memoryMb: 4096, jvmArgs: '', resolution: null, gameDir: null, createdAt: 0, lastPlayed: null };
   let versions: { id: string; type: string }[] = [];
   try { versions = (await api.versions()).filter((v) => v.type === 'release').slice(0, 60); } catch { versions = [{ id: base.gameVersion, type: 'release' }]; }
   const maxMem = Math.max(2048, state.info.totalMemMb - 1024);
@@ -48,7 +48,7 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
   const fillLoaders = async () => {
     const gv = (f.elements.namedItem('gameVersion') as HTMLSelectElement).value;
     try {
-      const list = await api.fabricLoaders(gv);
+      const list = await api.loaderVersions('fabric', gv);
       for (const l of list.slice(0, 25)) {
         const o = document.createElement('option');
         o.value = l.version;
@@ -68,7 +68,7 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
     const w = Number(fd.get('w')), h = Number(fd.get('h'));
     const profile: GameProfile = {
       ...base, name: String(fd.get('name')), gameVersion: String(fd.get('gameVersion')), legoClient: fd.get('legoClient') === 'on',
-      loader: String(fd.get('loader') || '') || null, memoryMb: Number(fd.get('memoryMb')), jvmArgs: String(fd.get('jvmArgs') ?? ''),
+      loader: String(fd.get('loader') || '') || null, loaderType: fd.get('legoClient') === 'on' || fd.get('loader') ? 'fabric' : null, memoryMb: Number(fd.get('memoryMb')), jvmArgs: String(fd.get('jvmArgs') ?? ''),
       resolution: w && h ? { width: w, height: h } : null,
     };
     try {
