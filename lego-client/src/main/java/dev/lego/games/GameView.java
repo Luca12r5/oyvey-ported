@@ -113,6 +113,8 @@ public abstract class GameView extends View {
          this.state = GameView.State.OVER;
          this.stateAt = System.currentTimeMillis();
          this.record = var1 && GameInfo.submit(this.info.id, this.score);
+         // Counted results go to the LEGO server, which awards LEGO Coins (daily cap).
+         if (var1) dev.lego.net.LegoAuth.reportGame(this.info.id, this.score, this.record);
          Sound.play(this.record ? "minecraft:ui.toast.challenge_complete" : "minecraft:block.note_block.bass", this.record ? 1.2F : 0.7F, 0.35F);
       }
    }
@@ -352,7 +354,9 @@ public abstract class GameView extends View {
 
             Gx.textCenter(this.record ? "Neuer Rekord!" : this.overTitle(), var7, var18 + this.pf(36.0), this.pf(15.0), 3, this.record ? -15043 : Style.text);
             Gx.textCenter(this.scoreLabel() + ": " + this.scoreText(), var7, var18 + this.pf(56.0), this.pf(10.0), 2, Style.sub);
-            this.buttons(var7, var18 + this.p(78.0), "Nochmal", "reset", this::start, "Zurück", "back", this::back);
+            int coins = dev.lego.net.LegoAuth.lastCoins;
+            if (coins > 0) Gx.textCenter("+" + coins + " LEGO Coins", var7, var18 + this.pf(71.0), this.pf(9.0), 2, -15043);
+            this.buttons(var7, var18 + this.p(88.0), "Nochmal", "reset", this::start, "Zurück", "back", this::back);
          }
 
          Gx.popAlpha();

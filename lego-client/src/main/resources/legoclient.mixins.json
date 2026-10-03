@@ -18,7 +18,8 @@
     "FogMixin",
     "SkyRenderingMixin",
     "ClientRenderMixin",
-    "BlockEntityCullMixin"
+    "BlockEntityCullMixin",
+    "WindowTitleMixin"
   ],
   "injectors": {
     "defaultRequire": 0
