@@ -176,11 +176,11 @@ const SEEDS: Seed[] = [
   ['amoled-gold', 'AMOLED Gold', 'amoled', '#000000', '#0a0a0a', '#fefce8', '#eab308', '#f59e0b'],
   // Retro
   ['arcade-80s', 'Arcade 80s', 'retro', '#140a2e', '#241449', '#fff4d6', '#ff6b35', '#f7c548'],
-  ['gameboy', 'Pocket Green', 'retro', '#0f380f', '#306230', '#9bbc0f', '#8bac0f', '#9bbc0f', { background: 'solid' }],
+  ['gameboy', 'Pocket Green', 'retro', '#0f380f', '#1f4a1f', '#cde26b', '#8bac0f', '#9bbc0f', { background: 'solid' }],
   ['cga', 'CGA', 'retro', '#000000', '#101010', '#ffffff', '#55ffff', '#ff55ff'],
   ['terminal-amber', 'Terminal Amber', 'retro', '#0d0800', '#1a1000', '#ffb000', '#ffb000', '#ff7b00', { font: 'mono' }],
   ['vaporwave', 'Vaporwave', 'retro', '#1b0f2e', '#2d1b4e', '#fdf2ff', '#ff71ce', '#01cdfe', { background: 'grid', font: 'sans' }],
-  ['c64', 'Breadbin', 'retro', '#352879', '#40318d', '#a59ffc', '#7869c4', '#b8c76f'],
+  ['c64', 'Breadbin', 'retro', '#352879', '#40318d', '#c9c5ff', '#7869c4', '#b8c76f'],
   ['sepia-photo', 'Sepia', 'retro', '#efe6d5', '#f8f1e3', '#3b2a1a', '#8b5e34', '#a0522d', { background: 'noise', font: 'rounded', shadow: 'soft' }],
   // Futuristic
   ['hologram', 'Hologram', 'futuristic', '#020a13', '#071a2b', '#dffcff', '#4df3ff', '#a78bfa'],
