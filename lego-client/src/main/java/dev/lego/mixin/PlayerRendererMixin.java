@@ -27,6 +27,24 @@ public abstract class PlayerRendererMixin {
    private void lego$cape(Avatar var1, AvatarRenderState var2, float var3, CallbackInfo var4) {
       try {
          if (var1 != Mc.player()) {
+            dev.lego.net.LegoNet.Entry e = dev.lego.net.LegoNet.get(var1.getUUID());
+            if (e == null) {
+               return;
+            }
+            if (dev.lego.net.LegoNet.tagsEnabled() && e.nameTag() != null && var2.nameTag != null) {
+               dev.lego.net.NameTags.Style style = dev.lego.net.NameTags.get(e.nameTag());
+               if (style != null) {
+                  var2.nameTag = dev.lego.net.NameTags.component(style, var1.getName().getString(), e.customTag());
+               }
+            }
+            String cape = dev.lego.net.LegoNet.cosmeticsEnabled() && e.items().get(dev.lego.cosmetic.Cos.Slot.CAPE) != null
+               ? dev.lego.cosmetic.Cos.get(e.items().get(dev.lego.cosmetic.Cos.Slot.CAPE)).cape : null;
+            Identifier tex = CosRender.capeTextureFor(cape);
+            if (tex != null) {
+               ResourceTexture rt = new ResourceTexture(tex, tex);
+               var2.skin = var2.skin.with(Patch.create(Optional.empty(), Optional.of(rt), Optional.of(rt), Optional.empty()));
+               var2.showCape = true;
+            }
             return;
          }
 

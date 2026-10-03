@@ -147,6 +147,24 @@ public final class Cos {
       }
    }
 
+   /** Like renderEquipped, but for an explicit slot->item map (other LEGO players). */
+   public static void renderItems(G var0, Cos.A var1, boolean var2, Map<Cos.Slot, String> items) {
+      for (Cos.Slot var6 : Cos.Slot.values()) {
+         if (var6.head == var2 && var6 != Cos.Slot.CAPE && var6 != Cos.Slot.PET && var6 != Cos.Slot.VEHICLE) {
+            Cos.Item var7 = items.get(var6) == null ? null : get(items.get(var6));
+            if (var7 != null) {
+               var0.push();
+               var0.color(-1).glow(false);
+               try {
+                  var7.model.render(var0, var1);
+               } finally {
+                  var0.pop();
+               }
+            }
+         }
+      }
+   }
+
    public static final class A {
       public float time;
       public boolean sneak;

@@ -138,6 +138,48 @@ public final class CosRender {
       }
    }
 
+   /** Animated cape texture for any cape id (used for other LEGO players). */
+   public static Identifier capeTextureFor(String cape) {
+      if (cape == null) return null;
+      if (cape.equals("cape_spotify") || cape.equals("spotify")) return null;
+      return texture(Capes.frameName(cape, (float)System.currentTimeMillis() / 1000.0F));
+   }
+
+   private static final java.util.Map<java.util.UUID, CosRender.Built[]> REMOTE = new java.util.concurrent.ConcurrentHashMap<>();
+
+   /** Builds (cached ~33 ms) and submits the geometry of another player's equipped items. */
+   static void drawRemote(java.util.UUID id, java.util.Map<Cos.Slot, String> items, PoseStack var0, SubmitNodeCollector var1, int var2, ModelPart var3, Cos.A var4, boolean head) {
+      long now = System.currentTimeMillis();
+      CosRender.Built[] slot = REMOTE.computeIfAbsent(id, k -> new CosRender.Built[2]);
+      int mq = Math.round(var4.move * 10.0F);
+      int ver = items.hashCode();
+      CosRender.Built b = slot[head ? 1 : 0];
+      if (b == null || now - b.t > 33L || b.ver != ver || b.sneak != var4.sneak || b.mq != mq) {
+         LinkedHashMap<String, List<CosRender.Q>> normal = new LinkedHashMap<>();
+         LinkedHashMap<String, List<CosRender.Q>> glow = new LinkedHashMap<>();
+         G g = new G((tex, p, uv, argb, glowing, n0, n1, n2) -> (glowing ? glow : normal).computeIfAbsent(tex, k -> new ArrayList<>()).add(new CosRender.Q(p, uv, argb, n0, n1, n2)));
+         Cos.renderItems(g, var4, head, items);
+         smooth(normal);
+         b = new CosRender.Built();
+         b.t = now;
+         b.ver = ver;
+         b.mq = mq;
+         b.sneak = var4.sneak;
+         b.normal = normal;
+         b.glow = glow;
+         slot[head ? 1 : 0] = b;
+      }
+      if (!b.normal.isEmpty() || !b.glow.isEmpty()) {
+         var0.pushPose();
+         var3.translateAndRotate(var0);
+         var0.scale(-0.0625F, -0.0625F, -0.0625F);
+         submit(var0, var1, b.normal, false, var2);
+         submit(var0, var1, b.glow, true, var2);
+         var0.popPose();
+      }
+      if (REMOTE.size() > 256) REMOTE.clear();
+   }
+
    public static Identifier capeTexture() {
       Cos.Item var0 = Cos.equipped(Cos.Slot.CAPE);
       String var1 = var0 == null ? null : var0.cape;
@@ -450,13 +492,42 @@ public final class CosRender {
          super(var1);
       }
 
+      /** Other players: render their LEGO items if the backend reported any. */
+      private void remote(PoseStack pose, SubmitNodeCollector out, int light, AvatarRenderState state) {
+         if (Mc.mc().level == null || !(Mc.mc().level.getEntity(state.id) instanceof net.minecraft.client.player.AbstractClientPlayer p) || p.isInvisible()) {
+            return;
+         }
+         java.util.UUID id = p.getUUID();
+         if (!dev.lego.net.LegoNet.allowed(id)) {
+            return;
+         }
+         dev.lego.net.LegoNet.Entry e = dev.lego.net.LegoNet.get(id);
+         if (e == null || e.items().isEmpty()) {
+            return;
+         }
+         Cos.A a = new Cos.A();
+         a.time = state.ageInTicks / 20.0F;
+         a.sneak = state.isCrouching;
+         a.move = Math.min(1.0F, state.walkAnimationSpeed * 1.4F);
+         PlayerModel model = this.getParentModel();
+         CosRender.drawRemote(id, e.items(), pose, out, light, model.body, a, false);
+         CosRender.drawRemote(id, e.items(), pose, out, light, model.head, a, true);
+      }
+
       @Override
       public void submit(PoseStack var1, SubmitNodeCollector var2, int var3, AvatarRenderState var4, float var5, float var6) {
          Perf.begin("Kosmetik");
 
          try {
             LocalPlayer var7 = Mc.player();
-            if (var7 == null || var4.id != Mc.id(var7) || !Cos.anyEquipped()) {
+            if (var7 != null && var4.id != Mc.id(var7)) {
+               if (dev.lego.net.LegoNet.cosmeticsEnabled()) {
+                  this.remote(var1, var2, var3, var4);
+               }
+               return;
+            }
+
+            if (var7 == null || !Cos.anyEquipped()) {
                return;
             }
 

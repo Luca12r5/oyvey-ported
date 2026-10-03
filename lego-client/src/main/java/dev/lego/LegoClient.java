@@ -99,6 +99,7 @@ public final class LegoClient implements ClientModInitializer {
       HudModules.registerAll();
       Visuals.registerAll();
       Utility.registerAll();
+      dev.lego.net.LegoNet.register();
       Performance.registerAll();
       Emotes.register();
       spotify = Modules.register(new SpotifyModule());
