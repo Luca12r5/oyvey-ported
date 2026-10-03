@@ -1,0 +1,43 @@
+name: Restore LEGO client sources
+
+# One-shot helper: remaps legacy/legoclient-*.jar to Mojang names, decompiles
+# it with Vineflower and publishes the result on the ci/lego-decompiled branch.
+# Only runs when the helper itself changes.
+on:
+  push:
+    paths:
+      - 'tools/restore-lego/**'
+      - '.github/workflows/restore-lego-sources.yml'
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Remap legacy jar to Mojang names
+        run: |
+          chmod +x gradlew
+          ./gradlew -p tools/restore-lego remapLego --no-daemon --stacktrace
+      - name: Decompile
+        run: tools/restore-lego/decompile.sh
+      - name: Publish to ci/lego-decompiled
+        run: |
+          set -e
+          SRC=tools/restore-lego/build/decompiled
+          DEST=$(mktemp -d)
+          cp -r "$SRC"/. "$DEST"/
+          cd "$DEST"
+          git init -q
+          git checkout -q -b ci/lego-decompiled
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Decompiled legoclient 3.4.0 (Mojang names) from ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" ci/lego-decompiled

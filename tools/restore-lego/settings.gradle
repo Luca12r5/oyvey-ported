@@ -1,0 +1,10 @@
+// Standalone helper build: remaps the original LEGO Client 3.4.0 jar from
+// intermediary to Mojang names so it can be decompiled into editable source.
+// Run from the repo root: ./gradlew -p tools/restore-lego remapLego
+pluginManagement {
+    repositories {
+        maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+        gradlePluginPortal()
+    }
+}
+rootProject.name = 'restore-lego'

@@ -1,0 +1,40 @@
+plugins {
+    id 'fabric-loom' version '1.14-SNAPSHOT'
+}
+
+def legacyJar = file('../../legacy/legoclient-3.4.0+1.21.11.jar')
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    minecraft 'com.mojang:minecraft:1.21.11'
+    mappings loom.officialMojangMappings()
+    modImplementation 'net.fabricmc:fabric-loader:0.18.4'
+    modImplementation 'net.fabricmc.fabric-api:fabric-api:0.141.1+1.21.11'
+    // Loom remaps mod dependencies to the "named" (Mojang) namespace.
+    modCompileOnly files(legacyJar)
+}
+
+// Copies the remapped legacy jar and every library on the compile classpath into
+// build/restore so the decompiler can resolve types.
+tasks.register('remapLego') {
+    dependsOn 'compileJava'
+    doLast {
+        def out = file("$buildDir/restore")
+        delete out
+        def libs = new File(out, 'libs')
+        libs.mkdirs()
+        configurations.compileClasspath.resolve().each { File f ->
+            if (f.name.contains('legoclient')) {
+                copy { from f; into out; rename { 'legoclient-named.jar' } }
+            } else if (f.name.endsWith('.jar')) {
+                copy { from f; into libs }
+            }
+        }
+        if (!new File(out, 'legoclient-named.jar').exists()) {
+            throw new GradleException('remapped legoclient jar not found on compile classpath')
+        }
+    }
+}
