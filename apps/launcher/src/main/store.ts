@@ -6,7 +6,7 @@
 import { app, safeStorage } from 'electron';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { defaultSettings, migrateProfile, type Settings } from '../core/settings.ts';
+import { defaultSettings, migrateProfile, migrateSettings, type Settings } from '../core/settings.ts';
 import type { MinecraftSession } from '../core/msauth.ts';
 
 export interface Account {
@@ -29,7 +29,7 @@ async function atomicWrite(file: string, data: string | Buffer): Promise<void> {
 
 export async function loadSettings(): Promise<Settings> {
   try {
-    const s = JSON.parse(await readFile(settingsFile(), 'utf8')) as Partial<Settings>;
+    const s = migrateSettings(JSON.parse(await readFile(settingsFile(), 'utf8')) as Partial<Settings>);
     const d = defaultSettings();
     return { ...d, ...s, profiles: s.profiles?.length ? s.profiles.map((p) => migrateProfile(p)) : d.profiles };
   } catch {

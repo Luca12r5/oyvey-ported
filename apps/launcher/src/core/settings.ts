@@ -46,6 +46,8 @@ export interface GameProfile {
 }
 
 export interface Settings {
+  /** Bumped when defaults change in a way old settings must be migrated. */
+  settingsVersion: number;
   themeId: string;
   customThemes: unknown[];
   language: 'de' | 'en';
@@ -94,8 +96,19 @@ export function migrateProfile(p: Partial<GameProfile> & { loader?: string | nul
   } as GameProfile;
 }
 
+export const SETTINGS_VERSION = 2;
+
+/** Settings saved by older launcher versions: adopt the new default look once. */
+export function migrateSettings(s: Partial<Settings>): Partial<Settings> {
+  if ((s.settingsVersion ?? 1) < 2) {
+    s = { ...s, themeId: 'lego-graphite', background: 'nebula', accentColor: null };
+  }
+  return { ...s, settingsVersion: SETTINGS_VERSION };
+}
+
 export function defaultSettings(): Settings {
   return {
+    settingsVersion: SETTINGS_VERSION,
     themeId: 'lego-graphite', customThemes: [], language: 'de', backendUrl: 'https://api.lego-launcher.example',
     selectedProfile: DEFAULT_PROFILE.id, profiles: [{ ...DEFAULT_PROFILE, createdAt: Date.now() }],
     closeOnLaunch: false, reducedMotion: false, uiScale: 1, autoUpdate: 'ask', rarityColors: {},

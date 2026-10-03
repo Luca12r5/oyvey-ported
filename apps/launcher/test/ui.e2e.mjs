@@ -55,7 +55,8 @@ await call(me.token, 'POST', '/api/admin/news', { kind: 'news', title: 'Launcher
 
 const userData = mkdtempSync(join(tmpdir(), 'lego-launcher-ud-'));
 mkdirSync(userData, { recursive: true });
-writeFileSync(join(userData, 'settings.json'), JSON.stringify({ backendUrl: base }));
+// Settings as an older launcher version wrote them (blue theme with grid background).
+writeFileSync(join(userData, 'settings.json'), JSON.stringify({ backendUrl: base, themeId: 'nightfall' }));
 const account = {
   msRefreshToken: 'test-refresh',
   mc: { accessToken: 'test-mc-token', expiresAt: Date.now() + 3_600_000, uuid: me.uuid, name: 'LegoDev', xuid: null, skinUrl: null },
@@ -92,7 +93,13 @@ await win.waitForTimeout(1500); // character + background settle
 await page('play', 'SPIELEN');
 // Default look is the gray "LEGO Graphite" theme.
 const bgColor = await win.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
-if (bgColor !== '#141519') problems.push(`default theme background is ${bgColor}, expected graphite #141519`);
+if (bgColor !== '#141519') problems.push(`old settings were not migrated to graphite: --bg is ${bgColor}`);
+// The window layout must fill the window in every theme.
+async function layoutOk(label) {
+  const r = await win.evaluate(() => ({ shell: document.querySelector('.shell').getBoundingClientRect().width, bar: document.querySelector('.titlebar').getBoundingClientRect().width, w: innerWidth }));
+  if (r.shell < r.w - 2 || r.bar < r.w - 2) problems.push(`${label}: layout collapsed (shell ${r.shell}px, titlebar ${r.bar}px, window ${r.w}px)`);
+}
+await layoutOk('graphite');
 // Profile dropdown lists the profiles.
 await win.click('#drop');
 await win.waitForSelector('.menu [data-profile]');
@@ -148,6 +155,13 @@ const after = await win.evaluate(() => getComputedStyle(document.documentElement
 const bodyClass = await win.evaluate(() => document.body.className);
 if (before === after) problems.push('theme switch did not change --accent');
 if (!bodyClass.includes('font-mono') || !bodyClass.includes('bg-scanlines')) problems.push(`matrix theme classes missing: ${bodyClass}`);
+await layoutOk('matrix');
+// Every theme background kind must keep the layout intact (regression: class name clash with "bg-grid").
+for (const id of ['nightfall', 'matrix', 'lego-graphite']) {
+  await win.click(`[data-theme=${id}]`);
+  await win.waitForTimeout(150);
+  await layoutOk(`theme ${id}`);
+}
 if (shots) await win.screenshot({ path: join(shots, 'launcher-theme-matrix.png') });
 
 // Buy something through the launcher shop.

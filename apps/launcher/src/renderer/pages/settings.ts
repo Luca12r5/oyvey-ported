@@ -92,7 +92,7 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
       ${row(t('set.scale'), `${t('set.scale.d')} (${Math.round(s.uiScale * 100)} %)`, html`<input type="range" data-key="uiScale" min="0.75" max="2" step="0.05" value="${s.uiScale}">`)}
       ${row(t('set.motion'), t('set.motion.d'), sw('reducedMotion', s.reducedMotion))}`,
     background: html`
-      ${row(t('set.bgPick'), t('set.bgPick.d'), html`<div class="bg-grid">${LAUNCHER_BACKGROUNDS.map((b) => html`<button class="bg-tile ${s.background === b.id ? 'on' : ''}" data-bg="${b.id}"><canvas data-preview="${b.id}"></canvas><span>${b.name[getLang()]}</span></button>`)}</div>`, 'stack')}
+      ${row(t('set.bgPick'), t('set.bgPick.d'), html`<div class="bgpick">${LAUNCHER_BACKGROUNDS.map((b) => html`<button class="bg-tile ${s.background === b.id ? 'on' : ''}" data-bg="${b.id}"><canvas data-preview="${b.id}"></canvas><span>${b.name[getLang()]}</span></button>`)}</div>`, 'stack')}
       ${row(t('set.snow'), t('set.snow.d'), sw('snow', s.snow))}
       ${row(t('set.quality'), `${t('set.quality.d')} (${Math.round(s.backgroundQuality * 100)} %)`, html`<input type="range" data-key="backgroundQuality" min="0" max="1" step="0.05" value="${s.backgroundQuality}">`)}`,
     game: html`

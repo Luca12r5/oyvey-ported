@@ -305,7 +305,7 @@ input[type=color] { padding: 0; height: 34px; cursor: pointer; }
 .swatch.on { border-color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 50%, transparent); }
 .swatch.custom { display: grid; place-items: center; background: conic-gradient(#f43f5e, #f59e0b, #84cc16, #06b6d4, #8b5cf6, #f43f5e); margin: 0; }
 .swatch.custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.bg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.bgpick { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
 .bg-tile { position: relative; padding: 0; border-radius: 14px; overflow: hidden; border: 2px solid var(--glass-b); background: var(--bg2); cursor: pointer; aspect-ratio: 16 / 10; transition: border-color var(--dur), transform .2s var(--ease); }
 .bg-tile:hover { transform: translateY(-2px); }
 .bg-tile.on { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
