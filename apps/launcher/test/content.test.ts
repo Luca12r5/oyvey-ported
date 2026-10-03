@@ -70,7 +70,7 @@ test('loader availability and version lists', async () => {
   assert.equal(loaderSupports('fabric', '25w14a'), true);
   assert.equal(loaderSupports('neoforge', '1.19.4'), false);
   const f = fakeFetch({
-    'https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.json': { '1.20.1': ['1.20.1-47.0.0', '1.20.1-47.2.0'] },
+    'https://maven.minecraftforge.net/releases/net/minecraftforge/forge/maven-metadata.json': { '1.20.1': ['1.20.1-47.0.0', '1.20.1-47.2.0'], '1.20.2': ['1.20.2-48.0.0'] },
     'https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge': { versions: ['20.4.10', '21.1.9', '21.1.77', '21.1.100-beta', '21.10.3'] },
     'https://meta.quiltmc.org/v3/versions/loader/1.21': [{ loader: { version: '0.26.0' } }, { loader: { version: '0.26.1-beta.1' } }],
   });
@@ -78,7 +78,7 @@ test('loader availability and version lists', async () => {
   assert.deepEqual((await loaderVersions(f, 'neoforge', '1.21.1')).map((x) => x.version), ['21.1.100-beta', '21.1.77', '21.1.9']);
   assert.deepEqual((await loaderVersions(f, 'neoforge', '1.21.10')).map((x) => x.version), ['21.10.3']);
   assert.deepEqual(await loaderVersions(f, 'quilt', '1.21'), [{ version: '0.26.0', stable: true }, { version: '0.26.1-beta.1', stable: false }]);
-  assert.equal(installerInfo('forge', '1.20.1', '47.2.0').url, 'https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.2.0/forge-1.20.1-47.2.0-installer.jar');
+  assert.equal(installerInfo('forge', '1.20.1', '47.2.0').url, 'https://maven.minecraftforge.net/releases/net/minecraftforge/forge/1.20.1-47.2.0/forge-1.20.1-47.2.0-installer.jar');
   assert.equal(installerInfo('neoforge', '1.21.1', '21.1.77').versionId, 'neoforge-21.1.77');
 });
 
@@ -202,4 +202,24 @@ test('imports: Prism/MultiMC, CurseForge app, official launcher, copy without wo
   const manifest = { manifestType: 'minecraftModpack', name: 'CF Pack', minecraft: { version: '1.20.1', modLoaders: [{ id: 'forge-47.2.0', primary: true }] }, files: [{ projectID: 1, fileID: 2, required: true }], overrides: 'overrides' };
   const zip = storedZip({ 'manifest.json': JSON.stringify(manifest) });
   assert.deepEqual(cfLoader(readCfManifest(zip)), { gameVersion: '1.20.1', loaderType: 'forge', loader: '47.2.0' });
+});
+
+test('log4j XML output becomes readable lines', async () => {
+  const { createLogCleaner } = await import('../src/core/launch.ts');
+  const c = createLogCleaner();
+  const out = [
+    '<log4j:Event logger="net.minecraft.client.Minecraft" timestamp="1791064360861" level="INFO" thread="Render thread">',
+    '  <log4j:Message><![CDATA[Setting user: LegoCI]]></log4j:Message>',
+    '</log4j:Event>',
+    '<log4j:Event logger="x" timestamp="1791064360900" level="ERROR" thread="main">',
+    '  <log4j:Throwable><![CDATA[java.lang.RuntimeException: boom',
+    '\tat a.b(C.java:1)',
+    ']]></log4j:Throwable>',
+    '</log4j:Event>',
+    'plain stdout line',
+  ].map(c).filter((x) => x !== null);
+  assert.equal(out.length, 3);
+  assert.match(out[0]!, /^\[\d\d:\d\d:\d\d\] \[Render thread\/INFO\]: Setting user: LegoCI$/);
+  assert.match(out[1]!, /\[main\/ERROR\]: java.lang.RuntimeException: boom\n\tat a.b/);
+  assert.equal(out[2], 'plain stdout line');
 });

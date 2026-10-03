@@ -97,6 +97,19 @@ export async function installVersion(f: FetchLike, l: Layout, version: VersionJs
   report('Bibliotheken');
   await downloadAll(f, tasks, { onProgress: (p) => report('Bibliotheken', p), signal });
 
+  // Like the official launcher, a version that inherits from vanilla runs with
+  // a copy of the client jar named after itself. Forge/NeoForge rely on this
+  // (they exclude "${version_name}.jar" from the module path).
+  let runJar = clientJar;
+  if (version.id !== baseId) {
+    runJar = join(l.versions, version.id, `${version.id}.jar`);
+    const same = await stat(runJar).then((a) => stat(clientJar).then((b) => a.size === b.size)).catch(() => false);
+    if (!same) {
+      await mkdir(dirname(runJar), { recursive: true });
+      await copyFile(clientJar, runJar);
+    }
+  }
+
   if (version.assetIndex) {
     const ai = version.assetIndex;
     const idxFile = join(l.assets, 'indexes', `${ai.id}.json`);
@@ -127,7 +140,7 @@ export async function installVersion(f: FetchLike, l: Layout, version: VersionJs
   for (const lib of libs.filter((x) => x.native)) {
     await extract(join(l.libraries, lib.path), nativesDir, nativeFilter(lib.excludes));
   }
-  return { clientJar, nativesDir, loggingConfig, virtualAssets };
+  return { clientJar: runJar, nativesDir, loggingConfig, virtualAssets };
 }
 
 // ---- Java runtime --------------------------------------------------------

@@ -76,3 +76,39 @@ export function diagnose(text: string): string | null {
   for (const [re, hint] of rules) if (re.test(text)) return hint;
   return null;
 }
+
+/**
+ * Turns the game's log4j XML output (used when the official logging config is
+ * passed) into readable lines: "[12:34:56] [Render thread/INFO]: message".
+ * Plain lines pass through unchanged. Returns null for pure XML markup.
+ */
+export function createLogCleaner(): (line: string) => string | null {
+  let head = '';
+  let buf: string[] | null = null;
+  return (line: string) => {
+    const ev = /<log4j:Event\b[^>]*\btimestamp="(\d+)"[^>]*\blevel="(\w+)"[^>]*\bthread="([^"]*)"/.exec(line);
+    if (ev) {
+      const d = new Date(Number(ev[1]));
+      head = `[${d.toTimeString().slice(0, 8)}] [${ev[3]}/${ev[2]}]: `;
+      return null;
+    }
+    if (buf) {
+      const end = line.indexOf(']]>');
+      if (end < 0) { buf.push(line); return null; }
+      buf.push(line.slice(0, end));
+      const text = buf.join('\n');
+      buf = null;
+      return text.trim() ? head + text.trim() : null;
+    }
+    const m = /<log4j:(Message|Throwable)><!\[CDATA\[(.*)$/.exec(line);
+    if (m) {
+      const rest = m[2]!;
+      const end = rest.indexOf(']]>');
+      if (end >= 0) return rest.slice(0, end).trim() ? head + rest.slice(0, end) : null;
+      buf = [rest];
+      return null;
+    }
+    if (/^\s*<\/?log4j:[A-Za-z]+[^>]*>\s*$/.test(line)) return null;
+    return line;
+  };
+}

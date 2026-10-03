@@ -18,7 +18,7 @@ import { randomUUID } from 'node:crypto';
 import { currentEnv, buildArguments, redactArgs } from '../src/core/mojang.ts';
 import { getManifest, installJava, installVersion, layout, resolveLoaderVersion, syncMods, vanillaVersion, type ModFile } from '../src/core/install.ts';
 import { projectVersions, performanceFiles } from '../src/core/modrinth.ts';
-import { startGame } from '../src/core/launch.ts';
+import { createLogCleaner, startGame } from '../src/core/launch.ts';
 import type { LoaderType } from '../src/core/settings.ts';
 
 const arg = (name: string, d: string | null = null) => {
@@ -69,7 +69,7 @@ if (legoJar) {
   copyFileSync(legoJar, join(gameDir, 'mods', basename(legoJar)));
 }
 
-const token = '0';
+const token = 'lego-ci-no-session';
 const args = buildArguments({
   version: merged, env, javaPath, gameDir, assetsDir: l.assets, gameAssetsDir: installed.virtualAssets ?? undefined,
   librariesDir: l.libraries, nativesDir: installed.nativesDir, clientJar: installed.clientJar, classpathSeparator: process.platform === 'win32' ? ';' : ':',
@@ -83,7 +83,10 @@ step(`Launch: ${redactArgs(args, token).slice(0, 6).join(' ')} … (${args.lengt
 const READY = [/Sound engine started/, /Created: \d+x\d+x\d+ minecraft:textures\/atlas\/blocks\.png-atlas/, /Created: \d+x\d+ textures-atlas/, /Reloading ResourceManager/];
 const lines: string[] = [];
 let ready = false, legoLoaded = false, modCount: string | null = null;
-const game = await startGame(javaPath, args, gameDir, join(root, 'logs'), (line) => {
+const clean = createLogCleaner();
+const game = await startGame(javaPath, args, gameDir, join(root, 'logs'), (raw) => {
+  const line = clean(raw);
+  if (line === null) return;
   lines.push(line);
   if (lines.length > 4000) lines.splice(0, 1000);
   if (/\[LegoClient\] geladen/.test(line)) { legoLoaded = true; step(`LEGO: ${line.trim()}`); }

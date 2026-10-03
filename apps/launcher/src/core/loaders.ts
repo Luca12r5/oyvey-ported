@@ -14,7 +14,9 @@ import type { LoaderType } from './settings.ts';
 
 export const FABRIC_META = 'https://meta.fabricmc.net/v2';
 export const QUILT_META = 'https://meta.quiltmc.org/v3';
-export const FORGE_MAVEN = 'https://maven.minecraftforge.net';
+/** Forge serves its artifacts from the "releases" repository; the root is kept as a fallback. */
+export const FORGE_MAVEN = 'https://maven.minecraftforge.net/releases';
+export const FORGE_MAVEN_ROOT = 'https://maven.minecraftforge.net';
 export const NEOFORGE_MAVEN = 'https://maven.neoforged.net';
 
 export interface LoaderVersion { version: string; stable: boolean }
@@ -43,8 +45,8 @@ export async function loaderVersions(f: FetchLike, type: LoaderType, gameVersion
     return list.map((x) => ({ version: x.loader.version, stable: !/beta|pre|rc/i.test(x.loader.version) }));
   }
   if (type === 'forge') {
-    const all = await fetchJson<Record<string, string[]>>(f, `${FORGE_MAVEN}/net/minecraftforge/forge/maven-metadata.json`);
-    return (all[gameVersion] ?? []).slice().reverse().map((v) => ({ version: v.slice(gameVersion.length + 1), stable: true }));
+    const versions = await forgeVersions(f);
+    return versions.filter((v) => v.startsWith(`${gameVersion}-`)).sort(cmpVersion).reverse().map((v) => ({ version: v.slice(gameVersion.length + 1), stable: true }));
   }
   // NeoForge versions are "<minor>.<patch>.<build>" for game "1.<minor>.<patch>".
   const r = await fetchJson<{ versions: string[] }>(f, `${NEOFORGE_MAVEN}/api/maven/versions/releases/net/neoforged/neoforge`);
@@ -52,6 +54,21 @@ export async function loaderVersions(f: FetchLike, type: LoaderType, gameVersion
   if (!m) return [];
   const prefix = `${m[1]}.${m[2] ?? '0'}.`;
   return r.versions.filter((v) => v.startsWith(prefix)).sort(cmpVersion).reverse().map((v) => ({ version: v, stable: !/beta|alpha/i.test(v) }));
+}
+
+/** All Forge versions ("<mc>-<forge>"), from maven-metadata.json or the standard maven-metadata.xml. */
+async function forgeVersions(f: FetchLike): Promise<string[]> {
+  for (const base of [FORGE_MAVEN, FORGE_MAVEN_ROOT]) {
+    try {
+      const all = await fetchJson<Record<string, string[]>>(f, `${base}/net/minecraftforge/forge/maven-metadata.json`, {}, { retries: 0 });
+      if (all && typeof all === 'object' && !Array.isArray(all)) return Object.values(all).flat();
+    } catch { /* try the next source */ }
+    try {
+      const res = await f(`${base}/net/minecraftforge/forge/maven-metadata.xml`, { signal: AbortSignal.timeout(15_000) });
+      if (res.ok) return [...(await res.text()).matchAll(/<version>([^<]+)<\/version>/g)].map((m) => m[1]!);
+    } catch { /* try the next source */ }
+  }
+  throw new Error('Die Forge-Versionsliste ist nicht erreichbar.');
 }
 
 export async function newestLoader(f: FetchLike, type: LoaderType, gameVersion: string): Promise<string> {

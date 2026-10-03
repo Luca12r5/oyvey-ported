@@ -21,7 +21,7 @@ import {
 import { cfLoader, copyInstance, installCfPack, readCfManifest, readFolder, scanInstances, type FoundInstance } from '../core/importers.ts';
 import { listEntries } from '../core/zip.ts';
 import { fetchJson } from '../core/net.ts';
-import { diagnose, startGame } from '../core/launch.ts';
+import { createLogCleaner, diagnose, startGame } from '../core/launch.ts';
 import { DEFAULT_PROFILE, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
 import { encryptionAvailable, loadAccounts, loadSettings, paths, saveAccounts, saveSettings, type Account, type AccountStore } from './store.ts';
 import { setupUpdater, checkForUpdate, installUpdate } from './updater.ts';
@@ -257,7 +257,11 @@ async function launch(profileId: string): Promise<{ ok: boolean; error?: string 
     });
     report('Starte Minecraft');
     send('game-log', { line: `[launcher] ${javaPath} ${redactArgs(args, mc.accessToken).join(' ')}`, stream: 'out' });
-    const game = await startGame(javaPath, args, gameDir, paths.logs(), (line, stream) => send('game-log', { line: line.split(mc.accessToken).join('<redacted>'), stream }));
+    const clean = createLogCleaner();
+    const game = await startGame(javaPath, args, gameDir, paths.logs(), (raw, stream) => {
+      const line = clean(raw);
+      if (line !== null) send('game-log', { line: line.split(mc.accessToken).join('<redacted>'), stream });
+    });
     running = profile;
     profile.lastPlayed = Date.now();
     await saveSettings(settings);
