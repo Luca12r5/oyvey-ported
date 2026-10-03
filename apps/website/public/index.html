@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LEGO Launcher</title>
+  <meta name="description" content="LEGO Launcher – Minecraft-Launcher mit eigenem Client, Cosmetics, Freunden, Minispielen und mehr.">
+  <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/style.css">
+  <script type="module" src="/assets/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" data-link><span class="brick" aria-hidden="true"></span><span>LEGO Launcher</span></a>
+    <button class="menu-toggle" type="button" aria-label="Menü" aria-expanded="false" id="menuToggle">☰</button>
+    <nav class="nav" id="nav" aria-label="Hauptnavigation"></nav>
+    <div class="account" id="account"></div>
+  </header>
+  <main id="app" tabindex="-1"><noscript>Diese Seite benötigt JavaScript.</noscript></main>
+  <footer class="footer">
+    <div>© LEGO Launcher Projekt · Nicht verbunden mit Mojang, Microsoft oder der LEGO Group.</div>
+    <nav aria-label="Rechtliches"><a href="/legal/imprint" data-link>Impressum</a><a href="/legal/privacy" data-link>Datenschutz</a><a href="/legal/terms" data-link>Nutzungsbedingungen</a><a href="/status" data-link>Status</a></nav>
+  </footer>
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <dialog id="dialog" class="dialog"></dialog>
+</body>
+</html>
