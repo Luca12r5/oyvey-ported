@@ -1,0 +1,9 @@
+{
+  "key.category.spotifyhud.main": "Spotify HUD",
+  "key.spotifyhud.open": "Spotify HUD öffnen (steuern / verschieben)",
+  "key.spotifyhud.playpause": "Abspielen / Pause",
+  "key.spotifyhud.next": "Nächster Titel",
+  "key.spotifyhud.previous": "Vorheriger Titel",
+  "key.spotifyhud.like": "Liken / Entfernen",
+  "key.spotifyhud.lyrics": "Lyrics an / aus"
+}
