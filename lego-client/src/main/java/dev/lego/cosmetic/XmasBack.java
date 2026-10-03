@@ -143,7 +143,7 @@ final class XmasBack {
          ((float[])var2.get(var15))[3] = var13[var15] / var12;
       }
 
-      return var2.toArray(new float[0][]);
+      return (float[][])var2.toArray(new float[0][]);
    }
 
    static void treePack(G var0, Cos.A var1) {

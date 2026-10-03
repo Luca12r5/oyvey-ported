@@ -342,7 +342,7 @@ public final class SkyExtras {
 
          int var40 = 0;
 
-         for (int var46 : var38) {
+         for (int var46 : (Iterable<Integer>) (Iterable<?>) (var38)) {
             var40 = Math.max(var40, var46);
          }
 

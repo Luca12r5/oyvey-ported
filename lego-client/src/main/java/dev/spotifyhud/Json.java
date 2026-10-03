@@ -288,7 +288,7 @@ public final class Json {
          var0.append("{\n");
          int var4 = 0;
 
-         for (Entry var6 : var3.entrySet()) {
+         for (Entry var6 : (Iterable<Entry>) (Iterable<?>) (var3.entrySet())) {
             var0.append("  ".repeat(var2 + 1));
             quote(var0, (String)var6.getKey());
             var0.append(": ");

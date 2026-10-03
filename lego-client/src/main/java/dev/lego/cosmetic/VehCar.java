@@ -123,7 +123,7 @@ final class VehCar {
       float[] var20 = new float[var16.size()];
       int var24 = 0;
 
-      for (float var31 : var16) {
+      for (float var31 : (Iterable<Float>) (Iterable<?>) (var16)) {
          if (var24 == 0 || var31 - var20[var24 - 1] > 0.3F) {
             var20[var24++] = var31;
          }

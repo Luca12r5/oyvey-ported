@@ -110,7 +110,7 @@ final class CapeArt2 {
             }
          }
 
-         for (double[] var33 : var32) {
+         for (double[] var33 : (Iterable<double[]>) (Iterable<?>) (var32)) {
             double var23 = var33[0];
             double var25 = var33[1];
             var31.moveTo(var23, var25);

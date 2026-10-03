@@ -270,7 +270,7 @@ public final class Utility {
       boolean blocks(String var1) {
          long var2 = System.currentTimeMillis();
 
-         while (!this.recent.isEmpty() && var2 - this.recent.peekFirst()[1] > this.window.get() * 1000.0) {
+         while (!this.recent.isEmpty() && var2 - (Long)this.recent.peekFirst()[1] > this.window.get() * 1000.0) {
             this.recent.pollFirst();
          }
 

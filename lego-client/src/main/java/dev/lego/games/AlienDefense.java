@@ -303,7 +303,7 @@ public final class AlienDefense extends GameView {
 
          AlienDefense.Alien var24 = (AlienDefense.Alien)var20.get(this.rnd.nextInt(var20.size()));
          if (this.rnd.nextFloat() < 0.5F) {
-            for (AlienDefense.Alien var32 : var20) {
+            for (AlienDefense.Alien var32 : (Iterable<AlienDefense.Alien>) (Iterable<?>) (var20)) {
                if (Math.abs(this.fX + var32.col * 30.0F + 11.0F - this.px) < 22.0F) {
                   var24 = var32;
                }

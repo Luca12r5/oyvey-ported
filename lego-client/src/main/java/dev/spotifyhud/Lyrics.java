@@ -250,10 +250,10 @@ public final class Lyrics {
 
             String var19 = WORD_TAG.matcher(var26).replaceAll("").replaceAll("\\s+", " ").trim();
 
-            for (long var21 : var10) {
+            for (long var21 : (Iterable<Long>) (Iterable<?>) (var10)) {
                Lyrics.Line var23 = new Lyrics.Line(Math.max(0L, var21 - var1), var19);
                if (!var13.isEmpty() && var10.size() == 1) {
-                  var23.words = var13.toArray(new String[0]);
+                  var23.words = (String[])var13.toArray(new String[0]);
                   var23.wordTimes = new long[var27.size()];
 
                   for (int var24 = 0; var24 < var27.size(); var24++) {
@@ -268,7 +268,7 @@ public final class Lyrics {
          }
       }
 
-      var4.sort((var0x, var1x) -> Long.compare(var0x.timeMs, var1x.timeMs));
+      ((java.util.List<Lyrics.Line>)(java.util.List<?>)var4).sort((var0x, var1x) -> Long.compare(var0x.timeMs, var1x.timeMs));
       estimateWords(var4);
       return var4;
    }

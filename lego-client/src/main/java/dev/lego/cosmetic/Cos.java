@@ -110,7 +110,7 @@ public final class Cos {
             if (var1 instanceof Map) {
                Cos.EQUIPPED.clear();
 
-               for (Entry var3 : ((Map)var1).entrySet()) {
+               for (Entry var3 : (Iterable<Entry>) (Iterable<?>) (((Map)var1).entrySet())) {
                   try {
                      Cos.Slot var4 = Cos.Slot.valueOf((String)var3.getKey());
                      if (var3.getValue() instanceof String && Cos.get((String)var3.getValue()) != null) {

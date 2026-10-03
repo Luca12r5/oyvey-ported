@@ -292,7 +292,7 @@ final class CapeArtHd {
 
       double var32 = var10 * 0.31;
 
-      for (double[] var34 : var12) {
+      for (double[] var34 : (Iterable<double[]>) (Iterable<?>) (var12)) {
          for (int var17 = (int)(var34[1] - var32 - 1.0); var17 <= var34[1] + var32 + 1.0; var17++) {
             for (int var36 = (int)(var34[0] - var32 - 1.0); var36 <= var34[0] + var32 + 1.0; var36++) {
                if (var36 >= 0 && var17 >= 0 && var36 < 160 && var17 < 256) {
@@ -313,7 +313,7 @@ final class CapeArtHd {
       relief(var1, var8, 14.0, 0.65, 1.3, 0.75);
       var0.setStroke(new BasicStroke(0.8F));
 
-      for (double[] var35 : var12) {
+      for (double[] var35 : (Iterable<double[]>) (Iterable<?>) (var12)) {
          var0.setColor(Capes.col(16777215, 0.22));
          var0.draw(new java.awt.geom.Arc2D.Double(var35[0] - var32 * 0.55, var35[1] - var32 * 0.55, var32 * 1.1, var32 * 1.1, 90.0, 110.0, 0));
       }
@@ -425,7 +425,7 @@ final class CapeArtHd {
             }
          }
 
-         for (double[] var34 : var33) {
+         for (double[] var34 : (Iterable<double[]>) (Iterable<?>) (var33)) {
             double var24 = var34[0];
             double var26 = var34[1];
             var32.moveTo(var24, var26);

@@ -229,7 +229,7 @@ public final class CustomSky extends Module {
             }
          }
 
-         var3.sort((var0, var1x) -> Double.compare((Double)var1x[1], (Double)var0[1]));
+         ((java.util.List<Object[]>)(java.util.List<?>)var3).sort((var0, var1x) -> Double.compare((Double)var1x[1], (Double)var0[1]));
       } else if (this.builtIn()) {
          var3.add(new Object[]{this.presetKey(this.mode.index), 1.0, SkyGen.IDS[this.mode.index]});
       } else {
@@ -264,7 +264,7 @@ public final class CustomSky extends Module {
          double var6 = 0.0;
          double var8 = 0.0;
 
-         for (Object[] var11 : var1) {
+         for (Object[] var11 : (Iterable<Object[]>) (Iterable<?>) (var1)) {
             if (var11[2] != null && this.loaded.containsKey((String)var11[0])) {
                int var12 = SkyGen.fogColor((String)var11[2]);
                double var13 = (Double)var11[1];

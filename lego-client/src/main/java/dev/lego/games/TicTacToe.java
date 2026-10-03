@@ -171,7 +171,7 @@ public final class TicTacToe extends GameView {
          int var7 = Integer.MIN_VALUE;
          ArrayList var3 = new ArrayList();
 
-         for (int var5 : var1) {
+         for (int var5 : (Iterable<Integer>) (Iterable<?>) (var1)) {
             this.b[var5] = 2;
             int var6 = this.minimax(false, 1);
             this.b[var5] = 0;

@@ -521,7 +521,7 @@ public final class HudModules {
          this.rows = var1;
          StringBuilder var9 = new StringBuilder();
 
-         for (String[] var11 : var1) {
+         for (String[] var11 : (Iterable<String[]>) (Iterable<?>) (var1)) {
             var9.append(var11[0]).append(var11[1]);
          }
 

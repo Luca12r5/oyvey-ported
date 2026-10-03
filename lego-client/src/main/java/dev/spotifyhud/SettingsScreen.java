@@ -92,7 +92,7 @@ public final class SettingsScreen extends Screen {
       double var11 = HudRenderer.animTime();
       StringBuilder var13 = new StringBuilder(256);
 
-      for (SettingsUi.W var15 : var8) {
+      for (SettingsUi.W var15 : (Iterable<SettingsUi.W>) (Iterable<?>) (var8)) {
          var13.append(var15.id)
             .append(var15.on)
             .append(var15.selected)
@@ -439,7 +439,7 @@ public final class SettingsScreen extends Screen {
       } else {
          int var2 = var1.key();
          boolean var3 = (var1.modifiers() & 2) != 0;
-         Object var4 = this.text();
+         String var4 = String.valueOf(this.text());
          if (var2 == 256 || var2 == 257 || var2 == 335 || var2 == 258) {
             this.unfocus();
             return true;

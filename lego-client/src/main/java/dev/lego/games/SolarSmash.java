@@ -211,7 +211,7 @@ public final class SolarSmash extends View {
          }
       }
 
-      ArrayList var27 = new ArrayList<>(this.bodies);
+      ArrayList<SolarPlanet> var27 = new ArrayList<>(this.bodies);
       var27.sort((var0, var1x) -> Float.compare((float)Math.sin(var0.orbitA) * var0.orbitR, (float)Math.sin(var1x.orbitA) * var1x.orbitR));
 
       for (SolarPlanet var29 : var27) {

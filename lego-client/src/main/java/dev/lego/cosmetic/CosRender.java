@@ -197,7 +197,7 @@ public final class CosRender {
                   var0x.add(var3.cape);
                }
 
-               for (String var5 : var0x) {
+               for (String var5 : (Iterable<String>) (Iterable<?>) (var0x)) {
                   CTex.get(var5);
                }
             } catch (Throwable var6) {
@@ -218,11 +218,11 @@ public final class CosRender {
       int var8 = Math.round(var4.move * 10.0F);
       CosRender.Built var9 = BUILT[var5 ? 1 : 0];
       if (var9 == null || var6 - var9.t > 33L || var9.ver != Cos.version || var9.sneak != var4.sneak || var9.mq != var8 || var9.flags != flagsKey) {
-         LinkedHashMap var10 = new LinkedHashMap();
-         LinkedHashMap var11 = new LinkedHashMap();
+         LinkedHashMap<String, List<CosRender.Q>> var10 = new LinkedHashMap<>();
+         LinkedHashMap<String, List<CosRender.Q>> var11 = new LinkedHashMap<>();
          G var12 = new G(
             (var2x, var3x, var4x, var5x, var6x, var7, var8x, var9x) -> (var6x ? var11 : var10)
-               .computeIfAbsent(var2x, var0xx -> new ArrayList())
+               .computeIfAbsent(var2x, var0xx -> new ArrayList<>())
                .add(new CosRender.Q(var3x, var4x, var5x, var7, var8x, var9x))
          );
 
@@ -273,7 +273,7 @@ public final class CosRender {
          for (Entry var8 : var0.entrySet()) {
             int var9 = Smooth.group((String)var8.getKey(), false);
 
-            for (CosRender.Q var11 : (List)var8.getValue()) {
+            for (CosRender.Q var11 : (Iterable<CosRender.Q>) (Iterable<?>) ((List)var8.getValue())) {
                var5[var6] = var11;
                var12[var6] = var11.p;
                var13[var6] = var11.n;
@@ -301,7 +301,7 @@ public final class CosRender {
             List var10 = (List)var6.getValue();
             int var11 = var3 ? 15728880 : var4;
             var1.submitCustomGeometry(var0, var9, (var2x, var3x) -> {
-               for (CosRender.Q var5 : var10) {
+               for (CosRender.Q var5 : (Iterable<CosRender.Q>) (Iterable<?>) (var10)) {
                   for (int var6x = 0; var6x < 4; var6x++) {
                      v(var3x, var2x, var5, var6x, var11);
                   }
@@ -336,7 +336,7 @@ public final class CosRender {
       double var27 = Math.sin(Math.toRadians(var9));
       double var29 = Math.cos(Math.toRadians(var10));
       double var31 = Math.sin(Math.toRadians(var10));
-      LinkedHashMap var33 = new LinkedHashMap();
+      LinkedHashMap<String, List<Object[]>> var33 = new LinkedHashMap<>();
       G var34 = new G((var25x, var26, var27x, var28, var29x, var30, var31x, var32) -> {
          double[] var33x = new double[12];
 
@@ -360,14 +360,14 @@ public final class CosRender {
          }
       }
 
-      for (Entry var36 : var33.entrySet()) {
+      for (Entry var36 : (Iterable<Entry>) (Iterable<?>) (var33.entrySet())) {
          boolean var37 = ((String)var36.getKey()).startsWith("!");
          String var38 = var37 ? ((String)var36.getKey()).substring(1) : (String)var36.getKey();
          Identifier var39 = texture(var38);
          if (var39 != null) {
             int var40 = var37 ? 2 : mode(var38);
 
-            for (Object[] var42 : (List)var36.getValue()) {
+            for (Object[] var42 : (Iterable<Object[]>) (Iterable<?>) ((List)var36.getValue())) {
                float[] var43 = (float[])var42[3];
                R3.texQuad(var39, var40, (double[])var42[0], (float[])var42[1], (Integer)var42[2], var12, var43[0], var43[1], var43[2]);
             }
@@ -450,7 +450,8 @@ public final class CosRender {
          super(var1);
       }
 
-      public void method_4199(PoseStack var1, SubmitNodeCollector var2, int var3, AvatarRenderState var4, float var5, float var6) {
+      @Override
+      public void submit(PoseStack var1, SubmitNodeCollector var2, int var3, AvatarRenderState var4, float var5, float var6) {
          Perf.begin("Kosmetik");
 
          try {

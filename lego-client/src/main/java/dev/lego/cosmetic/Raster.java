@@ -96,8 +96,8 @@ public final class Raster {
       }
 
       int var26 = var14.size();
-      float[][] var27 = var14.toArray(new float[0][]);
-      float[][] var28 = var15.toArray(new float[0][]);
+      float[][] var27 = (float[][])var14.toArray(new float[0][]);
+      float[][] var28 = (float[][])var15.toArray(new float[0][]);
       int[] var29 = new int[var26];
 
       for (int var30 = 0; var30 < var26; var30++) {
@@ -105,9 +105,9 @@ public final class Raster {
       }
 
       float[] var61 = Smooth.normals(var27, var28, var29, var26);
-      ArrayList var31 = new ArrayList(var26 * 2);
+      ArrayList<Raster.Tri> var31 = new ArrayList<>(var26 * 2);
       int[][] var32 = new int[][]{{0, 1, 2}, {0, 2, 3}};
-      HashMap var33 = new HashMap();
+      HashMap<String, CTex.T> var33 = new HashMap<>();
 
       for (int var34 = 0; var34 < var26; var34++) {
          float[] var35 = var27[var34];

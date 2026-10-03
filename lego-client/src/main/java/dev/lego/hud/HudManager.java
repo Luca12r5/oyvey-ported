@@ -234,7 +234,7 @@ public final class HudManager {
             double var23 = var12;
             double var24 = var12;
 
-            for (double[] var21 : var14) {
+            for (double[] var21 : (Iterable<double[]>) (Iterable<?>) (var14)) {
                if (Math.abs(var8 - var21[0]) < var23) {
                   var23 = Math.abs(var8 - var21[0]);
                   var8 = var21[0];
@@ -242,7 +242,7 @@ public final class HudManager {
                }
             }
 
-            for (double[] var26 : var15) {
+            for (double[] var26 : (Iterable<double[]>) (Iterable<?>) (var15)) {
                if (Math.abs(var10 - var26[0]) < var24) {
                   var24 = Math.abs(var10 - var26[0]);
                   var10 = var26[0];

@@ -51,7 +51,7 @@ public final class SkyPacks {
       ArrayList var2 = new ArrayList();
       Map var3 = var0.listResources("fabricskyboxes/sky", var0x -> var0x.getPath().endsWith(".json"));
 
-      for (Entry var5 : var3.entrySet()) {
+      for (Entry var5 : (Iterable<Entry>) (Iterable<?>) (var3.entrySet())) {
          try (InputStream var6 = ((Resource)var5.getValue()).open()) {
             SkyPacks.Layer var7 = parseFsb(new String(var6.readAllBytes(), StandardCharsets.UTF_8));
             if (var7 != null) {
@@ -65,7 +65,7 @@ public final class SkyPacks {
 
       Map var16 = var0.listResources("optifine/sky/world0", var0x -> var0x.getPath().endsWith(".properties"));
 
-      for (Entry var19 : var16.entrySet()) {
+      for (Entry var19 : (Iterable<Entry>) (Iterable<?>) (var16.entrySet())) {
          try (InputStream var20 = ((Resource)var19.getValue()).open()) {
             Properties var8 = new Properties();
             var8.load(new BufferedReader(new InputStreamReader(var20, StandardCharsets.UTF_8)));
@@ -80,7 +80,7 @@ public final class SkyPacks {
       }
 
       ArrayList var18 = !var1.isEmpty() ? var1 : var2;
-      var18.sort((var0x, var1x) -> Integer.compare(var0x.priority, var1x.priority));
+      ((java.util.List<SkyPacks.Layer>)(java.util.List<?>)var18).sort((var0x, var1x) -> Integer.compare(var0x.priority, var1x.priority));
       info = var18.isEmpty() ? "Kein Sky-Pack aktiv" : var18.size() + " Himmel-Ebene(n) aus " + (!var1.isEmpty() ? "FabricSkyboxes" : "OptiFine") + "-Format";
       LegoClient.LOG("Sky-Packs: " + info);
       return var18;

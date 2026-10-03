@@ -256,7 +256,7 @@ final class Cos3Geo {
             if (var22 ? !(var16 <= 1.0E-7) : !(var16 >= -1.0E-7)) {
                boolean var18 = false;
 
-               for (int var20 : var3) {
+               for (int var20 : (Iterable<Integer>) (Iterable<?>) (var3)) {
                   if (var20 != var10 && var20 != var11 && var20 != var12 && inTri(var0[var20], var13, var14, var15)) {
                      var18 = true;
                      break;

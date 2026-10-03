@@ -22,7 +22,7 @@ public abstract class EntityMixin {
    )
    private void lego$look(double var1, double var3, CallbackInfo var5) {
       try {
-         if (this == Mc.player() && Utility.freelook != null && Utility.freelook.active()) {
+         if ((Object)this == Mc.player() && Utility.freelook != null && Utility.freelook.active()) {
             Utility.freelook.look(var1, var3);
             var5.cancel();
          }

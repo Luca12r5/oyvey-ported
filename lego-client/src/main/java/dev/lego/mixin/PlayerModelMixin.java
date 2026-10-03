@@ -28,7 +28,7 @@ public abstract class PlayerModelMixin {
             return;
          }
 
-         HumanoidModel var3 = (HumanoidModel)this;
+         HumanoidModel var3 = (HumanoidModel)(Object)this;
          if (Emotes.active()) {
             Emotes.pose(var3.head, var3.body, var3.rightArm, var3.leftArm, var3.rightLeg, var3.leftLeg);
          }

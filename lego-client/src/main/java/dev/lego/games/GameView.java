@@ -306,7 +306,7 @@ public abstract class GameView extends View {
             List var9 = Fonts.wrap(this.info.howTo, 1, this.pf(8.2F), var3 - this.p(60.0), 4);
             float var10 = var8 + this.pf(58.0);
 
-            for (String var12 : var9) {
+            for (String var12 : (Iterable<String>) (Iterable<?>) (var9)) {
                Gx.textCenter(var12, var7, var10, this.pf(8.2F), 1, Style.sub);
                var10 += this.pf(12.5);
             }

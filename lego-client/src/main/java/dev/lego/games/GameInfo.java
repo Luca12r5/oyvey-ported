@@ -99,7 +99,7 @@ public final class GameInfo {
                Object var2 = ((Map)var1).get("best");
                Object var3 = ((Map)var1).get("plays");
                if (var2 instanceof Map) {
-                  for (Entry var5 : ((Map)var2).entrySet()) {
+                  for (Entry var5 : (Iterable<Entry>) (Iterable<?>) (((Map)var2).entrySet())) {
                      if (var5.getValue() instanceof Number) {
                         GameInfo.BEST.put((String)var5.getKey(), ((Number)var5.getValue()).longValue());
                      }
@@ -107,7 +107,7 @@ public final class GameInfo {
                }
 
                if (var3 instanceof Map) {
-                  for (Entry var7 : ((Map)var3).entrySet()) {
+                  for (Entry var7 : (Iterable<Entry>) (Iterable<?>) (((Map)var3).entrySet())) {
                      if (var7.getValue() instanceof Number) {
                         GameInfo.PLAYS.put((String)var7.getKey(), ((Number)var7.getValue()).longValue());
                      }

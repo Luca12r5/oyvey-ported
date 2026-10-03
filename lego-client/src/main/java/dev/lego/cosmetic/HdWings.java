@@ -45,7 +45,7 @@ final class HdWings {
          var10.add((float[])var4.get(var11));
       }
 
-      return var10.toArray(new float[0][]);
+      return (float[][])var10.toArray(new float[0][]);
    }
 
    static void card(G var0, String var1, float[][] var2, float var3, float var4, float var5, float var6, float var7, float var8, String var9, int var10) {
@@ -60,7 +60,7 @@ final class HdWings {
       List var22 = Cos3Geo.triangulate(var11);
       int var15 = var0.color;
 
-      for (int[] var17 : var22) {
+      for (int[] var17 : (Iterable<int[]>) (Iterable<?>) (var22)) {
          float[] var18 = var13[var17[0]];
          float[] var19 = var13[var17[1]];
          float[] var20 = var13[var17[2]];

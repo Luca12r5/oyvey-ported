@@ -213,7 +213,7 @@ public final class Performance {
                if (var1 instanceof Map) {
                   FpsBoost.this.saved.clear();
 
-                  for (Entry var3 : ((Map)var1).entrySet()) {
+                  for (Entry var3 : (Iterable<Entry>) (Iterable<?>) (((Map)var1).entrySet())) {
                      FpsBoost.this.saved.put((String)var3.getKey(), String.valueOf(var3.getValue()));
                   }
                }
@@ -508,7 +508,7 @@ public final class Performance {
          );
          int var12 = var10 + 4 * var3 + var7 + 2 * var3;
 
-         for (Entry var14 : var5.entrySet()) {
+         for (Entry var14 : (Iterable<Entry>) (Iterable<?>) (var5.entrySet())) {
             double var15 = ((double[])var14.getValue())[0];
             int var17 = var15 < 1.0 ? -4670008 : (var15 < 4.0 ? -13053 : -45730);
             Gx.text((String)var14.getKey(), var9 + 6 * var3, var12, var4, 2, -1512980);

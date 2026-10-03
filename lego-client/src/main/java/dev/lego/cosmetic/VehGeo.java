@@ -728,7 +728,7 @@ final class VehGeo {
       int var13 = 0;
       float var14 = Float.NEGATIVE_INFINITY;
 
-      for (float var10 : var4) {
+      for (float var10 : (Iterable<Float>) (Iterable<?>) (var4)) {
          if (var10 - var14 > 0.05F || var13 == 0) {
             var12[var13++] = var10;
             var14 = var10;

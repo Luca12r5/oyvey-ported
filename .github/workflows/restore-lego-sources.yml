@@ -25,6 +25,8 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew -p tools/restore-lego remapLego --no-daemon --stacktrace
+      - name: Look up leftover intermediary names
+        run: tools/restore-lego/lookup.sh
       - name: Decompile
         run: tools/restore-lego/decompile.sh
       - name: Publish to ci/lego-decompiled
