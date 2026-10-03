@@ -12,14 +12,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(
-   value = {PlayerModel.class},
-   remap = false
+   value = {PlayerModel.class}
 )
 public abstract class PlayerModelMixin {
    @Inject(
-      method = {"method_62110(Lnet/minecraft/class_10055;)V"},
+      method = {"setupAnim(Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;)V"},
       at = {@At("TAIL")},
-      remap = false,
       require = 0
    )
    private void lego$emote(AvatarRenderState var1, CallbackInfo var2) {

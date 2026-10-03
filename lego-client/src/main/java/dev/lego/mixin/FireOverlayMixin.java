@@ -11,16 +11,14 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(
-   value = {ScreenEffectRenderer.class},
-   remap = false
+   value = {ScreenEffectRenderer.class}
 )
 public abstract class FireOverlayMixin {
    private static boolean lego$pushed;
 
    @Inject(
-      method = {"method_23070(Lnet/minecraft/class_4587;Lnet/minecraft/class_4597;Lnet/minecraft/class_1058;)V"},
+      method = {"renderFire(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;)V"},
       at = {@At("HEAD")},
-      remap = false,
       require = 0
    )
    private static void lego$low(PoseStack var0, MultiBufferSource var1, TextureAtlasSprite var2, CallbackInfo var3) {
@@ -37,9 +35,8 @@ public abstract class FireOverlayMixin {
    }
 
    @Inject(
-      method = {"method_23070(Lnet/minecraft/class_4587;Lnet/minecraft/class_4597;Lnet/minecraft/class_1058;)V"},
+      method = {"renderFire(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;)V"},
       at = {@At("RETURN")},
-      remap = false,
       require = 0
    )
    private static void lego$lowEnd(PoseStack var0, MultiBufferSource var1, TextureAtlasSprite var2, CallbackInfo var3) {

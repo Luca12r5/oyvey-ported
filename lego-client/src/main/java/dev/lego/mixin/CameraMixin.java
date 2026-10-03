@@ -13,46 +13,39 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(
-   value = {Camera.class},
-   remap = false
+   value = {Camera.class}
 )
 public abstract class CameraMixin {
    private final double[] lego$cam = new double[5];
 
-   @Shadow(
-      remap = false
-   )
-   protected abstract void method_19325(float var1, float var2);
+   @Shadow
+   protected abstract void setRotation(float var1, float var2);
 
-   @Shadow(
-      remap = false
-   )
-   protected abstract void method_19327(double var1, double var3, double var5);
+   @Shadow
+   protected abstract void setPosition(double var1, double var3, double var5);
 
    @Inject(
-      method = {"method_19321(Lnet/minecraft/class_1937;Lnet/minecraft/class_1297;ZZF)V"},
+      method = {"setup(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/Entity;ZZF)V"},
       at = {@At("TAIL")},
-      remap = false,
       require = 0
    )
    private void lego$cutscene(Level var1, Entity var2, boolean var3, boolean var4, float var5, CallbackInfo var6) {
       try {
          if (Cutscenes.camera(var5, this.lego$cam)) {
-            this.method_19325((float)this.lego$cam[3], (float)this.lego$cam[4]);
-            this.method_19327(this.lego$cam[0], this.lego$cam[1], this.lego$cam[2]);
+            this.setRotation((float)this.lego$cam[3], (float)this.lego$cam[4]);
+            this.setPosition(this.lego$cam[0], this.lego$cam[1], this.lego$cam[2]);
          }
       } catch (Throwable var8) {
       }
    }
 
    @ModifyArg(
-      method = {"method_19321(Lnet/minecraft/class_1937;Lnet/minecraft/class_1297;ZZF)V"},
+      method = {"setup(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/Entity;ZZF)V"},
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/class_4184;method_19325(FF)V"
+         target = "Lnet/minecraft/client/Camera;setRotation(FF)V"
       ),
       index = 0,
-      remap = false,
       require = 0
    )
    private float lego$yaw(float var1) {
@@ -60,13 +53,12 @@ public abstract class CameraMixin {
    }
 
    @ModifyArg(
-      method = {"method_19321(Lnet/minecraft/class_1937;Lnet/minecraft/class_1297;ZZF)V"},
+      method = {"setup(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/Entity;ZZF)V"},
       at = @At(
          value = "INVOKE",
-         target = "Lnet/minecraft/class_4184;method_19325(FF)V"
+         target = "Lnet/minecraft/client/Camera;setRotation(FF)V"
       ),
       index = 1,
-      remap = false,
       require = 0
    )
    private float lego$pitch(float var1) {

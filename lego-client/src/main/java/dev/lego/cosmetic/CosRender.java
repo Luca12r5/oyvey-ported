@@ -396,7 +396,7 @@ public final class CosRender {
       if (var6 != null && Gx.B instanceof McBackend) {
          try {
             if (stateOf == null) {
-               stateOf = InventoryScreen.class.getDeclaredMethod("method_48472", LivingEntity.class);
+               stateOf = InventoryScreen.class.getDeclaredMethod(dev.lego.util.Remap.method("net.minecraft.class_490", "method_48472", "(Lnet/minecraft/class_1309;)Lnet/minecraft/class_10017;"), LivingEntity.class);
                stateOf.setAccessible(true);
             }
 

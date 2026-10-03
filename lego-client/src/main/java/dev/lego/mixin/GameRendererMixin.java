@@ -14,15 +14,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(
-   value = {GameRenderer.class},
-   remap = false
+   value = {GameRenderer.class}
 )
 public abstract class GameRendererMixin {
    @Inject(
-      method = {"method_3196(Lnet/minecraft/class_4184;FZ)F"},
+      method = {"getFov(Lnet/minecraft/client/Camera;FZ)F"},
       at = {@At("RETURN")},
       cancellable = true,
-      remap = false,
       require = 0
    )
    private void lego$zoom(Camera var1, float var2, boolean var3, CallbackInfoReturnable<Float> var4) {
@@ -43,10 +41,9 @@ public abstract class GameRendererMixin {
    }
 
    @Inject(
-      method = {"method_3198(Lnet/minecraft/class_4587;F)V"},
+      method = {"bobHurt(Lcom/mojang/blaze3d/vertex/PoseStack;F)V"},
       at = {@At("HEAD")},
       cancellable = true,
-      remap = false,
       require = 0
    )
    private void lego$tilt(PoseStack var1, float var2, CallbackInfo var3) {

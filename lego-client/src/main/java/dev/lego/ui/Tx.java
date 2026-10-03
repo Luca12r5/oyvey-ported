@@ -95,7 +95,7 @@ public final class Tx {
                for (Method var6 : var1.getMethods()) {
                   if (var6.getParameterCount() == 0
                      && Modifier.isStatic(var6.getModifiers())
-                     && var6.getReturnType().getName().equals("net.minecraft.class_12136")) {
+                     && var6.getReturnType().getName().equals(dev.lego.util.Remap.clazz("net.minecraft.class_12136"))) {
                      var2 = var6.invoke(null);
                      break;
                   }
@@ -114,9 +114,9 @@ public final class Tx {
                   }
                }
 
-               Method var13 = var2.getClass().getMethod("method_75294", var10);
+               Method var13 = var2.getClass().getMethod(dev.lego.util.Remap.method("net.minecraft.class_12136", "method_75294", "(Lcom/mojang/blaze3d/textures/FilterMode;)Lnet/minecraft/class_12137;"), var10);
                linearSampler = var13.invoke(var2, var11);
-               samplerField = AbstractTexture.class.getDeclaredField("field_63613");
+               samplerField = AbstractTexture.class.getDeclaredField(dev.lego.util.Remap.field("net.minecraft.class_1044", "field_63613", "Lnet/minecraft/class_12137;"));
                samplerField.setAccessible(true);
             }
 

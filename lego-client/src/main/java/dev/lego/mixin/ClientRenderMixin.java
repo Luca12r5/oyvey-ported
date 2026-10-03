@@ -8,14 +8,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(
-   value = {Minecraft.class},
-   remap = false
+   value = {Minecraft.class}
 )
 public abstract class ClientRenderMixin {
    @Inject(
-      method = {"method_1523(Z)V"},
+      method = {"runTick(Z)V"},
       at = {@At("HEAD")},
-      remap = false,
       require = 0
    )
    private void lego$frame(boolean var1, CallbackInfo var2) {

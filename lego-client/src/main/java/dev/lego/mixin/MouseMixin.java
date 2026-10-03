@@ -9,15 +9,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(
-   value = {MouseHandler.class},
-   remap = false
+   value = {MouseHandler.class}
 )
 public abstract class MouseMixin {
    @Inject(
-      method = {"method_1598(JDD)V"},
+      method = {"onScroll(JDD)V"},
       at = {@At("HEAD")},
       cancellable = true,
-      remap = false,
       require = 0
    )
    private void lego$scroll(long var1, double var3, double var5, CallbackInfo var7) {

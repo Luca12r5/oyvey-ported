@@ -9,15 +9,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(
-   value = {Entity.class},
-   remap = false
+   value = {Entity.class}
 )
 public abstract class EntityMixin {
    @Inject(
-      method = {"method_5872(DD)V"},
+      method = {"turn(DD)V"},
       at = {@At("HEAD")},
       cancellable = true,
-      remap = false,
       require = 0
    )
    private void lego$look(double var1, double var3, CallbackInfo var5) {

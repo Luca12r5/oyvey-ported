@@ -8,15 +8,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(
-   value = {FramerateLimitTracker.class},
-   remap = false
+   value = {FramerateLimitTracker.class}
 )
 public abstract class FpsLimiterMixin {
    @Inject(
-      method = {"method_61937()I"},
+      method = {"getFramerateLimit()I"},
       at = {@At("RETURN")},
       cancellable = true,
-      remap = false,
       require = 0
    )
    private void lego$bg(CallbackInfoReturnable<Integer> var1) {

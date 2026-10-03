@@ -12,14 +12,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(
-   value = {FogRenderer.class},
-   remap = false
+   value = {FogRenderer.class}
 )
 public abstract class FogMixin {
    @Inject(
-      method = {"method_62185(Lnet/minecraft/class_4184;FLnet/minecraft/class_638;IF)Lorg/joml/Vector4f;"},
+      method = {"computeFogColor(Lnet/minecraft/client/Camera;FLnet/minecraft/client/multiplayer/ClientLevel;IF)Lorg/joml/Vector4f;"},
       at = {@At("RETURN")},
-      remap = false,
       require = 0
    )
    private void lego$fog(Camera var1, float var2, ClientLevel var3, int var4, float var5, CallbackInfoReturnable<Vector4f> var6) {

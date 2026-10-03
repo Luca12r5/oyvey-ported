@@ -321,7 +321,7 @@ public final class Visuals {
 
       private static void setPost(GameRenderer var0, Identifier var1) throws Exception {
          if (setPost == null) {
-            setPost = GameRenderer.class.getDeclaredMethod("method_62904", Identifier.class);
+            setPost = GameRenderer.class.getDeclaredMethod(dev.lego.util.Remap.method("net.minecraft.class_757", "method_62904", "(Lnet/minecraft/class_2960;)V"), Identifier.class);
             setPost.setAccessible(true);
          }
 

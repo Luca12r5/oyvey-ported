@@ -16,14 +16,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(
-   value = {AvatarRenderer.class},
-   remap = false
+   value = {AvatarRenderer.class}
 )
 public abstract class PlayerRendererMixin {
    @Inject(
-      method = {"method_62604(Lnet/minecraft/class_11890;Lnet/minecraft/class_10055;F)V"},
+      method = {"extractRenderState(Lnet/minecraft/world/entity/Avatar;Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;F)V"},
       at = {@At("TAIL")},
-      remap = false,
       require = 0
    )
    private void lego$cape(Avatar var1, AvatarRenderState var2, float var3, CallbackInfo var4) {

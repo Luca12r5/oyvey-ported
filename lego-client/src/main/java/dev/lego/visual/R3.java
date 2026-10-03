@@ -480,7 +480,7 @@ public final class R3 {
             try {
                RenderSetup var2 = RenderSetup.builder(RenderPipelines.END_SKY).withTexture("Sampler0", var0).sortOnUpload().createRenderSetup();
                if (layerOf == null) {
-                  layerOf = RenderType.class.getDeclaredMethod("method_75940", String.class, RenderSetup.class);
+                  layerOf = RenderType.class.getDeclaredMethod(dev.lego.util.Remap.method("net.minecraft.class_1921", "method_75940", "(Ljava/lang/String;Lnet/minecraft/class_12247;)Lnet/minecraft/class_1921;"), String.class, RenderSetup.class);
                   layerOf.setAccessible(true);
                }
 

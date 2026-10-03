@@ -10,15 +10,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(
-   value = {EntityRenderDispatcher.class},
-   remap = false
+   value = {EntityRenderDispatcher.class}
 )
 public abstract class EntityRenderManagerMixin {
    @Inject(
-      method = {"method_3950(Lnet/minecraft/class_1297;Lnet/minecraft/class_4604;DDD)Z"},
+      method = {"shouldRender(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/client/renderer/culling/Frustum;DDD)Z"},
       at = {@At("RETURN")},
       cancellable = true,
-      remap = false,
       require = 0
    )
    private void lego$cull(Entity var1, Frustum var2, double var3, double var5, double var7, CallbackInfoReturnable<Boolean> var9) {

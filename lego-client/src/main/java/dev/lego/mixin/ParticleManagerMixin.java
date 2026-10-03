@@ -9,15 +9,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(
-   value = {ParticleEngine.class},
-   remap = false
+   value = {ParticleEngine.class}
 )
 public abstract class ParticleManagerMixin {
    @Inject(
-      method = {"method_3058(Lnet/minecraft/class_703;)V"},
+      method = {"add(Lnet/minecraft/client/particle/Particle;)V"},
       at = {@At("HEAD")},
       cancellable = true,
-      remap = false,
       require = 0
    )
    private void lego$limit(Particle var1, CallbackInfo var2) {

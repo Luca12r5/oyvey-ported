@@ -12,14 +12,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(
-   value = {ClientPacketListener.class},
-   remap = false
+   value = {ClientPacketListener.class}
 )
 public abstract class NetworkHandlerMixin {
    @Inject(
-      method = {"method_11148(Lnet/minecraft/class_2663;)V"},
+      method = {"handleEntityEvent(Lnet/minecraft/network/protocol/game/ClientboundEntityEventPacket;)V"},
       at = {@At("TAIL")},
-      remap = false,
       require = 0
    )
    private void lego$status(ClientboundEntityEventPacket var1, CallbackInfo var2) {

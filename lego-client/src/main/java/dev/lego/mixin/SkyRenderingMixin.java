@@ -10,15 +10,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(
-   value = {SkyRenderer.class},
-   remap = false
+   value = {SkyRenderer.class}
 )
 public abstract class SkyRenderingMixin {
    @Inject(
-      method = {"method_62302(I)V"},
+      method = {"renderSkyDisc(I)V"},
       at = {@At("HEAD")},
       cancellable = true,
-      remap = false,
       require = 0
    )
    private void lego$top(int var1, CallbackInfo var2) {
@@ -31,10 +29,9 @@ public abstract class SkyRenderingMixin {
    }
 
    @Inject(
-      method = {"method_62306(Lnet/minecraft/class_4587;FI)V"},
+      method = {"renderSunriseAndSunset(Lcom/mojang/blaze3d/vertex/PoseStack;FI)V"},
       at = {@At("HEAD")},
       cancellable = true,
-      remap = false,
       require = 0
    )
    private void lego$glow(PoseStack var1, float var2, int var3, CallbackInfo var4) {
@@ -47,10 +44,9 @@ public abstract class SkyRenderingMixin {
    }
 
    @Inject(
-      method = {"method_62307(Lnet/minecraft/class_4587;FFFLnet/minecraft/class_12131;FF)V"},
+      method = {"renderSunMoonAndStars(Lcom/mojang/blaze3d/vertex/PoseStack;FFFLnet/minecraft/world/level/MoonPhase;FF)V"},
       at = {@At("HEAD")},
       cancellable = true,
-      remap = false,
       require = 0
    )
    private void lego$bodies(PoseStack var1, float var2, float var3, float var4, MoonPhase var5, float var6, float var7, CallbackInfo var8) {
@@ -63,10 +59,9 @@ public abstract class SkyRenderingMixin {
    }
 
    @Inject(
-      method = {"method_62305()V"},
+      method = {"renderDarkDisc()V"},
       at = {@At("HEAD")},
       cancellable = true,
-      remap = false,
       require = 0
    )
    private void lego$dark(CallbackInfo var1) {
