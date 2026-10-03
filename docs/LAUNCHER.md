@@ -49,6 +49,9 @@ npm run dist:win -w apps/launcher
 
 ### Code-Signing
 
+Ausführlich: [CODE-SIGNING.md](CODE-SIGNING.md) (Azure Trusted Signing oder Zertifikat, Antivirus-Hinweise).
+
+
 Ohne Zertifikat ist die EXE unsigniert; Windows SmartScreen warnt dann. Mit einem Authenticode-Zertifikat: Secrets `CSC_LINK` (Base64-PFX oder URL) und `CSC_KEY_PASSWORD` setzen – electron-builder signiert EXE, Installer und Uninstaller. electron-updater prüft bei signierten Builds den Herausgeber.
 
 ## Release & Auto-Update
@@ -66,3 +69,12 @@ Ohne Zertifikat ist die EXE unsigniert; Windows SmartScreen warnt dann. Mit eine
 ## Spieldaten
 
 `%APPDATA%/LEGO Launcher/minecraft/` enthält `versions/`, `libraries/`, `assets/`, `runtime/` (Mojang-Java) und `instances/<profil>/` (eigener Spielordner je Profil mit `mods/`). Vom Launcher installierte Mods stehen in `mods/.lego-managed.json`; nur diese werden bei Updates ersetzt – eigene Mods bleiben unangetastet.
+
+## Versionen, Loader, Mods, Import
+
+- **Versionen:** alle Einträge aus Mojangs Versionsmanifest. Snapshots und Alpha/Beta lassen sich im Profil-Editor bzw. in den Einstellungen einblenden. Java kommt passend zur Version von Mojang (`javaVersion.component`, ältere Versionen `jre-legacy`).
+- **Loader:** Fabric/Quilt über deren Meta-API (Bibliotheken per SHA-1 geprüft). Forge (ab 1.13) und NeoForge (ab 1.20.2) über den offiziellen Installer (`--installClient`), dessen Prüfsumme vorher gegen das Maven-`.sha1` geprüft wird. Der Installer läuft beim ersten Start des Profils.
+- **Mods:** Seite „Mods“ – Modrinth-Suche, Pflicht-Abhängigkeiten werden mitinstalliert, Metadaten in `mods/.lego-mods.json`. Vom Launcher verwaltete Dateien (LEGO Client, Fabric API, FPS-Paket) stehen in `mods/.lego-managed.json` und werden nie mit Nutzer-Mods verwechselt.
+- **Modpacks:** Modrinth-Modpacks direkt aus der Suche oder als `.mrpack`-Datei; CurseForge-Zips über „Profile → Importieren“. Für CurseForge-Mods wird ein API-Schlüssel benötigt (Einstellungen → Spiel oder Build-Variable `LEGO_CURSEFORGE_KEY`).
+- **Import aus anderen Launchern:** Prism/MultiMC, CurseForge-App, offizieller Launcher oder beliebiger Ordner. Kopiert werden `mods`, `config`, `resourcepacks`, `shaderpacks`, `options*.txt`, `servers.dat`, `defaultconfigs`, `kubejs`, optional `saves`. Der Quell-Launcher wird nicht verändert.
+- **Konten:** beliebig viele Microsoft-Konten, Wechsel über das Konto-Menü oben rechts.

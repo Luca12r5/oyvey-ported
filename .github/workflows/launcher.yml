@@ -2,6 +2,10 @@ name: LEGO Launcher (Windows)
 
 on:
   push:
+    branches: ['**']
+    # Path filters are not evaluated for tag pushes, so release tags always build.
+    tags:
+      - 'launcher-v*'
     paths:
       - 'apps/launcher/**'
       - 'packages/shared/**'
@@ -32,7 +36,8 @@ jobs:
     needs: test
     runs-on: windows-latest
     permissions:
-      contents: read
+      # write is only used to publish releases for launcher-v* tags
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -44,13 +49,42 @@ jobs:
         env:
           LEGO_MS_CLIENT_ID: ${{ secrets.LEGO_MS_CLIENT_ID }}
           LEGO_BACKEND_URL: ${{ vars.LEGO_BACKEND_URL }}
+          LEGO_CURSEFORGE_KEY: ${{ secrets.LEGO_CURSEFORGE_KEY }}
+          # Option A: classic code signing certificate (.pfx, base64) – see docs/CODE-SIGNING.md
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          # Option B: Azure Trusted Signing
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_SIGN_ENDPOINT: ${{ vars.AZURE_SIGN_ENDPOINT }}
+          AZURE_SIGN_ACCOUNT: ${{ vars.AZURE_SIGN_ACCOUNT }}
+          AZURE_SIGN_PROFILE: ${{ vars.AZURE_SIGN_PROFILE }}
+          SIGN_PUBLISHER: ${{ vars.SIGN_PUBLISHER }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
-          # Without a certificate electron-builder must not try to sign.
-          if [ -z "$CSC_LINK" ]; then export CSC_IDENTITY_AUTO_DISCOVERY=false; unset CSC_LINK CSC_KEY_PASSWORD; fi
-          npm run dist:win -w apps/launcher
+          args=()
+          if [ -n "$AZURE_SIGN_ENDPOINT" ] && [ -n "$AZURE_CLIENT_SECRET" ]; then
+            echo "Signing with Azure Trusted Signing"
+            args+=(-c.win.azureSignOptions.endpoint="$AZURE_SIGN_ENDPOINT" -c.win.azureSignOptions.codeSigningAccountName="$AZURE_SIGN_ACCOUNT" -c.win.azureSignOptions.certificateProfileName="$AZURE_SIGN_PROFILE" -c.win.azureSignOptions.publisherName="$SIGN_PUBLISHER")
+            unset CSC_LINK CSC_KEY_PASSWORD
+          elif [ -n "$CSC_LINK" ]; then
+            echo "Signing with code signing certificate"
+            [ -n "$SIGN_PUBLISHER" ] && args+=(-c.win.signtoolOptions.publisherName="$SIGN_PUBLISHER")
+          else
+            echo "::warning::Unsigned build – Windows SmartScreen and some antivirus products may warn (docs/CODE-SIGNING.md)."
+            export CSC_IDENTITY_AUTO_DISCOVERY=false; unset CSC_LINK CSC_KEY_PASSWORD
+          fi
+          publish=never
+          if [[ "$GITHUB_REF" == refs/tags/launcher-v* ]]; then
+            want="${GITHUB_REF#refs/tags/launcher-v}"
+            have=$(node -p "require('./apps/launcher/package.json').version")
+            if [ "$want" != "$have" ]; then echo "::error::Tag version $want does not match package.json $have"; exit 1; fi
+            publish=always
+          fi
+          npm run build -w apps/launcher
+          cd apps/launcher && npx electron-builder --win --x64 --publish "$publish" "${args[@]}"
       - name: Checksums
         shell: pwsh
         run: Get-ChildItem apps/launcher/release/*.exe | Get-FileHash -Algorithm SHA256 | Format-List

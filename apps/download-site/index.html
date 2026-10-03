@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://api.github.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>LEGO Launcher – Download</title>
+  <meta name="description" content="LEGO Launcher für Windows herunterladen: Minecraft 1.8 bis zur neuesten Version, Fabric, Quilt, Forge, NeoForge, Mods, Modpacks und der LEGO Client.">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/site.css">
+  <script type="module" src="assets/site.js"></script>
+</head>
+<body>
+  <canvas id="bg" aria-hidden="true"></canvas>
+  <header class="top">
+    <a class="brand" href="./"><img src="assets/icon.svg" alt="" width="30" height="23"><span>LEGO<b>LAUNCHER</b></span></a>
+    <nav><a href="#features">Funktionen</a><a href="#safety">Sicherheit</a><a href="#faq">FAQ</a><a href="#" data-site="feedback" hidden>Feedback &amp; Bugs</a></nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-text">
+        <span class="pill">Für Windows 10 und 11 · kostenlos</span>
+        <h1>Minecraft starten.<br><span class="grad">Im LEGO-Stil.</span></h1>
+        <p class="lead">Ein Launcher für jede Minecraft-Version von 1.8 bis zur neuesten – mit Fabric, Quilt, Forge und NeoForge, Mods und Modpacks von Modrinth, Import aus anderen Launchern und dem LEGO Client.</p>
+        <div class="cta">
+          <a class="btn primary big" id="download" href="#" data-state="loading"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 11 12 15.5 16.5 11M5 19.5h14"/></svg><span><b>Herunterladen</b><small id="dlMeta">Neueste Version wird gesucht…</small></span></a>
+          <a class="btn ghost" id="allReleases" href="#">Alle Versionen</a>
+        </div>
+        <p class="hash" id="hash" hidden>SHA-256: <code id="hashValue"></code></p>
+      </div>
+      <figure class="hero-shot"><div class="glow"></div><img src="assets/shot-play.webp" alt="Startbildschirm des LEGO Launchers mit 3D-Figur und Spielen-Knopf" width="1280" height="800"></figure>
+    </section>
+
+    <section id="features" class="features">
+      <article><h3>Jede Version</h3><p>Release, Snapshots und auf Wunsch Alpha/Beta. Java wird passend zur Version automatisch von Mojang installiert.</p></article>
+      <article><h3>Alle Mod-Loader</h3><p>Fabric und Quilt vollständig, Forge und NeoForge über den offiziellen Installer.</p></article>
+      <article><h3>Mods &amp; Modpacks</h3><p>Modrinth-Suche direkt im Launcher, Abhängigkeiten werden mitinstalliert, Modpacks als neues Profil.</p></article>
+      <article><h3>Umzug leicht gemacht</h3><p>Profile aus Prism, CurseForge und dem offiziellen Launcher übernehmen – inklusive Configs, Ressourcen- und Shaderpaketen.</p></article>
+      <article><h3>Mehr FPS</h3><p>Optionales FPS-Paket mit Sodium, Lithium, FerriteCore, ImmediatelyFast und EntityCulling – echte Open-Source-Mods, keine Registry-Tricks.</p></article>
+      <article><h3>LEGO Client &amp; Coins</h3><p>Cosmetics, Freunde, Chat und Minispiele. Für Spielzeit und Minispiele gibt es LEGO Coins.</p></article>
+    </section>
+
+    <section class="gallery">
+      <figure><img src="assets/shot-profiles.webp" alt="Profil-Editor mit Versions- und Loader-Auswahl" loading="lazy" width="1280" height="800"><figcaption>Profile für jede Version und jeden Loader</figcaption></figure>
+      <figure><img src="assets/shot-settings.webp" alt="Einstellungen mit animierten Hintergründen" loading="lazy" width="1280" height="800"><figcaption>Animierte Hintergründe, Akzentfarben, 100+ Designs</figcaption></figure>
+      <figure><img src="assets/shot-shop.webp" alt="Shop mit Cosmetics" loading="lazy" width="1280" height="800"><figcaption>Cosmetics mit festen Preisen, keine Lootboxen</figcaption></figure>
+    </section>
+
+    <section id="safety" class="safety">
+      <h2>Sicherheit – ehrlich erklärt</h2>
+      <div class="cols">
+        <div><h3>Anmeldung</h3><p>Nur über die offizielle Microsoft-Seite. Der Launcher sieht dein Passwort nie, Tokens werden mit der Windows-Verschlüsselung (DPAPI) gespeichert. Der LEGO-Server bekommt dein Minecraft-Token nie.</p></div>
+        <div><h3>Downloads</h3><p>Jede Datei (Minecraft, Java, Bibliotheken, Mods) wird per SHA-1/SHA-512 geprüft, bevor sie benutzt wird. Nur HTTPS.</p></div>
+        <div><h3>Keine Systemeingriffe</h3><p>Keine Admin-Rechte, keine Registry- oder Dienständerungen, keine Hintergrundprozesse nach dem Beenden.</p></div>
+        <div><h3>Windows-Warnung?</h3><p id="signNote">Neue Programme ohne Code-Signatur-Reputation zeigen manchmal eine SmartScreen-Warnung. Prüfe dann die SHA-256-Prüfsumme oben und die Signatur in den Dateieigenschaften.</p></div>
+      </div>
+    </section>
+
+    <section id="faq" class="faq">
+      <h2>FAQ</h2>
+      <details><summary>Brauche ich Minecraft: Java Edition?</summary><p>Ja. Du meldest dich mit dem Microsoft-Konto an, das Minecraft: Java Edition besitzt. Ohne Kauf ist kein Spielen möglich.</p></details>
+      <details><summary>Ist das ein offizielles Produkt?</summary><p>Nein. Der LEGO Launcher ist ein Fan-Projekt und nicht mit Mojang, Microsoft oder der LEGO Group verbunden.</p></details>
+      <details><summary>Warum meldet mein Virenscanner etwas?</summary><p>Unsignierte oder sehr neue Installer werden von manchen Scannern heuristisch markiert. Lade nur von dieser Seite oder den GitHub-Releases, vergleiche die SHA-256-Prüfsumme und melde Fehlalarme beim Hersteller. Der Quellcode ist öffentlich.</p></details>
+      <details><summary>Wo melde ich Bugs oder Ideen?</summary><p id="faqFeedback">Im Launcher unter „Feedback“ oder auf der LEGO-Website.</p></details>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>© LEGO Launcher Projekt · Nicht verbunden mit Mojang, Microsoft oder der LEGO Group.</span>
+    <nav><a href="#" id="source">Quellcode</a><a href="#" data-site="" hidden>Website</a><a href="#" data-site="dev" hidden>Entwickler-Dashboard</a></nav>
+  </footer>
+</body>
+</html>

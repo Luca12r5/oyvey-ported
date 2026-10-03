@@ -42,6 +42,22 @@ Legende: ✅ umgesetzt und getestet · 🟡 teilweise / ungetestet im echten Spi
 | 26 | 50+ weitere Ideen | 🟡 | Umgesetzt: HUD-Editor, Keystrokes, CPS, FPS, Crosshair-Editor (3.4.0), Achievements, tägliche/wöchentliche Quests, Login-Streaks, Daily Rewards, Party-Chat, Freunde-Benachrichtigungen, Theme-Sharing (Export/Import), Cloud-Sync-Endpunkt, Feedback-Voting, Wartungsmodus, Statusseite, Meldesystem, Blockierliste, Datenschutz, UI-Skalierung, reduzierte Animationen, Patch-Notes/News im Launcher, Ranglisten, Benachrichtigungen. Rest ⬜. |
 | 27 | Tests & Qualität | ✅ | 26 Backend-/Shared-Tests, 13 Launcher-Tests, 6 JUnit-Tests, Chromium-E2E, Electron-E2E, alle in CI. |
 
+## Stand nach Sitzung 2 (2026-10-03, Launcher-Ausbau & Redesign)
+
+| Bereich | Status | Konkret |
+|---|---|---|
+| Alle Minecraft-Versionen 1.8 → neueste | ✅/🟡 | Release, Snapshots, Alpha/Beta wählbar. Alte Versionen: Legacy-Natives, `minecraftArguments`, `jre-legacy`, virtuelle Assets. 1.8.9-Argumente/Natives per Test geprüft; **echter Spielstart nur auf Windows prüfbar** (hier kein Mojang-Zugang). |
+| Mod-Loader | ✅/🟡 | Fabric und Quilt (Meta-Profile, SHA-1 geprüft) ✅. Forge (1.13+) und NeoForge (1.20.2+) über den offiziellen Installer im Hintergrund 🟡 (experimentell markiert, ungetestet gegen echte Server). Forge < 1.13 ⬜. |
+| Mods in Profile | ✅ | Modrinth-Suche (Mods, Ressourcenpakete, Shader, Modpacks), Pflicht-Abhängigkeiten, An/Aus, Entfernen, SHA-512-Prüfung. |
+| Modpacks / Import aus anderen Launchern | ✅/🟡 | `.mrpack` vollständig (Host-Allowlist, Pfadprüfung). CurseForge-Zip: Overrides/Configs immer, Mods nur mit CurseForge-API-Schlüssel und wenn der Autor Drittanbieter-Downloads erlaubt. Prism/MultiMC, CurseForge-App, offizieller Launcher, beliebiger Ordner (Mods, Configs, Ressourcen-/Shaderpakete, Optionen, optional Welten). |
+| Mehrere Konten | ✅ | Konto hinzufügen/wechseln/entfernen, verschlüsselt gespeichert, Skin/Cape vom Session-Server. |
+| FPS-Paket | ✅/🟡 | Sodium, Lithium, FerriteCore, ImmediatelyFast, EntityCulling pro Profil, soweit für Version/Loader verfügbar. **Keine eigene FPS-Messung** – Gewinne hängen von Hardware und Version ab. |
+| Redesign (Play-Screen, Settings) | ✅ | 3D-Figur (skinview3d, eigener LEGO-Minifig-Standardskin, echte Skins/Capes), Glow-Bühne, Animationen, Gradient-PLAY mit Profil-Menü, Icon-Leiste mit eigenen SVG-Icons, Pixel-Art-Icons statt Emojis, Kontowechsler, 9 animierte Hintergründe + Schnee + Qualität, Akzentfarben, grauer Standard („LEGO Graphite“), Settings mit Suche. Electron-UI-Test mit Screenshots. Übersetzung Englisch: neue Seiten ✅, ältere Seiten (Shop, Freunde, …) noch deutsch 🟡. |
+| LEGO Coins durch Spielen | ✅/🟡 | Spielzeit (5 Coins/15 min, max. 120/Tag) und Minispiele (2 + 3 bei Rekord, max. 100/Tag) serverseitig ✅ getestet. Der Client meldet Minispiel-Ergebnisse selbst (Mojang-Join-Login) 🟡 – kompiliert in CI, im Spiel ungetestet. Ergebnisse sind clientseitig fälschbar; deshalb die Tageslimits. |
+| LEGO Client im Spiel sichtbar | 🟡 | Fenstertitel „LEGO Client <Version>“, Cosmetics/Name Tags anderer LEGO-Spieler (LegoNet). Ungetestet im echten Spiel. |
+| Download-Website | ✅ | `apps/download-site` (GitHub Pages), neueste Version + SHA-256 live aus GitHub-Releases. Release per Tag `launcher-v<version>`. |
+| „Nicht als Virus erkannt“ | 🟡 | Keine Admin-Rechte/Registry/Dienste; Signatur per Azure Trusted Signing oder Zertifikat vorbereitet (`docs/CODE-SIGNING.md`). **Ohne Zertifikat (nur durch dich beschaffbar) kann SmartScreen weiter warnen.** |
+
 ## Nächste Schritte (Vorschlag, in dieser Reihenfolge)
 
 1. **Im echten Spiel testen**: Client-JAR aus CI + Fabric API in einer 1.21.11-Instanz starten, Remote-Cosmetics mit zwei Konten prüfen, Tacho kalibrieren.

@@ -15,10 +15,8 @@ win:
   target:
     - target: nsis
       arch: [x64]
-  # Set CSC_LINK / CSC_KEY_PASSWORD (code signing certificate) in CI to sign
-  # the EXE and installer. Unsigned builds work but trigger SmartScreen.
-  signtoolOptions:
-    publisherName: LEGO Launcher contributors
+  # Signing (certificate or Azure Trusted Signing) is configured by CI, see
+  # docs/CODE-SIGNING.md. Unsigned builds work but can trigger SmartScreen.
   artifactName: LEGO-Launcher-Setup-${version}.${ext}
 nsis:
   oneClick: false
