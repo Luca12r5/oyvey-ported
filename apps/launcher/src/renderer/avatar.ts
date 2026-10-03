@@ -11,6 +11,8 @@ export type Anim = 'idle' | 'walk' | 'wave' | 'spin';
 export interface Avatar {
   setSkin(skin: string | null, variant: 'classic' | 'slim', cape: string | null): Promise<void>;
   play(a: Anim): void;
+  /** Freezes or resumes the animation ("Skin-Animation" switch). */
+  setPaused(paused: boolean): void;
   resize(): void;
   dispose(): void;
 }
@@ -49,11 +51,12 @@ export function createAvatar(canvas: HTMLCanvasElement, reducedMotion: boolean):
     }
     return new IdleAnimation();
   };
+  let paused = reducedMotion;
   const play = (a: Anim) => {
     current = a;
     viewer.animation = make(a);
-    viewer.autoRotate = a === 'spin';
-    if (reducedMotion && viewer.animation) viewer.animation.paused = true;
+    viewer.autoRotate = a === 'spin' && !paused;
+    if (paused && viewer.animation) viewer.animation.paused = true;
   };
   play('idle');
   const ro = new ResizeObserver(() => { const b = box(); viewer.setSize(b.width, b.height); });
@@ -66,6 +69,11 @@ export function createAvatar(canvas: HTMLCanvasElement, reducedMotion: boolean):
       play(current);
     },
     play,
+    setPaused(p) {
+      paused = p || reducedMotion;
+      if (viewer.animation) viewer.animation.paused = paused;
+      viewer.autoRotate = current === 'spin' && !paused;
+    },
     resize() { const b = box(); viewer.setSize(b.width, b.height); },
     dispose() { ro.disconnect(); viewer.dispose(); },
   };
@@ -104,6 +112,7 @@ function flatAvatar(canvas: HTMLCanvasElement): Avatar {
   return {
     async setSkin(skin) { await load(skin ?? DEFAULT_SKIN); },
     play() { /* static */ },
+    setPaused() { /* static */ },
     resize: draw,
     dispose() { ro.disconnect(); },
   };

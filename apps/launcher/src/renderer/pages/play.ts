@@ -11,6 +11,7 @@ import type { LaunchProgress } from '../../ipc-types.ts';
 import { signInFlow } from './account.ts';
 
 const logLines: { line: string; stream: string }[] = [];
+const skinAnimOn = () => { try { return localStorage.getItem('lego.skinAnim') !== '0'; } catch { return true; } };
 let anim: Anim = 'idle';
 
 const LOADER_NAMES: Record<string, string> = { fabric: 'Fabric', quilt: 'Quilt', forge: 'Forge', neoforge: 'NeoForge' };
@@ -31,18 +32,22 @@ export async function playPage(el: HTMLElement): Promise<void> {
   mount(el, html`<div class="play">
     <div class="play-top">
       <div class="greet"><small>${a.signedIn ? t('play.welcome') : t('play.notSigned')}</small><h1>${a.signedIn ? a.name : 'LEGO Launcher'}</h1></div>
+      <div class="row top-ctl">
+      <label class="skin-anim">${t('play.skinAnim')}<span class="switch"><input type="checkbox" id="skinAnim" ${skinAnimOn() ? 'checked' : ''}><i></i></span></label>
       <div class="seg" id="anims" role="group">
         ${(['idle', 'walk', 'wave', 'spin'] as Anim[]).map((x) => html`<button class="${x === anim ? 'on' : ''}" data-anim="${x}" title="${t(`play.anim.${x}` as 'play.anim.idle')}">${icon(x === 'idle' ? 'users' : x === 'walk' ? 'gamepad' : x === 'wave' ? 'wave' : 'rotate', 'sm')}</button>`)}
-      </div>
+      </div></div>
     </div>
     <section class="stage" aria-hidden="true">
+      <div class="floor"></div>
       <div class="halo"></div><div class="halo ring"></div><div class="halo ring r2"></div>
       <div class="pedestal"></div>
+      <div class="nametag">${pixel('brick', 'xs')}<span>${a.signedIn ? a.name : 'LEGO'}</span></div>
       <canvas id="avatar"></canvas>
     </section>
     <aside class="side">
       <div class="glass" id="progressCard"><div class="skeleton"></div></div>
-      <div class="glass news"><div class="row between"><h3>${t('play.news')}</h3><button class="link" id="allNews">${icon('chevronRight', 'sm')}</button></div><div id="news"><div class="skeleton"></div></div></div>
+      <div class="news"><div class="news-h">${icon('news', 'sm')}<span>${t('play.news')}</span><button class="link" id="allNews">${icon('chevronRight', 'sm')}</button></div><div id="news"><div class="skeleton"></div></div></div>
     </aside>
     <div class="launchbar">
       ${a.signedIn ? html`
@@ -67,9 +72,15 @@ export async function playPage(el: HTMLElement): Promise<void> {
     avatar = createAvatar(el.querySelector<HTMLCanvasElement>('#avatar')!, s.reducedMotion);
     void avatar.setSkin(state.skin.skin, state.skin.variant, state.skin.cape).catch(() => {});
     avatar.play(anim);
+    avatar.setPaused(!skinAnimOn());
   } catch (e) {
     console.warn('avatar unavailable', e);
   }
+  el.querySelector('#skinAnim')!.addEventListener('change', (e) => {
+    const on = (e.target as HTMLInputElement).checked;
+    try { localStorage.setItem('lego.skinAnim', on ? '1' : '0'); } catch { /* storage blocked */ }
+    avatar?.setPaused(!on);
+  });
   el.querySelector('#anims')!.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-anim]');
     if (!b) return;
@@ -175,7 +186,11 @@ export async function playPage(el: HTMLElement): Promise<void> {
   const newsBox = el.querySelector('#news')!;
   try {
     const n = await lego<{ news: { id: number; title: string; body: string; created_at: number; kind: string }[] }>('GET', '/api/public/news');
-    mount(newsBox, n.news.length ? html`${n.news.slice(0, 3).map((x) => html`<div class="news-item"><div class="small muted">${fmtDate(x.created_at)}</div><b>${x.title}</b><p class="small">${x.body.slice(0, 110)}${x.body.length > 110 ? '…' : ''}</p></div>`)}` : html`<p class="small muted">${t('play.noNews')}</p>`);
+    const art = ['brick', 'diamond', 'rocket', 'creeper', 'trophy', 'sword', 'star', 'chest'];
+    mount(newsBox, n.news.length ? html`${n.news.slice(0, 6).map((x, i) => html`<article class="news-card">
+        <div class="nc-title">${x.title}</div>
+        <div class="nc-banner" data-k="${i % 4}">${pixel(art[(x.id ?? i) % art.length]!, 'lg')}<span class="nc-date">${fmtDate(x.created_at)}</span></div>
+        <p class="small">${x.body.slice(0, 120)}${x.body.length > 120 ? '…' : ''}</p></article>`)}` : html`<p class="small muted">${t('play.noNews')}</p>`);
   } catch {
     mount(newsBox, html`<p class="small muted">${t('play.newsOffline')}</p>`);
   }

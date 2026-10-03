@@ -49,6 +49,9 @@ const PAGES: PageDef[] = [
   { id: 'settings', label: () => t('nav.settings'), icon: 'settings', page: settingsPage, bottom: true },
 ];
 
+/** Shorter labels for the sidebar (full names stay in tooltips/aria). */
+const SHORT: Record<string, () => string> = { rewards: () => 'Rewards', settings: () => (state.settings.language === 'en' ? 'Settings' : 'Optionen'), dev: () => 'Dev', cosmetics: () => 'Cosmetics' };
+
 let bg: Background | null = null;
 let leaveHooks: (() => void)[] = [];
 
@@ -68,7 +71,7 @@ export function retheme(): void {
 
 function renderSidebar(): void {
   const staff = state.auth.lego.roles.length > 0;
-  const item = (p: PageDef) => html`<button class="nav-item ${state.page === p.id ? 'active' : ''}" data-page="${p.id}" data-label="${p.label()}" aria-label="${p.label()}">${icon(p.icon)}</button>`;
+  const item = (p: PageDef) => html`<button class="nav-item ${state.page === p.id ? 'active' : ''}" data-page="${p.id}" aria-label="${p.label()}" title="${p.label()}">${icon(p.icon)}<span class="lbl">${SHORT[p.id]?.() ?? p.label()}</span></button>`;
   const visible = PAGES.filter((p) => !p.staff || staff);
   mount(document.getElementById('sidebar')!, html`${visible.filter((p) => !p.bottom).map(item)}<div class="spacer"></div>${visible.filter((p) => p.bottom).map(item)}`);
 }

@@ -14,6 +14,7 @@ const api: LauncherApi = {
   deleteProfile: (id) => ipcRenderer.invoke('profile:delete', id),
   authState: () => ipcRenderer.invoke('auth:state'),
   signIn: () => ipcRenderer.invoke('auth:signin'),
+  signInWithCode: () => ipcRenderer.invoke('auth:signin-code'),
   cancelSignIn: () => ipcRenderer.send('auth:cancel'),
   signOut: (uuid) => ipcRenderer.invoke('auth:signout', uuid),
   switchAccount: (uuid) => ipcRenderer.invoke('auth:switch', uuid),

@@ -83,3 +83,24 @@ test('declined sign-in stops polling', async () => {
   const dc = { deviceCode: 'DC', userCode: 'X', verificationUri: '', expiresAt: Date.now() + 60_000, intervalMs: 1, message: '' };
   await assert.rejects(pollDeviceCode(f, 'id', dc, undefined, async () => {}), (e: unknown) => e instanceof AuthError && e.code === 'declined');
 });
+
+test('interactive sign-in: PKCE authorize URL, redirect parsing and code exchange', async () => {
+  const { authorizeRequest, parseRedirect, exchangeCode, MS_REDIRECT_URI } = await import('../src/core/msauth.ts');
+  const req = await authorizeRequest('client-123');
+  const u = new URL(req.url);
+  assert.equal(u.searchParams.get('client_id'), 'client-123');
+  assert.equal(u.searchParams.get('code_challenge_method'), 'S256');
+  assert.equal(u.searchParams.get('redirect_uri'), MS_REDIRECT_URI);
+  const { createHash } = await import('node:crypto');
+  assert.equal(u.searchParams.get('code_challenge'), createHash('sha256').update(req.verifier).digest('base64url'));
+  assert.equal(parseRedirect('https://example.com/?code=x', req.state), null);
+  assert.equal(parseRedirect(`${MS_REDIRECT_URI}?code=abc&state=${req.state}`, req.state), 'abc');
+  assert.throws(() => parseRedirect(`${MS_REDIRECT_URI}?code=abc&state=evil`, req.state), /state/);
+  assert.throws(() => parseRedirect(`${MS_REDIRECT_URI}?error=access_denied&state=${req.state}`, req.state), /abgebrochen/);
+  let body = '';
+  const f = (async (_url: string, init?: RequestInit) => { body = String(init?.body); return new Response(JSON.stringify({ access_token: 'A', refresh_token: 'R', expires_in: 3600 }), { status: 200 }); }) as typeof fetch;
+  const t = await exchangeCode(f, 'client-123', 'abc', req.verifier);
+  assert.equal(t.refreshToken, 'R');
+  assert.match(body, /grant_type=authorization_code/);
+  assert.match(body, new RegExp(`code_verifier=${req.verifier}`));
+});

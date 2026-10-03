@@ -14,9 +14,14 @@ nicht erlaubt und würde jederzeit gesperrt werden.
 5. Umleitungs-URI: leer lassen → **Registrieren**.
 6. Auf der Übersichtsseite die **„Anwendungs-ID (Client)“** kopieren
    (Format `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`).
-7. Links **„Authentifizierung“** → ganz unten **„Öffentliche Clientflows
-   zulassen“** auf **Ja** → Speichern. (Der Launcher nutzt den Device-Code-Flow,
-   ein Client-Geheimnis ist nicht nötig.)
+7. Links **„Authentifizierung“** → **„Plattform hinzufügen“** →
+   **„Mobil- und Desktopanwendungen“** → bei den Umleitungs-URIs
+   `https://login.microsoftonline.com/common/oauth2/nativeclient` anhaken →
+   **Konfigurieren**. (Damit öffnet sich das Microsoft-Anmeldefenster direkt im
+   Launcher – wie bei anderen Launchern.)
+8. Auf derselben Seite ganz unten **„Öffentliche Clientflows zulassen“** auf
+   **Ja** → Speichern. (Für die Ersatz-Anmeldung „Mit Code anmelden“; ein
+   Client-Geheimnis ist nicht nötig.)
 
 ## 2. Freischaltung für die Minecraft-API beantragen
 
@@ -44,14 +49,15 @@ Die Client-ID ist kein Passwort; sie darf im Programm stehen.
 
 ## 4. Testen
 
-Launcher starten → oben rechts **Anmelden** → im Browser öffnet sich
-`microsoft.com/link`, den angezeigten Code eingeben, mit dem Konto anmelden,
-das Minecraft: Java Edition besitzt. Danach erscheint dein Name und Skin oben
+Launcher starten → oben rechts **Anmelden** → es öffnet sich das
+Microsoft-Anmeldefenster, mit dem Konto anmelden, das Minecraft: Java Edition
+besitzt. (Alternative unter Konto → „Mit Code anmelden“.) Danach erscheint dein Name und Skin oben
 rechts, und **SPIELEN** startet das Spiel.
 
 ## Was der Launcher dabei macht
 
-Device-Code → Xbox Live → XSTS (`rp://api.minecraftservices.com/`) →
+Microsoft-Anmeldefenster (Autorisierungscode mit PKCE, eigene temporäre
+Browser-Sitzung ohne gespeicherte Cookies) bzw. Device-Code → Xbox Live → XSTS (`rp://api.minecraftservices.com/`) →
 `login_with_xbox` → Lizenzprüfung → Profil. Das Microsoft-Refresh-Token wird mit
 Windows-DPAPI verschlüsselt gespeichert; dein Passwort sieht der Launcher nie.
 Der LEGO-Server bekommt das Minecraft-Token nie (Anmeldung dort über den

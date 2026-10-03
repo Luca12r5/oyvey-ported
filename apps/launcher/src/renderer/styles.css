@@ -351,3 +351,59 @@ th { color: var(--muted); font-size: .7rem; text-transform: uppercase; letter-sp
   .play { grid-template-columns: minmax(0, 1fr) 270px; }
   .console-card { right: 290px; }
 }
+
+/* ===== Classic launcher look: labelled sidebar, pixel headings, grid stage ===== */
+:root { --pixel: Silkscreen, "JetBrains Mono", monospace; }
+.wordmark, .nav-item .lbl, .nametag, .pb-title, .news-h, .nc-title, .greet small, .skin-anim, .set-sec h2, .menu-h { font-family: var(--pixel); font-weight: 400; }
+.wordmark { letter-spacing: .06em; font-size: 1rem; }
+.wordmark b { font-family: var(--pixel); letter-spacing: .12em; font-size: .78rem; }
+
+/* sidebar: icon + label, framed active item */
+.rail { width: 86px; border-radius: 6px; padding: 10px 0; gap: 4px; }
+.nav-item { width: 72px; height: 62px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border: 1px solid transparent; }
+.nav-item .lbl { font-size: .58rem; letter-spacing: .06em; text-transform: uppercase; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 68px; }
+.nav-item::after { display: none; }
+.nav-item.active { background: color-mix(in srgb, var(--accent) 22%, transparent); border-color: color-mix(in srgb, var(--accent) 75%, transparent); box-shadow: inset 0 -3px 0 var(--accent), 0 0 18px color-mix(in srgb, var(--accent) 30%, transparent); color: #fff; }
+.nav-item.active::before { left: -8px; }
+
+/* stage: perspective grid floor and ceiling, name tag */
+.stage { overflow: hidden; border-radius: 6px; }
+.floor, .stage::before { content: ""; position: absolute; left: -40%; right: -40%; height: 46%; z-index: 0; pointer-events: none;
+  background-image: linear-gradient(color-mix(in srgb, var(--accent) 34%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--accent) 34%, transparent) 1px, transparent 1px);
+  background-size: 64px 64px; }
+.floor { bottom: 0; transform: perspective(420px) rotateX(62deg); transform-origin: bottom center; -webkit-mask-image: linear-gradient(transparent, #000 45%); mask-image: linear-gradient(transparent, #000 45%); animation: floorScroll 6s linear infinite; }
+.stage::before { top: 0; transform: perspective(420px) rotateX(-62deg); transform-origin: top center; -webkit-mask-image: linear-gradient(#000 0%, transparent 70%); mask-image: linear-gradient(#000 0%, transparent 70%); opacity: .55; }
+@keyframes floorScroll { to { background-position: 0 64px; } }
+.nametag { position: absolute; top: 9%; left: 50%; transform: translateX(-50%); z-index: 3; display: flex; align-items: center; gap: 8px; padding: 5px 14px 6px; background: rgba(0,0,0,.6); color: #fff; font-size: 1.35rem; letter-spacing: .02em; pointer-events: none; white-space: nowrap; box-shadow: 0 4px 18px rgba(0,0,0,.35); }
+.top-ctl { gap: 14px; }
+.skin-anim { display: flex; align-items: center; gap: 10px; margin: 0; font-size: .78rem; color: var(--muted); text-transform: none; letter-spacing: 0; cursor: pointer; }
+.skin-anim .switch { width: 38px; height: 20px; }
+.skin-anim .switch i::after { width: 14px; height: 14px; }
+.skin-anim .switch input:checked + i::after { transform: translateX(18px); }
+
+/* launch button: framed rectangle with accent underline */
+.play-group { border-radius: 4px; background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 26%, var(--bg)), color-mix(in srgb, var(--accent) 14%, var(--bg))); border: 2px solid color-mix(in srgb, var(--accent) 70%, transparent); box-shadow: inset 0 -4px 0 var(--accent), 0 10px 34px color-mix(in srgb, var(--accent) 30%, transparent); min-width: min(400px, 100%); }
+.play-group:hover { box-shadow: inset 0 -4px 0 var(--accent), 0 14px 44px color-mix(in srgb, var(--accent) 45%, transparent); }
+.play-group::before { background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.14) 50%, transparent 65%) -150% 0 / 60% 100% no-repeat; }
+.pb-title { font-size: 1.6rem; letter-spacing: .1em; text-shadow: 0 2px 0 rgba(0,0,0,.35); }
+.pb-sub { font-weight: 500; opacity: .85; }
+.play-drop { width: 64px; border-left: 2px solid color-mix(in srgb, var(--accent) 55%, transparent); background: rgba(0,0,0,.15); }
+.play-group.running { background: linear-gradient(180deg, #14532d, #0f3d22); border-color: #22c55e; box-shadow: inset 0 -4px 0 #22c55e, 0 10px 34px rgba(34,197,94,.3); }
+
+/* news column with image cards */
+.side { gap: 12px; }
+.side > .glass { border-radius: 6px; }
+.news { display: flex; flex-direction: column; gap: 4px; min-height: 0; overflow-y: auto; padding: 12px; border-radius: 6px; background: var(--glass); border: 1px solid var(--glass-b); backdrop-filter: blur(16px); }
+.news-h { display: flex; align-items: center; gap: 8px; padding: 0 2px 8px; margin-bottom: 4px; border-bottom: 1px solid var(--glass-b); font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; }
+.news-h .link { margin-left: auto; }
+.news-card { display: flex; flex-direction: column; gap: 6px; padding: 8px 0 10px; }
+.news-card p { margin: 0; color: var(--muted); }
+.nc-title { font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text); }
+.nc-banner { position: relative; height: 128px; display: grid; place-items: center; border-radius: 4px; border: 1px solid var(--glass-b); overflow: hidden;
+  background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--accent) 45%, transparent), transparent 60%), linear-gradient(135deg, color-mix(in srgb, var(--accent2) 40%, var(--bg)), var(--bg2)); }
+.nc-banner[data-k="1"] { background: radial-gradient(circle at 70% 30%, rgba(56,189,248,.45), transparent 60%), linear-gradient(135deg, #0c4a6e, var(--bg2)); }
+.nc-banner[data-k="2"] { background: radial-gradient(circle at 40% 70%, rgba(34,197,94,.4), transparent 60%), linear-gradient(135deg, #14532d, var(--bg2)); }
+.nc-banner[data-k="3"] { background: radial-gradient(circle at 60% 40%, rgba(234,179,8,.4), transparent 60%), linear-gradient(135deg, #713f12, var(--bg2)); }
+.nc-banner .px.lg { width: 64px; height: 64px; transition: transform .3s var(--ease); }
+.news-card:hover .nc-banner .px.lg { transform: scale(1.12) rotate(-4deg); }
+.nc-date { position: absolute; right: 8px; bottom: 6px; font-size: .68rem; color: rgba(255,255,255,.8); text-shadow: 0 1px 2px rgba(0,0,0,.6); }

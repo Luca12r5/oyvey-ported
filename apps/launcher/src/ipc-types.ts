@@ -48,7 +48,10 @@ export interface LauncherApi {
   saveProfile(p: GameProfile): Promise<{ ok: boolean; errors: string[]; settings: Settings }>;
   deleteProfile(id: string): Promise<Settings>;
   authState(): Promise<AuthState>;
-  signIn(): Promise<DeviceCodeInfo>;
+  /** Opens the Microsoft sign-in window; the result arrives as an 'auth' event. */
+  signIn(): Promise<{ window: true }>;
+  /** Fallback: device code to enter on microsoft.com/link. */
+  signInWithCode(): Promise<DeviceCodeInfo>;
   cancelSignIn(): void;
   signOut(uuid?: string): Promise<AuthState>;
   switchAccount(uuid: string): Promise<AuthState>;

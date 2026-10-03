@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { mkdir, readFile, readdir, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { createHash, randomUUID } from 'node:crypto';
-import { minecraftFromMicrosoft, pollDeviceCode, refreshMicrosoft, startDeviceCode, AuthError, type MinecraftSession } from '../core/msauth.ts';
+import { authorizeRequest, exchangeCode, minecraftFromMicrosoft, parseRedirect, pollDeviceCode, refreshMicrosoft, startDeviceCode, AuthError, type MinecraftSession } from '../core/msauth.ts';
 import { LegoApi } from '../core/lego.ts';
 import { currentEnv, buildArguments, redactArgs } from '../core/mojang.ts';
 import {
@@ -42,6 +42,7 @@ let settings: Settings;
 let store: AccountStore = { accounts: [], active: null };
 let legoError: string | null = null;
 let signInAbort: AbortController | null = null;
+let loginWin: BrowserWindow | null = null;
 let launchAbort: AbortController | null = null;
 let running: GameProfile | null = null;
 /** Instance folders the user found via scan or picker; only these may be imported. */
@@ -421,20 +422,79 @@ function registerIpc(): void {
   });
 
   ipcMain.handle('auth:state', () => authState());
-  ipcMain.handle('auth:signin', async () => {
-    if (!clientId()) throw new Error('Keine Microsoft-Client-ID: in Einstellungen → Erweitert eintragen oder beim Build LEGO_MS_CLIENT_ID setzen (docs/MICROSOFT-LOGIN.md).');
+  const finishSignIn = async (id: string, ms: { refreshToken: string; accessToken: string }) => {
+    const mc = await minecraftFromMicrosoft(fetch, ms.accessToken);
+    await putAccount({ msRefreshToken: ms.refreshToken, mc, lego: null, clientId: id }, true);
+    send('auth', authState());
+    await connectLego();
+  };
+  const requireClientId = () => {
     const id = clientId();
+    if (!id) throw new Error('Keine Microsoft-Client-ID: in Einstellungen → Erweitert eintragen oder beim Build LEGO_MS_CLIENT_ID setzen (docs/MICROSOFT-LOGIN.md).');
+    return id;
+  };
+  // Default: Microsoft's sign-in page in a launcher window (like other launchers).
+  ipcMain.handle('auth:signin', async () => {
+    const id = requireClientId();
+    loginWin?.close();
+    const req = await authorizeRequest(id);
+    // A fresh, in-memory session: no cookies of earlier logins, nothing written to disk.
+    const part = session.fromPartition(`mslogin-${randomUUID()}`, { cache: false });
+    part.setPermissionRequestHandler((_wc, _p, cb) => cb(false));
+    loginWin = new BrowserWindow({
+      parent: win ?? undefined, modal: false, width: 520, height: 700, title: 'Mit Microsoft anmelden', autoHideMenuBar: true, backgroundColor: '#ffffff',
+      webPreferences: { session: part, sandbox: true, contextIsolation: true, nodeIntegration: false, javascript: true },
+    });
+    const lw = loginWin;
+    let done = false;
+    const handle = (url: string, prevent: () => void) => {
+      let code: string | null;
+      try {
+        code = parseRedirect(url, req.state);
+      } catch (e) {
+        prevent();
+        done = true;
+        lw.close();
+        send('auth', { ...authState(), error: e instanceof Error ? e.message : String(e) });
+        return;
+      }
+      if (code === null) {
+        // Only Microsoft/Xbox/Live pages may load in this window.
+        try {
+          const host = new URL(url).hostname;
+          if (!/(^|\.)(microsoftonline\.com|live\.com|microsoft\.com|xboxlive\.com|xbox\.com|msauth\.net|msftauth\.net|aadcdn\.msftauth\.net|gfx\.ms)$/.test(host)) prevent();
+        } catch { prevent(); }
+        return;
+      }
+      prevent();
+      done = true;
+      lw.close();
+      void exchangeCode(fetch, id, code, req.verifier).then((ms) => finishSignIn(id, ms)).catch((e) => send('auth', { ...authState(), error: e instanceof Error ? e.message : String(e) }));
+    };
+    lw.webContents.on('will-redirect', (e, url) => handle(url, () => e.preventDefault()));
+    lw.webContents.on('will-navigate', (e, url) => handle(url, () => e.preventDefault()));
+    lw.webContents.setWindowOpenHandler(({ url }) => {
+      if (url.startsWith('https://')) void shell.openExternal(url);
+      return { action: 'deny' };
+    });
+    lw.on('closed', () => {
+      if (loginWin === lw) loginWin = null;
+      if (!done) send('auth', { ...authState(), cancelled: true });
+      void part.clearStorageData().catch(() => {});
+    });
+    await lw.loadURL(req.url);
+    return { window: true };
+  });
+  // Fallback: device code (code entered on microsoft.com/link in any browser).
+  ipcMain.handle('auth:signin-code', async () => {
+    const id = requireClientId();
     signInAbort?.abort();
     signInAbort = new AbortController();
     const dc = await startDeviceCode(fetch, id);
     const signal = signInAbort.signal;
     void (async () => {
       try {
-        const ms = await pollDeviceCode(fetch, id, dc, signal);
-        const mc = await minecraftFromMicrosoft(fetch, ms.accessToken);
-        await putAccount({ msRefreshToken: ms.refreshToken, mc, lego: null, clientId: id }, true);
-        send('auth', authState());
-        await connectLego();
+        await finishSignIn(id, await pollDeviceCode(fetch, id, dc, signal));
       } catch (e) {
         send('auth', { ...authState(), error: e instanceof Error ? e.message : String(e) });
       }
@@ -442,7 +502,7 @@ function registerIpc(): void {
     void shell.openExternal(dc.verificationUri);
     return { userCode: dc.userCode, verificationUri: dc.verificationUri, expiresAt: dc.expiresAt };
   });
-  ipcMain.on('auth:cancel', () => signInAbort?.abort());
+  ipcMain.on('auth:cancel', () => { signInAbort?.abort(); loginWin?.close(); });
   ipcMain.handle('auth:signout', async (_e, uuid?: string) => {
     const target = uuid ?? store.active;
     const acc = store.accounts.find((a) => a.mc.uuid === target);

@@ -4,11 +4,31 @@ import { go, refreshChrome, state } from '../app.ts';
 import { api, confirm, dialog, errorToast, fmtDate, fmtNum, html, lego, mount, toast } from '../ui.ts';
 import { tagHtml } from './cosmetics.ts';
 
-/** Microsoft device-code sign-in: shows the code, opens microsoft.com/link in the browser. */
+/** Microsoft sign-in: opens Microsoft's login page in a launcher window. */
 export async function signInFlow(): Promise<void> {
+  if (!state.info.msClientConfigured) return notConfigured();
   try {
-    const dc = await api.signIn();
-    const d = dialog(html`<h2>Mit Microsoft anmelden</h2>
+    await api.signIn();
+  } catch (e) {
+    errorToast(e);
+  }
+}
+
+function notConfigured(): void {
+  const d = dialog(html`<h2>Anmeldung noch nicht eingerichtet</h2>
+    <p>Diesem Launcher-Build fehlt die Microsoft-App-ID. Der Betreiber muss sie einmalig bei Microsoft anlegen und von Mojang freischalten lassen – danach ist die Anmeldung für alle automatisch.</p>
+    <p class="small muted">Anleitung: docs/MICROSOFT-LOGIN.md im Projekt. Hast du schon eine ID, trag sie unter Einstellungen → Erweitert ein.</p>
+    <div class="row between gap"><button class="btn" id="close">Schließen</button><button class="btn primary" id="settings">${icon('settings', 'sm')} Einstellungen</button></div>`);
+  d.querySelector('#close')!.addEventListener('click', () => d.close());
+  d.querySelector('#settings')!.addEventListener('click', () => { d.close(); void go('settings').then(() => document.querySelector<HTMLButtonElement>('[data-tab=advanced]')?.click()); });
+}
+
+/** Fallback: device code entered on microsoft.com/link in any browser. */
+export async function codeSignInFlow(): Promise<void> {
+  if (!state.info.msClientConfigured) return notConfigured();
+  try {
+    const dc = await api.signInWithCode();
+    const d = dialog(html`<h2>Mit Code anmelden</h2>
       <p>Im Browser hat sich die offizielle Microsoft-Seite geöffnet. Gib dort diesen Code ein:</p>
       <div class="code-big">${dc.userCode}</div>
       <p class="small muted gap">Seite nicht offen? <a href="#" id="open">${dc.verificationUri}</a> · Der Code ist bis ${new Date(dc.expiresAt).toLocaleTimeString('de-DE')} gültig. Dein Passwort gibst du nur bei Microsoft ein – der Launcher sieht es nie.</p>
@@ -23,9 +43,10 @@ export async function signInFlow(): Promise<void> {
 export async function accountPage(el: HTMLElement): Promise<void> {
   const a = state.auth;
   if (!a.signedIn) {
-    mount(el, html`<h1>Konto</h1><div class="card"><p>Melde dich mit dem Microsoft-Konto an, das Minecraft: Java Edition besitzt.</p><button class="btn primary" id="signin">Mit Microsoft anmelden</button>
+    mount(el, html`<h1>Konto</h1><div class="card"><p>Melde dich mit dem Microsoft-Konto an, das Minecraft: Java Edition besitzt.</p><div class="row"><button class="btn primary" id="signin">Mit Microsoft anmelden</button><button class="btn" id="code">Mit Code anmelden</button></div>
       ${a.secureStorage ? '' : html`<p class="small muted gap">Hinweis: Das System bietet keine sichere Speicherung – du musst dich nach jedem Start neu anmelden.</p>`}</div>`);
     el.querySelector('#signin')!.addEventListener('click', () => void signInFlow());
+    el.querySelector('#code')!.addEventListener('click', () => void codeSignInFlow());
     return;
   }
   type Me = { credits: number; bio: string; customTag: string | null; subscription: { tier: string; expiresAt: number } | null; createdAt: number };
