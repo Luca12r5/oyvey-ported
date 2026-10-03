@@ -5,6 +5,7 @@ import { app, BrowserWindow, ipcMain, shell, session, dialog } from 'electron';
 import { cpus, freemem, release, totalmem } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, readFile, readdir, stat } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { createHash, randomUUID } from 'node:crypto';
 import { minecraftFromMicrosoft, pollDeviceCode, refreshMicrosoft, startDeviceCode, AuthError, type MinecraftSession } from '../core/msauth.ts';
 import { LegoApi } from '../core/lego.ts';
@@ -31,6 +32,8 @@ declare const __MS_CLIENT_ID__: string;
 declare const __BACKEND_URL__: string;
 declare const __CURSEFORGE_KEY__: string;
 const MS_CLIENT_ID = typeof __MS_CLIENT_ID__ === 'string' ? __MS_CLIENT_ID__ : '';
+/** Azure app id: from the settings (for self-built setups) or baked into the build. */
+const clientId = () => (settings?.msClientId || MS_CLIENT_ID).trim();
 const BACKEND_URL = typeof __BACKEND_URL__ === 'string' ? __BACKEND_URL__ : '';
 const CURSEFORGE_KEY = typeof __CURSEFORGE_KEY__ === 'string' ? __CURSEFORGE_KEY__ : '';
 
@@ -86,7 +89,8 @@ async function freshSession(): Promise<MinecraftSession> {
   const a = active();
   if (!a) throw new AuthError('signed_out', 'Bitte zuerst mit Microsoft anmelden.');
   if (a.mc.expiresAt - Date.now() > 5 * 60_000) return a.mc;
-  const ms = await refreshMicrosoft(fetch, MS_CLIENT_ID, a.msRefreshToken);
+  // Refresh tokens are bound to the app id that signed the account in.
+  const ms = await refreshMicrosoft(fetch, a.clientId ?? clientId(), a.msRefreshToken);
   const mc = await minecraftFromMicrosoft(fetch, ms.accessToken);
   await putAccount({ ...a, msRefreshToken: ms.refreshToken, mc });
   return mc;
@@ -166,11 +170,29 @@ async function latestRelease(): Promise<string> {
 }
 
 // ---- launching ---------------------------------------------------------------
+/** The LEGO client jar shipped inside the installer (resources/legoclient.jar). */
+function bundledLegoClient(): string | null {
+  const candidates = [
+    app.isPackaged ? join(process.resourcesPath, 'legoclient.jar') : null,
+    !app.isPackaged ? process.env.LEGO_CLIENT_JAR ?? null : null,
+  ];
+  return candidates.find((p): p is string => !!p && existsSync(p)) ?? null;
+}
+
+/**
+ * LEGO client: a release offered by the LEGO server (allows hotfixes without a
+ * launcher update), otherwise the copy shipped with the launcher.
+ */
 async function legoClientFile(): Promise<ModFile> {
-  const r = await legoApi().call<{ version: string; url: string; filename: string; sha512?: string; sha256?: string } | null>('GET', '/api/public/client-release');
-  if (!r || !r.url) throw new Error('Der LEGO-Server bietet noch keinen Client-Download an (LEGO_CLIENT_URL nicht gesetzt).');
-  if (!/^[\w.+\-]+\.jar$/.test(r.filename)) throw new Error('Ungültiger Dateiname für den LEGO Client.');
-  return { url: r.url, filename: r.filename, sha512: r.sha512, sha256: r.sha256 };
+  if (backendUrl()) {
+    try {
+      const r = await legoApi().call<{ version: string; url: string; filename: string; sha512?: string; sha256?: string } | null>('GET', '/api/public/client-release');
+      if (r?.url && /^[\w.+\-]+\.jar$/.test(r.filename) && (r.sha512 || r.sha256)) return { url: r.url, filename: r.filename, sha512: r.sha512, sha256: r.sha256 };
+    } catch { /* server offline: use the bundled client */ }
+  }
+  const local = bundledLegoClient();
+  if (!local) throw new Error('Der LEGO Client fehlt in dieser Installation und der LEGO-Server bietet keinen Download an. Bitte den Launcher neu installieren.');
+  return { url: '', filename: 'legoclient.jar', localPath: local };
 }
 
 async function launch(profileId: string): Promise<{ ok: boolean; error?: string }> {
@@ -343,7 +365,7 @@ function registerIpc(): void {
   ipcMain.handle('info', () => ({
     version: app.getVersion(), platform: process.platform, arch: process.arch,
     totalMemMb: Math.round(totalmem() / 1048576), freeMemMb: Math.round(freemem() / 1048576),
-    cpus: cpus().length, cpuModel: cpus()[0]?.model ?? '', msClientConfigured: !!MS_CLIENT_ID, gameDir: paths.game(),
+    cpus: cpus().length, cpuModel: cpus()[0]?.model ?? '', msClientConfigured: !!clientId(), gameDir: paths.game(),
   }));
   ipcMain.on('window', (_e, action: string) => {
     if (action === 'minimize') win?.minimize();
@@ -354,7 +376,7 @@ function registerIpc(): void {
   ipcMain.handle('settings:set', async (_e, patch: Partial<Settings>) => {
     const allowed: (keyof Settings)[] = [
       'themeId', 'customThemes', 'language', 'backendUrl', 'selectedProfile', 'closeOnLaunch', 'reducedMotion', 'uiScale', 'autoUpdate', 'rarityColors',
-      'accentColor', 'background', 'backgroundQuality', 'snow', 'showSnapshots', 'showHistorical', 'curseforgeKey',
+      'accentColor', 'background', 'backgroundQuality', 'snow', 'showSnapshots', 'showHistorical', 'curseforgeKey', 'msClientId',
     ];
     for (const k of allowed) if (k in patch) (settings as unknown as Record<string, unknown>)[k] = patch[k];
     // Never trust the renderer: re-validate imported themes and clamp numbers.
@@ -365,6 +387,7 @@ function registerIpc(): void {
     if (typeof settings.background !== 'string' || !/^[a-z0-9-]{1,32}$/.test(settings.background)) settings.background = 'nebula';
     if (!['de', 'en'].includes(settings.language)) settings.language = 'de';
     for (const k of ['snow', 'showSnapshots', 'showHistorical', 'closeOnLaunch', 'reducedMotion'] as const) settings[k] = !!settings[k];
+    settings.msClientId = typeof settings.msClientId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(settings.msClientId.trim()) ? settings.msClientId.trim().toLowerCase() : '';
     settings.curseforgeKey = typeof settings.curseforgeKey === 'string' ? settings.curseforgeKey.trim().slice(0, 200) : '';
     if (!['ask', 'auto', 'off'].includes(settings.autoUpdate)) settings.autoUpdate = 'ask';
     if (typeof settings.backendUrl === 'string' && settings.backendUrl && !/^https:\/\//.test(settings.backendUrl) && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(settings.backendUrl)) {
@@ -395,16 +418,17 @@ function registerIpc(): void {
 
   ipcMain.handle('auth:state', () => authState());
   ipcMain.handle('auth:signin', async () => {
-    if (!MS_CLIENT_ID) throw new Error('Dieser Build hat keine Microsoft-Client-ID (LEGO_MS_CLIENT_ID). Siehe docs/LAUNCHER.md.');
+    if (!clientId()) throw new Error('Keine Microsoft-Client-ID: in Einstellungen → Erweitert eintragen oder beim Build LEGO_MS_CLIENT_ID setzen (docs/MICROSOFT-LOGIN.md).');
+    const id = clientId();
     signInAbort?.abort();
     signInAbort = new AbortController();
-    const dc = await startDeviceCode(fetch, MS_CLIENT_ID);
+    const dc = await startDeviceCode(fetch, id);
     const signal = signInAbort.signal;
     void (async () => {
       try {
-        const ms = await pollDeviceCode(fetch, MS_CLIENT_ID, dc, signal);
+        const ms = await pollDeviceCode(fetch, id, dc, signal);
         const mc = await minecraftFromMicrosoft(fetch, ms.accessToken);
-        await putAccount({ msRefreshToken: ms.refreshToken, mc, lego: null }, true);
+        await putAccount({ msRefreshToken: ms.refreshToken, mc, lego: null, clientId: id }, true);
         send('auth', authState());
         await connectLego();
       } catch (e) {

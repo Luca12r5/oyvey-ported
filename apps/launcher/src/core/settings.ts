@@ -63,6 +63,8 @@ export interface Settings {
   showHistorical: boolean;
   /** Optional CurseForge API key (needed only to import CurseForge modpacks). */
   curseforgeKey: string;
+  /** Azure app (client) id for Microsoft sign-in; empty = the one built into the launcher. */
+  msClientId: string;
 }
 
 export const DEFAULT_PROFILE: GameProfile = {
@@ -92,7 +94,7 @@ export function defaultSettings(): Settings {
     themeId: 'lego-graphite', customThemes: [], language: 'de', backendUrl: 'https://api.lego-launcher.example',
     selectedProfile: DEFAULT_PROFILE.id, profiles: [{ ...DEFAULT_PROFILE, createdAt: Date.now() }],
     closeOnLaunch: false, reducedMotion: false, uiScale: 1, autoUpdate: 'ask', rarityColors: {},
-    accentColor: null, background: 'nebula', backgroundQuality: 0.6, snow: false, showSnapshots: false, showHistorical: false, curseforgeKey: '',
+    accentColor: null, background: 'nebula', backgroundQuality: 0.6, snow: false, showSnapshots: false, showHistorical: false, curseforgeKey: '', msClientId: '',
   };
 }
 

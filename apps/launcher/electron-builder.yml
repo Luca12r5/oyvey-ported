@@ -11,6 +11,11 @@ files:
   - package.json
   - "!dist/**/*.map"
 asar: true
+# The LEGO client mod built by CI (lego-client) ships with the installer.
+extraResources:
+  - from: resources
+    to: .
+    filter: ['*.jar']
 win:
   target:
     - target: nsis

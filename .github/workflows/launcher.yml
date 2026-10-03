@@ -9,6 +9,7 @@ on:
     paths:
       - 'apps/launcher/**'
       - 'packages/shared/**'
+      - 'lego-client/**'
       - '.github/workflows/launcher.yml'
   workflow_dispatch:
 
@@ -45,6 +46,18 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build LEGO client (shipped inside the installer)
+        shell: bash
+        run: |
+          ./gradlew -p lego-client build -x test --no-daemon
+          jar=$(ls lego-client/build/libs/legoclient-*.jar | grep -v -- '-sources' | head -1)
+          cp "$jar" apps/launcher/resources/legoclient.jar
+          ls -la apps/launcher/resources
       - name: Build installer
         env:
           LEGO_MS_CLIENT_ID: ${{ secrets.LEGO_MS_CLIENT_ID }}

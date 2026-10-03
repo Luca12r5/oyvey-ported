@@ -100,6 +100,7 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
       ${row(t('set.historical'), t('set.historical.d'), sw('showHistorical', s.showHistorical))}
       ${row(t('set.cfKey'), t('set.cfKey.d'), html`<input type="password" data-key="curseforgeKey" value="${s.curseforgeKey}" placeholder="$2a$10$…" autocomplete="off" class="compact wide">`)}`,
     advanced: html`
+      ${row(t('set.msClient'), t('set.msClient.d'), html`<input data-key="msClientId" value="${s.msClientId}" placeholder="00000000-0000-0000-0000-000000000000" autocomplete="off" spellcheck="false" class="compact wide mono">`)}
       ${row(t('set.backend'), t('set.backend.d'), html`<input data-key="backendUrl" value="${s.backendUrl}" placeholder="https://…" class="compact wide">`)}
       ${row(t('set.gameDir'), `${t('set.gameDir.d')} ${state.info.gameDir}`, html`<button class="btn sm" id="game">${icon('folder', 'sm')} ${t('set.open')}</button>`)}
       ${row(t('set.diag'), t('set.diag.d'), html`<button class="btn sm" id="diag">${t('set.copy')}</button>`)}`,
@@ -121,6 +122,7 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
     if (!key) return;
     const value = i.type === 'checkbox' ? i.checked : i.type === 'range' ? Number(i.value) : i.value.trim();
     await save({ [key]: value } as Partial<Settings>);
+    if (key === 'msClientId') state.info = await api.info();
     if (key === 'backendUrl') { state.auth = await api.reconnectLego(); await loadIdentity(); }
     if (i.type !== 'text' && i.type !== 'password') rerender();
     toast(t('set.saved'), 'ok');

@@ -13,6 +13,8 @@ export interface Account {
   msRefreshToken: string;
   mc: MinecraftSession;
   lego: { token: string; expiresAt: number; userId: string; roles: string[] } | null;
+  /** Azure app id used for this account's sign-in (refresh tokens are bound to it). */
+  clientId?: string;
 }
 
 const dir = () => app.getPath('userData');

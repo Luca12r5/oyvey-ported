@@ -181,7 +181,8 @@ export async function installJava(f: FetchLike, l: Layout, component: string, en
 
 // ---- Mods ----------------------------------------------------------------
 
-export interface ModFile { url: string; filename: string; sha512?: string; sha256?: string; sha1?: string; size?: number }
+/** A managed mod: downloaded from `url`, or copied from `localPath` (e.g. the LEGO client shipped with the launcher). */
+export interface ModFile { url: string; filename: string; sha512?: string; sha256?: string; sha1?: string; size?: number; localPath?: string }
 
 export async function fabricApiFile(f: FetchLike, gameVersion: string): Promise<ModFile> {
   const q = `game_versions=${encodeURIComponent(JSON.stringify([gameVersion]))}&loaders=${encodeURIComponent(JSON.stringify(['fabric']))}`;
@@ -204,7 +205,9 @@ export async function syncMods(f: FetchLike, modsDir: string, files: ModFile[], 
     if (!wanted.has(old) && /^[\w.+\-]+\.jar$/.test(old)) await rm(join(modsDir, old), { force: true });
   }
   report('Mods');
-  await downloadAll(f, files.map((m) => ({ url: m.url, dest: join(modsDir, m.filename), sha512: m.sha512, sha256: m.sha256, sha1: m.sha1, size: m.size, label: m.filename })), { signal, onProgress: (p) => report('Mods', p) });
+  const remote = files.filter((m) => !m.localPath);
+  await downloadAll(f, remote.map((m) => ({ url: m.url, dest: join(modsDir, m.filename), sha512: m.sha512, sha256: m.sha256, sha1: m.sha1, size: m.size, label: m.filename })), { signal, onProgress: (p) => report('Mods', p) });
+  for (const m of files.filter((x) => x.localPath)) await copyFile(m.localPath!, join(modsDir, m.filename));
   await writeFile(managedFile, JSON.stringify([...wanted], null, 2));
 }
 

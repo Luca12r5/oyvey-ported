@@ -17,6 +17,8 @@ xvfb-run -a node apps/launcher/test/ui.e2e.mjs   # UI-Test gegen echtes Backend 
 
 ## Microsoft-Anmeldung einrichten (Pflicht für den Login)
 
+Schritt für Schritt: [MICROSOFT-LOGIN.md](MICROSOFT-LOGIN.md). Die Client-ID kann auch im Launcher unter Einstellungen → Erweitert eingetragen werden.
+
 1. Im [Azure-Portal](https://portal.azure.com) eine App-Registrierung anlegen:
    - Kontotypen: **„Persönliche Microsoft-Konten“** (der Launcher nutzt den `consumers`-Tenant).
    - Authentifizierung → „Öffentliche Clientflows zulassen“ = **Ja** (Device-Code-Flow).
@@ -32,7 +34,7 @@ Hinweis: Die Endpunkte wurden aus der etablierten Dokumentation übernommen; der
 
 - Standard-URL beim Build: Repository-Variable `LEGO_BACKEND_URL` (z. B. `https://api.dein-lego.de`).
 - Nutzer können sie unter Einstellungen → Allgemein überschreiben (nur `https://`).
-- Der Launcher installiert den LEGO Client von der URL, die das Backend unter `/api/public/client-release` meldet (siehe `docs/BACKEND.md`).
+- Der LEGO Client ist im Installer enthalten (CI baut ihn aus `lego-client/`). Meldet das Backend unter `/api/public/client-release` eine eigene Version mit Prüfsumme, wird stattdessen diese geladen (Hotfixes ohne Launcher-Update).
 
 ## EXE bauen
 
