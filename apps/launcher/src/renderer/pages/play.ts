@@ -9,6 +9,7 @@ import { t } from '../i18n.ts';
 import type { GameProfile } from '../../core/settings.ts';
 import type { LaunchProgress } from '../../ipc-types.ts';
 import { signInFlow } from './account.ts';
+import { officialFlow } from './official.ts';
 
 const logLines: { line: string; stream: string }[] = [];
 const skinAnimOn = () => { try { return localStorage.getItem('lego.skinAnim') !== '0'; } catch { return true; } };
@@ -59,7 +60,7 @@ export async function playPage(el: HTMLElement): Promise<void> {
           <button class="play-drop" id="drop" aria-label="${t('play.profile')}" aria-haspopup="menu">${icon('chevron')}</button>
         </div>`
       : html`<div class="play-group"><button class="play-btn" id="signin"><span class="pb-title">${t('acc.signin')}</span><span class="pb-sub">${t('play.signin')}</span></button></div>
-        ${state.info.msClientConfigured ? '' : html`<p class="small muted center">${t('play.noClientId')}</p>`}`}
+        <button class="btn official" id="official">${icon('external', 'sm')} ${t('play.official')}</button>`}
       <div class="status glass" id="status" hidden></div>
       <button class="link small" id="console">${icon('terminal', 'sm')} ${t('play.console')}</button>
     </div>
@@ -91,6 +92,7 @@ export async function playPage(el: HTMLElement): Promise<void> {
 
   // ---- launch / progress / log
   el.querySelector('#signin')?.addEventListener('click', () => void signInFlow());
+  el.querySelector('#official')?.addEventListener('click', () => void officialFlow(profile.id));
   el.querySelector('#allNews')!.addEventListener('click', () => void go('news'));
   el.querySelector('#drop')?.addEventListener('click', (e) => profileMenu(e.currentTarget as HTMLElement));
   const statusBox = el.querySelector<HTMLElement>('#status')!;
@@ -215,7 +217,8 @@ function profileMenu(anchor: HTMLElement): void {
     <div class="menu-scroll">${sorted.map((p) => html`<button class="menu-i ${p.id === s.selectedProfile ? 'on' : ''}" data-profile="${p.id}" role="menuitem">${pixel(p.icon, 'sm')}<span class="grow"><b>${p.name}</b><small>${profileLine(p)}</small></span>${p.id === s.selectedProfile ? icon('check', 'sm') : ''}</button>`)}</div>
     <div class="menu-sep"></div>
     <button class="menu-i" data-act="new" role="menuitem">${icon('plus', 'sm')}<span class="grow">${t('play.newProfile')}</span></button>
-    <button class="menu-i" data-act="manage" role="menuitem">${icon('profiles', 'sm')}<span class="grow">${t('nav.profiles')}</span></button>`);
+    <button class="menu-i" data-act="manage" role="menuitem">${icon('profiles', 'sm')}<span class="grow">${t('nav.profiles')}</span></button>
+    <button class="menu-i" data-act="official" role="menuitem">${icon('external', 'sm')}<span class="grow">${t('play.official')}</span></button>`);
   document.body.append(m);
   const group = anchor.parentElement!.getBoundingClientRect();
   m.style.left = `${group.left}px`;
@@ -237,6 +240,7 @@ function profileMenu(anchor: HTMLElement): void {
     } else if (b.dataset.act === 'new') {
       newProfileRequested = true;
       void go('profiles');
-    } else void go('profiles');
+    } else if (b.dataset.act === 'official') void officialFlow();
+    else void go('profiles');
   });
 }

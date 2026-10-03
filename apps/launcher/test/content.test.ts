@@ -228,3 +228,32 @@ test('log4j XML output becomes readable lines', async () => {
   assert.match(out[1]!, /\[main\/ERROR\]: java.lang.RuntimeException: boom\n\tat a.b/);
   assert.equal(out[2], 'plain stdout line');
 });
+
+test('official launcher: profile is added without touching other profiles, re-export updates it', async () => {
+  const { exportToOfficial, officialMinecraftDir } = await import('../src/core/official.ts');
+  assert.match(officialMinecraftDir({ APPDATA: 'C:\\\\Users\\\\x\\\\AppData\\\\Roaming' }, 'win32'), /\.minecraft$/);
+  const mc = tmp('official');
+  await assert.rejects(exportToOfficial(fakeFetch({}), mc, { key: 'lego-a', name: 'LEGO', gameVersion: '1.21.11', loaderType: null, loader: null, gameDir: '/g', memoryMb: 4096, icon: null }), /nicht gefunden/);
+  writeFileSync(join(mc, 'launcher_profiles.json'), JSON.stringify({ profiles: { other: { name: 'Mine', lastVersionId: 'latest-release', type: 'latest-release' } }, settings: { keep: true }, version: 3 }));
+  const f = fakeFetch({
+    'https://meta.fabricmc.net/v2/versions/loader/1.21.11': [{ loader: { version: '0.19.5', stable: true } }],
+    'https://meta.fabricmc.net/v2/versions/loader/1.21.11/0.19.5/profile/json': { id: 'x', inheritsFrom: '1.21.11', mainClass: 'net.fabricmc.loader.impl.launch.knot.KnotClient', libraries: [] },
+  });
+  const id = await exportToOfficial(f, mc, { key: 'lego-a', name: 'LEGO Client', gameVersion: '1.21.11', loaderType: 'fabric', loader: null, gameDir: '/inst/a', memoryMb: 4096, icon: 'data:image/png;base64,AAAA' }, new Date('2026-01-01T00:00:00Z'));
+  assert.equal(id, 'fabric-loader-0.19.5-1.21.11');
+  assert.ok(existsSync(join(mc, 'versions', id, `${id}.json`)));
+  const data = JSON.parse(readFileSync(join(mc, 'launcher_profiles.json'), 'utf8'));
+  assert.equal(data.profiles.other.name, 'Mine');
+  assert.deepEqual(data.settings, { keep: true });
+  assert.equal(data.profiles['lego-a'].lastVersionId, id);
+  assert.equal(data.profiles['lego-a'].gameDir, '/inst/a');
+  assert.equal(data.profiles['lego-a'].icon, 'data:image/png;base64,AAAA');
+  assert.ok(existsSync(join(mc, 'launcher_profiles.json.lego-backup')));
+  await exportToOfficial(f, mc, { key: 'lego-a', name: 'LEGO Neu', gameVersion: '1.21.11', loaderType: 'fabric', loader: '0.19.5', gameDir: '/inst/a', memoryMb: 2048, icon: 'javascript:evil' });
+  const again = JSON.parse(readFileSync(join(mc, 'launcher_profiles.json'), 'utf8'));
+  assert.equal(Object.keys(again.profiles).length, 2);
+  assert.equal(again.profiles['lego-a'].name, 'LEGO Neu');
+  assert.equal(again.profiles['lego-a'].created, '2026-01-01T00:00:00.000Z');
+  assert.equal(again.profiles['lego-a'].icon, 'data:image/png;base64,AAAA', 'invalid icon is ignored, previous kept');
+  await assert.rejects(exportToOfficial(f, mc, { key: 'f', name: 'F', gameVersion: '1.20.1', loaderType: 'forge', loader: null, gameDir: '/x', memoryMb: 2048, icon: null }), /Forge/);
+});

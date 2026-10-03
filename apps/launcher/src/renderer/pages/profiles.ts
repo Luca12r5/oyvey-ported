@@ -9,6 +9,7 @@ import { LEGO_CLIENT_GAME_VERSION, LOADER_TYPES, loaderSupports, type GameProfil
 import type { FoundInstance } from '../../core/importers.ts';
 import { profileLine, takeNewProfileRequest } from './play.ts';
 import { openModsFor } from './mods.ts';
+import { officialFlow } from './official.ts';
 
 const LOADER_LABEL: Record<LoaderType, string> = { fabric: 'Fabric', quilt: 'Quilt', forge: 'Forge', neoforge: 'NeoForge' };
 
@@ -26,6 +27,7 @@ export async function profilesPage(el: HTMLElement): Promise<void> {
         <button class="icon-btn" data-edit="${p.id}" title="${t('prof.edit')}">${icon('sliders', 'sm')}</button>
         <button class="icon-btn" data-mods="${p.id}" title="${t('prof.mods')}">${icon('mods', 'sm')}</button>
         <button class="icon-btn" data-folder="${p.id}" title="${t('mods.folder')}">${icon('folder', 'sm')}</button>
+        ${p.loaderType === 'forge' || p.loaderType === 'neoforge' ? '' : html`<button class="icon-btn" data-official="${p.id}" title="${t('play.official')}">${icon('external', 'sm')}</button>`}
         ${s.profiles.length > 1 ? html`<button class="icon-btn danger" data-del="${p.id}" title="${t('prof.delete')}">${icon('trash', 'sm')}</button>` : ''}
       </div></article>`)}</div>`);
   el.onclick = async (e) => {
@@ -39,6 +41,7 @@ export async function profilesPage(el: HTMLElement): Promise<void> {
       if (d.play) { state.settings = await api.setSettings({ selectedProfile: d.play }); return void go('play'); }
       if (d.mods) { openModsFor(d.mods); return void go('mods'); }
       if (d.folder) return await api.openFolder('game', d.folder);
+      if (d.official) return await officialFlow(d.official);
       if (d.del && await confirm('Profil löschen?', 'Das Profil wird aus der Liste entfernt. Der Spielordner bleibt auf der Festplatte erhalten.', t('prof.delete'), true)) {
         state.settings = await api.deleteProfile(d.del);
         return await profilesPage(el);

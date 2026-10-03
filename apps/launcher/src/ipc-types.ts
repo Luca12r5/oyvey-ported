@@ -73,6 +73,8 @@ export interface LauncherApi {
   scanInstances(): Promise<FoundInstance[]>;
   pickFolder(): Promise<FoundInstance | null>;
   importInstance(inst: FoundInstance, includeWorlds: boolean): Promise<{ profileId: string; copied: string[] }>;
+  officialStatus(): Promise<{ present: boolean; dir: string }>;
+  exportToOfficial(profileId: string, icon: string | null): Promise<{ versionId: string; name: string }>;
   lego<T = unknown>(method: string, path: string, body?: unknown): Promise<T>;
   openExternal(url: string): Promise<void>;
   diagnostics(): Promise<string>;

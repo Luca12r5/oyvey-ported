@@ -20,6 +20,7 @@ import {
 } from '../core/modrinth.ts';
 import { cfLoader, copyInstance, installCfPack, readCfManifest, readFolder, scanInstances, type FoundInstance } from '../core/importers.ts';
 import { listEntries } from '../core/zip.ts';
+import { exportToOfficial, officialLauncherPresent, officialMinecraftDir } from '../core/official.ts';
 import { fetchJson } from '../core/net.ts';
 import { createLogCleaner, diagnose, startGame } from '../core/launch.ts';
 import { DEFAULT_PROFILE, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
@@ -196,6 +197,27 @@ async function legoClientFile(): Promise<ModFile> {
   return { url: '', filename: 'legoclient.jar', localPath: local };
 }
 
+/** Installs the launcher-managed mods (LEGO client, Fabric API, FPS pack) into a profile. */
+async function prepareMods(profile: GameProfile, gameDir: string, report: (step: string, p?: { done: number; total: number; bytes: number; totalBytes: number }) => void, signal?: AbortSignal): Promise<void> {
+  const managed: ModFile[] = [];
+  if (profile.legoClient) {
+    report('LEGO Client');
+    const api = await projectVersions(fetch, 'fabric-api', profile.gameVersion, 'fabric');
+    const v = api.find((x) => x.version_type === 'release') ?? api[0];
+    const file = v?.files.find((x) => x.primary) ?? v?.files[0];
+    if (!file) throw new Error(`Keine Fabric API für Minecraft ${profile.gameVersion}.`);
+    managed.push({ url: file.url, filename: file.filename, sha512: file.hashes.sha512, size: file.size }, await legoClientFile());
+  }
+  if (profile.performancePack && profile.loaderType) {
+    report('FPS-Paket');
+    const user = new Set((await installedMods(gameDir)).map((m) => m.projectId));
+    for (const p of await performanceFiles(fetch, profile.gameVersion, profile.loaderType)) {
+      if (!user.has(p.projectId)) managed.push({ url: p.url, filename: p.filename, sha512: p.sha512, size: p.size });
+    }
+  }
+  if (profile.loaderType || managed.length) await syncMods(fetch, join(gameDir, 'mods'), managed, report, signal);
+}
+
 async function launch(profileId: string): Promise<{ ok: boolean; error?: string }> {
   if (running) return { ok: false, error: 'Minecraft läuft bereits.' };
   const profile = settings.profiles.find((p) => p.id === profileId);
@@ -227,23 +249,7 @@ async function launch(profileId: string): Promise<{ ok: boolean; error?: string 
     const merged = await resolveLoaderVersion(fetch, l, base, profile.loaderType, profile.loader, javaPath, log);
     const installed = await installVersion(fetch, l, merged, base.id, env, report, signal, gameDir);
 
-    const managed: ModFile[] = [];
-    if (profile.legoClient) {
-      report('LEGO Client');
-      const api = await projectVersions(fetch, 'fabric-api', profile.gameVersion, 'fabric');
-      const v = api.find((x) => x.version_type === 'release') ?? api[0];
-      const file = v?.files.find((x) => x.primary) ?? v?.files[0];
-      if (!file) throw new Error(`Keine Fabric API für Minecraft ${profile.gameVersion}.`);
-      managed.push({ url: file.url, filename: file.filename, sha512: file.hashes.sha512, size: file.size }, await legoClientFile());
-    }
-    if (profile.performancePack && profile.loaderType) {
-      report('FPS-Paket');
-      const user = new Set((await installedMods(gameDir)).map((m) => m.projectId));
-      for (const p of await performanceFiles(fetch, profile.gameVersion, profile.loaderType)) {
-        if (!user.has(p.projectId)) managed.push({ url: p.url, filename: p.filename, sha512: p.sha512, size: p.size });
-      }
-    }
-    if (profile.loaderType || managed.length) await syncMods(fetch, join(gameDir, 'mods'), managed, report, signal);
+    await prepareMods(profile, gameDir, report, signal);
 
     const jvm = parseJvmArgs(profile.jvmArgs);
     const args = buildArguments({
@@ -598,6 +604,25 @@ function registerIpc(): void {
     return { profileId: p.id, copied };
   });
 
+  // Play through the official Minecraft Launcher (it signs in with its own approved app).
+  ipcMain.handle('official:status', async () => {
+    const dir = officialMinecraftDir();
+    return { present: await officialLauncherPresent(dir), dir };
+  });
+  ipcMain.handle('official:export', async (_e, profileId: string, icon: string | null) => {
+    const p = profileById(profileId);
+    const gameDir = profileDir(p);
+    await mkdir(gameDir, { recursive: true });
+    const report = (step: string, pr?: { done: number; total: number; bytes: number; totalBytes: number }) => send('launch-progress', { step, ...pr } satisfies LaunchProgress);
+    await prepareMods(p, gameDir, report);
+    report('Profil im Minecraft Launcher anlegen');
+    const versionId = await exportToOfficial(fetch, officialMinecraftDir(), {
+      key: `lego-${p.id}`, name: p.name, gameVersion: p.gameVersion, loaderType: p.loaderType, loader: p.loader, gameDir, memoryMb: p.memoryMb,
+      icon: typeof icon === 'string' ? icon : null,
+    });
+    send('launch-progress', { step: 'Fertig' });
+    return { versionId, name: p.name };
+  });
   // The renderer never sees the LEGO token; it asks main to call the API.
   ipcMain.handle('lego', async (_e, method: string, path: string, body?: unknown) => {
     if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(method) || typeof path !== 'string' || !path.startsWith('/api/') || path.includes('..')) throw new Error('invalid request');
