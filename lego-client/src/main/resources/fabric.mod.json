@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "legoclient",
+  "version": "${version}",
+  "name": "LEGO Client",
+  "description": "LEGO Launcher client for Minecraft 1.21.11: HUD, visuals, performance tools, 3D cosmetics, pets, vehicles, emotes, mini games, Spotify HUD and LEGO account integration.",
+  "authors": ["Ar Zero"],
+  "license": "MIT",
+  "icon": "assets/legoclient/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["dev.lego.LegoClient"]
+  },
+  "mixins": ["legoclient.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

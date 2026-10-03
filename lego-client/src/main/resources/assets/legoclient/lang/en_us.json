@@ -1,0 +1,11 @@
+{
+  "key.category.legoclient.main": "Lego Client",
+  "key.legoclient.gui": "Open menu",
+  "key.legoclient.zoom": "Zoom",
+  "key.legoclient.emotes": "Emote wheel (hold)",
+  "key.legoclient.invsee": "InvSee (look at player)",
+  "key.legoclient.ecsee": "EcSee (look at player)",
+  "key.legoclient.waypoint": "Set waypoint",
+  "key.legoclient.hud": "HUD editor",
+  "key.legoclient.tv": "TV (browser)"
+}
