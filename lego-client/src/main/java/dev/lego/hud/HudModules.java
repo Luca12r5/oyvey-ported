@@ -42,6 +42,7 @@ public final class HudModules {
       Modules.register(new HudModules.GameTime());
       Modules.register(new HudModules.Session());
       Modules.register(new HudModules.Speed());
+      Modules.register(new Speedometer());
       Modules.register(new HudModules.Memory());
       Modules.register(new HudModules.Server());
       Modules.register(new HudModules.Armor());
