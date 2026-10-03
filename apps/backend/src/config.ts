@@ -19,6 +19,8 @@ export interface Config {
   stripeWebhookSecret: string | null;
   websiteDir: string;
   maintenance: boolean;
+  /** Published LEGO client build the launcher installs (all optional). */
+  clientRelease: { version: string; url: string; filename: string; sha512: string | null; sha256: string | null } | null;
 }
 
 function bool(v: string | undefined, def: boolean): boolean {
@@ -40,5 +42,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET || null,
     websiteDir: env.LEGO_WEBSITE_DIR ?? join(root, 'website', 'public'),
     maintenance: bool(env.LEGO_MAINTENANCE, false),
+    clientRelease: env.LEGO_CLIENT_URL
+      ? {
+          version: env.LEGO_CLIENT_VERSION ?? 'unknown',
+          url: env.LEGO_CLIENT_URL,
+          filename: env.LEGO_CLIENT_FILENAME ?? env.LEGO_CLIENT_URL.split('/').pop() ?? 'legoclient.jar',
+          sha512: env.LEGO_CLIENT_SHA512 || null,
+          sha256: env.LEGO_CLIENT_SHA256 || null,
+        }
+      : null,
   };
 }

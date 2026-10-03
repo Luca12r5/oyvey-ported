@@ -1,0 +1,65 @@
+name: LEGO Launcher (Windows)
+
+on:
+  push:
+    paths:
+      - 'apps/launcher/**'
+      - 'packages/shared/**'
+      - '.github/workflows/launcher.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck -w apps/launcher
+      - run: npm test -w apps/launcher
+      - name: Electron UI test
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb > /dev/null
+          npm run build -w apps/launcher
+          cd apps/launcher && xvfb-run -a node --disable-warning=ExperimentalWarning test/ui.e2e.mjs
+
+  windows:
+    needs: test
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Build installer
+        env:
+          LEGO_MS_CLIENT_ID: ${{ secrets.LEGO_MS_CLIENT_ID }}
+          LEGO_BACKEND_URL: ${{ vars.LEGO_BACKEND_URL }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          # Without a certificate electron-builder must not try to sign.
+          if [ -z "$CSC_LINK" ]; then export CSC_IDENTITY_AUTO_DISCOVERY=false; unset CSC_LINK CSC_KEY_PASSWORD; fi
+          npm run dist:win -w apps/launcher
+      - name: Checksums
+        shell: pwsh
+        run: Get-ChildItem apps/launcher/release/*.exe | Get-FileHash -Algorithm SHA256 | Format-List
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lego-launcher-windows
+          path: |
+            apps/launcher/release/*.exe
+            apps/launcher/release/*.blockmap
+            apps/launcher/release/latest.yml
+          if-no-files-found: error
+          retention-days: 30

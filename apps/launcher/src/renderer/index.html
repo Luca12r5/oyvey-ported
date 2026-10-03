@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://textures.minecraft.net https://crafatar.com; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>LEGO Launcher</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <div class="titlebar">
+    <div class="tb-left"><span class="logo" aria-hidden="true"></span><span class="tb-title">LEGO LAUNCHER</span><span class="tb-sub" id="tbVersion"></span></div>
+    <div class="tb-right">
+      <button class="tb-chip" id="tbAccount" type="button">Anmelden</button>
+      <button class="tb-btn" data-win="minimize" aria-label="Minimieren">—</button>
+      <button class="tb-btn" data-win="maximize" aria-label="Maximieren">▢</button>
+      <button class="tb-btn close" data-win="close" aria-label="Schließen">✕</button>
+    </div>
+  </div>
+  <div class="shell">
+    <nav class="sidebar" id="sidebar" aria-label="Navigation"></nav>
+    <main class="content" id="view" tabindex="-1"></main>
+  </div>
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <dialog id="dialog" class="dialog"></dialog>
+</body>
+</html>

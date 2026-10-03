@@ -188,9 +188,9 @@ test('stripe webhook: signature required, fulfilment exactly once', async (t) =>
   assert.equal((await post(stripeSignature(body, secret, Math.floor(Date.now() / 1000) - 3600))).status, 400, 'old timestamps are rejected');
   const ok = await post(stripeSignature(body, secret));
   assert.equal(ok.status, 200);
-  assert.equal((await ok.json()).granted, true);
+  assert.equal(((await ok.json()) as { granted: boolean }).granted, true);
   const dup = await post(stripeSignature(body, secret));
-  assert.equal((await dup.json()).granted, false);
+  assert.equal(((await dup.json()) as { granted: boolean }).granted, false);
   assert.equal((await c.call('GET', '/api/me')).body.credits, 1100);
 
   // Subscription grants tier + period credits.

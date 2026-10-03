@@ -1,0 +1,38 @@
+# Windows installer + updater metadata for the LEGO Launcher.
+# Build: npm run dist:win -w apps/launcher  (CI: .github/workflows/launcher.yml)
+appId: dev.lego.launcher
+productName: LEGO Launcher
+copyright: LEGO Launcher contributors
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**/*
+  - package.json
+  - "!dist/**/*.map"
+asar: true
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  # Set CSC_LINK / CSC_KEY_PASSWORD (code signing certificate) in CI to sign
+  # the EXE and installer. Unsigned builds work but trigger SmartScreen.
+  signtoolOptions:
+    publisherName: LEGO Launcher contributors
+  artifactName: LEGO-Launcher-Setup-${version}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  allowElevation: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: LEGO Launcher
+  # Keep user data (settings, worlds) on uninstall unless the user removes it.
+  deleteAppDataOnUninstall: false
+  differentialPackage: true
+publish:
+  provider: github
+  owner: Luca12r5
+  repo: oyvey-ported
+  releaseType: release

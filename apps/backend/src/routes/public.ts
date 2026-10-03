@@ -21,6 +21,13 @@ export function registerPublic(app: App): void {
     paymentsEnabled: !!(app.config.stripeSecretKey && app.config.stripeWebhookSecret),
   }), { auth: 'none' });
 
+  // The launcher installs exactly this file and verifies its hash.
+  r.get('/api/public/client-release', () => {
+    const c = app.config.clientRelease;
+    if (!c || !c.url.startsWith('https://') || (!c.sha512 && !c.sha256)) return null;
+    return c;
+  }, { auth: 'none' });
+
   r.get('/api/public/catalog', () => ({ rarities: RARITY_INFO, items: CATALOG, nameTags: NAME_TAGS }), { auth: 'none' });
   r.get('/api/public/themes', () => ({ themes: THEMES }), { auth: 'none' });
   r.get('/api/public/progression', () => ({ quests: QUESTS, seasons: SEASONS, products: PRODUCTS, dailyRewards: DAILY_REWARDS }), { auth: 'none' });
