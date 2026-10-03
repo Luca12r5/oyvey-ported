@@ -1,4 +1,5 @@
 import { api, avatar, confirmDialog, errorToast, fmtDate, fmtNum, html, mount, state, toast, tagPreview, loadCatalog, slotIcon } from '../core.js';
+import { pixel } from '../icons.js';
 import { applyTheme, navigate, refreshSession } from '../app.js';
 
 export async function login(el) {
@@ -98,7 +99,7 @@ export async function profile(el, name) {
     ${p.bio ? html`<p class="card spaced">${p.bio}</p>` : ''}
     <h2 class="spaced">Ausgerüstet</h2>
     ${equipped.length ? html`<div class="grid cols-4">${equipped.map(({ slot, item }) => html`<div class="item" data-c="${catalog.rarities[item.rarity].color}"><div class="thumb">${slotIcon(slot)}</div><div class="name">${item.name}</div><div class="muted small">${slot}</div></div>`)}</div>` : html`<div class="empty">Nichts ausgerüstet.</div>`}
-    ${p.achievements ? html`<h2 class="spaced">Erfolge</h2><div class="grid cols-4">${p.achievements.map((a) => html`<div class="card ${a.unlocked ? '' : 'muted'}"><b>${a.unlocked ? '🏆' : '🔒'} ${a.name}</b><div class="progress spaced"><span data-p="${(a.progress / a.target) * 100}"></span></div><div class="small muted">${a.progress} / ${a.target}</div></div>`)}</div>` : ''}
+    ${p.achievements ? html`<h2 class="spaced">Erfolge</h2><div class="grid cols-4">${p.achievements.map((a) => html`<div class="card ${a.unlocked ? '' : 'muted'}"><b>${pixel(a.unlocked ? 'trophy' : 'lock', 'xs')} ${a.name}</b><div class="progress spaced"><span data-p="${(a.progress / a.target) * 100}"></span></div><div class="small muted">${a.progress} / ${a.target}</div></div>`)}</div>` : ''}
     <p class="muted small spaced">Dabei seit ${fmtDate(p.createdAt)}${p.friendCount !== null ? ` · ${p.friendCount} Freunde` : ''}</p>`);
   el.querySelector('#addFriend')?.addEventListener('click', async () => {
     try { const r = await api('POST', '/api/friends/requests', { player: p.name }); toast(r.status === 'friends' ? 'Ihr seid jetzt befreundet' : 'Anfrage gesendet', 'ok'); } catch (e) { errorToast(e); }

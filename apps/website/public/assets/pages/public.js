@@ -1,4 +1,5 @@
 import { api, fmtDate, html, mount, raw, state } from '../core.js';
+import { pixel } from '../icons.js';
 
 const RELEASES = 'https://github.com/Luca12r5/oyvey-ported/releases/latest';
 
@@ -8,12 +9,12 @@ export async function home(el) {
   mount(el, html`
     <section class="hero">
       <div>
-        <span class="badge">Minecraft 1.21.11 · Fabric</span>
+        <span class="badge">Minecraft 1.8 bis neueste · Fabric · Quilt · Forge · NeoForge</span>
         <h1>Dein Minecraft. Dein Launcher.</h1>
         <p class="lead">LEGO Launcher startet Minecraft mit dem LEGO Client: HUD, Performance-Werkzeuge, ${cosmetics} 3D-Cosmetics, Pets, Fahrzeuge, Emotes, Minispiele, Freunde und ein eigenes Konto mit Coins und Battle Pass.</p>
         <div class="row"><a class="btn primary" href="/download" data-link>Herunterladen</a><a class="btn" href="/features" data-link>Was ist drin?</a></div>
       </div>
-      <div class="art" aria-hidden="true"><div class="gridfx"></div><div class="orb"></div></div>
+      <figure class="art"><div class="glow" aria-hidden="true"></div><img src="/assets/shot-play.webp" alt="Startbildschirm des LEGO Launchers" width="1280" height="800"></figure>
     </section>
     <section class="grid cols-4">
       <div class="card"><div class="kpi">${catalog.items.length}</div><div class="muted">Cosmetics &amp; Name Tags</div></div>
@@ -27,20 +28,20 @@ export async function home(el) {
 }
 
 const FEATURES = [
-  ['🚀', 'Eigener Launcher', 'Microsoft-Anmeldung über den offiziellen Login, Versions- und Profilverwaltung, Fabric-Installation, Logs und Absturzberichte.'],
-  ['⚡', 'Performance', 'Entity-Culling, Partikel-Limit, Hintergrund-FPS, Leistungsmonitor. Messbar, ohne Registry-Tweaks oder Systemeingriffe.'],
-  ['🧩', 'Module & HUD', 'Rund 85 Client-Module mit Einstellungen, Tastenbelegung und HUD-Editor – nur faire Funktionen, keine Cheats.'],
-  ['🧣', 'Cosmetics', '211 eigene 3D-Cosmetics (Capes, Flügel, Hüte, Rucksäcke, Auren, Pets, Fahrzeuge) plus 100 Name-Tag-Stile.'],
-  ['👥', 'Freunde & Chat', 'Freundschaftsanfragen, Online-Status mit Datenschutz, private Nachrichten, Partys mit Party-Chat.'],
-  ['🎮', 'Minispiele', 'Tetris, Snake, 2048, Asteroids, Sudoku, Solar Smash und mehr direkt im Client.'],
-  ['🏆', 'Battle Pass & Quests', 'Tägliche Belohnungen, tägliche und wöchentliche Quests, kostenlose und Premium-Stufen.'],
-  ['🛡️', 'Sicher', 'Dein Minecraft-Token verlässt nie deinen PC: Die Anmeldung beim LEGO-Server nutzt dasselbe Verfahren wie Minecraft-Server.'],
+  ['rocket', 'Eigener Launcher', 'Microsoft-Anmeldung über den offiziellen Login, Versions- und Profilverwaltung, Fabric-Installation, Logs und Absturzberichte.'],
+  ['flame', 'Performance', 'Entity-Culling, Partikel-Limit, Hintergrund-FPS, Leistungsmonitor. Messbar, ohne Registry-Tweaks oder Systemeingriffe.'],
+  ['package', 'Module & HUD', 'Rund 85 Client-Module mit Einstellungen, Tastenbelegung und HUD-Editor – nur faire Funktionen, keine Cheats.'],
+  ['cape', 'Cosmetics', '211 eigene 3D-Cosmetics (Capes, Flügel, Hüte, Rucksäcke, Auren, Pets, Fahrzeuge) plus 100 Name-Tag-Stile.'],
+  ['heart', 'Freunde & Chat', 'Freundschaftsanfragen, Online-Status mit Datenschutz, private Nachrichten, Partys mit Party-Chat.'],
+  ['creeper', 'Minispiele', 'Tetris, Snake, 2048, Asteroids, Sudoku, Solar Smash und mehr direkt im Client.'],
+  ['trophy', 'Battle Pass & Quests', 'Tägliche Belohnungen, tägliche und wöchentliche Quests, kostenlose und Premium-Stufen.'],
+  ['lock', 'Sicher', 'Dein Minecraft-Token verlässt nie deinen PC: Die Anmeldung beim LEGO-Server nutzt dasselbe Verfahren wie Minecraft-Server.'],
 ];
 
 export async function features(el) {
   mount(el, html`<h1>Features</h1>
     <p class="muted">Was heute funktioniert. Geplante Funktionen stehen in der Roadmap im Repository.</p>
-    <div class="grid cols-3">${FEATURES.map(([i, t, d]) => html`<div class="card"><div class="feature-icon">${i}</div><h3>${t}</h3><p class="muted">${d}</p></div>`)}</div>`);
+    <div class="grid cols-3">${FEATURES.map(([i, t, d]) => html`<div class="card"><div class="feature-icon">${pixel(i, 'md')}</div><h3>${t}</h3><p class="muted">${d}</p></div>`)}</div>`);
 }
 
 export async function download(el) {

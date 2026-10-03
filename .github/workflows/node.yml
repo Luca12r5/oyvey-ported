@@ -28,6 +28,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - name: Website icons in sync with the launcher
+        run: node apps/website/tools/sync-icons.mjs --check
       - name: Website end-to-end (Chromium)
         run: |
           npx playwright-core install chromium

@@ -120,7 +120,7 @@ document.getElementById('menuToggle').addEventListener('click', (e) => {
 (async () => {
   let theme = null;
   try { theme = localStorage.getItem(THEME_KEY); } catch { /* ignore */ }
-  await Promise.all([applyTheme(theme ?? 'nightfall'), refreshSession()]);
+  await Promise.all([applyTheme(theme ?? 'lego-graphite'), refreshSession()]);
   await render();
   if (state.user) connectEvents();
 })();
@@ -132,7 +132,7 @@ function connectEvents() {
     toast(`Neue Nachricht von ${m.fromName}`);
   });
   es.addEventListener('friend_request', (e) => toast(`Freundschaftsanfrage von ${JSON.parse(e.data).from.name}`));
-  es.addEventListener('gift', (e) => toast(`🎁 Geschenk von ${JSON.parse(e.data).from.name}!`, 'ok'));
+  es.addEventListener('gift', (e) => toast(`Geschenk von ${JSON.parse(e.data).from.name}!`, 'ok'));
   es.addEventListener('credits', (e) => toast(`Coins aktualisiert: ${JSON.parse(e.data).balance}`, 'ok'));
   es.addEventListener('feedback_update', () => toast('Dein Feedback wurde aktualisiert'));
   es.onerror = () => { /* EventSource reconnects automatically */ };

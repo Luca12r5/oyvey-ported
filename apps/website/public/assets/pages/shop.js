@@ -1,4 +1,5 @@
 import { api, confirmDialog, errorToast, fmtDate, fmtNum, html, idemKey, loadCatalog, mount, rarityBadge, slotIcon, state, tagPreview, toast } from '../core.js';
+import { icon, pixel } from '../icons.js';
 
 const SLOTS = [['', 'Alle'], ['cape', 'Capes'], ['wings', 'Flügel'], ['hat', 'Hüte'], ['face', 'Gesicht'], ['back', 'Rücken'], ['aura', 'Auren'], ['pet', 'Pets'], ['vehicle', 'Fahrzeuge'], ['nametag', 'Name Tags']];
 const UNLOCK = { default: 'Kostenlos', shop: 'Shop', battlepass: 'Battle Pass', achievement: 'Erfolg', event: 'Event', staff: 'Team' };
@@ -18,7 +19,7 @@ function itemCard(item, catalog, inv, mode) {
     <div class="row between"><span class="name">${item.name}</span>${rarityBadge(item.rarity)}</div>
     <div class="small muted">${UNLOCK[item.unlock] ?? item.unlock}${item.seasonal ? ' · Saisonal' : ''}${item.price ? ` · ${fmtNum(item.price)} Coins` : ''}</div>
     ${state.user ? html`<div class="row">
-      ${owned ? html`<span class="owned">✔ Im Besitz</span><span class="spacer"></span><button class="btn small ${equipped ? '' : 'primary'}" data-equip="${item.id}" data-slot="${item.slot}" data-on="${equipped ? '0' : '1'}">${equipped ? 'Ablegen' : 'Ausrüsten'}</button>`
+      ${owned ? html`<span class="owned">${icon('check', 'xs')} Im Besitz</span><span class="spacer"></span><button class="btn small ${equipped ? '' : 'primary'}" data-equip="${item.id}" data-slot="${item.slot}" data-on="${equipped ? '0' : '1'}">${equipped ? 'Ablegen' : 'Ausrüsten'}</button>`
         : mode === 'shop' && item.unlock === 'shop' ? html`<button class="btn small primary" data-buy="${item.id}">Kaufen</button><button class="btn small" data-gift="${item.id}">Verschenken</button>` : ''}
     </div>` : ''}
   </div>`;
@@ -30,7 +31,7 @@ async function browser(el, mode) {
   const title = mode === 'shop' ? 'Shop' : 'Cosmetics';
   let balance = null;
   if (state.user) balance = (await api('GET', '/api/me')).credits;
-  mount(el, html`<div class="row between"><h1>${title}</h1>${balance !== null ? html`<span class="badge">💰 ${fmtNum(balance)} Coins</span>` : ''}</div>
+  mount(el, html`<div class="row between"><h1>${title}</h1>${balance !== null ? html`<span class="badge">${pixel('coin', 'xs')} ${fmtNum(balance)} Coins</span>` : ''}</div>
     ${mode === 'shop' ? html`<p class="muted">Gegenstände werden mit LEGO Coins gekauft. Coins gibt es über tägliche Belohnungen, Quests, den Battle Pass – oder als Paket. Keine Lootboxen, keine Zufallsbelohnungen: du siehst immer genau, was du bekommst.</p>` : html`<p class="muted">Sammlung: ${inv.owned.length} / ${catalog.items.length} freigeschaltet.</p><div class="progress"><span data-p="${(inv.owned.length / catalog.items.length) * 100}"></span></div>`}
     <div class="card row spaced">
       <input id="q" placeholder="Suchen…" aria-label="Suche">
@@ -114,14 +115,14 @@ export async function battlePass(el) {
   if (state.user) mine = (await api('GET', '/api/progress')).pass;
   const season = mine?.season ?? pub.seasons[0];
   const level = mine?.level ?? 0;
-  const reward = (r) => !r ? html`<span class="muted">–</span>` : r.credits ? html`💰 ${r.credits}` : html`${slotIcon(catalog.items.find((i) => i.id === r.item)?.slot)} ${catalog.items.find((i) => i.id === r.item)?.name ?? r.item}`;
+  const reward = (r) => !r ? html`<span class="muted">–</span>` : r.credits ? html`${pixel('coin', 'xs')} ${r.credits}` : html`${slotIcon(catalog.items.find((i) => i.id === r.item)?.slot, 'sm')} ${catalog.items.find((i) => i.id === r.item)?.name ?? r.item}`;
   mount(el, html`<h1>${season.name}</h1>
     <p class="muted">Bis ${season.endsAt} · ${season.xpPerTier} XP pro Stufe. XP gibt es für Quests.${mine ? ` Du bist auf Stufe ${level} (${fmtNum(mine.xp)} XP)${mine.premium ? ' mit Premium.' : '.'}` : ''}</p>
     ${mine ? html`<div class="progress"><span data-p="${((mine.xp % season.xpPerTier) / season.xpPerTier) * 100}"></span></div>` : ''}
     <div class="card table-wrap spaced"><table><thead><tr><th>Stufe</th><th>Kostenlos</th><th>Premium</th></tr></thead><tbody>
       ${season.tiers.map((t) => {
         const can = (track) => mine && level >= t.tier && (track === 'free' || mine.premium) && !mine.claimed.includes(`${t.tier}:${track}`);
-        const cell = (r, track) => html`<td>${reward(r)} ${r && mine?.claimed.includes(`${t.tier}:${track}`) ? html`<span class="owned">✔</span>` : r && can(track) ? html`<button class="btn small primary" data-tier="${t.tier}" data-track="${track}">Abholen</button>` : ''}</td>`;
+        const cell = (r, track) => html`<td>${reward(r)} ${r && mine?.claimed.includes(`${t.tier}:${track}`) ? html`<span class="owned">${icon('check', 'sm')}</span>` : r && can(track) ? html`<button class="btn small primary" data-tier="${t.tier}" data-track="${track}">Abholen</button>` : ''}</td>`;
         return html`<tr class="${level >= t.tier ? '' : 'muted'}"><td>${t.tier}</td>${cell(t.free, 'free')}${cell(t.premium, 'premium')}</tr>`;
       })}
     </tbody></table></div>`);
@@ -144,7 +145,7 @@ export async function rewards(el) {
     <h2 class="spaced">Quests</h2>
     <div class="grid cols-3">${p.quests.map((q) => html`<div class="card stack"><div class="row between"><b>${q.title.de}</b><span class="badge">${q.period === 'daily' ? 'Täglich' : 'Wöchentlich'}</span></div>
       <div class="progress"><span data-p="${(q.progress / q.target) * 100}"></span></div><div class="small muted">${q.progress} / ${q.target} · ${q.credits} Coins · ${q.xp} XP</div>
-      ${q.claimed ? html`<span class="owned">✔ Abgeholt</span>` : html`<button class="btn small ${q.complete ? 'primary' : ''}" data-quest="${q.id}" ${q.complete ? '' : 'disabled'}>Abholen</button>`}</div>`)}</div>
+      ${q.claimed ? html`<span class="owned">${icon('check', 'xs')} Abgeholt</span>` : html`<button class="btn small ${q.complete ? 'primary' : ''}" data-quest="${q.id}" ${q.complete ? '' : 'disabled'}>Abholen</button>`}</div>`)}</div>
     <h2 class="spaced">Coins-Verlauf</h2>
     <div class="card table-wrap"><table><thead><tr><th>Datum</th><th>Änderung</th><th>Stand</th><th>Grund</th></tr></thead><tbody>
       ${credits.history.map((h) => html`<tr><td>${fmtDate(h.created_at)}</td><td class="${h.delta > 0 ? 'pos' : 'neg'}">${h.delta > 0 ? '+' : ''}${fmtNum(h.delta)}</td><td>${fmtNum(h.balance_after)}</td><td>${h.reason}</td></tr>`)}

@@ -1,4 +1,5 @@
 import { api, errorToast, fmtDate, hasPerm, html, mount, state, toast } from '../core.js';
+import { icon } from '../icons.js';
 import { navigate } from '../app.js';
 
 const KINDS = { bug: 'Fehler', suggestion: 'Vorschlag', minigame: 'Minispiel-Idee', cosmetic: 'Cosmetic-Idee', theme: 'Design-Idee', performance: 'Performance', support: 'Support' };
@@ -69,7 +70,7 @@ export async function detail(el, id) {
   mount(el, html`<a class="btn small" href="/feedback" data-link>← Übersicht</a>
     <div class="card stack spaced"><div class="row"><span class="badge">${KINDS[f.kind]}</span><span class="badge c" data-c="${STATUS_COLOR[f.status]}">${STATUS[f.status]}</span><span class="spacer"></span><button class="btn small" id="vote">▲ ${f.votes}</button></div>
       <h1>${f.title}</h1><div class="small muted">${f.author} · ${fmtDate(f.created_at)}</div><p class="prewrap">${f.body}</p>
-      ${d.attachments.length ? html`<div class="row">${d.attachments.map((a) => html`<a class="btn small" href="/api/feedback/attachments/${a.id}">📎 ${a.filename} (${Math.ceil(a.size / 1024)} KB)</a>`)}</div>` : ''}
+      ${d.attachments.length ? html`<div class="row">${d.attachments.map((a) => html`<a class="btn small" href="/api/feedback/attachments/${a.id}">${icon('upload', 'xs')} ${a.filename} (${Math.ceil(a.size / 1024)} KB)</a>`)}</div>` : ''}
       ${staff ? html`<div class="row"><label for="st">Status</label><select id="st">${Object.entries(STATUS).map(([k, v]) => html`<option value="${k}" ${k === f.status ? 'selected' : ''}>${v}</option>`)}</select></div>` : ''}
     </div>
     <h2 class="spaced">Kommentare</h2>

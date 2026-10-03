@@ -1,6 +1,7 @@
 // Shared helpers for the website: API client, escaping, toasts, dialogs.
 // All dynamic text goes through esc(); colours are applied via CSSOM (allowed
 // by the strict CSP) instead of inline style attributes.
+import { pixel } from './icons.js';
 
 export const state = { user: null, csrf: null, catalog: null, themes: null };
 
@@ -118,8 +119,9 @@ export function rarityBadge(rarity) {
   return html`<span class="badge c" data-c="${info?.color ?? '#888'}">${info?.label?.de ?? rarity}</span>`;
 }
 
-const SLOT_ICONS = { cape: '🧣', wings: '🪽', hat: '🎩', face: '🕶️', back: '🎒', aura: '✨', pet: '🐾', vehicle: '🚗', nametag: '🏷️' };
-export const slotIcon = (s) => SLOT_ICONS[s] ?? '⬜';
+const SLOT_ICONS = { cape: 'cape', wings: 'wings', hat: 'hat', face: 'glasses', back: 'backpack', aura: 'sparkle', pet: 'paw', vehicle: 'car', nametag: 'tag' };
+/** Pixel-art icon for a cosmetic slot (same icon set as the launcher). */
+export const slotIcon = (s, size = 'lg') => pixel(SLOT_ICONS[s] ?? 'package', size);
 
 /** Name tag preview: per-character colours like the in-game renderer. */
 export function tagPreview(style, text) {
