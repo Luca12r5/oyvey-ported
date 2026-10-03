@@ -136,13 +136,14 @@ public final class EmoteWheelView extends View {
       for (int var19 = 0; var19 < var7; var19++) {
          float var20 = Ease.to("wheel:h" + var19, var19 == this.sel ? 1.0F : 0.0F, 16.0F);
          if (!(var20 < 0.01F)) {
+            final int slotIndex = var19;
             Gx.Img var22 = Gx.painted(
                "wheel:w" + var14 + ":" + var19 + ":" + var32,
                var32,
                var32,
                var6x -> {
                   double var7x = var32 / 2.0;
-                  double var9x = 90.0 - 360.0 * (var19 - 0.5) / var14;
+                  double var9x = 90.0 - 360.0 * (slotIndex - 0.5) / var14;
                   Area var11 = new Area(
                      new java.awt.geom.Arc2D.Double(
                         var7x - var2 - var13 * 0.4,
