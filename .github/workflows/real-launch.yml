@@ -1,0 +1,79 @@
+name: Real game start
+
+# Installs and really starts Minecraft with the launcher core on a Linux runner
+# (software OpenGL under xvfb) and waits for the title screen. Covers old and
+# new versions, every mod loader and the LEGO client built from this commit.
+
+on:
+  push:
+    paths:
+      - 'apps/launcher/src/core/**'
+      - 'apps/launcher/test/real-launch.ts'
+      - 'lego-client/**'
+      - '.github/workflows/real-launch.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x gradlew && ./gradlew -p lego-client build -x test --no-daemon
+      - name: Pick mod jar
+        run: |
+          jar=$(ls lego-client/build/libs/legoclient-*.jar | grep -v -- '-sources' | head -1)
+          cp "$jar" legoclient.jar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: legoclient-jar
+          path: legoclient.jar
+          retention-days: 7
+
+  launch:
+    needs: client
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 1.21.11 Fabric + LEGO Client + FPS pack
+            args: --version 1.21.11 --loader fabric --lego legoclient.jar --fps
+          - name: latest release (vanilla)
+            args: --version latest
+          - name: 1.8.9 (vanilla)
+            args: --version 1.8.9
+          - name: 1.12.2 (vanilla)
+            args: --version 1.12.2
+          - name: 1.16.5 Fabric
+            args: --version 1.16.5 --loader fabric
+          - name: 1.20.1 Forge
+            args: --version 1.20.1 --loader forge
+          - name: 1.21.1 NeoForge
+            args: --version 1.21.1 --loader neoforge
+          - name: 1.21.1 Quilt
+            args: --version 1.21.1 --loader quilt
+    name: ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: legoclient-jar
+          path: apps/launcher
+      - name: Display libraries
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 x11-xserver-utils libxxf86vm1 libxrandr2 libxcursor1 libxi6 libxtst6 > /dev/null
+      - name: Install and start Minecraft
+        working-directory: apps/launcher
+        run: xvfb-run -a -s "-screen 0 1280x800x24" node --disable-warning=ExperimentalWarning test/real-launch.ts ${{ matrix.args }}
