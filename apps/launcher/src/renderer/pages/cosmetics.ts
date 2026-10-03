@@ -1,3 +1,4 @@
+import { pixel } from '../icons.ts';
 import { CATALOG, NAME_TAGS, RARITY_INFO, tagCharColor, type CatalogItem, type NameTagStyle, type Rarity } from '@lego/shared';
 import { state } from '../app.ts';
 import { confirm, errorToast, fmtNum, html, idem, lego, mount, slotIcon, toast, type Raw } from '../ui.ts';
@@ -29,14 +30,14 @@ function card(i: CatalogItem, inv: Inv, mode: 'collection' | 'shop'): Raw {
     <div class="small muted">${UNLOCK[i.unlock] ?? i.unlock}${i.price ? ` · ${fmtNum(i.price)} Coins` : ''}${i.seasonal ? ' · Saisonal' : ''}</div>
     <div class="row">${owned
       ? html`<button class="btn sm ${equipped ? '' : 'primary'}" data-equip="${i.id}" data-slot="${i.slot}" data-on="${equipped ? '0' : '1'}">${equipped ? 'Ablegen' : 'Ausrüsten'}</button>`
-      : mode === 'shop' && i.unlock === 'shop' ? html`<button class="btn sm primary" data-buy="${i.id}">Kaufen</button>` : html`<span class="small muted">🔒 ${UNLOCK[i.unlock]}</span>`}</div>
+      : mode === 'shop' && i.unlock === 'shop' ? html`<button class="btn sm primary" data-buy="${i.id}">Kaufen</button>` : html`<span class="small muted">${pixel('lock', 'xs')} ${UNLOCK[i.unlock]}</span>`}</div>
   </div>`;
 }
 
 async function browser(el: HTMLElement, mode: 'collection' | 'shop'): Promise<void> {
   const [inv, me] = await Promise.all([lego<Inv>('GET', '/api/inventory'), lego<{ credits: number }>('GET', '/api/me')]);
   const f = { slot: '', rarity: '', q: '', owned: false };
-  mount(el, html`<div class="row between"><h1>${mode === 'shop' ? 'Shop' : 'Cosmetics'}</h1><span class="badge">💰 <span id="bal">${fmtNum(me.credits)}</span> Coins</span></div>
+  mount(el, html`<div class="row between"><h1>${mode === 'shop' ? 'Shop' : 'Cosmetics'}</h1><span class="badge">${pixel('coin', 'xs')} <span id="bal">${fmtNum(me.credits)}</span> Coins</span></div>
     ${mode === 'collection'
       ? html`<p class="muted">Sammlung ${inv.owned.length} / ${CATALOG.length}. Ausgerüstete Cosmetics sehen andere Spieler mit LEGO Client auf jedem Server und in jedem Spielmodus, solange beide mit dem LEGO-Server verbunden sind. Spieler mit anderen Clients (Vanilla, NoRisk, Lunar …) sehen sie nicht.</p><div class="progress"><i data-p="${(inv.owned.length / CATALOG.length) * 100}"></i></div>`
       : html`<p class="muted">Feste Preise, keine Lootboxen. Gekauft wird mit LEGO Coins.</p>`}

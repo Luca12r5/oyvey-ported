@@ -8,7 +8,7 @@ export function allThemes(custom: unknown[]): Theme[] {
 }
 
 export function findTheme(id: string, custom: unknown[]): Theme {
-  return allThemes(custom).find((t) => t.id === id) ?? getTheme('nightfall')!;
+  return allThemes(custom).find((t) => t.id === id) ?? getTheme('lego-graphite') ?? getTheme('nightfall')!;
 }
 
 export function applyTheme(t: Theme, opts: { reducedMotion: boolean; uiScale: number }): void {

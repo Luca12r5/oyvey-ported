@@ -3,7 +3,7 @@
   "productName": "LEGO Launcher",
   "version": "0.1.0",
   "private": true,
-  "description": "LEGO Launcher \u2013 Minecraft launcher for the LEGO client",
+  "description": "LEGO Launcher – Minecraft launcher for the LEGO client",
   "author": "LEGO Launcher contributors",
   "license": "MIT",
   "main": "dist/main.cjs",
@@ -19,13 +19,15 @@
     "electron-updater": "^6.6.2"
   },
   "devDependencies": {
+    "@fontsource/inter": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@fontsource/nunito": "^5.3.0",
     "@fontsource/silkscreen": "^5.3.0",
     "@lego/shared": "*",
     "electron": "38.8.6",
     "electron-builder": "^26.0.12",
-    "esbuild": "^0.25.10"
+    "esbuild": "^0.25.10",
+    "skinview3d": "^3.4.2"
   },
   "type": "module"
 }

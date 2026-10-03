@@ -65,7 +65,9 @@ test('loader availability and version lists', async () => {
   assert.equal(loaderSupports('fabric', '1.8.9'), false);
   assert.equal(loaderSupports('fabric', '1.14.4'), true);
   assert.equal(loaderSupports('forge', '1.12.2'), false, 'pre-1.13 Forge uses a different installer format');
-  assert.equal(loaderSupports('neoforge', '1.20.1'), true);
+  assert.equal(loaderSupports('neoforge', '1.20.1'), false);
+  assert.equal(loaderSupports('neoforge', '1.20.4'), true);
+  assert.equal(loaderSupports('fabric', '25w14a'), true);
   assert.equal(loaderSupports('neoforge', '1.19.4'), false);
   const f = fakeFetch({
     'https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.json': { '1.20.1': ['1.20.1-47.0.0', '1.20.1-47.2.0'] },

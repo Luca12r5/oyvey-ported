@@ -3,6 +3,20 @@
 export const LOADER_TYPES = ['fabric', 'quilt', 'forge', 'neoforge'] as const;
 export type LoaderType = (typeof LOADER_TYPES)[number];
 
+/** Whether the loader exists for this game version at all (cheap check, no network). */
+export function loaderSupports(type: LoaderType, gameVersion: string): boolean {
+  const m = /^1\.(\d+)(?:\.(\d+))?/.exec(gameVersion);
+  const minor = m ? Number(m[1]) : 99;
+  const patch = m?.[2] ? Number(m[2]) : 0;
+  // Snapshots like "25w14a" are newer than every 1.x release.
+  if (!m && !/^\d\dw\d\d[a-z]$/.test(gameVersion)) return false;
+  if (type === 'fabric' || type === 'quilt') return minor >= 14;
+  if (type === 'forge') return minor >= 13;
+  // NeoForge publishes its own artifact from 1.20.2 on.
+  if (type === 'neoforge') return minor > 20 || (minor === 20 && patch >= 2);
+  return false;
+}
+
 export interface GameProfile {
   id: string;
   name: string;

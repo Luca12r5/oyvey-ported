@@ -31,15 +31,7 @@ function cmpVersion(a: string, b: string): number {
   return 0;
 }
 
-/** Whether the loader exists for this game version at all (cheap check, no network). */
-export function loaderSupports(type: LoaderType, gameVersion: string): boolean {
-  const m = /^1\.(\d+)/.exec(gameVersion);
-  const minor = m ? Number(m[1]) : 99;
-  if (type === 'fabric' || type === 'quilt') return minor >= 14 || !m;
-  if (type === 'forge') return minor >= 13 || !m;
-  if (type === 'neoforge') return minor >= 20 || !m;
-  return false;
-}
+export { loaderSupports } from './settings.ts';
 
 export async function loaderVersions(f: FetchLike, type: LoaderType, gameVersion: string): Promise<LoaderVersion[]> {
   if (type === 'fabric') {

@@ -2,6 +2,7 @@
 // website: no inline styles (CSP), colours applied through CSSOM.
 
 import type { LauncherApi } from '../ipc-types.ts';
+import { pixel } from './icons.ts';
 
 declare global {
   interface Window { lego: LauncherApi }
@@ -77,8 +78,9 @@ export const fmtDate = (ms: number | null | undefined) => (ms ? new Date(ms).toL
 export const fmtNum = (n: number | null | undefined) => Number(n ?? 0).toLocaleString('de-DE');
 export const idem = () => crypto.randomUUID();
 
-const SLOT_ICONS: Record<string, string> = { cape: '🧣', wings: '🪽', hat: '🎩', face: '🕶️', back: '🎒', aura: '✨', pet: '🐾', vehicle: '🚗', nametag: '🏷️' };
-export const slotIcon = (s: string) => SLOT_ICONS[s] ?? '⬜';
+const SLOT_ICONS: Record<string, string> = { cape: 'cape', wings: 'wings', hat: 'hat', face: 'glasses', back: 'backpack', aura: 'sparkle', pet: 'paw', vehicle: 'car', nametag: 'tag' };
+/** Pixel-art icon for a cosmetic slot. */
+export const slotIcon = (s: string, size = 'lg'): Raw => pixel(SLOT_ICONS[s] ?? 'package', size);
 
 /** Calls the LEGO backend through the main process; shows a hint when offline. */
 export async function lego<T>(method: string, path: string, body?: unknown): Promise<T> {

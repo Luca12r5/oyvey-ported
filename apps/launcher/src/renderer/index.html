@@ -2,23 +2,23 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://textures.minecraft.net https://crafatar.com; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https://cdn.modrinth.com; font-src 'self'; connect-src 'self' data: blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>LEGO Launcher</title>
   <link rel="stylesheet" href="styles.css">
   <script type="module" src="app.js"></script>
 </head>
 <body>
-  <div class="titlebar">
-    <div class="tb-left"><span class="logo" aria-hidden="true"></span><span class="tb-title">LEGO LAUNCHER</span><span class="tb-sub" id="tbVersion"></span></div>
+  <canvas id="bg" class="bg-canvas" aria-hidden="true"></canvas>
+  <header class="titlebar">
+    <div class="tb-left"><span id="tbLogo"></span><span class="wordmark">LEGO<b>LAUNCHER</b></span><span class="tb-sub" id="tbVersion"></span></div>
     <div class="tb-right">
-      <button class="tb-chip" id="tbAccount" type="button">Anmelden</button>
-      <button class="tb-btn" data-win="minimize" aria-label="Minimieren">—</button>
-      <button class="tb-btn" data-win="maximize" aria-label="Maximieren">▢</button>
-      <button class="tb-btn close" data-win="close" aria-label="Schließen">✕</button>
+      <div id="tbCoins" class="tb-coins" hidden></div>
+      <div class="acct" id="acct"></div>
+      <div class="win" id="win"></div>
     </div>
-  </div>
+  </header>
   <div class="shell">
-    <nav class="sidebar" id="sidebar" aria-label="Navigation"></nav>
+    <nav class="rail" id="sidebar" aria-label="Navigation"></nav>
     <main class="content" id="view" tabindex="-1"></main>
   </div>
   <div id="toasts" class="toasts" aria-live="polite"></div>

@@ -16,7 +16,7 @@ export async function friendsPage(el: HTMLElement, chatWith?: Friend): Promise<v
       <form class="card row" id="add"><input name="player" class="grow" placeholder="Minecraft-Name" minlength="3" maxlength="16" required><button class="btn primary">Anfrage senden</button></form>
       ${f.incoming.length ? html`<div class="card gap"><h3>Anfragen</h3>${f.incoming.map((r) => html`<div class="row"><b class="grow">${r.name}</b><button class="btn sm primary" data-accept="${r.id}">Annehmen</button><button class="btn sm" data-decline="${r.id}">Ablehnen</button></div>`)}</div>` : ''}
       <div class="card gap"><h3>Freunde (${f.friends.length})</h3>
-        ${f.friends.length ? f.friends.map((x) => html`<div class="row gap"><span class="dot ${x.status}"></span><div class="grow"><b>${x.name}</b><div class="small muted">${LABEL[x.status] ?? x.status}${x.activity ? ` · ${x.activity}` : ''}${x.gameVersion ? ` · ${x.gameVersion}` : ''}${x.note ? ` · 📝 ${x.note}` : ''}</div></div>
+        ${f.friends.length ? f.friends.map((x) => html`<div class="row gap"><span class="dot ${x.status}"></span><div class="grow"><b>${x.name}</b><div class="small muted">${LABEL[x.status] ?? x.status}${x.activity ? ` · ${x.activity}` : ''}${x.gameVersion ? ` · ${x.gameVersion}` : ''}${x.note ? ` · ${x.note}` : ''}</div></div>
           <button class="btn sm" data-chat="${x.id}">Chat</button>${leader ? html`<button class="btn sm" data-invite="${x.name}">Einladen</button>` : ''}<button class="btn sm" data-note="${x.id}" data-current="${x.note}">Notiz</button><button class="btn sm danger" data-remove="${x.id}" data-name="${x.name}">✕</button></div>`)
         : html`<div class="empty">Noch keine Freunde.</div>`}
       </div>

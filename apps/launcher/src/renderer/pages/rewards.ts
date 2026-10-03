@@ -1,3 +1,4 @@
+import { icon, pixel } from '../icons.ts';
 import { CATALOG } from '@lego/shared';
 import { errorToast, fmtDate, fmtNum, html, lego, mount, slotIcon, toast } from '../ui.ts';
 
@@ -9,8 +10,8 @@ interface Progress {
 
 export async function rewardsPage(el: HTMLElement): Promise<void> {
   const [p, c] = await Promise.all([lego<Progress>('GET', '/api/progress'), lego<{ balance: number; history: { delta: number; reason: string; created_at: number }[] }>('GET', '/api/me/credits')]);
-  const reward = (r: { credits?: number; item?: string } | null) => !r ? '–' : r.credits ? html`💰 ${r.credits}` : html`${slotIcon(CATALOG.find((i) => i.id === r.item)?.slot ?? '')} ${CATALOG.find((i) => i.id === r.item)?.name ?? r.item}`;
-  mount(el, html`<div class="row between"><h1>Rewards</h1><span class="badge">💰 ${fmtNum(c.balance)} Coins</span></div>
+  const reward = (r: { credits?: number; item?: string } | null) => !r ? '–' : r.credits ? html`${pixel('coin', 'xs')} ${r.credits}` : html`${slotIcon(CATALOG.find((i) => i.id === r.item)?.slot ?? '', 'sm')} ${CATALOG.find((i) => i.id === r.item)?.name ?? r.item}`;
+  mount(el, html`<div class="row between"><h1>Rewards</h1><span class="badge">${pixel('coin', 'xs')} ${fmtNum(c.balance)} Coins</span></div>
     <div class="grid g3">
       <div class="card"><h3>Tägliche Belohnung</h3><p class="small">Serie ${p.daily.streak} · nächste: <b>${p.daily.nextReward}</b> Coins</p><button class="btn primary" id="daily" ${p.daily.claimedToday ? 'disabled' : ''}>${p.daily.claimedToday ? 'Heute abgeholt' : 'Abholen'}</button></div>
       <form class="card" id="promo"><h3>Aktionscode</h3><div class="row"><input name="code" class="grow" maxlength="32" required><button class="btn">Einlösen</button></div></form>
@@ -19,13 +20,13 @@ export async function rewardsPage(el: HTMLElement): Promise<void> {
     <h2 class="gap">Quests</h2>
     <div class="grid g3">${p.quests.map((q) => html`<div class="card"><div class="row between"><b>${q.title.de}</b><span class="badge">${q.period === 'daily' ? 'Täglich' : 'Woche'}</span></div>
       <div class="progress gap"><i data-p="${(q.progress / q.target) * 100}"></i></div><div class="small muted">${q.progress}/${q.target} · ${q.credits} Coins · ${q.xp} XP</div>
-      ${q.claimed ? html`<span class="small">✔ abgeholt</span>` : html`<button class="btn sm gap ${q.complete ? 'primary' : ''}" data-quest="${q.id}" ${q.complete ? '' : 'disabled'}>Abholen</button>`}</div>`)}</div>
+      ${q.claimed ? html`<span class="small">${icon('check', 'xs')} abgeholt</span>` : html`<button class="btn sm gap ${q.complete ? 'primary' : ''}" data-quest="${q.id}" ${q.complete ? '' : 'disabled'}>Abholen</button>`}</div>`)}</div>
     ${p.pass ? html`<h2 class="gap">Battle Pass</h2><div class="card"><table><thead><tr><th>Stufe</th><th>Kostenlos</th><th>Premium</th></tr></thead><tbody>
       ${p.pass.season.tiers.map((t) => {
         const cell = (r: typeof t.free, track: 'free' | 'premium') => {
           const claimed = p.pass!.claimed.includes(`${t.tier}:${track}`);
           const can = r && !claimed && p.pass!.level >= t.tier && (track === 'free' || p.pass!.premium);
-          return html`<td>${reward(r)} ${claimed ? '✔' : can ? html`<button class="btn sm primary" data-tier="${t.tier}" data-track="${track}">Abholen</button>` : ''}</td>`;
+          return html`<td>${reward(r)} ${claimed ? icon('check', 'sm') : can ? html`<button class="btn sm primary" data-tier="${t.tier}" data-track="${track}">Abholen</button>` : ''}</td>`;
         };
         return html`<tr class="${p.pass!.level >= t.tier ? '' : 'muted'}"><td>${t.tier}</td>${cell(t.free, 'free')}${cell(t.premium, 'premium')}</tr>`;
       })}</tbody></table></div>` : ''}

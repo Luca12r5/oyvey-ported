@@ -21,7 +21,7 @@ const common = { bundle: true, sourcemap: true, logLevel: 'warning', define, leg
 
 await build({ ...common, entryPoints: ['src/main/main.ts'], outfile: `${out}/main.cjs`, platform: 'node', target: 'node22', format: 'cjs', external: ['electron'] });
 await build({ ...common, entryPoints: ['src/preload/preload.ts'], outfile: `${out}/preload.cjs`, platform: 'node', target: 'node22', format: 'cjs', external: ['electron'] });
-await build({ ...common, entryPoints: ['src/renderer/app.ts'], outfile: `${out}/renderer/app.js`, platform: 'browser', target: 'chrome130', format: 'esm' });
+await build({ ...common, entryPoints: ['src/renderer/app.ts'], outfile: `${out}/renderer/app.js`, platform: 'browser', target: 'chrome130', format: 'esm', loader: { '.png': 'dataurl' }, minify: true });
 
 cpSync('src/renderer/index.html', `${out}/renderer/index.html`);
 cpSync('src/renderer/styles.css', `${out}/renderer/styles.css`);
@@ -30,6 +30,8 @@ const fonts = [
   ['@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2', 'jetbrains-mono-400.woff2'],
   ['@fontsource/nunito/files/nunito-latin-400-normal.woff2', 'nunito-400.woff2'],
   ['@fontsource/nunito/files/nunito-latin-700-normal.woff2', 'nunito-700.woff2'],
+  ...['400', '500', '600', '700', '800'].map((w) => [`@fontsource/inter/files/inter-latin-${w}-normal.woff2`, `inter-${w}.woff2`]),
+  ...['400', '600', '700'].map((w) => [`@fontsource/inter/files/inter-latin-ext-${w}-normal.woff2`, `inter-ext-${w}.woff2`]),
 ];
 for (const [src, name] of fonts) copyFileSync(require.resolve(src), join(out, 'renderer', 'fonts', name));
 for (const w of ['Regular', 'Medium', 'Bold']) copyFileSync(`../../lego-client/src/main/resources/assets/legoclient/fonts/Poppins-${w}.ttf`, join(out, 'renderer', 'fonts', `Poppins-${w}.ttf`));

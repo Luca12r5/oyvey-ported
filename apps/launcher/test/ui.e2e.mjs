@@ -55,7 +55,7 @@ await call(me.token, 'POST', '/api/admin/news', { kind: 'news', title: 'Launcher
 
 const userData = mkdtempSync(join(tmpdir(), 'lego-launcher-ud-'));
 mkdirSync(userData, { recursive: true });
-writeFileSync(join(userData, 'settings.json'), JSON.stringify({ backendUrl: base, themeId: 'nightfall' }));
+writeFileSync(join(userData, 'settings.json'), JSON.stringify({ backendUrl: base }));
 const account = {
   msRefreshToken: 'test-refresh',
   mc: { accessToken: 'test-mc-token', expiresAt: Date.now() + 3_600_000, uuid: me.uuid, name: 'LegoDev', xuid: null, skinUrl: null },
@@ -87,8 +87,29 @@ async function page(id, expect) {
   if (shots) await win.screenshot({ path: join(shots, `launcher-${id}.png`) });
 }
 
-await page('play', 'LAUNCH');
+await win.waitForSelector('#launch');
+await win.waitForTimeout(1500); // character + background settle
+await page('play', 'SPIELEN');
+// Default look is the gray "LEGO Graphite" theme.
+const bgColor = await win.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
+if (bgColor !== '#141519') problems.push(`default theme background is ${bgColor}, expected graphite #141519`);
+// Profile dropdown lists the profiles.
+await win.click('#drop');
+await win.waitForSelector('.menu [data-profile]');
+if (shots) await win.screenshot({ path: join(shots, 'launcher-profile-menu.png') });
+await win.keyboard.press('Escape');
+await win.mouse.click(5, 300);
+// Account switcher.
+await win.click('#acctBtn');
+await win.waitForSelector('.menu [data-act=add]');
+if (shots) await win.screenshot({ path: join(shots, 'launcher-account-menu.png') });
+await win.mouse.click(5, 300);
 await page('profiles', 'LEGO Client');
+await win.click('#new');
+await win.waitForSelector('#loaders [data-loader=fabric]');
+await win.waitForTimeout(400);
+if (shots) await win.screenshot({ path: join(shots, 'launcher-profile-editor.png') });
+await page('mods', 'Mods');
 await page('cosmetics', 'Sammlung');
 await page('shop', 'Shop');
 await page('friends', 'Alex');
@@ -98,6 +119,26 @@ await page('feedback', 'Neuer Beitrag');
 await page('account', 'LegoDev');
 await page('dev', 'Entwickler-Dashboard');
 await page('settings', 'Designs');
+// Accent colour override and animated background picker apply instantly.
+await win.click('[data-tab=appearance]');
+await win.click('[data-accent="#22c55e"]');
+await win.waitForTimeout(300);
+const accent = await win.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
+if (accent !== '#22c55e') problems.push(`accent override not applied: ${accent}`);
+await win.click('[data-tab=background]');
+await win.waitForSelector('[data-bg=bricks]');
+await win.click('[data-bg=bricks]');
+await win.waitForTimeout(500);
+if (shots) await win.screenshot({ path: join(shots, 'launcher-settings-background.png') });
+await win.click('[data-tab=appearance]');
+await win.click('[data-accent=""]');
+await win.fill('#sq', 'schnee');
+await win.waitForTimeout(200);
+const found = await win.locator('.setting:not([hidden])').count();
+if (found !== 1) problems.push(`settings search for "schnee" shows ${found} rows`);
+await win.fill('#sq', '');
+await win.click('[data-tab=themes]');
+await win.waitForSelector('[data-theme=matrix]');
 
 // Theme switching really changes the CSS variables.
 const before = await win.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent'));
@@ -110,7 +151,7 @@ if (!bodyClass.includes('font-mono') || !bodyClass.includes('bg-scanlines')) pro
 if (shots) await win.screenshot({ path: join(shots, 'launcher-theme-matrix.png') });
 
 // Buy something through the launcher shop.
-await win.click('[data-theme=nightfall]');
+await win.click('[data-theme=lego-graphite]');
 await win.click('[data-page=shop]');
 await win.waitForSelector('[data-buy]');
 await win.locator('[data-buy]').first().click();
