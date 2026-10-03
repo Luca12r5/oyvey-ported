@@ -1,0 +1,16 @@
+{
+  "name": "@lego/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "LEGO Launcher backend: accounts, social, credits, shop, progression, feedback and admin API. Also serves the website.",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.ts",
+    "cli": "node --disable-warning=ExperimentalWarning src/cli.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --disable-warning=ExperimentalWarning --test \"test/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@lego/shared": "*"
+  }
+}
