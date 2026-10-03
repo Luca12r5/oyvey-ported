@@ -26,7 +26,7 @@ function card(i: CatalogItem, inv: Inv, mode: 'collection' | 'shop'): Raw {
   return html`<div class="item ${info.animatedFrame ? 'anim' : ''}" data-c="${rarityColor(i.rarity)}">
     <div class="thumb">${tag ? tagHtml(tag, state.auth.name ?? 'Steve') : slotIcon(i.slot)}</div>
     <div class="row between"><b>${i.name}</b><span class="badge c" data-c="${rarityColor(i.rarity)}">${info.label.de}</span></div>
-    <div class="small muted">${UNLOCK[i.unlock] ?? i.unlock}${i.price ? ` · ${fmtNum(i.price)} Credits` : ''}${i.seasonal ? ' · Saisonal' : ''}</div>
+    <div class="small muted">${UNLOCK[i.unlock] ?? i.unlock}${i.price ? ` · ${fmtNum(i.price)} Coins` : ''}${i.seasonal ? ' · Saisonal' : ''}</div>
     <div class="row">${owned
       ? html`<button class="btn sm ${equipped ? '' : 'primary'}" data-equip="${i.id}" data-slot="${i.slot}" data-on="${equipped ? '0' : '1'}">${equipped ? 'Ablegen' : 'Ausrüsten'}</button>`
       : mode === 'shop' && i.unlock === 'shop' ? html`<button class="btn sm primary" data-buy="${i.id}">Kaufen</button>` : html`<span class="small muted">🔒 ${UNLOCK[i.unlock]}</span>`}</div>
@@ -36,10 +36,10 @@ function card(i: CatalogItem, inv: Inv, mode: 'collection' | 'shop'): Raw {
 async function browser(el: HTMLElement, mode: 'collection' | 'shop'): Promise<void> {
   const [inv, me] = await Promise.all([lego<Inv>('GET', '/api/inventory'), lego<{ credits: number }>('GET', '/api/me')]);
   const f = { slot: '', rarity: '', q: '', owned: false };
-  mount(el, html`<div class="row between"><h1>${mode === 'shop' ? 'Shop' : 'Cosmetics'}</h1><span class="badge">💰 <span id="bal">${fmtNum(me.credits)}</span> Credits</span></div>
+  mount(el, html`<div class="row between"><h1>${mode === 'shop' ? 'Shop' : 'Cosmetics'}</h1><span class="badge">💰 <span id="bal">${fmtNum(me.credits)}</span> Coins</span></div>
     ${mode === 'collection'
       ? html`<p class="muted">Sammlung ${inv.owned.length} / ${CATALOG.length}. Ausgerüstete Cosmetics sehen andere Spieler mit LEGO Client auf jedem Server und in jedem Spielmodus, solange beide mit dem LEGO-Server verbunden sind. Spieler mit anderen Clients (Vanilla, NoRisk, Lunar …) sehen sie nicht.</p><div class="progress"><i data-p="${(inv.owned.length / CATALOG.length) * 100}"></i></div>`
-      : html`<p class="muted">Feste Preise, keine Lootboxen. Gekauft wird mit LEGO Credits.</p>`}
+      : html`<p class="muted">Feste Preise, keine Lootboxen. Gekauft wird mit LEGO Coins.</p>`}
     <div class="row gap"><input id="q" class="grow" placeholder="Suchen…"><select id="rar"><option value="">Alle Seltenheiten</option>${(Object.keys(RARITY_INFO) as Rarity[]).map((r) => html`<option value="${r}">${RARITY_INFO[r].label.de}</option>`)}</select>
       ${mode === 'collection' ? html`<label class="check"><input type="checkbox" id="owned"> Nur im Besitz</label>` : ''}</div>
     <div class="tabs gap" id="slots">${SLOTS.map(([id, l], i) => html`<button data-slot="${id}" class="${i === 0 ? 'active' : ''}">${l}</button>`)}</div>
@@ -69,7 +69,7 @@ async function browser(el: HTMLElement, mode: 'collection' | 'shop'): Promise<vo
         inv.equipped = r.equipped;
       } else if (b.dataset.buy) {
         const item = CATALOG.find((i) => i.id === b.dataset.buy)!;
-        if (!(await confirm('Kaufen?', `${item.name} für ${fmtNum(item.price)} Credits?`, 'Kaufen'))) return;
+        if (!(await confirm('Kaufen?', `${item.name} für ${fmtNum(item.price)} Coins?`, 'Kaufen'))) return;
         const r = await lego<{ balance: number }>('POST', '/api/shop/buy', { itemId: item.id, idempotencyKey: idem() });
         inv.owned.push(item.id);
         el.querySelector('#bal')!.textContent = fmtNum(r.balance);

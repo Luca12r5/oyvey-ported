@@ -10,7 +10,7 @@ export async function home(el) {
       <div>
         <span class="badge">Minecraft 1.21.11 · Fabric</span>
         <h1>Dein Minecraft. Dein Launcher.</h1>
-        <p class="lead">LEGO Launcher startet Minecraft mit dem LEGO Client: HUD, Performance-Werkzeuge, ${cosmetics} 3D-Cosmetics, Pets, Fahrzeuge, Emotes, Minispiele, Freunde und ein eigenes Konto mit Credits und Battle Pass.</p>
+        <p class="lead">LEGO Launcher startet Minecraft mit dem LEGO Client: HUD, Performance-Werkzeuge, ${cosmetics} 3D-Cosmetics, Pets, Fahrzeuge, Emotes, Minispiele, Freunde und ein eigenes Konto mit Coins und Battle Pass.</p>
         <div class="row"><a class="btn primary" href="/download" data-link>Herunterladen</a><a class="btn" href="/features" data-link>Was ist drin?</a></div>
       </div>
       <div class="art" aria-hidden="true"><div class="gridfx"></div><div class="orb"></div></div>
@@ -109,7 +109,7 @@ const LEGAL = {
     <li>Minecraft-UUID und -Name (aus der Anmeldung über den Mojang-Sessionserver). Passwörter und Microsoft-/Minecraft-Tokens werden <b>nicht</b> an den LEGO-Server übertragen.</li>
     <li>Sitzungen (nur als SHA-256-Hash), Zeitpunkt der letzten Nutzung und Browser-/Launcher-Kennung.</li>
     <li>Freundeslisten, Blockierungen, private Nachrichten, Party-Chat, Meldungen.</li>
-    <li>Credits-Buchungen, gekaufte und ausgerüstete Gegenstände, Fortschritt, Spielergebnisse.</li>
+    <li>Coins-Buchungen, gekaufte und ausgerüstete Gegenstände, Fortschritt, Spielergebnisse.</li>
     <li>Feedback und freiwillig angehängte Dateien.</li>
     <li>Bei Käufen: Ereignis-ID und Betrag vom Zahlungsanbieter. Kartendaten verarbeitet ausschließlich der Zahlungsanbieter.</li></ul>
     <p>Wer deinen Status, dein Profil und deine Aktivität sieht, stellst du unter <a href="/account" data-link>Konto → Datenschutz</a> ein.</p>

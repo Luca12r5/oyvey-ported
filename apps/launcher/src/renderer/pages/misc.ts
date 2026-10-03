@@ -35,7 +35,7 @@ export async function feedbackPage(el: HTMLElement): Promise<void> {
 export async function devPage(el: HTMLElement): Promise<void> {
   const settings = state.settings;
   mount(el, html`<h1>Entwickler-Dashboard</h1><div class="card">
-    <p>Das Dashboard (Spielersuche, Credits vergeben/abziehen, Rollen, Sperren, Feedback, Meldungen, News, Aktionscodes, Audit-Log, Backups) läuft auf der LEGO-Website, damit jede Aktion zentral protokolliert wird.</p>
+    <p>Das Dashboard (Spielersuche, Coins vergeben/abziehen, Rollen, Sperren, Feedback, Meldungen, News, Aktionscodes, Audit-Log, Backups) läuft auf der LEGO-Website, damit jede Aktion zentral protokolliert wird.</p>
     <p class="small muted">Rollen: ${state.auth.lego.roles.join(', ')}</p>
     <button class="btn primary" id="open">Anmeldecode erzeugen & Dashboard öffnen</button></div>`);
   el.querySelector('#open')!.addEventListener('click', async () => {

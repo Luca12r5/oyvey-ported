@@ -29,7 +29,7 @@ async function overview(box) {
   mount(box, html`<div class="grid cols-4">
     <div class="card"><div class="kpi">${fmtNum(o.users)}</div><div class="muted">Spieler</div></div>
     <div class="card"><div class="kpi">${fmtNum(o.activeToday)}</div><div class="muted">Aktiv (24 h)</div></div>
-    <div class="card"><div class="kpi">${fmtNum(o.creditsInCirculation)}</div><div class="muted">Credits im Umlauf</div></div>
+    <div class="card"><div class="kpi">${fmtNum(o.creditsInCirculation)}</div><div class="muted">Coins im Umlauf</div></div>
     <div class="card"><div class="kpi">${fmtNum(o.creditsGrantedToday)}</div><div class="muted">Heute vergeben (Admin)</div></div>
     <div class="card"><div class="kpi">${o.openReports}</div><div class="muted">Offene Meldungen</div></div>
     <div class="card"><div class="kpi">${o.newFeedback}</div><div class="muted">Neues Feedback</div></div>
@@ -44,7 +44,7 @@ async function users(box) {
     e.preventDefault();
     try {
       const r = await api('GET', `/api/admin/users?q=${encodeURIComponent(new FormData(e.currentTarget).get('q'))}`);
-      mount(box.querySelector('#res'), r.users.length ? html`<div class="card table-wrap"><table><thead><tr><th>Spieler</th><th>Credits</th><th>Zuletzt</th><th></th></tr></thead><tbody>${r.users.map((u) => html`<tr><td><div class="row">${avatar(u.name)}<div><b>${u.name}</b><div class="small muted mono">${u.uuid}</div></div></div></td><td>${fmtNum(u.credits)}</td><td>${fmtDate(u.lastSeen)}${u.banned ? html` <span class="badge c" data-c="#ef4444">gesperrt</span>` : ''}</td><td><a class="btn small" href="/dev/users/${u.id}" data-link>Öffnen</a></td></tr>`)}</tbody></table></div>` : html`<div class="empty">Keine Treffer.</div>`);
+      mount(box.querySelector('#res'), r.users.length ? html`<div class="card table-wrap"><table><thead><tr><th>Spieler</th><th>Coins</th><th>Zuletzt</th><th></th></tr></thead><tbody>${r.users.map((u) => html`<tr><td><div class="row">${avatar(u.name)}<div><b>${u.name}</b><div class="small muted mono">${u.uuid}</div></div></div></td><td>${fmtNum(u.credits)}</td><td>${fmtDate(u.lastSeen)}${u.banned ? html` <span class="badge c" data-c="#ef4444">gesperrt</span>` : ''}</td><td><a class="btn small" href="/dev/users/${u.id}" data-link>Öffnen</a></td></tr>`)}</tbody></table></div>` : html`<div class="empty">Keine Treffer.</div>`);
     } catch (err) { errorToast(err); }
   });
 }
@@ -57,11 +57,11 @@ export async function user(el, id) {
   mount(el, html`<a class="btn small" href="/dev?tab=users" data-link>← Spieler</a>
     <div class="row spaced">${avatar(u.name, 'lg')}<div><h1>${u.name}</h1><div class="small muted mono">${u.uuid} · ${u.id}</div><div class="small muted">Seit ${fmtDate(u.createdAt)} · zuletzt ${fmtDate(u.lastSeen)} · Status ${d.presence.status}</div></div></div>
     <div class="grid cols-2 spaced">
-      ${hasPerm('credits.grant') ? html`<form class="card stack" id="credits"><h2>Credits: ${fmtNum(u.credits)}</h2>
+      ${hasPerm('credits.grant') ? html`<form class="card stack" id="credits"><h2>Coins: ${fmtNum(u.credits)}</h2>
         <div class="field"><label>Änderung (negativ = abziehen${hasPerm('credits.deduct') ? '' : ', nur Admins'})</label><input name="delta" type="number" step="1" required></div>
         <div class="field"><label>Grund (Pflicht, landet im Audit-Log)</label><input name="reason" minlength="5" maxlength="300" required></div>
         <button class="btn primary">Buchen</button>
-        <p class="small muted">Ab ${fmtNum(LARGE)} Credits ist eine zusätzliche Bestätigung nötig. Doppelklicks buchen nicht doppelt (Idempotenzschlüssel).</p></form>` : ''}
+        <p class="small muted">Ab ${fmtNum(LARGE)} Coins ist eine zusätzliche Bestätigung nötig. Doppelklicks buchen nicht doppelt (Idempotenzschlüssel).</p></form>` : ''}
       ${hasPerm('credits.grant') ? html`<form class="card stack" id="item"><h2>Gegenstand vergeben</h2>
         <select name="itemId">${catalog.items.map((i) => html`<option value="${i.id}">${i.name} (${i.slot}, ${i.rarity})</option>`)}</select>
         <input name="reason" minlength="5" maxlength="300" placeholder="Grund" required><button class="btn">Vergeben</button></form>` : ''}
@@ -70,7 +70,7 @@ export async function user(el, id) {
         <select name="hours"><option value="24">24 Stunden</option><option value="168">7 Tage</option><option value="720">30 Tage</option><option value="perm">Dauerhaft</option><option value="0">Sperre aufheben</option></select>
         <input name="reason" minlength="3" maxlength="300" placeholder="Grund" required><button class="btn danger">Anwenden</button></form>` : ''}
     </div>
-    <h2 class="spaced">Credits-Buchungen</h2>
+    <h2 class="spaced">Coins-Buchungen</h2>
     <div class="card table-wrap"><table><thead><tr><th>Datum</th><th>Änderung</th><th>Stand</th><th>Art</th><th>Grund</th></tr></thead><tbody>${d.ledger.map((l) => html`<tr><td>${fmtDate(l.created_at)}</td><td class="${l.delta > 0 ? 'pos' : 'neg'}">${l.delta > 0 ? '+' : ''}${fmtNum(l.delta)}</td><td>${fmtNum(l.balance_after)}</td><td>${l.kind}</td><td>${l.reason}</td></tr>`)}</tbody></table></div>
     <h2 class="spaced">Inventar (${d.inventory.length})</h2>
     <div class="card small">${d.inventory.length ? d.inventory.map((i) => html`<span class="badge">${i.item_id} · ${i.source}</span> `) : html`<span class="muted">Keine gekauften/vergebenen Gegenstände.</span>`}</div>
@@ -85,7 +85,7 @@ export async function user(el, id) {
     const reason = String(f.get('reason'));
     if (!Number.isInteger(delta) || delta === 0) return toast('Bitte eine ganze Zahl ungleich 0 eingeben.', 'error');
     const large = Math.abs(delta) >= LARGE;
-    const ok = await confirmDialog(delta > 0 ? 'Credits vergeben?' : 'Credits abziehen?', `${delta > 0 ? '+' : ''}${fmtNum(delta)} Credits für ${u.name}. Grund: ${reason}`,
+    const ok = await confirmDialog(delta > 0 ? 'Coins vergeben?' : 'Coins abziehen?', `${delta > 0 ? '+' : ''}${fmtNum(delta)} Coins für ${u.name}. Grund: ${reason}`,
       { danger: delta < 0, requireTyping: large ? String(Math.abs(delta)) : null });
     if (!ok) return;
     try {
@@ -155,8 +155,8 @@ async function news(box) {
 
 async function promo(box) {
   const d = await api('GET', '/api/admin/promo');
-  mount(box, html`<form class="card row" id="p"><input name="code" placeholder="CODE" pattern="[A-Za-z0-9-]{3,32}" required><input name="credits" type="number" min="1" max="100000" placeholder="Credits" required><input name="maxUses" type="number" min="1" placeholder="Max. Einlösungen" required><input name="days" type="number" min="1" max="366" placeholder="Gültig (Tage, optional)"><button class="btn primary">Erstellen</button></form>
-    <div class="card table-wrap spaced"><table><thead><tr><th>Code</th><th>Credits</th><th>Genutzt</th><th>Läuft ab</th></tr></thead><tbody>${d.codes.map((c) => html`<tr><td class="mono">${c.code}</td><td>${c.credits}</td><td>${c.uses} / ${c.max_uses}</td><td>${c.expires_at ? fmtDate(c.expires_at) : '–'}</td></tr>`)}</tbody></table></div>`);
+  mount(box, html`<form class="card row" id="p"><input name="code" placeholder="CODE" pattern="[A-Za-z0-9-]{3,32}" required><input name="credits" type="number" min="1" max="100000" placeholder="Coins" required><input name="maxUses" type="number" min="1" placeholder="Max. Einlösungen" required><input name="days" type="number" min="1" max="366" placeholder="Gültig (Tage, optional)"><button class="btn primary">Erstellen</button></form>
+    <div class="card table-wrap spaced"><table><thead><tr><th>Code</th><th>Coins</th><th>Genutzt</th><th>Läuft ab</th></tr></thead><tbody>${d.codes.map((c) => html`<tr><td class="mono">${c.code}</td><td>${c.credits}</td><td>${c.uses} / ${c.max_uses}</td><td>${c.expires_at ? fmtDate(c.expires_at) : '–'}</td></tr>`)}</tbody></table></div>`);
   box.querySelector('#p').addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);

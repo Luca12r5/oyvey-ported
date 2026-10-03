@@ -16,7 +16,7 @@ function itemCard(item, catalog, inv, mode) {
   return html`<div class="item ${r.animatedFrame ? 'animated' : ''}" data-c="${r.color}">
     <div class="thumb">${tag ? tagPreview(tag, state.user?.name ?? 'Steve') : slotIcon(item.slot)}</div>
     <div class="row between"><span class="name">${item.name}</span>${rarityBadge(item.rarity)}</div>
-    <div class="small muted">${UNLOCK[item.unlock] ?? item.unlock}${item.seasonal ? ' · Saisonal' : ''}${item.price ? ` · ${fmtNum(item.price)} Credits` : ''}</div>
+    <div class="small muted">${UNLOCK[item.unlock] ?? item.unlock}${item.seasonal ? ' · Saisonal' : ''}${item.price ? ` · ${fmtNum(item.price)} Coins` : ''}</div>
     ${state.user ? html`<div class="row">
       ${owned ? html`<span class="owned">✔ Im Besitz</span><span class="spacer"></span><button class="btn small ${equipped ? '' : 'primary'}" data-equip="${item.id}" data-slot="${item.slot}" data-on="${equipped ? '0' : '1'}">${equipped ? 'Ablegen' : 'Ausrüsten'}</button>`
         : mode === 'shop' && item.unlock === 'shop' ? html`<button class="btn small primary" data-buy="${item.id}">Kaufen</button><button class="btn small" data-gift="${item.id}">Verschenken</button>` : ''}
@@ -30,8 +30,8 @@ async function browser(el, mode) {
   const title = mode === 'shop' ? 'Shop' : 'Cosmetics';
   let balance = null;
   if (state.user) balance = (await api('GET', '/api/me')).credits;
-  mount(el, html`<div class="row between"><h1>${title}</h1>${balance !== null ? html`<span class="badge">💰 ${fmtNum(balance)} Credits</span>` : ''}</div>
-    ${mode === 'shop' ? html`<p class="muted">Gegenstände werden mit LEGO Credits gekauft. Credits gibt es über tägliche Belohnungen, Quests, den Battle Pass – oder als Paket. Keine Lootboxen, keine Zufallsbelohnungen: du siehst immer genau, was du bekommst.</p>` : html`<p class="muted">Sammlung: ${inv.owned.length} / ${catalog.items.length} freigeschaltet.</p><div class="progress"><span data-p="${(inv.owned.length / catalog.items.length) * 100}"></span></div>`}
+  mount(el, html`<div class="row between"><h1>${title}</h1>${balance !== null ? html`<span class="badge">💰 ${fmtNum(balance)} Coins</span>` : ''}</div>
+    ${mode === 'shop' ? html`<p class="muted">Gegenstände werden mit LEGO Coins gekauft. Coins gibt es über tägliche Belohnungen, Quests, den Battle Pass – oder als Paket. Keine Lootboxen, keine Zufallsbelohnungen: du siehst immer genau, was du bekommst.</p>` : html`<p class="muted">Sammlung: ${inv.owned.length} / ${catalog.items.length} freigeschaltet.</p><div class="progress"><span data-p="${(inv.owned.length / catalog.items.length) * 100}"></span></div>`}
     <div class="card row spaced">
       <input id="q" placeholder="Suchen…" aria-label="Suche">
       <select id="rarity" aria-label="Seltenheit"><option value="">Alle Seltenheiten</option>${Object.values(catalog.rarities).map((r) => html`<option value="${r.id}">${r.label.de}</option>`)}</select>
@@ -39,7 +39,7 @@ async function browser(el, mode) {
     </div>
     <div class="tabs spaced" id="slots">${SLOTS.map(([id, label], i) => html`<button data-slot="${id}" class="${i === 0 ? 'active' : ''}">${label}</button>`)}</div>
     <div class="grid cols-4" id="items"></div>
-    ${mode === 'shop' ? html`<h2 class="spaced">Credits & Mitgliedschaften</h2><div id="products" class="grid cols-3"></div>` : ''}`);
+    ${mode === 'shop' ? html`<h2 class="spaced">Coins & Mitgliedschaften</h2><div id="products" class="grid cols-3"></div>` : ''}`);
   const list = el.querySelector('#items');
   const draw = () => {
     const items = catalog.items.filter((i) =>
@@ -69,7 +69,7 @@ async function browser(el, mode) {
         toast(d.on === '1' ? 'Ausgerüstet – im Spiel sichtbar für andere LEGO-Spieler' : 'Abgelegt', 'ok');
       } else if (d.buy) {
         const item = catalog.items.find((i) => i.id === d.buy);
-        if (!(await confirmDialog('Kaufen?', `${item.name} für ${fmtNum(item.price)} Credits kaufen?`, { confirmText: 'Kaufen' }))) return;
+        if (!(await confirmDialog('Kaufen?', `${item.name} für ${fmtNum(item.price)} Coins kaufen?`, { confirmText: 'Kaufen' }))) return;
         const r = await api('POST', '/api/shop/buy', { itemId: item.id, idempotencyKey: idemKey() });
         inv.owned.push(item.id);
         balance = r.balance;
@@ -81,7 +81,7 @@ async function browser(el, mode) {
         const name = prompt(`An welchen Freund verschenken?\n${friends.map((f) => f.name).join(', ')}`);
         const friend = friends.find((f) => f.name.toLowerCase() === (name ?? '').trim().toLowerCase());
         if (!friend) return;
-        if (!(await confirmDialog('Verschenken?', `${item.name} für ${fmtNum(item.price)} Credits an ${friend.name} schenken?`, { confirmText: 'Verschenken' }))) return;
+        if (!(await confirmDialog('Verschenken?', `${item.name} für ${fmtNum(item.price)} Coins an ${friend.name} schenken?`, { confirmText: 'Verschenken' }))) return;
         await api('POST', '/api/shop/gift', { itemId: item.id, to: friend.id, idempotencyKey: idemKey() });
         toast(`Geschenk an ${friend.name} gesendet`, 'ok');
       }
@@ -137,27 +137,27 @@ export async function rewards(el) {
   mount(el, html`<h1>Belohnungen</h1>
     <div class="grid cols-2">
       <div class="card stack"><h2>Tägliche Belohnung</h2>
-        <p>Serie: <b>${p.daily.streak}</b> Tag(e). Nächste Belohnung: <b>${p.daily.nextReward} Credits</b>.</p>
+        <p>Serie: <b>${p.daily.streak}</b> Tag(e). Nächste Belohnung: <b>${p.daily.nextReward} Coins</b>.</p>
         <button class="btn primary" id="daily" ${p.daily.claimedToday ? 'disabled' : ''}>${p.daily.claimedToday ? 'Heute abgeholt' : 'Abholen'}</button></div>
       <form class="card stack" id="promo"><h2>Aktionscode</h2><input name="code" maxlength="32" placeholder="CODE" required><button class="btn">Einlösen</button></form>
     </div>
     <h2 class="spaced">Quests</h2>
     <div class="grid cols-3">${p.quests.map((q) => html`<div class="card stack"><div class="row between"><b>${q.title.de}</b><span class="badge">${q.period === 'daily' ? 'Täglich' : 'Wöchentlich'}</span></div>
-      <div class="progress"><span data-p="${(q.progress / q.target) * 100}"></span></div><div class="small muted">${q.progress} / ${q.target} · ${q.credits} Credits · ${q.xp} XP</div>
+      <div class="progress"><span data-p="${(q.progress / q.target) * 100}"></span></div><div class="small muted">${q.progress} / ${q.target} · ${q.credits} Coins · ${q.xp} XP</div>
       ${q.claimed ? html`<span class="owned">✔ Abgeholt</span>` : html`<button class="btn small ${q.complete ? 'primary' : ''}" data-quest="${q.id}" ${q.complete ? '' : 'disabled'}>Abholen</button>`}</div>`)}</div>
-    <h2 class="spaced">Credits-Verlauf</h2>
+    <h2 class="spaced">Coins-Verlauf</h2>
     <div class="card table-wrap"><table><thead><tr><th>Datum</th><th>Änderung</th><th>Stand</th><th>Grund</th></tr></thead><tbody>
       ${credits.history.map((h) => html`<tr><td>${fmtDate(h.created_at)}</td><td class="${h.delta > 0 ? 'pos' : 'neg'}">${h.delta > 0 ? '+' : ''}${fmtNum(h.delta)}</td><td>${fmtNum(h.balance_after)}</td><td>${h.reason}</td></tr>`)}
     </tbody></table>${credits.history.length ? '' : html`<div class="empty">Noch keine Buchungen.</div>`}</div>`);
   el.querySelector('#daily').addEventListener('click', async () => {
-    try { const r = await api('POST', '/api/daily/claim'); toast(`+${r.credits} Credits (Serie ${r.streak})`, 'ok'); await rewards(el); } catch (e) { errorToast(e); }
+    try { const r = await api('POST', '/api/daily/claim'); toast(`+${r.credits} Coins (Serie ${r.streak})`, 'ok'); await rewards(el); } catch (e) { errorToast(e); }
   });
   el.querySelector('#promo').addEventListener('submit', async (e) => {
     e.preventDefault();
-    try { const r = await api('POST', '/api/promo/redeem', { code: new FormData(e.currentTarget).get('code') }); toast(`+${r.credits} Credits`, 'ok'); await rewards(el); } catch (err) { errorToast(err); }
+    try { const r = await api('POST', '/api/promo/redeem', { code: new FormData(e.currentTarget).get('code') }); toast(`+${r.credits} Coins`, 'ok'); await rewards(el); } catch (err) { errorToast(err); }
   });
   el.querySelectorAll('[data-quest]').forEach((b) => b.addEventListener('click', async () => {
-    try { const r = await api('POST', `/api/quests/${b.dataset.quest}/claim`); toast(`+${r.credits} Credits, +${r.xp} XP`, 'ok'); await rewards(el); } catch (e) { errorToast(e); }
+    try { const r = await api('POST', `/api/quests/${b.dataset.quest}/claim`); toast(`+${r.credits} Coins, +${r.xp} XP`, 'ok'); await rewards(el); } catch (e) { errorToast(e); }
   }));
 }
 

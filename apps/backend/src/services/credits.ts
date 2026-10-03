@@ -6,7 +6,7 @@ import type { Db } from '../db.ts';
 import { conflict, HttpError } from '../http.ts';
 
 export type CreditKind =
-  | 'grant' | 'deduct' | 'purchase' | 'daily' | 'quest' | 'battlepass' | 'promo' | 'payment' | 'subscription' | 'refund';
+  | 'grant' | 'deduct' | 'purchase' | 'daily' | 'quest' | 'battlepass' | 'promo' | 'payment' | 'subscription' | 'refund' | 'game' | 'playtime';
 
 export interface CreditChange {
   userId: string;
@@ -50,7 +50,7 @@ export function applyCredits(db: Db, c: CreditChange): { balance: number; ledger
     }
     const current = balance(db, c.userId);
     const next = current + c.delta;
-    if (next < 0) throw conflict('insufficient_credits', `Not enough credits (have ${current}, need ${-c.delta})`);
+    if (next < 0) throw conflict('insufficient_credits', `Not enough LEGO Coins (have ${current}, need ${-c.delta})`);
     db.run('UPDATE users SET credits = :n WHERE id = :id', { n: next, id: c.userId });
     const r = db.run(
       `INSERT INTO credit_ledger(user_id, delta, balance_after, kind, reason, ref, actor_id, idem_key, created_at)
@@ -76,7 +76,7 @@ export function history(db: Db, userId: string, limit = 50, before?: number): Le
 export function suspiciousEarners(db: Db, threshold = 3000): { user_id: string; earned: number }[] {
   return db.all(
     `SELECT user_id, SUM(delta) AS earned FROM credit_ledger
-     WHERE delta > 0 AND kind IN ('daily','quest','battlepass','promo') AND created_at > :since
+     WHERE delta > 0 AND kind IN ('daily','quest','battlepass','promo','game','playtime') AND created_at > :since
      GROUP BY user_id HAVING earned > :th ORDER BY earned DESC LIMIT 100`,
     { since: Date.now() - 86_400_000, th: threshold },
   );

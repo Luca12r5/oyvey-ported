@@ -111,17 +111,17 @@ export interface Product {
 }
 
 export const PRODUCTS: readonly Product[] = [
-  { id: 'credits_500', kind: 'credits', name: '500 LEGO Credits', priceCents: 499, credits: 500, perks: [] },
-  { id: 'credits_1100', kind: 'credits', name: '1,100 LEGO Credits', priceCents: 999, credits: 1100, perks: ['+10% bonus'] },
-  { id: 'credits_2400', kind: 'credits', name: '2,400 LEGO Credits', priceCents: 1999, credits: 2400, perks: ['+20% bonus'] },
+  { id: 'credits_500', kind: 'credits', name: '500 LEGO Coins', priceCents: 499, credits: 500, perks: [] },
+  { id: 'credits_1100', kind: 'credits', name: '1,100 LEGO Coins', priceCents: 999, credits: 1100, perks: ['+10% bonus'] },
+  { id: 'credits_2400', kind: 'credits', name: '2,400 LEGO Coins', priceCents: 1999, credits: 2400, perks: ['+20% bonus'] },
   { id: 'lego_pass_s1', kind: 'pass', name: 'LEGO Pass (Season 1)', priceCents: 799, perks: ['Premium battle pass track for Season 1'] },
   {
     id: 'lego_plus', kind: 'subscription', name: 'LEGO+', priceCents: 399, tier: 'lego_plus', periodDays: 30,
-    perks: ['Premium battle pass track while active', '400 credits each period', 'Custom name tag text', '+10% battle pass XP'],
+    perks: ['Premium battle pass track while active', '400 LEGO Coins each period', 'Custom name tag text', '+10% battle pass XP'],
   },
   {
     id: 'lego_plus_plus', kind: 'subscription', name: 'LEGO++', priceCents: 799, tier: 'lego_plus_plus', periodDays: 30,
-    perks: ['Everything in LEGO+', '1,000 credits each period', 'Animated profile banners', '+25% battle pass XP'],
+    perks: ['Everything in LEGO+', '1,000 LEGO Coins each period', 'Animated profile banners', '+25% battle pass XP'],
   },
 ];
 

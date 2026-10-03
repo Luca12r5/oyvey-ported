@@ -43,7 +43,7 @@ export async function accountPage(el: HTMLElement): Promise<void> {
     <div class="card"><h2>${a.name}</h2><div class="row">${tagHtml(tag, me?.customTag ? `${a.name} · ${me.customTag}` : a.name!)}</div>
       <p class="small muted gap mono">${a.uuid}</p>
       <p class="small">LEGO-Server: ${a.lego.connected ? '✔ verbunden' : `✖ ${a.lego.error ?? 'nicht verbunden'}`}${a.lego.roles.length ? ` · Rollen: ${a.lego.roles.join(', ')}` : ''}</p>
-      ${me ? html`<p>💰 <b>${fmtNum(me.credits)}</b> Credits · ${me.subscription ? `${me.subscription.tier === 'lego_plus_plus' ? 'LEGO++' : 'LEGO+'} bis ${fmtDate(me.subscription.expiresAt)}` : 'kein Abo'}</p>` : ''}
+      ${me ? html`<p>💰 <b>${fmtNum(me.credits)}</b> Coins · ${me.subscription ? `${me.subscription.tier === 'lego_plus_plus' ? 'LEGO++' : 'LEGO+'} bis ${fmtDate(me.subscription.expiresAt)}` : 'kein Abo'}</p>` : ''}
       <div class="row gap">${a.lego.connected ? html`<button class="btn" id="webcode">Website-Anmeldung</button>` : html`<button class="btn primary" id="reconnect">LEGO-Server verbinden</button>`}<button class="btn danger" id="signout">Abmelden</button></div></div>
     <div class="card"><h2>Statistiken</h2><div class="grid g3">
       <div><div class="kpi">${((t.playtime_minutes ?? 0) / 60).toFixed(1)} h</div><div class="small muted">Spielzeit</div></div>

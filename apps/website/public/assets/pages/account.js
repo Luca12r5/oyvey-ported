@@ -34,7 +34,7 @@ export async function settings(el) {
     <div class="grid cols-2">
       <div class="card stack">
         <div class="row">${avatar(me.name, 'lg')}<div><h2>${me.name}</h2><div class="muted small">Seit ${fmtDate(me.createdAt)} · ${me.roles.length ? me.roles.join(', ') : 'Spieler'}</div></div></div>
-        <div class="row"><span class="kpi">${fmtNum(me.credits)}</span><span class="muted">LEGO Credits</span><span class="spacer"></span><a class="btn small" href="/rewards" data-link>Verlauf</a></div>
+        <div class="row"><span class="kpi">${fmtNum(me.credits)}</span><span class="muted">LEGO Coins</span><span class="spacer"></span><a class="btn small" href="/rewards" data-link>Verlauf</a></div>
         <div class="muted small">${me.subscription ? `Abo: ${me.subscription.tier === 'lego_plus_plus' ? 'LEGO++' : 'LEGO+'} bis ${fmtDate(me.subscription.expiresAt)}` : 'Kein Abo aktiv'}</div>
         <form id="bioForm" class="stack"><label for="bio">Über mich</label><textarea id="bio" maxlength="280">${me.bio}</textarea><button class="btn">Speichern</button></form>
       </div>

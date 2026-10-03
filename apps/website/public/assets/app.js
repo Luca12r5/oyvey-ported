@@ -133,7 +133,7 @@ function connectEvents() {
   });
   es.addEventListener('friend_request', (e) => toast(`Freundschaftsanfrage von ${JSON.parse(e.data).from.name}`));
   es.addEventListener('gift', (e) => toast(`🎁 Geschenk von ${JSON.parse(e.data).from.name}!`, 'ok'));
-  es.addEventListener('credits', (e) => toast(`Credits aktualisiert: ${JSON.parse(e.data).balance}`, 'ok'));
+  es.addEventListener('credits', (e) => toast(`Coins aktualisiert: ${JSON.parse(e.data).balance}`, 'ok'));
   es.addEventListener('feedback_update', () => toast('Dein Feedback wurde aktualisiert'));
   es.onerror = () => { /* EventSource reconnects automatically */ };
 }

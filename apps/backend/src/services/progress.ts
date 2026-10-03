@@ -166,3 +166,48 @@ export function claimPassTier(db: Db, userId: string, tier: number, track: 'free
     return { reward, balance: balanceAfter };
   });
 }
+
+// ---- LEGO Coins for playing -------------------------------------------------
+
+/** Coins per finished mini game / extra for a win or personal record. */
+export const GAME_COINS = { played: 2, won: 3, dailyCap: 100 } as const;
+/** Coins for every full 15 minutes in game (measured by the server). */
+export const PLAYTIME_COINS = { minutes: 15, coins: 5, dailyCap: 120 } as const;
+
+/** Awards coins for a reported game, respecting the daily cap. Returns coins granted. */
+export function awardGameCoins(db: Db, userId: string, won: boolean, now = new Date()): number {
+  return db.tx(() => {
+    const d = dayKey(now);
+    const earned = db.get<{ value: number }>("SELECT value FROM metrics WHERE user_id = :u AND metric = 'game_coins' AND period = :p", { u: userId, p: d })?.value ?? 0;
+    const amount = Math.min(GAME_COINS.played + (won ? GAME_COINS.won : 0), GAME_COINS.dailyCap - earned);
+    if (amount <= 0) return 0;
+    db.run(
+      `INSERT INTO metrics(user_id, metric, period, value) VALUES (:u, 'game_coins', :p, :a)
+       ON CONFLICT(user_id, metric, period) DO UPDATE SET value = value + :a`,
+      { u: userId, p: d, a: amount },
+    );
+    applyCredits(db, { userId, delta: amount, kind: 'game', reason: won ? 'Mini game won' : 'Mini game played' });
+    return amount;
+  });
+}
+
+/** Called after play time was added; grants coins for newly completed 15-minute blocks. */
+export function awardPlaytimeCoins(db: Db, userId: string, now = new Date()): number {
+  return db.tx(() => {
+    const d = dayKey(now);
+    const minutes = metricValue(db, userId, 'playtime_minutes', d);
+    const blocks = Math.floor(minutes / PLAYTIME_COINS.minutes);
+    const paid = db.get<{ value: number }>("SELECT value FROM metrics WHERE user_id = :u AND metric = 'playtime_blocks' AND period = :p", { u: userId, p: d })?.value ?? 0;
+    const maxBlocks = Math.floor(PLAYTIME_COINS.dailyCap / PLAYTIME_COINS.coins);
+    const newBlocks = Math.max(0, Math.min(blocks, maxBlocks) - paid);
+    if (newBlocks === 0) return 0;
+    db.run(
+      `INSERT INTO metrics(user_id, metric, period, value) VALUES (:u, 'playtime_blocks', :p, :v)
+       ON CONFLICT(user_id, metric, period) DO UPDATE SET value = :v`,
+      { u: userId, p: d, v: paid + newBlocks },
+    );
+    const coins = newBlocks * PLAYTIME_COINS.coins;
+    applyCredits(db, { userId, delta: coins, kind: 'playtime', reason: `${newBlocks * PLAYTIME_COINS.minutes} min played`, idemKey: `playtime:${userId}:${d}:${paid + newBlocks}` });
+    return coins;
+  });
+}

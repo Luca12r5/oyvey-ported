@@ -207,3 +207,24 @@ test('payments are disabled without configuration', async (t) => {
   const c = await login(h, 'NoPay');
   assert.equal((await c.call('POST', '/api/payments/checkout', { productId: 'credits_500' })).status, 503);
 });
+
+test('LEGO Coins for playing: per game, wins, daily cap, play time', async (t) => {
+  const h = await start();
+  t.after(() => h.close());
+  const c = await login(h, 'Gamer');
+  const r1 = await c.call('POST', '/api/me/game-results', { gameId: 'tetris', score: 1200, won: false });
+  assert.equal(r1.body.coins, 2);
+  const r2 = await c.call('POST', '/api/me/game-results', { gameId: 'tetris', score: 5000, won: true });
+  assert.equal(r2.body.coins, 5);
+  assert.equal((await c.call('GET', '/api/me')).body.credits, 7);
+  // Daily cap of 100 coins from games.
+  let total = 7;
+  for (let i = 0; i < 30; i++) total += (await c.call('POST', '/api/me/game-results', { gameId: 'snake', score: 10, won: true })).body.coins ?? 0;
+  assert.equal(total, 100);
+
+  // Play time measured by the server: simulate 31 minutes of in-game presence.
+  const { awardPlaytimeCoins, addMetric } = await import('../src/services/progress.ts');
+  addMetric(h.app.db, c.id, 'playtime_minutes', 31, 1440);
+  assert.equal(awardPlaytimeCoins(h.app.db, c.id), 10, 'two full 15-minute blocks');
+  assert.equal(awardPlaytimeCoins(h.app.db, c.id), 0, 'never paid twice');
+});

@@ -135,7 +135,8 @@ await page.click('dialog button[value=ok]');
 await page.waitForSelector('.toast.ok');
 
 // Grant credits to Alex through the dashboard, including the typed confirmation for large amounts.
-await visit(`/dev/users/${alex.id}`, 'Credits');
+const alexBefore = (await call(alex.token, 'GET', '/api/me')).credits;
+await visit(`/dev/users/${alex.id}`, 'Coins');
 await page.fill('#credits input[name=delta]', '6000');
 await page.fill('#credits input[name=reason]', 'Turniersieger E2E');
 await page.click('#credits button');
@@ -143,7 +144,7 @@ await page.fill('dialog input[name=typed]', '6000');
 await page.click('dialog button[value=ok]');
 await page.waitForSelector('text=Gebucht');
 const alexMe = await call(alex.token, 'GET', '/api/me');
-if (alexMe.credits !== 6000) problems.push(`expected Alex to have 6000 credits, has ${alexMe.credits}`);
+if (alexMe.credits !== alexBefore + 6000) problems.push(`expected Alex to have ${alexBefore + 6000} coins, has ${alexMe.credits}`);
 const auditLog = await call(dev.token, 'GET', `/api/admin/audit?target=${alex.id}`);
 if (!auditLog.entries.some((e) => e.action === 'credits.grant' && e.details.reason === 'Turniersieger E2E')) problems.push('audit entry missing');
 

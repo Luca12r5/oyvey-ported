@@ -7,7 +7,7 @@ import { requireUser } from '../app.ts';
 import { badRequest } from '../http.ts';
 import { cleanText, int, obj, oneOf, optStr, str } from '../security.ts';
 import { balance, history } from '../services/credits.ts';
-import { addMetric, dayKey } from '../services/progress.ts';
+import { addMetric, awardGameCoins, awardPlaytimeCoins, dayKey } from '../services/progress.ts';
 import { getUser, rolesOf } from '../services/users.ts';
 
 const PRIVACY = ['everyone', 'friends', 'nobody'] as const;
@@ -102,7 +102,9 @@ export function registerMe(app: App): void {
     db.run('INSERT INTO game_results(user_id, game_id, score, won, created_at) VALUES (:u, :g, :s, :w, :t)', { u: u.id, g: gameId, s: score, w: won ? 1 : 0, t: Date.now() });
     addMetric(db, u.id, 'minigames_played', 1, MAX_REPORT_PER_DAY.minigames_played);
     if (won) addMetric(db, u.id, 'minigame_wins', 1, MAX_REPORT_PER_DAY.minigame_wins);
-    return { ok: true };
+    const coins = awardGameCoins(db, u.id, won);
+    if (coins) app.events.send(u.id, 'credits', { delta: coins, reason: 'game' });
+    return { ok: true, coins };
   }, { rate: ['results', 30] });
 
   r.get('/api/me/stats', (ctx: AppCtx) => {
@@ -143,5 +145,9 @@ function creditPlaytime(app: App, userId: string, minutes: number): void {
     "INSERT INTO metrics(user_id, metric, period, value) VALUES (:u, :m, 'total', :v) ON CONFLICT(user_id, metric, period) DO UPDATE SET value = :v",
     { u: userId, m: key, v: total % 100 },
   );
-  if (whole > 0) addMetric(app.db, userId, 'playtime_minutes', whole, MAX_REPORT_PER_DAY.playtime_minutes);
+  if (whole > 0) {
+    addMetric(app.db, userId, 'playtime_minutes', whole, MAX_REPORT_PER_DAY.playtime_minutes);
+    const coins = awardPlaytimeCoins(app.db, userId);
+    if (coins) app.events.send(userId, 'credits', { delta: coins, reason: 'playtime' });
+  }
 }
