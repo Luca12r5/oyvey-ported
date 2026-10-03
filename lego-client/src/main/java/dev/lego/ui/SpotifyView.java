@@ -85,10 +85,11 @@ public final class SpotifyView extends View {
          boolean var14 = var11 == this.tab;
          Gx.rect(var10, var5 + this.p(48.0), var12, var13, var13 / 2, var14 ? -1 : 452984831);
          Gx.textCenter(var9[var11], var10 + var12 / 2.0F, var5 + this.p(48.0) + var13 / 2.0F, this.pf(8.0), 3, var14 ? -16777216 : -570425345);
+         final int tabIndex = var11;
          Kit.hit(var10, var5 + this.p(48.0), var12, var13).click(() -> {
-            this.tab = var11;
+            this.tab = tabIndex;
             this.scroll = this.scrollT = 0.0F;
-            if (var11 == 1 && this.lists == null && api() != null) {
+            if (tabIndex == 1 && this.lists == null && api() != null) {
                this.load(() -> this.lists = api().playlists());
             }
          });
