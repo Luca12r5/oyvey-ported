@@ -34,3 +34,20 @@ jobs:
         run: |
           npx playwright-core install chromium
           CHROMIUM_PATH=$(node -e "console.log(require('playwright-core').chromium.executablePath())") npm run e2e
+
+  docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build server image
+        run: docker build -t lego-server .
+      - name: Start and check
+        run: |
+          docker run -d --name lego -p 8787:8787 -e LEGO_SECURE_COOKIES=0 -e LEGO_PUBLIC_ORIGIN=http://localhost:8787 lego-server
+          for i in $(seq 1 30); do curl -fsS http://localhost:8787/api/public/status && break; sleep 1; done
+          curl -fsS -o /dev/null http://localhost:8787/
+          curl -fsS -o /dev/null http://localhost:8787/assets/style.css
+          docker exec lego node --disable-warning=ExperimentalWarning apps/backend/src/cli.ts backup /data/test-backup.sqlite
+          docker logs lego

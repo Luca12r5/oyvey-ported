@@ -1,0 +1,21 @@
+# Render Blueprint: LEGO server (API + website) as a Docker web service with a
+# persistent disk for the SQLite database. Render → New → Blueprint → this repo.
+services:
+  - type: web
+    name: lego-server
+    runtime: docker
+    plan: starter            # persistent disks need a paid plan
+    healthCheckPath: /api/public/status
+    disk:
+      name: lego-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: LEGO_PUBLIC_ORIGIN
+        sync: false          # e.g. https://lego-server.onrender.com or your domain
+      - key: LEGO_SECURE_COOKIES
+        value: "1"
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false

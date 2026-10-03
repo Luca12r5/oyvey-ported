@@ -1,0 +1,30 @@
+# Fly.io: fly launch --no-deploy (keeps this file), then
+#   fly volumes create lego_data --size 1
+#   fly secrets set LEGO_PUBLIC_ORIGIN=https://<app>.fly.dev
+#   fly deploy
+app = "lego-server"
+primary_region = "fra"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  LEGO_SECURE_COOKIES = "1"
+
+[mounts]
+  source = "lego_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8787
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    path = "/api/public/status"
+    timeout = "5s"
