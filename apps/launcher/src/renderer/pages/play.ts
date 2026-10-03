@@ -59,8 +59,10 @@ export async function playPage(el: HTMLElement): Promise<void> {
           </button>
           <button class="play-drop" id="drop" aria-label="${t('play.profile')}" aria-haspopup="menu">${icon('chevron')}</button>
         </div>`
-      : html`<div class="play-group"><button class="play-btn" id="signin"><span class="pb-title">${t('acc.signin')}</span><span class="pb-sub">${t('play.signin')}</span></button></div>
-        <button class="btn official" id="official">${icon('external', 'sm')} ${t('play.official')}</button>`}
+      : state.info.msClientConfigured
+        ? html`<div class="play-group"><button class="play-btn" id="signin"><span class="pb-title">${t('acc.signin')}</span><span class="pb-sub">${t('play.signin')}</span></button></div>
+          <button class="btn official" id="official">${icon('external', 'sm')} ${t('play.official')}</button>`
+        : html`<div class="play-group"><button class="play-btn" id="launchOfficial"><span class="pb-title">${t('play.play')}</span><span class="pb-sub">${pixel(profile.icon, 'xs')}${profile.name} · ${t('play.viaOfficial')}</span></button><button class="play-drop" id="drop" aria-label="${t('play.profile')}" aria-haspopup="menu">${icon('chevron')}</button></div>`}
       <div class="status glass" id="status" hidden></div>
       <button class="link small" id="console">${icon('terminal', 'sm')} ${t('play.console')}</button>
     </div>
@@ -93,6 +95,7 @@ export async function playPage(el: HTMLElement): Promise<void> {
   // ---- launch / progress / log
   el.querySelector('#signin')?.addEventListener('click', () => void signInFlow());
   el.querySelector('#official')?.addEventListener('click', () => void officialFlow(profile.id));
+  el.querySelector('#launchOfficial')?.addEventListener('click', () => void officialFlow(profile.id));
   el.querySelector('#allNews')!.addEventListener('click', () => void go('news'));
   el.querySelector('#drop')?.addEventListener('click', (e) => profileMenu(e.currentTarget as HTMLElement));
   const statusBox = el.querySelector<HTMLElement>('#status')!;

@@ -20,7 +20,7 @@ import {
 } from '../core/modrinth.ts';
 import { cfLoader, copyInstance, installCfPack, readCfManifest, readFolder, scanInstances, type FoundInstance } from '../core/importers.ts';
 import { listEntries } from '../core/zip.ts';
-import { exportToOfficial, officialLauncherPresent, officialMinecraftDir } from '../core/official.ts';
+import { exportToOfficial, officialLauncherPresent, officialMinecraftDir, openOfficialLauncher } from '../core/official.ts';
 import { fetchJson } from '../core/net.ts';
 import { createLogCleaner, diagnose, startGame } from '../core/launch.ts';
 import { DEFAULT_PROFILE, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
@@ -609,6 +609,7 @@ function registerIpc(): void {
     const dir = officialMinecraftDir();
     return { present: await officialLauncherPresent(dir), dir };
   });
+  ipcMain.handle('official:open', () => openOfficialLauncher());
   ipcMain.handle('official:export', async (_e, profileId: string, icon: string | null) => {
     const p = profileById(profileId);
     const gameDir = profileDir(p);

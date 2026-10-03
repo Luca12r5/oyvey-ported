@@ -38,6 +38,7 @@ const api: LauncherApi = {
   importInstance: (inst, w) => ipcRenderer.invoke('import:instance', inst, w),
   officialStatus: () => ipcRenderer.invoke('official:status'),
   exportToOfficial: (id, icon) => ipcRenderer.invoke('official:export', id, icon),
+  openOfficialLauncher: () => ipcRenderer.invoke('official:open'),
   lego: (m, p, b) => ipcRenderer.invoke('lego', m, p, b),
   openExternal: (u) => ipcRenderer.invoke('open-external', u),
   diagnostics: () => ipcRenderer.invoke('diagnostics'),

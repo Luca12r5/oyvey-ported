@@ -4,6 +4,7 @@
 // official launcher then handles sign-in, downloads and starting the game.
 
 import { copyFile, mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
+import { spawn } from 'node:child_process';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { layout } from './install.ts';
@@ -88,4 +89,36 @@ export async function exportToOfficial(f: FetchLike, mcDir: string, o: OfficialP
   await writeFile(`${file}.tmp`, JSON.stringify(data, null, 2));
   await rename(`${file}.tmp`, file);
   return versionId;
+}
+
+/**
+ * Starts the official Minecraft Launcher if it is installed: the classic
+ * installer version (MinecraftLauncher.exe) or the Microsoft Store/Xbox app
+ * version (started through its app id). Returns false if neither was found.
+ */
+export async function openOfficialLauncher(env: NodeJS.ProcessEnv = process.env, platform: NodeJS.Platform = process.platform): Promise<boolean> {
+  const exists = (p: string) => stat(p).then(() => true, () => false);
+  if (platform === 'win32') {
+    const exes = [env['ProgramFiles(x86)'], env.ProgramFiles, env.LOCALAPPDATA && join(env.LOCALAPPDATA, 'Programs')]
+      .filter((x): x is string => !!x)
+      .map((dir) => join(dir, 'Minecraft Launcher', 'MinecraftLauncher.exe'));
+    for (const exe of exes) {
+      if (await exists(exe)) {
+        spawn(exe, [], { detached: true, stdio: 'ignore', shell: false }).unref();
+        return true;
+      }
+    }
+    // Store/Xbox app version: only if its package is really installed.
+    const pkg = env.LOCALAPPDATA && join(env.LOCALAPPDATA, 'Packages', 'Microsoft.4297127D64EC6_8wekyb3d8bbwe');
+    if (pkg && (await exists(pkg))) {
+      spawn('explorer.exe', ['shell:AppsFolder\\Microsoft.4297127D64EC6_8wekyb3d8bbwe!Minecraft'], { detached: true, stdio: 'ignore', shell: false }).unref();
+      return true;
+    }
+    return false;
+  }
+  if (platform === 'darwin' && (await exists('/Applications/Minecraft.app'))) {
+    spawn('open', ['-a', 'Minecraft'], { detached: true, stdio: 'ignore' }).unref();
+    return true;
+  }
+  return false;
 }

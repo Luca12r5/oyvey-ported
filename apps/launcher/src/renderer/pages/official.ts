@@ -43,9 +43,10 @@ export async function officialFlow(profileId?: string): Promise<void> {
   const off = api.on('launch-progress', (x: { step: string }) => { const s = d.querySelector('#step'); if (s) s.textContent = x.step; });
   try {
     const r = await api.exportToOfficial(p.id, await pixelPng(p.icon));
+    const opened = await api.openOfficialLauncher().catch(() => false);
     mount(d, html`<h2>${icon('check', 'sm')} Fertig!</h2>
-      <p>Im offiziellen Minecraft Launcher gibt es jetzt die Installation <b>„${r.name}“</b>.</p>
-      <ol class="small"><li>Minecraft Launcher öffnen (anmelden wie immer).</li><li>Oben „Minecraft: Java Edition“ → links unten neben „Spielen“ die Installation <b>${r.name}</b> wählen.</li><li><b>Spielen</b> klicken.</li></ol>
+      <p>${opened ? 'Der Minecraft Launcher öffnet sich jetzt.' : 'Öffne jetzt den Minecraft Launcher.'} Die Installation <b>„${r.name}“</b> ist angelegt.</p>
+      <ol class="small"><li>Im Minecraft Launcher anmelden (falls noch nicht geschehen).</li><li>„Minecraft: Java Edition“ → links unten neben „Spielen“ <b>${r.name}</b> wählen (meist schon ausgewählt).</li><li><b>Spielen</b> klicken – Einzelspieler und Multiplayer-Server funktionieren.</li></ol>
       <p class="small muted">Mods, Einstellungen und Welten liegen im Ordner dieses LEGO-Profils – du kannst weiter beide Launcher benutzen.</p>
       <form method="dialog" class="row gap"><button class="btn primary">OK</button></form>`);
   } catch (e) {
