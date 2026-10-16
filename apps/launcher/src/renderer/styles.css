@@ -495,3 +495,23 @@ body.is-fullscreen .titlebar { -webkit-app-region: no-drag; }
 .intro-btn { padding: 8px 16px; border-radius: 99px; border: 1px solid rgba(243,236,255,.22); background: rgba(7,6,11,.55); color: #f3ecff; font: 600 .8rem var(--head); letter-spacing: .08em; cursor: pointer; backdrop-filter: blur(10px); transition: background .2s, border-color .2s, transform .2s var(--spring); }
 .intro-btn:hover { background: rgba(255,122,26,.25); border-color: #ff7a1a; transform: translateY(-1px); }
 .intro-btn.skip::after { content: " \25B8\25B8"; }
+
+/* game console */
+.console-card { left: 0; right: 340px; bottom: 112px; padding: 12px; }
+.console-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.console-head h3 { margin: 0; display: flex; align-items: center; gap: 6px; margin-right: auto; }
+.console-head .seg button b { font-weight: 700; opacity: .8; margin-left: 2px; }
+.console { height: 260px; padding: 6px 0; background: rgba(4,3,8,.7); white-space: normal; word-break: normal; }
+.console .ln { display: grid; grid-template-columns: 62px 52px minmax(0, 120px) minmax(0, 1fr); gap: 8px; padding: 1px 10px; line-height: 1.45; border-left: 2px solid transparent; }
+.console .ln:hover { background: rgba(255,255,255,.04); }
+.console .ts { color: #6f6688; }
+.console .lv { font-weight: 700; font-size: .66rem; letter-spacing: .04em; align-self: center; text-align: center; border-radius: 4px; padding: 0 4px; color: #a99bc4; background: rgba(169,155,196,.1); }
+.console .src { color: #8a7fa6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.console .tx { white-space: pre-wrap; word-break: break-word; color: #d9d0ee; tab-size: 2; }
+.console .lv-WARN { border-left-color: #fbbf24; } .console .lv-WARN .lv { color: #fbbf24; background: rgba(251,191,36,.12); }
+.console .lv-ERROR, .console .lv-FATAL { border-left-color: var(--blood); background: rgba(225,29,72,.07); }
+.console .lv-ERROR .lv, .console .lv-FATAL .lv { color: #fff; background: var(--blood); }
+.console .lv-ERROR .tx, .console .lv-FATAL .tx { color: #ffb4c2; }
+.console .lv-DEBUG { opacity: .6; }
+.console .ln.flash { animation: lnflash 1.4s ease; }
+@keyframes lnflash { 0%, 40% { background: rgba(225,29,72,.35); } }

@@ -15,12 +15,10 @@ export async function signInFlow(): Promise<void> {
 }
 
 function notConfigured(): void {
-  const d = dialog(html`<h2>Anmeldung noch nicht eingerichtet</h2>
-    <p>Diesem Launcher-Build fehlt die Microsoft-App-ID. Der Betreiber muss sie einmalig bei Microsoft anlegen und von Mojang freischalten lassen – danach ist die Anmeldung für alle automatisch.</p>
-    <p class="small muted">Anleitung: docs/MICROSOFT-LOGIN.md im Projekt. Hast du schon eine ID, trag sie unter Einstellungen → Erweitert ein.</p>
-    <div class="row between gap"><button class="btn" id="close">Schließen</button><button class="btn primary" id="settings">${icon('settings', 'sm')} Einstellungen</button></div>`);
+  const d = dialog(html`<h2>Anmeldung noch nicht verfügbar</h2>
+    <p>Die Microsoft-Anmeldung ist in diesem Launcher-Build noch nicht eingerichtet. Du kannst den Launcher solange im Gastmodus ausprobieren.</p>
+    <div class="row between gap"><button class="btn primary" id="close">OK</button></div>`);
   d.querySelector('#close')!.addEventListener('click', () => d.close());
-  d.querySelector('#settings')!.addEventListener('click', () => { d.close(); void go('settings').then(() => document.querySelector<HTMLButtonElement>('[data-tab=advanced]')?.click()); });
 }
 
 /** Fallback: device code entered on microsoft.com/link in any browser. */

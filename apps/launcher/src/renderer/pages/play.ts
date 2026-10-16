@@ -9,8 +9,11 @@ import { t } from '../i18n.ts';
 import type { GameProfile } from '../../core/settings.ts';
 import type { LaunchProgress } from '../../ipc-types.ts';
 import { signInFlow } from './account.ts';
+import { isProblem, parseLine, type LogEntry } from '../logparse.ts';
 
-const logLines: { line: string; stream: string }[] = [];
+const logLines: LogEntry[] = [];
+let logFilter: 'all' | 'warn' | 'error' = 'all';
+const shown = (e: LogEntry) => logFilter === 'all' || (logFilter === 'error' ? isProblem(e) : e.level !== 'INFO' && e.level !== 'DEBUG');
 const skinAnimOn = () => { try { return localStorage.getItem('lego.skinAnim') !== '0'; } catch { return true; } };
 let anim: Anim = 'idle';
 
@@ -62,7 +65,11 @@ export async function playPage(el: HTMLElement): Promise<void> {
       <div class="status glass" id="status" hidden></div>
       <button class="link small" id="console">${icon('terminal', 'sm')} ${t('play.console')}</button>
     </div>
-    <div class="glass console-card" id="consoleCard" hidden><div class="row between"><h3>Log</h3><div class="row"><button class="btn sm" id="openLogs">${icon('folder', 'sm')}</button><button class="btn sm" id="copyLog">Kopieren</button></div></div><div class="console" id="log"></div></div>
+    <div class="glass console-card" id="consoleCard" hidden>
+      <div class="console-head"><h3>${icon('terminal', 'sm')} ${t('play.console')}</h3>
+        <div class="seg" id="lvl"><button data-lvl="all">Alle</button><button data-lvl="warn">Warnungen <b id="cWarn">0</b></button><button data-lvl="error">Fehler <b id="cErr">0</b></button></div>
+        <div class="row"><button class="btn sm" id="firstErr" disabled>Zum ersten Fehler</button><button class="icon-btn" id="openLogs" title="Log-Ordner">${icon('folder', 'sm')}</button><button class="btn sm" id="copyLog">Kopieren</button><button class="icon-btn" id="closeConsole" title="Schließen">${icon('close', 'sm')}</button></div></div>
+      <div class="console" id="log" role="log" aria-live="off"></div></div>
   </div>`);
 
   // ---- character
@@ -72,6 +79,7 @@ export async function playPage(el: HTMLElement): Promise<void> {
     void avatar.setSkin(state.skin.skin, state.skin.variant, state.skin.cape).catch(() => {});
     avatar.play(anim);
     avatar.setPaused(!skinAnimOn());
+    setTimeout(() => avatar?.react('greet'), 700);
   } catch (e) {
     console.warn('avatar unavailable', e);
   }
@@ -94,19 +102,53 @@ export async function playPage(el: HTMLElement): Promise<void> {
   el.querySelector('#drop')?.addEventListener('click', (e) => profileMenu(e.currentTarget as HTMLElement));
   const statusBox = el.querySelector<HTMLElement>('#status')!;
   const logBox = el.querySelector<HTMLElement>('#log')!;
-  const drawLog = () => {
-    logBox.replaceChildren(...logLines.slice(-400).map((l) => {
-      const d = document.createElement('div');
-      if (l.stream === 'err') d.className = 'err';
-      d.textContent = l.line;
-      return d;
-    }));
-    logBox.scrollTop = logBox.scrollHeight;
+  const consoleCard = el.querySelector<HTMLElement>('#consoleCard')!;
+  const row = (e: LogEntry) => {
+    const d = document.createElement('div');
+    d.className = `ln lv-${e.level}`;
+    for (const [cls, txt] of [['ts', e.time], ['lv', e.level], ['src', e.source], ['tx', e.text]] as const) {
+      const sp = document.createElement('span');
+      sp.className = cls;
+      sp.textContent = txt;
+      d.append(sp);
+    }
+    return d;
   };
+  const counts = () => {
+    el.querySelector('#cWarn')!.textContent = String(logLines.filter((e) => e.level === 'WARN').length);
+    const errs = logLines.filter(isProblem).length;
+    el.querySelector('#cErr')!.textContent = String(errs);
+    el.querySelector<HTMLButtonElement>('#firstErr')!.disabled = errs === 0;
+  };
+  const drawLog = () => {
+    logBox.replaceChildren(...logLines.filter(shown).slice(-600).map(row));
+    logBox.scrollTop = logBox.scrollHeight;
+    el.querySelectorAll<HTMLButtonElement>('#lvl button').forEach((b) => b.classList.toggle('on', b.dataset.lvl === logFilter));
+    counts();
+  };
+  const appendLog = (e: LogEntry) => {
+    const stick = logBox.scrollHeight - logBox.scrollTop - logBox.clientHeight < 40;
+    if (shown(e)) logBox.append(row(e));
+    while (logBox.childElementCount > 600) logBox.firstElementChild!.remove();
+    if (stick) logBox.scrollTop = logBox.scrollHeight;
+    counts();
+  };
+  const openConsole = (open: boolean) => { consoleCard.hidden = !open; if (open) drawLog(); };
   drawLog();
-  el.querySelector('#console')!.addEventListener('click', () => { const c = el.querySelector<HTMLElement>('#consoleCard')!; c.hidden = !c.hidden; if (!c.hidden) drawLog(); });
+  el.querySelector('#console')!.addEventListener('click', () => openConsole(consoleCard.hidden));
+  el.querySelector('#closeConsole')!.addEventListener('click', () => openConsole(false));
+  el.querySelector('#lvl')!.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-lvl]');
+    if (b) { logFilter = b.dataset.lvl as typeof logFilter; drawLog(); }
+  });
+  el.querySelector('#firstErr')!.addEventListener('click', () => {
+    if (logFilter !== 'all') { logFilter = 'all'; drawLog(); }
+    const first = logBox.querySelector<HTMLElement>('.lv-ERROR, .lv-FATAL');
+    first?.scrollIntoView({ block: 'center' });
+    first?.classList.add('flash');
+  });
   el.querySelector('#openLogs')!.addEventListener('click', () => void api.openFolder('logs'));
-  el.querySelector('#copyLog')!.addEventListener('click', () => void navigator.clipboard.writeText(logLines.map((l) => l.line).join('\n')).then(() => toast('Log kopiert', 'ok')));
+  el.querySelector('#copyLog')!.addEventListener('click', () => void navigator.clipboard.writeText(logLines.map((l) => `[${l.time}] [${l.source}/${l.level}] ${l.text}`).join('\n')).then(() => toast('Log kopiert', 'ok')));
 
   const unsub = [
     api.on('launch-progress', (p: LaunchProgress) => {
@@ -117,9 +159,10 @@ export async function playPage(el: HTMLElement): Promise<void> {
       statusBox.querySelector('#cancel')?.addEventListener('click', () => api.cancelLaunch());
     }),
     api.on('game-log', (l: { line: string; stream: string }) => {
-      logLines.push(l);
+      const entry = parseLine(l.line, l.stream);
+      logLines.push(entry);
       if (logLines.length > 5000) logLines.splice(0, 1000);
-      if (!el.querySelector<HTMLElement>('#consoleCard')!.hidden) drawLog();
+      if (!consoleCard.hidden) appendLog(entry);
     }),
     api.on('game-exit', (r: { code: number; hint: string | null }) => {
       if (r.code === 0) toast('Minecraft wurde beendet.');
@@ -139,7 +182,8 @@ export async function playPage(el: HTMLElement): Promise<void> {
     btn.parentElement!.classList.add('busy');
     mount(btn.querySelector('.pb-title')!, html`${t('play.installing')}`);
     logLines.length = 0;
-    avatar?.play('walk');
+    avatar?.react('launch');
+    if (s.autoConsole) openConsole(true);
     const r = await api.launch(profile.id);
     btn.parentElement!.classList.remove('busy');
     if (!r.ok) {
@@ -152,7 +196,7 @@ export async function playPage(el: HTMLElement): Promise<void> {
       btn.parentElement!.classList.add('running');
       mount(btn.querySelector('.pb-title')!, html`${t('play.running')}`);
       statusBox.hidden = true;
-      avatar?.play('wave');
+      avatar?.react('success');
       toast(t('play.fun'), 'ok');
     }
   });

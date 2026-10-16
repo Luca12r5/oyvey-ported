@@ -145,7 +145,7 @@ export async function minecraftFromMicrosoft(f: FetchLike, msAccessToken: string
     });
   } catch (e) {
     if (e instanceof HttpStatusError && e.status === 403) {
-      throw new AuthError('app_not_approved', 'Minecraft services rejected this launcher build. The Azure app id is not approved for the Minecraft API (see docs/LAUNCHER.md).');
+      throw new AuthError('app_not_approved', 'Die Minecraft-Anmeldung für diesen Launcher wird gerade noch von Mojang freigeschaltet. Bitte versuche es später noch einmal.');
     }
     throw e;
   }
@@ -241,7 +241,7 @@ export async function exchangeCode(f: FetchLike, clientId: string, code: string,
     if (e instanceof HttpStatusError) {
       let err = '';
       try { err = (JSON.parse(e.body) as { error_description?: string; error?: string }).error_description ?? ''; } catch { /* ignore */ }
-      if (/AADSTS50011|redirect/i.test(err)) throw new AuthError('redirect_uri', `In der Azure-App fehlt die Umleitungs-URI ${MS_REDIRECT_URI} (Plattform „Mobil- und Desktopanwendungen“).`);
+      if (/AADSTS50011|redirect/i.test(err)) throw new AuthError('redirect_uri', 'Die Microsoft-Anmeldung ist für diesen Launcher gerade nicht verfügbar. Bitte später erneut versuchen.');
       throw new AuthError('ms_error', `Microsoft-Anmeldung fehlgeschlagen (${err.split('\n')[0] || e.status}).`);
     }
     throw e;

@@ -435,7 +435,7 @@ function registerIpc(): void {
   };
   const requireClientId = () => {
     const id = clientId();
-    if (!id) throw new Error('Keine Microsoft-Client-ID: in Einstellungen → Erweitert eintragen oder beim Build LEGO_MS_CLIENT_ID setzen (docs/MICROSOFT-LOGIN.md).');
+    if (!id) throw new Error('Die Microsoft-Anmeldung ist in diesem Launcher-Build nicht eingerichtet.');
     return id;
   };
   // Default: Microsoft's sign-in page in a launcher window (like other launchers).
