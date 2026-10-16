@@ -85,6 +85,8 @@ export interface Settings {
   stage: StageStyle;
   designPresets: DesignPreset[];
   bgImage: string;
+  /** User chose to try the launcher without signing in (guest mode). */
+  guest: boolean;
 }
 
 export const DEFAULT_PROFILE: GameProfile = {
@@ -128,7 +130,7 @@ export function defaultSettings(): Settings {
     closeOnLaunch: false, reducedMotion: false, uiScale: 1, autoUpdate: 'ask', rarityColors: {},
     accentColor: null, background: 'graveyard', backgroundQuality: 0.6, snow: false, showSnapshots: false, showHistorical: false, curseforgeKey: '', msClientId: '',
     introEnabled: true, introSound: true, autoConsole: true,
-    fx: { ...DEFAULT_FX }, surface: 'glass', stage: 'portal', designPresets: [], bgImage: '',
+    fx: { ...DEFAULT_FX }, surface: 'glass', stage: 'portal', designPresets: [], bgImage: '', guest: false,
   };
 }
 

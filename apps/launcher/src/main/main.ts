@@ -133,6 +133,57 @@ async function connectLego(): Promise<void> {
   send('auth', authState());
 }
 
+// ---- live events (friend requests, messages, presence) ------------------------
+// Server-Sent Events from /api/events, forwarded to the renderer as 'lego-event'.
+let eventsToken: string | null = null;
+let eventsAbort: AbortController | null = null;
+async function eventsLoop(token: string, ac: AbortController): Promise<void> {
+  let delay = 2000;
+  while (!ac.signal.aborted) {
+    try {
+      const r = await fetch(`${backendUrl()}/api/events`, { headers: { Authorization: `Bearer ${token}`, Accept: 'text/event-stream' }, signal: ac.signal });
+      if (!r.ok || !r.body) throw new Error(`events ${r.status}`);
+      delay = 2000;
+      const reader = r.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let i: number;
+        while ((i = buf.indexOf('\n\n')) >= 0) {
+          const chunk = buf.slice(0, i);
+          buf = buf.slice(i + 2);
+          let type = 'message';
+          let data = '';
+          for (const line of chunk.split('\n')) {
+            if (line.startsWith('event: ')) type = line.slice(7).trim();
+            else if (line.startsWith('data: ')) data += line.slice(6);
+          }
+          if (!data || type === 'hello') continue;
+          try { send('lego-event', { type, data: JSON.parse(data) }); } catch { /* malformed event */ }
+        }
+      }
+    } catch {
+      if (ac.signal.aborted) return;
+    }
+    await new Promise((res) => setTimeout(res, delay));
+    delay = Math.min(60_000, delay * 2);
+  }
+}
+setInterval(() => {
+  const token = active()?.lego?.token ?? null;
+  if (token === eventsToken) return;
+  eventsAbort?.abort();
+  eventsAbort = null;
+  eventsToken = token;
+  if (token && backendUrl()) {
+    eventsAbort = new AbortController();
+    void eventsLoop(token, eventsAbort);
+  }
+}, 3000);
+
 // ---- presence heartbeat ----------------------------------------------------
 setInterval(() => {
   if (!active()?.lego) return;
@@ -387,7 +438,7 @@ function registerIpc(): void {
     const allowed: (keyof Settings)[] = [
       'themeId', 'customThemes', 'language', 'backendUrl', 'selectedProfile', 'closeOnLaunch', 'reducedMotion', 'uiScale', 'autoUpdate', 'rarityColors',
       'accentColor', 'background', 'backgroundQuality', 'snow', 'showSnapshots', 'showHistorical', 'curseforgeKey', 'msClientId',
-      'introEnabled', 'introSound', 'autoConsole', 'fx', 'surface', 'stage', 'designPresets', 'bgImage',
+      'introEnabled', 'introSound', 'autoConsole', 'fx', 'surface', 'stage', 'designPresets', 'bgImage', 'guest',
     ];
     for (const k of allowed) if (k in patch) (settings as unknown as Record<string, unknown>)[k] = patch[k];
     // Never trust the renderer: re-validate imported themes and clamp numbers.
@@ -397,7 +448,7 @@ function registerIpc(): void {
     if (settings.accentColor !== null && !HEX.test(String(settings.accentColor))) settings.accentColor = null;
     if (typeof settings.background !== 'string' || !/^[a-z0-9-]{1,32}$/.test(settings.background)) settings.background = 'nebula';
     if (!['de', 'en'].includes(settings.language)) settings.language = 'de';
-    for (const k of ['snow', 'showSnapshots', 'showHistorical', 'closeOnLaunch', 'reducedMotion', 'introEnabled', 'introSound', 'autoConsole'] as const) settings[k] = !!settings[k];
+    for (const k of ['snow', 'showSnapshots', 'showHistorical', 'closeOnLaunch', 'reducedMotion', 'introEnabled', 'introSound', 'autoConsole', 'guest'] as const) settings[k] = !!settings[k];
     settings.msClientId = typeof settings.msClientId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(settings.msClientId.trim()) ? settings.msClientId.trim().toLowerCase() : '';
     settings.curseforgeKey = typeof settings.curseforgeKey === 'string' ? settings.curseforgeKey.trim().slice(0, 200) : '';
     if (!['ask', 'auto', 'off'].includes(settings.autoUpdate)) settings.autoUpdate = 'ask';

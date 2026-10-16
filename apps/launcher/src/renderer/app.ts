@@ -3,7 +3,7 @@
 
 import type { AppInfo, AuthState } from '../ipc-types.ts';
 import type { Settings } from '../core/settings.ts';
-import { api, html, mount, toast, errorToast, fmtNum, lego } from './ui.ts';
+import { api, dialog, html, mount, toast, errorToast, fmtNum, lego } from './ui.ts';
 import { applyTheme, findTheme } from './theme.ts';
 import { brickLogo, icon, pixel } from './icons.ts';
 import { Background } from './bg.ts';
@@ -143,6 +143,7 @@ function renderWindowButtons(st: { maximized: boolean; fullscreen: boolean }): v
 
 function renderTitlebar(): void {
   document.getElementById('tbVersion')!.textContent = `v${state.info.version}`;
+  document.body.classList.toggle('guest', !state.auth.signedIn);
   const coins = document.getElementById('tbCoins')!;
   coins.hidden = state.coins === null;
   if (state.coins !== null) mount(coins, html`${pixel('coin')}<b>${fmtNum(state.coins)}</b>`);
@@ -226,7 +227,7 @@ export async function go(page: string): Promise<void> {
   view.className = 'view-enter';
   host.replaceChildren(view);
   if (def.needsLego && !state.auth.lego.connected) {
-    mount(view, html`<div class="card narrow"><h1>${def.label()}</h1><p class="muted">Diese Seite braucht eine Verbindung zum LEGO-Server.</p>
+    mount(view, html`<div class="card narrow"><h1>${def.label()}</h1>${state.auth.signedIn ? '' : html`<p><span class="badge c" data-c="#ff7a1a">${icon('ghost', 'xs')} Gastmodus</span></p>`}<p class="muted">Diese Seite braucht ein Konto und eine Verbindung zum LEGO-Server. Im Gastmodus kannst du Home, Profile, Designs, Startanimation, VR-Vorschau und alle Einstellungen ausprobieren.</p>
       <p>${state.auth.signedIn ? (state.auth.lego.error ?? 'Nicht verbunden.') : 'Melde dich zuerst mit deinem Microsoft-Konto an.'}</p>
       <div class="row">${state.auth.signedIn ? html`<button class="btn primary" id="reconnect">Erneut verbinden</button>` : html`<button class="btn primary" id="signin">${t('play.signin')}</button>`}</div></div>`);
     view.querySelector('#reconnect')?.addEventListener('click', async () => { state.auth = await api.reconnectLego(); await loadIdentity(); void go(page); });
@@ -283,6 +284,12 @@ async function boot(): Promise<void> {
       void go(state.page);
     }
   });
+  api.on('lego-event', (ev: { type: string; data: { from?: { name?: string }; from_id?: string; body?: string } }) => {
+    if (ev.type === 'friend_request') toast(`${ev.data.from?.name ?? 'Jemand'} möchte dein Freund sein`, 'ok');
+    else if (ev.type === 'friend_accepted') toast('Freundschaftsanfrage angenommen', 'ok');
+    else if (ev.type === 'party_invite') toast(`${ev.data.from?.name ?? 'Jemand'} lädt dich in eine Party ein`);
+    else if (ev.type === 'message' && state.page !== 'friends') toast(`Neue Nachricht: ${String(ev.data.body ?? '').slice(0, 60)}`);
+  });
   api.on('update', (u: { state: string; version?: string; error?: string; percent?: number }) => {
     if (u.state === 'available' && state.settings.autoUpdate === 'ask') toast(`Update ${u.version} verfügbar – Einstellungen → Über`);
     if (u.state === 'ready') toast(`Update ${u.version} bereit. Wird beim Beenden installiert.`, 'ok');
@@ -294,6 +301,17 @@ async function boot(): Promise<void> {
   await go('play');
   await intro;
   bg?.start();
+  if (!state.auth.signedIn && !state.settings.guest && !state.info.e2e) welcome();
+}
+
+/** First start without an account: sign in, or try everything as a guest. */
+function welcome(): void {
+  const d = dialog(html`<h2>Willkommen beim LEGO Launcher</h2>
+    <p>Melde dich mit dem Microsoft-Konto an, das Minecraft: Java Edition besitzt – oder schau dich erst als Gast um.</p>
+    <ul class="small muted"><li>Als Gast: Designs, 3D-Hintergründe, Startanimation, Charakter, Profile, Einstellungen und VR-Vorschau ausprobieren.</li><li>Mit Konto: Spielen, Freunde, Cosmetics, Shop und Belohnungen.</li></ul>
+    <div class="row between gap"><button class="btn" id="guestGo">${icon('ghost', 'sm')} Als Gast ausprobieren</button><button class="btn primary" id="signGo">${t('play.signin')}</button></div>`);
+  d.querySelector('#guestGo')!.addEventListener('click', async () => { d.close(); state.settings = await api.setSettings({ guest: true }); toast('Gastmodus aktiv – viel Spaß beim Umschauen!', 'ok'); });
+  d.querySelector('#signGo')!.addEventListener('click', () => { d.close(); void signInFlow(); });
 }
 
 function startIntro(): Promise<void> {

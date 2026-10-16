@@ -168,3 +168,32 @@ test('public profiles and leaderboards honour privacy', async (t) => {
   assert.deepEqual(board.body.entries.map((e: any) => e.name), ['Public']);
   assert.equal((await a.call('POST', '/api/friends/requests', { player: 'Private' })).status, 403);
 });
+
+test('player search: prefix match, relation, blocks and privacy', async (t) => {
+  const h = await start();
+  t.after(() => h.close());
+  const a = await login(h, 'Alice');
+  const b = await login(h, 'Bob_Builder');
+  const c = await login(h, 'BobCat');
+  await login(h, 'Bobby');
+
+  assert.deepEqual((await a.call('GET', '/api/users/search?q=bo')).body.users, []);
+  let r = await a.call('GET', '/api/users/search?q=bob');
+  assert.deepEqual(r.body.users.map((u: { name: string }) => u.name).sort(), ['BobCat', 'Bob_Builder', 'Bobby'].sort());
+  // "_" is literal, not a wildcard.
+  assert.deepEqual((await a.call('GET', '/api/users/search?q=bob_')).body.users.map((u: { name: string }) => u.name), ['Bob_Builder']);
+
+  await a.call('POST', '/api/friends/requests', { player: 'BobCat' });
+  r = await a.call('GET', '/api/users/search?q=bobcat');
+  assert.equal(r.body.users[0].relation, 'requested');
+  assert.equal((await c.call('GET', '/api/users/search?q=alice')).body.users[0].relation, 'incoming');
+
+  // Blocked either way: invisible.
+  await b.call('POST', '/api/blocks', { player: 'Alice' });
+  assert.ok(!(await a.call('GET', '/api/users/search?q=bob_b')).body.users.length);
+  // Profile hidden from everyone.
+  await c.call('PUT', '/api/me/privacy', { profile: 'nobody', status: 'friends', activity: 'friends', messages: 'friends', friendRequests: true });
+  assert.ok(!(await a.call('GET', '/api/users/search?q=bobcat')).body.users.length);
+  // Searching yourself returns nothing.
+  assert.ok(!(await a.call('GET', '/api/users/search?q=alice')).body.users.length);
+});

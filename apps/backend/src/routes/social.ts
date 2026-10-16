@@ -53,6 +53,27 @@ export function registerSocial(app: App): void {
     };
   });
 
+  // Find players by name prefix. Respects blocks (both ways) and profile privacy.
+  r.get('/api/users/search', (ctx: AppCtx) => {
+    const u = requireUser(ctx);
+    const q = (ctx.query.get('q') ?? '').trim().toLowerCase();
+    if (!/^[a-z0-9_]{3,16}$/.test(q)) return { users: [] };
+    const rows = db.all<UserRow>(
+      `SELECT * FROM users WHERE mc_name_lower LIKE :p ESCAPE '\\' AND id != :u
+       ORDER BY mc_name_lower = :q DESC, length(mc_name_lower), mc_name_lower LIMIT 25`,
+      { p: `${q.replace(/_/g, '\\_')}%`, u: u.id, q });
+    const users = rows
+      .filter((x) => !isBlocked(db, x.id, u.id) && !isBlocked(db, u.id, x.id) && canSee(db, x.privacy_profile, x.id, u.id))
+      .slice(0, 10)
+      .map((x) => {
+        const friend = areFriends(db, u.id, x.id);
+        const out = !friend && !!db.get('SELECT 1 FROM friend_requests WHERE from_id = :a AND to_id = :b', { a: u.id, b: x.id });
+        const inc = !friend && !out && !!db.get('SELECT 1 FROM friend_requests WHERE from_id = :b AND to_id = :a', { a: u.id, b: x.id });
+        return { ...publicUser(x), relation: friend ? 'friend' : out ? 'requested' : inc ? 'incoming' : 'none', acceptsRequests: x.allow_friend_requests === 1 };
+      });
+    return { users };
+  }, { rate: ['user-search', 40] });
+
   r.post('/api/friends/requests', (ctx: AppCtx) => {
     const u = requireUser(ctx);
     const t = target(str(obj(ctx.body), 'player', 3, 40));

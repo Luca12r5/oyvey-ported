@@ -61,7 +61,8 @@ export async function playPage(el: HTMLElement): Promise<void> {
           </button>
           <button class="play-drop" id="drop" aria-label="${t('play.profile')}" aria-haspopup="menu">${icon('chevron')}</button>
         </div>`
-      : html`<div class="play-group"><button class="play-btn" id="signin"><span class="pb-title">${t('acc.signin')}</span><span class="pb-sub">${t('play.signin')}</span></button></div>`}
+      : html`<div class="play-group"><button class="play-btn" id="signin"><span class="pb-title">${t('acc.signin')}</span><span class="pb-sub">${t('play.signin')}</span></button></div>
+        <div class="guest-note">${icon('ghost', 'sm')}<span><b>Gastmodus</b> – Oberfläche, Designs, Startanimation, Charakter und VR-Vorschau sind frei testbar. Zum Spielen brauchst du ein Microsoft-Konto mit Minecraft: Java Edition.</span></div>`}
       <div class="status glass" id="status" hidden></div>
       <button class="link small" id="console">${icon('terminal', 'sm')} ${t('play.console')}</button>
     </div>
