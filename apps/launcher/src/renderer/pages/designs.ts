@@ -7,7 +7,7 @@ import {
   BACKGROUNDS, FONTS, MOTIONS, RARITY_INFO, SHADOWS, THEME_FAMILIES, readabilityWarnings, rederive, validateTheme,
   type Theme, type ThemeColors,
 } from '@lego/shared';
-import { retheme, state } from '../app.ts';
+import { backgroundInfo, retheme, state } from '../app.ts';
 import { api, confirm, errorToast, html, mount, toast, type Raw } from '../ui.ts';
 import { allThemes, applyTheme, findTheme } from '../theme.ts';
 import { icon } from '../icons.ts';
@@ -36,6 +36,8 @@ const BUILT_IN: DesignPreset[] = [
   { id: 'synth-night', name: 'Synth-Nacht', themeId: 'halloween', accentColor: '#d946ef', background: 'scifi', snow: false, fx: { ...DEFAULT_FX, speed: 1.2 }, surface: 'neon', stage: 'plain' },
   { id: 'calm', name: 'Ruhig', themeId: 'halloween', accentColor: null, background: 'rooms', snow: false, fx: { ...DEFAULT_FX, particles: 0.2, speed: 0.5, glow: false, parallax: false }, surface: 'solid', stage: 'plain' },
 ];
+
+const tierName = (q: number) => (q < 0.34 ? 'Niedrig' : q < 0.7 ? 'Mittel' : q < 0.9 ? 'Hoch' : 'Ultra 4K');
 
 function page(box: HTMLElement): HTMLElement {
   return box.closest<HTMLElement>('.view-enter') ?? (box.parentElement as HTMLElement);
@@ -118,7 +120,11 @@ function sceneTab(box: HTMLElement): void {
   mount(box, html`<section class="set-sec"><h2>3D-Szenen</h2><div class="bgpick">${three.map(tile)}
       <label class="bg-tile upload ${s.background === 'image' ? 'on' : ''}" data-bg-image>${s.bgImage ? html`<img alt="" src="${s.bgImage}">` : html`<span class="up-ic">${icon('upload')}</span>`}<span>Eigenes Bild</span><input type="file" id="bgFile" accept="image/png,image/jpeg,image/webp" hidden></label></div></section>
     <section class="set-sec"><h2>Klassisch (2D, sparsam)</h2><div class="bgpick">${flat.map(tile)}</div></section>
-    <section class="set-sec"><h2>Qualität</h2><div class="glass rows"><div class="setting"><div><b>${tr('set.quality')}</b><small>${tr('set.quality.d')} (${Math.round(s.backgroundQuality * 100)} %)</small></div><div class="ctl"><input type="range" id="quality" min="0" max="1" step="0.05" value="${s.backgroundQuality}"></div></div></div></section>`);
+    <section class="set-sec"><h2>Qualität</h2><div class="glass rows"><div class="setting"><div><b>${tr('set.quality')}</b><small>Ultra rendert in voller Bildschirmauflösung bis 4K mit Kantenglättung und Tiefenunschärfe. Wird es zu langsam, senkt der Launcher die Auflösung automatisch – kein Ruckeln. <span id="resInfo" class="mono"></span></small></div>
+      <div class="ctl"><div class="seg" id="tiers">${([[0.2, 'Niedrig'], [0.55, 'Mittel'], [0.8, 'Hoch'], [1, 'Ultra 4K']] as [number, string][]).map(([v, l]) => html`<button data-q="${v}" class="${tierName(s.backgroundQuality) === l ? 'on' : ''}">${l}</button>`)}</div></div></div></div></section>`);
+  const info = box.querySelector<HTMLElement>('#resInfo')!;
+  const showRes = () => { const r = backgroundInfo(); info.textContent = r ? `Aktuell: ${r.w}×${r.h}` : 'Aktuell: 2D'; };
+  setTimeout(showRes, 400);
   box.querySelectorAll<HTMLCanvasElement>('[data-preview]').forEach((c) => requestAnimationFrame(() => drawPreview(c, c.dataset.preview!)));
   // 3D thumbnails one after another so the UI stays responsive.
   const imgs = [...box.querySelectorAll<HTMLImageElement>('[data-thumb]')];
@@ -130,12 +136,13 @@ function sceneTab(box: HTMLElement): void {
   };
   setTimeout(next, 60);
   box.onclick = (e) => {
+    const q = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-q]');
+    if (q) { void saveNow({ backgroundQuality: Number(q.dataset.q) }).then(() => { box.querySelectorAll('#tiers button').forEach((x) => x.classList.toggle('on', x === q)); setTimeout(showRes, 400); }); return; }
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-bg]');
     if (!b) return;
     box.querySelectorAll('.bg-tile').forEach((x) => x.classList.toggle('on', x === b));
-    void saveNow({ background: b.dataset.bg });
+    void saveNow({ background: b.dataset.bg }).then(() => setTimeout(showRes, 400));
   };
-  box.querySelector('#quality')!.addEventListener('change', (e) => void saveNow({ backgroundQuality: Number((e.target as HTMLInputElement).value) }).then(() => sceneTab(box)));
   box.querySelector('#bgFile')!.addEventListener('change', async (e) => {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;

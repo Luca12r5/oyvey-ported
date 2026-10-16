@@ -9,6 +9,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
 import { NOCTURNE } from '@lego/shared';
 import { bat, dotTexture, lightning, lightShaft, portal, pumpkin } from './intro3d.ts';
 import type { DesignFx } from '../core/design.ts';
@@ -534,10 +535,17 @@ function disposeScene(scene: THREE.Scene): void {
   scene.clear();
 }
 
+/** low < 0.34 <= mid < 0.7 <= high < 0.9 <= ultra (4K: full device resolution, MSAA, depth of field). */
+export type Tier = 'low' | 'mid' | 'high' | 'ultra';
+export const tierOf = (q: number): Tier => (q < 0.34 ? 'low' : q < 0.7 ? 'mid' : q < 0.9 ? 'high' : 'ultra');
+const TIER_DPR: Record<Tier, number> = { low: 0.75, mid: 1, high: 1.5, ultra: 2 };
+
 export class Bg3D {
   private renderer: THREE.WebGLRenderer;
-  private composer: EffectComposer;
-  private bloom: UnrealBloomPass;
+  private composer!: EffectComposer;
+  private bloom!: UnrealBloomPass;
+  private bokeh: BokehPass | null = null;
+  private tier: Tier | null = null;
   private scene = new THREE.Scene();
   private camera = new THREE.PerspectiveCamera(55, 1, 0.1, 500);
   private built: Built | null = null;
@@ -549,35 +557,74 @@ export class Bg3D {
   private lowPower = false;
   private mouse = { x: 0, y: 0, sx: 0, sy: 0 };
   private dot = dotTexture();
+  /** Adaptive resolution: current scale of the tier's pixel ratio and frame time statistics. */
+  private scale = 1;
+  private frameMs: number[] = [];
+  private lastAdapt = 0;
   readonly canvas: HTMLCanvasElement;
   lost = false;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'low-power' });
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', stencil: false });
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.composer = new EffectComposer(this.renderer);
-    this.composer.addPass(new RenderPass(this.scene, this.camera));
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.7, 0.55, 0.2);
-    this.composer.addPass(this.bloom);
-    this.composer.addPass(new OutputPass());
-    canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); this.lost = true; this.stop(); canvas.dispatchEvent(new Event('bg3d-lost')); });
+    canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); this.fail(); });
     addEventListener('mousemove', (e) => { this.mouse.x = e.clientX / innerWidth - 0.5; this.mouse.y = e.clientY / innerHeight - 0.5; });
   }
 
-  configure(cfg: Bg3DConfig): void {
-    const key = `${cfg.id}|${Math.round(cfg.fx.particles * 4)}|${cfg.quality < 0.34 ? 0 : cfg.quality < 0.7 ? 1 : 2}|${cfg.pal.accent}|${cfg.pal.accent2}`;
-    this.cfg = cfg;
-    if (key !== this.key) {
-      this.key = key;
-      disposeScene(this.scene);
-      this.scene.background = new THREE.Color(cfg.pal.bg).lerp(new THREE.Color(NOCTURNE.void), 0.5);
-      this.built = BUILD[cfg.id]({ scene: this.scene, camera: this.camera, density: cfg.fx.particles, q: cfg.quality, pal: cfg.pal, dot: this.dot });
-      this.t = 8;
+  /** Any GPU problem: stop for good and let the owner fall back to 2D. */
+  private fail(): void {
+    if (this.lost) return;
+    this.lost = true;
+    this.stop();
+    this.canvas.dispatchEvent(new Event('bg3d-lost'));
+  }
+
+  /** Post-processing chain for a quality tier (MSAA + depth of field on ultra). */
+  private buildComposer(tier: Tier): void {
+    this.composer?.dispose();
+    const size = this.renderer.getDrawingBufferSize(new THREE.Vector2());
+    const target = new THREE.WebGLRenderTarget(Math.max(1, size.x), Math.max(1, size.y), {
+      type: THREE.HalfFloatType,
+      samples: tier === 'ultra' ? 4 : tier === 'high' ? 2 : 0,
+    });
+    this.composer = new EffectComposer(this.renderer, target);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.bokeh = null;
+    if (tier === 'ultra') {
+      this.bokeh = new BokehPass(this.scene, this.camera, { focus: 14, aperture: 0.00004, maxblur: 0.006 });
+      this.composer.addPass(this.bokeh);
     }
-    this.applyLive();
-    this.resize();
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), tier === 'ultra' ? 0.8 : 0.7, 0.55, 0.2);
+    this.composer.addPass(this.bloom);
+    this.composer.addPass(new OutputPass());
+    this.tier = tier;
+  }
+
+  configure(cfg: Bg3DConfig): void {
+    if (this.lost) return;
+    const tier = tierOf(cfg.quality);
+    const key = `${cfg.id}|${Math.round(cfg.fx.particles * 4)}|${tier}|${cfg.pal.accent}|${cfg.pal.accent2}`;
+    this.cfg = cfg;
+    try {
+      if (tier !== this.tier) { this.scale = 1; this.buildComposer(tier); }
+      if (key !== this.key) {
+        this.key = key;
+        disposeScene(this.scene);
+        this.scene.background = new THREE.Color(cfg.pal.bg).lerp(new THREE.Color(NOCTURNE.void), 0.5);
+        // Ultra gets more detail (density is scaled up, never above what the slider allows x1.5).
+        const density = tier === 'ultra' ? Math.min(1.5, cfg.fx.particles * 1.5) : cfg.fx.particles;
+        this.built = BUILD[cfg.id]({ scene: this.scene, camera: this.camera, density, q: tier === 'ultra' ? 1 : cfg.quality, pal: cfg.pal, dot: this.dot });
+        this.t = 8;
+        this.renderer.compile(this.scene, this.camera);
+      }
+      this.applyLive();
+      this.resize();
+    } catch (e) {
+      console.warn('3D background failed, using 2D', e);
+      this.fail();
+    }
   }
 
   /** Settings that never need a rebuild. */
@@ -587,12 +634,16 @@ export class Bg3D {
     this.renderer.toneMappingExposure = b.exposure * (0.75 + c.fx.light * 0.25);
     b.lights.forEach(({ l, base }) => { l.intensity = base * c.fx.light; l.userData.k = c.fx.light; });
     this.bloom.enabled = c.fx.glow && c.quality >= 0.3;
+    if (this.bokeh) {
+      this.bokeh.enabled = c.fx.fog;
+      (this.bokeh.uniforms as Record<string, { value: number }>).focus!.value = b.cam.distanceTo(b.look) * 0.55;
+    }
   }
 
   resize(): void {
-    if (!this.cfg) return;
-    const q = this.cfg.quality;
-    const dpr = Math.min(devicePixelRatio || 1, q < 0.34 ? 0.75 : q < 0.7 ? 1 : 1.5);
+    if (!this.cfg || this.lost) return;
+    const want = Math.min(devicePixelRatio || 1, TIER_DPR[this.tier ?? 'mid']) * this.scale;
+    const dpr = Math.max(0.5, want);
     this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(innerWidth, innerHeight, false);
     this.composer.setPixelRatio(dpr);
@@ -602,8 +653,26 @@ export class Bg3D {
     if (this.cfg.still) this.render(0);
   }
 
+  /** Current internal resolution (for the quality label). */
+  resolution(): { w: number; h: number; tier: Tier } {
+    const v = this.renderer.getDrawingBufferSize(new THREE.Vector2());
+    return { w: v.x, h: v.y, tier: this.tier ?? 'mid' };
+  }
+
   setLowPower(on: boolean): void {
     this.lowPower = on;
+  }
+
+  /** Keeps the background smooth: lowers resolution when frames get slow, raises it again when there is headroom. */
+  private adapt(ms: number, now: number): void {
+    this.frameMs.push(ms);
+    if (this.frameMs.length < 90 || now - this.lastAdapt < 2000) return;
+    const sorted = [...this.frameMs].sort((a, b) => a - b);
+    const p90 = sorted[Math.floor(sorted.length * 0.9)]!;
+    this.frameMs = [];
+    this.lastAdapt = now;
+    if (p90 > 24 && this.scale > 0.5) { this.scale = Math.max(0.5, this.scale * 0.8); this.resize(); }
+    else if (p90 < 13 && this.scale < 1) { this.scale = Math.min(1, this.scale * 1.15); this.resize(); }
   }
 
   private render(dt: number): void {
@@ -613,9 +682,11 @@ export class Bg3D {
     const k = c.fx.parallax && !c.still ? 1 : 0;
     m.sx += (m.x * k - m.sx) * Math.min(1, dt * 2 + (c.still ? 1 : 0));
     m.sy += (m.y * k - m.sy) * Math.min(1, dt * 2 + (c.still ? 1 : 0));
-    this.camera.position.copy(b.cam).add(new THREE.Vector3(m.sx * 2.2 + Math.sin(this.t * 0.07) * 0.6, -m.sy * 1.1 + Math.sin(this.t * 0.11) * 0.25, 0));
+    // Slow breathing dolly + mouse parallax: the scene always has a little depth motion.
+    const dolly = Math.sin(this.t * 0.05) * 0.8;
+    this.camera.position.copy(b.cam).add(new THREE.Vector3(m.sx * 2.2 + Math.sin(this.t * 0.07) * 0.6, -m.sy * 1.1 + Math.sin(this.t * 0.11) * 0.25, dolly));
     this.camera.lookAt(b.look);
-    if (this.bloom.enabled) this.composer.render();
+    if (this.bloom.enabled || this.bokeh?.enabled || this.tier === 'ultra' || this.tier === 'high') this.composer.render();
     else this.renderer.render(this.scene, this.camera);
   }
 
@@ -623,10 +694,19 @@ export class Bg3D {
     this.raf = requestAnimationFrame(this.frame);
     const minGap = this.lowPower ? 1000 / 20 : 1000 / 62;
     if (now - this.last < minGap) return;
-    const dt = Math.min(0.1, (now - (this.last || now)) / 1000) * (this.cfg?.fx.speed ?? 1);
+    const raw = now - (this.last || now);
+    const dt = Math.min(0.1, raw / 1000) * (this.cfg?.fx.speed ?? 1);
     this.last = now;
     this.t += dt;
-    this.render(dt);
+    const t0 = performance.now();
+    try {
+      this.render(dt);
+    } catch (e) {
+      console.warn('3D background frame failed', e);
+      this.fail();
+      return;
+    }
+    if (!this.lowPower) this.adapt(Math.max(raw, performance.now() - t0), now);
   };
 
   start(): void {

@@ -63,6 +63,10 @@ export function onLeave(fn: () => void): void {
   leaveHooks.push(fn);
 }
 
+export function backgroundInfo(): { w: number; h: number; tier: string } | null {
+  return bg?.renderInfo() ?? null;
+}
+
 /** Lower frame rate while Minecraft runs. */
 export function backgroundLowPower(on: boolean): void {
   bg?.setLowPower(on);

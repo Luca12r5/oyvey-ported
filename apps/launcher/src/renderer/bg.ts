@@ -465,6 +465,11 @@ export class Background {
     this.bg3d?.setLowPower(on);
   }
 
+  /** Internal 3D resolution and tier, or null in 2D mode. */
+  renderInfo(): { w: number; h: number; tier: string } | null {
+    return this.use3d && this.bg3d ? this.bg3d.resolution() : null;
+  }
+
   private resize(): void {
     // Quality controls the internal resolution: 50 %..100 % of device pixels.
     const scale = (window.devicePixelRatio || 1) * (0.5 + this.quality * 0.5);
