@@ -55,5 +55,4 @@ linux:
   artifactName: LEGO-Launcher-${version}.${ext}
   category: Game
   synopsis: Minecraft launcher with mod support
-  desktop:
-    StartupWMClass: lego-launcher
+  executableName: lego-launcher
