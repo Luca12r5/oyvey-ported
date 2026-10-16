@@ -18,6 +18,7 @@ import { friendsPage } from './pages/social.ts';
 import { rewardsPage } from './pages/rewards.ts';
 import { accountPage, signInFlow } from './pages/account.ts';
 import { settingsPage } from './pages/settings.ts';
+import { designsPage } from './pages/designs.ts';
 import { newsPage, feedbackPage, devPage } from './pages/misc.ts';
 
 export interface State {
@@ -41,6 +42,7 @@ const PAGES: PageDef[] = [
   { id: 'profiles', label: () => t('nav.profiles'), icon: 'profiles', page: profilesPage, slot: 'main' },
   { id: 'friends', label: () => t('nav.friends'), icon: 'friends', page: friendsPage, needsLego: true, slot: 'main' },
   { id: 'cosmetics', label: () => t('nav.cosmetics'), icon: 'cosmetics', page: cosmeticsPage, needsLego: true, slot: 'main' },
+  { id: 'designs', label: () => t('nav.designs'), icon: 'brush', page: (el) => designsPage(el), slot: 'main' },
   { id: 'shop', label: () => t('nav.shop'), icon: 'shop', page: shopPage, needsLego: true, slot: 'more' },
   { id: 'rewards', label: () => t('nav.rewards'), icon: 'rewards', page: rewardsPage, needsLego: true, slot: 'more' },
   { id: 'news', label: () => t('nav.news'), icon: 'news', page: newsPage, slot: 'more' },
@@ -61,14 +63,21 @@ export function onLeave(fn: () => void): void {
   leaveHooks.push(fn);
 }
 
+/** Lower frame rate while Minecraft runs. */
+export function backgroundLowPower(on: boolean): void {
+  bg?.setLowPower(on);
+}
+
 export function retheme(): void {
   const s = state.settings;
   setLang(s.language);
   applyTheme(findTheme(s.themeId, s.customThemes), { reducedMotion: s.reducedMotion, uiScale: s.uiScale });
   if (s.accentColor) document.documentElement.style.setProperty('--accent', s.accentColor);
-  bg ??= new Background(document.getElementById('bg') as HTMLCanvasElement);
-  bg.configure({ id: s.background, quality: s.backgroundQuality, snow: s.snow, still: s.reducedMotion });
-  document.body.classList.add('nocturne');
+  bg ??= new Background(document.getElementById('bg') as HTMLCanvasElement, document.getElementById('bg3d') as HTMLCanvasElement);
+  bg.configure({ id: s.background, quality: s.backgroundQuality, snow: s.snow, still: s.reducedMotion, fx: s.fx, image: s.bgImage });
+  document.body.classList.add('nocturne', `surf-${s.surface}`, `stage-${s.stage}`);
+  document.body.classList.toggle('no-vignette', !s.fx.vignette);
+  document.body.classList.toggle('no-glow', !s.fx.glow);
 }
 
 function visiblePages(): PageDef[] {

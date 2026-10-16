@@ -6,7 +6,7 @@
 //   E2E_SCREENSHOTS=dir to keep screenshots.
 
 import { createServer } from 'node:http';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -143,26 +143,52 @@ await page('news', 'Launcher-Test');
 await page('feedback', 'Neuer Beitrag');
 await page('account', 'LegoDev');
 await page('dev', 'Entwickler-Dashboard');
-await page('settings', 'Designs');
-// Accent colour override and animated background picker apply instantly.
-await win.click('[data-tab=appearance]');
+await page('settings', 'Einstellungen');
+await win.fill('#sq', 'sprache');
+await win.waitForTimeout(200);
+const found = await win.locator('.setting:not([hidden])').count();
+if (found !== 1) problems.push(`settings search for "sprache" shows ${found} rows`);
+await win.fill('#sq', '');
+// Designs studio: accent override, 3D scene, effects, presets.
+await page('designs', 'Designs');
+await win.click('[data-tab=colors]');
 await win.click('[data-accent="#22c55e"]');
-await win.waitForTimeout(300);
+await win.waitForTimeout(400);
 const accent = await win.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
 if (accent !== '#22c55e') problems.push(`accent override not applied: ${accent}`);
-await win.click('[data-tab=background]');
+await win.click('[data-accent=""]');
+await win.waitForTimeout(300);
+await win.click('[data-tab=scene]');
 await win.waitForSelector('[data-bg=bricks]');
 await win.click('[data-bg=bricks]');
 await win.waitForTimeout(500);
-if (shots) await win.screenshot({ path: join(shots, 'launcher-settings-background.png') });
-await win.click('[data-tab=appearance]');
-await win.click('[data-accent=""]');
-await win.fill('#sq', 'schnee');
-await win.waitForTimeout(200);
-const found = await win.locator('.setting:not([hidden])').count();
-if (found !== 1) problems.push(`settings search for "schnee" shows ${found} rows`);
-await win.fill('#sq', '');
-await win.click('[data-tab=themes]');
+if ((await win.evaluate(() => document.body.dataset.bg)) !== 'bricks') problems.push('2D background bricks not active');
+await win.click('[data-bg=graveyard]');
+await win.waitForTimeout(1200);
+const bg3d = await win.evaluate(() => ({ id: document.body.dataset.bg, shown: !document.getElementById('bg3d').hidden }));
+if (bg3d.id !== 'graveyard' && bg3d.id !== 'haunted') problems.push(`3D scene not selected: ${bg3d.id}`);
+if (shots) await win.screenshot({ path: join(shots, 'launcher-designs-scene.png') });
+await win.click('[data-tab=effects]');
+await win.locator('[data-fx=particles]').fill('0.2');
+await win.locator('[data-fx=glow]').uncheck();
+let fx = '';
+for (let i = 0; i < 25; i++) {
+  await win.waitForTimeout(200);
+  fx = readFileSync(join(userData, 'settings.json'), 'utf8');
+  if (/"particles": 0\.2/.test(fx) && /"glow": false/.test(fx)) break;
+}
+if (!/"particles": 0\.2/.test(fx) || !/"glow": false/.test(fx)) problems.push('effect settings were not saved: ' + JSON.stringify(JSON.parse(fx).fx));
+if (shots) await win.screenshot({ path: join(shots, 'launcher-designs-effects.png') });
+await win.click('[data-tab=presets]');
+await win.fill('#pname', 'E2E Nacht');
+await win.click('#psave');
+await win.waitForSelector('[data-apply][data-own="1"]');
+await win.locator('[data-apply="blood-moon"]').click();
+await win.waitForTimeout(600);
+if ((await win.evaluate(() => document.body.dataset.bg)) === 'bricks') problems.push('built-in preset not applied');
+await win.locator('[data-apply][data-own="1"]').first().click();
+await win.waitForTimeout(400);
+await win.click('[data-tab=colors]');
 await win.waitForSelector('[data-theme=matrix]');
 
 // Theme switching really changes the CSS variables.

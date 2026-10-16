@@ -1,5 +1,7 @@
 // Launcher settings and game profiles (stored as JSON in the user data dir).
 
+import { DEFAULT_FX, type DesignFx, type DesignPreset, type StageStyle, type SurfaceStyle } from './design.ts';
+
 export const LOADER_TYPES = ['fabric', 'quilt', 'forge', 'neoforge'] as const;
 export type LoaderType = (typeof LOADER_TYPES)[number];
 
@@ -77,6 +79,12 @@ export interface Settings {
   introSound: boolean;
   /** Open the console panel automatically when a game starts. */
   autoConsole: boolean;
+  /** Design editor: effects, panel style, character stage, saved presets, custom image. */
+  fx: DesignFx;
+  surface: SurfaceStyle;
+  stage: StageStyle;
+  designPresets: DesignPreset[];
+  bgImage: string;
 }
 
 export const DEFAULT_PROFILE: GameProfile = {
@@ -120,6 +128,7 @@ export function defaultSettings(): Settings {
     closeOnLaunch: false, reducedMotion: false, uiScale: 1, autoUpdate: 'ask', rarityColors: {},
     accentColor: null, background: 'graveyard', backgroundQuality: 0.6, snow: false, showSnapshots: false, showHistorical: false, curseforgeKey: '', msClientId: '',
     introEnabled: true, introSound: true, autoConsole: true,
+    fx: { ...DEFAULT_FX }, surface: 'glass', stage: 'portal', designPresets: [], bgImage: '',
   };
 }
 

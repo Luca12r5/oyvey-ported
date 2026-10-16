@@ -73,7 +73,7 @@ const U = (t: number) => {
 
 // ---- small factories ------------------------------------------------------------
 
-function dotTexture(): THREE.CanvasTexture {
+export function dotTexture(): THREE.CanvasTexture {
   const c = document.createElement('canvas');
   c.width = c.height = 64;
   const g = c.getContext('2d')!;
@@ -86,7 +86,7 @@ function dotTexture(): THREE.CanvasTexture {
   return new THREE.CanvasTexture(c);
 }
 
-function portal(radius: number): { group: THREE.Group; update: (t: number, reveal: number) => void } {
+export function portal(radius: number): { group: THREE.Group; update: (t: number, reveal: number) => void } {
   const group = new THREE.Group();
   const uniforms = { uTime: { value: 0 }, uReveal: { value: 0 }, uA: { value: new THREE.Color(NOCTURNE.pumpkin) }, uB: { value: new THREE.Color(NOCTURNE.violet) } };
   const ring = new THREE.Mesh(
@@ -148,7 +148,7 @@ function portal(radius: number): { group: THREE.Group; update: (t: number, revea
   };
 }
 
-function pumpkin(): THREE.Group {
+export function pumpkin(): THREE.Group {
   const g = new THREE.Group();
   const geo = new THREE.SphereGeometry(1, 40, 28);
   const pos = geo.attributes.position as THREE.BufferAttribute;
@@ -184,7 +184,7 @@ function pumpkin(): THREE.Group {
   return g;
 }
 
-function bat(): { group: THREE.Group; wings: [THREE.Mesh, THREE.Mesh] } {
+export function bat(): { group: THREE.Group; wings: [THREE.Mesh, THREE.Mesh] } {
   const shape = new THREE.Shape();
   const pts: [number, number][] = [[0.5, 0.15], [0.9, 0.05], [1.2, 0.28], [1.12, -0.06], [0.86, -0.2], [0.62, -0.08], [0.36, -0.26], [0.1, -0.1]];
   shape.moveTo(0, 0);
@@ -204,7 +204,7 @@ function bat(): { group: THREE.Group; wings: [THREE.Mesh, THREE.Mesh] } {
   return { group, wings: [right, left] };
 }
 
-function lightning(from: THREE.Vector3, length: number): THREE.Mesh {
+export function lightning(from: THREE.Vector3, length: number): THREE.Mesh {
   const pts: THREE.Vector3[] = [];
   const p = from.clone();
   for (let i = 0; i <= 14; i++) {
@@ -217,7 +217,7 @@ function lightning(from: THREE.Vector3, length: number): THREE.Mesh {
   );
 }
 
-function lightShaft(height: number, radius: number, color: string): THREE.Mesh {
+export function lightShaft(height: number, radius: number, color: string): THREE.Mesh {
   const geo = new THREE.ConeGeometry(radius, height, 40, 1, true);
   geo.translate(0, -height / 2, 0);
   return new THREE.Mesh(geo, new THREE.ShaderMaterial({

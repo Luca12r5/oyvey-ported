@@ -1,7 +1,7 @@
 // Play screen: 3D character on a glowing stage, gradient PLAY button with a
 // profile dropdown, install progress, daily progress and news.
 
-import { go, loadIdentity, onLeave, state } from '../app.ts';
+import { backgroundLowPower, go, loadIdentity, onLeave, state } from '../app.ts';
 import { api, errorToast, fmtDate, fmtNum, html, lego, mount, toast } from '../ui.ts';
 import { icon, pixel } from '../icons.ts';
 import { createAvatar, type Anim, type Avatar } from '../avatar.ts';
@@ -165,6 +165,7 @@ export async function playPage(el: HTMLElement): Promise<void> {
       if (!consoleCard.hidden) appendLog(entry);
     }),
     api.on('game-exit', (r: { code: number; hint: string | null }) => {
+      backgroundLowPower(false);
       if (r.code === 0) toast('Minecraft wurde beendet.');
       else toast(`Minecraft ist abgestürzt (Code ${r.code}). ${r.hint ?? 'Details im Log.'}`, 'error');
       void loadIdentity();
@@ -197,6 +198,7 @@ export async function playPage(el: HTMLElement): Promise<void> {
       mount(btn.querySelector('.pb-title')!, html`${t('play.running')}`);
       statusBox.hidden = true;
       avatar?.react('success');
+      backgroundLowPower(true);
       toast(t('play.fun'), 'ok');
     }
   });

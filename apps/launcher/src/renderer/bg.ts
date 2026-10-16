@@ -1,20 +1,36 @@
-// Animated launcher backgrounds drawn on one full-window canvas. Colours come
-// from the theme variables, quality scales resolution and particle counts,
-// and animation stops when the window is hidden or motion is reduced.
+// Launcher backgrounds. 3D scenes (bg3d.ts, WebGL) are the default; the
+// classic 2D canvas styles below remain as lightweight options and as the
+// fallback when WebGL is missing or its context is lost. Colours come from the
+// theme variables, quality scales resolution and particle counts, animation
+// stops when the window is hidden or motion is reduced.
 
-export interface BackgroundDef { id: string; name: { de: string; en: string } }
+import { Bg3D, is3D } from './bg3d.ts';
+import { DEFAULT_FX, type DesignFx } from '../core/design.ts';
+
+export interface BackgroundDef { id: string; name: { de: string; en: string }; kind: '3d' | '2d' }
+
+/** 2D stand-ins when a 3D scene cannot be rendered. */
+const FALLBACK_2D: Record<string, string> = { graveyard: 'haunted', forest: 'haunted', castle: 'haunted', portal: 'warp', tunnel: 'warp', scifi: 'grid', rooms: 'voxels' };
 
 export const BACKGROUNDS: BackgroundDef[] = [
-  { id: 'nebula', name: { de: 'Nebel', en: 'Nebula' } },
-  { id: 'bricks', name: { de: 'Schwebende Steine', en: 'Floating bricks' } },
-  { id: 'aurora', name: { de: 'Polarlicht', en: 'Aurora' } },
-  { id: 'grid', name: { de: 'Neon-Raster', en: 'Neon grid' } },
-  { id: 'constellation', name: { de: 'Sternbild', en: 'Constellation' } },
-  { id: 'warp', name: { de: 'Warp', en: 'Warp' } },
-  { id: 'waves', name: { de: 'Wellen', en: 'Waves' } },
-  { id: 'voxels', name: { de: 'Voxel-Feld', en: 'Voxel field' } },
-  { id: 'plain', name: { de: 'Schlicht', en: 'Plain' } },
-  { id: 'haunted', name: { de: 'Spukhaus', en: 'Haunted' } },
+  { id: 'graveyard', name: { de: 'Nebliger Friedhof', en: 'Misty graveyard' }, kind: '3d' },
+  { id: 'forest', name: { de: 'Halloween-Wald', en: 'Halloween forest' }, kind: '3d' },
+  { id: 'castle', name: { de: 'Dunkles Schloss', en: 'Dark castle' }, kind: '3d' },
+  { id: 'portal', name: { de: 'Magisches Portal', en: 'Magic portal' }, kind: '3d' },
+  { id: 'tunnel', name: { de: 'Partikeltunnel', en: 'Particle tunnel' }, kind: '3d' },
+  { id: 'scifi', name: { de: 'Sci-Fi-Horizont', en: 'Sci-fi horizon' }, kind: '3d' },
+  { id: 'rooms', name: { de: 'Abstrakte Räume', en: 'Abstract rooms' }, kind: '3d' },
+  { id: 'image', name: { de: 'Eigenes Bild', en: 'Custom image' }, kind: '2d' },
+  { id: 'nebula', name: { de: 'Nebel', en: 'Nebula' }, kind: '2d' },
+  { id: 'bricks', name: { de: 'Schwebende Steine', en: 'Floating bricks' }, kind: '2d' },
+  { id: 'aurora', name: { de: 'Polarlicht', en: 'Aurora' }, kind: '2d' },
+  { id: 'grid', name: { de: 'Neon-Raster', en: 'Neon grid' }, kind: '2d' },
+  { id: 'constellation', name: { de: 'Sternbild', en: 'Constellation' }, kind: '2d' },
+  { id: 'warp', name: { de: 'Warp', en: 'Warp' }, kind: '2d' },
+  { id: 'waves', name: { de: 'Wellen', en: 'Waves' }, kind: '2d' },
+  { id: 'voxels', name: { de: 'Voxel-Feld', en: 'Voxel field' }, kind: '2d' },
+  { id: 'plain', name: { de: 'Schlicht', en: 'Plain' }, kind: '2d' },
+  { id: 'haunted', name: { de: 'Spukhaus (2D)', en: 'Haunted (2D)' }, kind: '2d' },
 ];
 
 interface Palette { bg: string; bg2: string; accent: string; accent2: string; text: string }
@@ -371,34 +387,82 @@ export function drawPreview(canvas: HTMLCanvasElement, id: string, t = 12_000): 
 
 interface Flake { x: number; y: number; r: number; s: number; d: number }
 
+export interface BackgroundConfig { id: string; quality: number; snow: boolean; still: boolean; fx?: DesignFx; image?: string }
+
+/** Full-window background: a 3D scene when possible, otherwise a 2D style. Snow is a 2D overlay on top. */
 export class Background {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
-  private id = 'nebula';
+  private canvas3d: HTMLCanvasElement;
+  private bg3d: Bg3D | null = null;
+  private use3d = false;
+  private id = 'graveyard';
   private quality = 0.6;
   private snow = false;
   private still = false;
+  private fx: DesignFx = { ...DEFAULT_FX };
+  private image: HTMLImageElement | null = null;
+  private imageSrc = '';
   private raf = 0;
   private pal = palette();
   private flakes: Flake[] = [];
   private last = 0;
+  private resizeQueued = false;
+  private cfg: BackgroundConfig | null = null;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, canvas3d: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
-    window.addEventListener('resize', () => this.resize());
+    this.canvas3d = canvas3d;
+    // Debounced to one resize per frame; also catches DPR changes (moving to another monitor).
+    const queue = () => {
+      if (this.resizeQueued) return;
+      this.resizeQueued = true;
+      requestAnimationFrame(() => { this.resizeQueued = false; this.resize(); this.bg3d?.resize(); });
+    };
+    window.addEventListener('resize', queue);
+    const watchDpr = () => matchMedia(`(resolution: ${devicePixelRatio}dppx)`).addEventListener('change', () => { queue(); watchDpr(); }, { once: true });
+    watchDpr();
     document.addEventListener('visibilitychange', () => (document.hidden ? this.stop() : this.start()));
-    this.resize();
+    canvas3d.addEventListener('bg3d-lost', () => { if (this.cfg) this.configure(this.cfg); });
   }
 
-  configure(o: { id: string; quality: number; snow: boolean; still: boolean }): void {
-    this.id = DRAW[o.id] ? o.id : 'nebula';
+  configure(o: BackgroundConfig): void {
+    this.cfg = o;
+    const wanted = DRAW[o.id] || is3D(o.id) || o.id === 'image' ? o.id : 'graveyard';
     this.quality = Math.max(0, Math.min(1, o.quality));
     this.snow = o.snow;
     this.still = o.still;
+    this.fx = o.fx ?? { ...DEFAULT_FX };
     this.pal = palette();
+    if (o.image !== undefined && o.image !== this.imageSrc) {
+      this.imageSrc = o.image;
+      this.image = null;
+      if (o.image) { const img = new Image(); img.onload = () => { this.image = img; if (this.still) this.frame(performance.now()); }; img.src = o.image; }
+    }
+    this.use3d = false;
+    if (is3D(wanted)) {
+      try {
+        this.bg3d ??= new Bg3D(this.canvas3d);
+        if (!this.bg3d.lost) {
+          this.bg3d.configure({ id: wanted, quality: this.quality, fx: this.fx, still: this.still, pal: { bg: this.pal.bg, accent: this.pal.accent, accent2: this.pal.accent2 } });
+          this.use3d = true;
+        }
+      } catch (e) {
+        console.warn('3D background unavailable, using 2D', e);
+      }
+    }
+    this.id = this.use3d ? wanted : is3D(wanted) ? FALLBACK_2D[wanted]! : wanted;
+    this.canvas3d.hidden = !this.use3d;
+    if (!this.use3d) this.bg3d?.stop();
+    this.canvas.hidden = this.use3d && !this.snow;
+    document.body.dataset.bg = this.id;
     this.resize();
     this.start();
+  }
+
+  setLowPower(on: boolean): void {
+    this.bg3d?.setLowPower(on);
   }
 
   private resize(): void {
@@ -407,17 +471,39 @@ export class Background {
     this.canvas.width = Math.round(innerWidth * scale);
     this.canvas.height = Math.round(innerHeight * scale);
     this.ctx.setTransform(scale, 0, 0, scale, 0, 0);
-    const n = Math.round(40 + this.quality * 160);
-    const r = rng(99);
-    this.flakes = Array.from({ length: n }, () => ({ x: r() * innerWidth, y: r() * innerHeight, r: 0.6 + r() * 2.2, s: 0.2 + r() * 0.8, d: r() * Math.PI * 2 }));
+    if (this.flakes.length === 0 || Math.abs(this.flakes.length - Math.round(40 + this.quality * 160)) > 1) {
+      const n = Math.round(40 + this.quality * 160);
+      const r = rng(99);
+      this.flakes = Array.from({ length: n }, () => ({ x: r() * innerWidth, y: r() * innerHeight, r: 0.6 + r() * 2.2, s: 0.2 + r() * 0.8, d: r() * Math.PI * 2 }));
+    } else {
+      for (const f of this.flakes) { f.x = Math.min(f.x, innerWidth); f.y = Math.min(f.y, innerHeight); }
+    }
     if (this.still) this.frame(performance.now());
   }
 
+  private drawImage(w: number, h: number, t: number): void {
+    const c = this.ctx;
+    c.fillStyle = this.pal.bg;
+    c.fillRect(0, 0, w, h);
+    const img = this.image;
+    if (!img) return;
+    // Slow "Ken Burns" drift for depth.
+    const k = 1.08 + Math.sin(t * 0.00005 * this.fx.speed) * 0.04;
+    const s = Math.max(w / img.width, h / img.height) * k;
+    const dx = (w - img.width * s) / 2 + Math.sin(t * 0.00007 * this.fx.speed) * w * 0.02;
+    const dy = (h - img.height * s) / 2 + Math.cos(t * 0.00006 * this.fx.speed) * h * 0.02;
+    c.globalAlpha = 0.55 + this.fx.light * 0.25;
+    c.drawImage(img, dx, dy, img.width * s, img.height * s);
+    c.globalAlpha = 1;
+  }
+
   private frame = (t: number): void => {
-    const dt = Math.min(64, t - (this.last || t));
+    const dt = Math.min(64, t - (this.last || t)) * this.fx.speed;
     this.last = t;
     const w = innerWidth, h = innerHeight;
-    (DRAW[this.id] ?? DRAW.plain!)(this.ctx, w, h, this.still ? 12_000 : t, this.pal, this.quality);
+    if (this.use3d) this.ctx.clearRect(0, 0, w, h);
+    else if (this.id === 'image') this.drawImage(w, h, this.still ? 0 : t);
+    else (DRAW[this.id] ?? DRAW.plain!)(this.ctx, w, h, this.still ? 12_000 : t * this.fx.speed, this.pal, this.quality * (0.4 + this.fx.particles * 0.6));
     if (this.snow) {
       this.ctx.fillStyle = 'rgba(255,255,255,.85)';
       for (const f of this.flakes) {
@@ -433,19 +519,22 @@ export class Background {
       }
       this.ctx.globalAlpha = 1;
     }
-    if (!this.still) this.raf = requestAnimationFrame(this.frame);
+    // In 3D mode the 2D loop only runs for the snow overlay.
+    if (!this.still && (!this.use3d || this.snow)) this.raf = requestAnimationFrame(this.frame);
   };
 
   start(): void {
     this.stop();
     if (document.hidden) return;
+    if (this.use3d) this.bg3d?.start();
     if (this.still) this.frame(performance.now());
-    else this.raf = requestAnimationFrame(this.frame);
+    else if (!this.use3d || this.snow) this.raf = requestAnimationFrame(this.frame);
   }
 
   stop(): void {
     cancelAnimationFrame(this.raf);
     this.raf = 0;
     this.last = 0;
+    this.bg3d?.stop();
   }
 }

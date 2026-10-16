@@ -2,6 +2,7 @@
 // translated stay German; keys missing in English fall back to German.
 
 const de = {
+  'set.designsMoved': 'Designs & Hintergründe', 'set.designsMoved.d': 'Farben, Themes, 3D-Szenen, Effekte und Presets findest du jetzt im Bereich Designs.',
   'set.autoConsole': 'Konsole beim Spielstart öffnen', 'set.autoConsole.d': 'Zeigt Startmeldungen, Warnungen und Fehler mit Zeitstempel, sobald das Spiel startet.',
   'intro.skip': 'Überspringen', 'set.intro': 'Startanimation', 'set.intro.d': 'Filmische 3D-Animation beim Start des Launchers (Klick oder Esc überspringt).', 'set.introSound': 'Ton der Startanimation', 'set.introSound.d': 'Synthetische Klänge während der Startanimation.', 'set.introPlay': 'Jetzt abspielen',
   'nav.home': 'Home', 'nav.more': 'Mehr', 'nav.designs': 'Designs', 'nav.vr': 'VR-Modus',
@@ -43,6 +44,7 @@ const de = {
 type Key = keyof typeof de;
 
 const en: Partial<Record<Key, string>> = {
+  'set.designsMoved': 'Designs & backgrounds', 'set.designsMoved.d': 'Colours, themes, 3D scenes, effects and presets are now in the Designs area.',
   'set.autoConsole': 'Open console on game start', 'set.autoConsole.d': 'Shows start messages, warnings and errors with timestamps as soon as the game starts.',
   'intro.skip': 'Skip', 'set.intro': 'Start animation', 'set.intro.d': 'Cinematic 3D animation when the launcher starts (click or Esc skips).', 'set.introSound': 'Start animation sound', 'set.introSound.d': 'Synthesised sounds during the start animation.', 'set.introPlay': 'Play now',
   'nav.more': 'More', 'nav.vr': 'VR mode',

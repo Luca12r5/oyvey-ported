@@ -515,3 +515,42 @@ body.is-fullscreen .titlebar { -webkit-app-region: no-drag; }
 .console .lv-DEBUG { opacity: .6; }
 .console .ln.flash { animation: lnflash 1.4s ease; }
 @keyframes lnflash { 0%, 40% { background: rgba(225,29,72,.35); } }
+
+/* design editor switches */
+.bg-canvas[hidden] { display: none; }
+#bg { z-index: 0; }
+#bg3d { z-index: 0; }
+body.no-vignette::after { display: none; }
+body.no-glow { --shadow: 0 10px 30px rgba(0,0,0,.35); }
+body.no-glow .rail-ind, body.no-glow .play-group, body.no-glow .btn.primary { box-shadow: none !important; }
+body.surf-solid { --panel: color-mix(in srgb, var(--surface) 97%, #000); }
+body.surf-solid .card, body.surf-solid .glass, body.surf-solid .pcard, body.surf-solid .rail { backdrop-filter: none; }
+body.surf-neon { --panel: color-mix(in srgb, var(--bg) 70%, transparent); --edge: linear-gradient(135deg, var(--accent), var(--accent2)); }
+body.surf-neon .card, body.surf-neon .glass, body.surf-neon .pcard { box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 30%, transparent), inset 0 0 22px color-mix(in srgb, var(--accent2) 12%, transparent); }
+body.stage-plain .halo, body.stage-plain .floor, body.stage-plain .pedestal, body.stage-plain .stage::before { display: none; }
+
+/* designs studio */
+.designs { display: grid; grid-template-columns: minmax(0, 1fr) 300px; grid-template-rows: auto 1fr; gap: 16px 20px; align-items: start; }
+.design-tabs { grid-column: 1 / -1; justify-self: start; }
+.design-tabs button { padding: 7px 14px; }
+.design-body { min-width: 0; display: flex; flex-direction: column; gap: 18px; }
+.design-preview { position: sticky; top: 0; display: flex; flex-direction: column; gap: 12px; }
+.dp-ui { display: flex; gap: 10px; height: 170px; padding: 10px; border-radius: 16px; background: color-mix(in srgb, var(--bg) 55%, transparent); border: 1px solid var(--glass-b); }
+.dp-rail { width: 34px; border-radius: 12px; padding: 6px 0; display: flex; flex-direction: column; align-items: center; gap: 6px; border: 1px solid transparent; background: linear-gradient(color-mix(in srgb, var(--bg) 72%, transparent), color-mix(in srgb, var(--bg) 72%, transparent)) padding-box, var(--edge) border-box; }
+.dp-rail i { width: 22px; height: 22px; border-radius: 7px; background: color-mix(in srgb, var(--text) 10%, transparent); }
+.dp-rail i.on { background: linear-gradient(145deg, var(--accent), var(--accent2)); box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 50%, transparent); }
+.dp-main { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.dp-card { padding: 10px; border-radius: 12px; border: 1px solid transparent; background: linear-gradient(var(--panel), var(--panel)) padding-box, var(--edge) border-box; display: flex; flex-direction: column; gap: 6px; }
+.dp-card small { color: var(--muted); font-size: .72rem; }
+.bg-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bg-tile em { font-style: normal; font-size: .62rem; padding: 1px 5px; border-radius: 5px; background: var(--accent); color: #fff; margin-left: 4px; }
+.bg-tile.upload { display: grid; place-items: center; cursor: pointer; margin: 0; }
+.bg-tile.upload .up-ic { color: var(--muted); }
+.presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.preset { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: var(--r-lg); border: 1px solid transparent; background: linear-gradient(var(--panel), var(--panel)) padding-box, linear-gradient(140deg, var(--c), color-mix(in srgb, var(--text) 8%, transparent) 60%) border-box; transition: transform .2s var(--spring); }
+.preset:hover { transform: translateY(-3px); }
+.pr-sw { height: 46px; border-radius: 10px; overflow: hidden; display: grid; grid-template-columns: 2fr 1fr 1fr; }
+.pr-sw i { background: var(--c); }
+.pr-meta small { display: block; color: var(--muted); font-size: .74rem; }
+.setting output { min-width: 40px; text-align: right; }
+@media (max-width: 1180px) { .designs { grid-template-columns: minmax(0, 1fr); } .design-preview { position: static; } }

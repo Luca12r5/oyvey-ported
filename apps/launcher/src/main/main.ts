@@ -28,6 +28,7 @@ import { encryptionAvailable, loadAccounts, loadSettings, paths, saveAccounts, s
 import { setupUpdater, checkForUpdate, installUpdate } from './updater.ts';
 import type { AuthState, LaunchProgress, ModEntry, SkinData } from '../ipc-types.ts';
 import { validateTheme } from '@lego/shared';
+import { sanitizeFx, sanitizeImage, sanitizePreset, STAGES, SURFACES, type DesignPreset } from '../core/design.ts';
 
 declare const __MS_CLIENT_ID__: string;
 declare const __BACKEND_URL__: string;
@@ -386,7 +387,7 @@ function registerIpc(): void {
     const allowed: (keyof Settings)[] = [
       'themeId', 'customThemes', 'language', 'backendUrl', 'selectedProfile', 'closeOnLaunch', 'reducedMotion', 'uiScale', 'autoUpdate', 'rarityColors',
       'accentColor', 'background', 'backgroundQuality', 'snow', 'showSnapshots', 'showHistorical', 'curseforgeKey', 'msClientId',
-      'introEnabled', 'introSound', 'autoConsole',
+      'introEnabled', 'introSound', 'autoConsole', 'fx', 'surface', 'stage', 'designPresets', 'bgImage',
     ];
     for (const k of allowed) if (k in patch) (settings as unknown as Record<string, unknown>)[k] = patch[k];
     // Never trust the renderer: re-validate imported themes and clamp numbers.
@@ -400,6 +401,11 @@ function registerIpc(): void {
     settings.msClientId = typeof settings.msClientId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(settings.msClientId.trim()) ? settings.msClientId.trim().toLowerCase() : '';
     settings.curseforgeKey = typeof settings.curseforgeKey === 'string' ? settings.curseforgeKey.trim().slice(0, 200) : '';
     if (!['ask', 'auto', 'off'].includes(settings.autoUpdate)) settings.autoUpdate = 'ask';
+    settings.fx = sanitizeFx(settings.fx);
+    if (!(SURFACES as readonly string[]).includes(settings.surface)) settings.surface = 'glass';
+    if (!(STAGES as readonly string[]).includes(settings.stage)) settings.stage = 'portal';
+    settings.designPresets = (Array.isArray(settings.designPresets) ? settings.designPresets : []).map(sanitizePreset).filter((p): p is DesignPreset => !!p).slice(0, 30);
+    settings.bgImage = sanitizeImage(settings.bgImage);
     if (typeof settings.backendUrl === 'string' && settings.backendUrl && !/^https:\/\//.test(settings.backendUrl) && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(settings.backendUrl)) {
       settings.backendUrl = '';
     }
