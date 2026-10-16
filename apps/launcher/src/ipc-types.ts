@@ -28,7 +28,7 @@ export interface AppInfo {
   freeMemMb: number;
   cpus: number;
   cpuModel: string;
-  msClientConfigured: boolean;
+  msClientConfigured: boolean; msClientBuiltIn: boolean;
   gameDir: string;
 }
 

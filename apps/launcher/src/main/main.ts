@@ -376,7 +376,7 @@ function registerIpc(): void {
   ipcMain.handle('info', () => ({
     version: app.getVersion(), platform: process.platform, arch: process.arch,
     totalMemMb: Math.round(totalmem() / 1048576), freeMemMb: Math.round(freemem() / 1048576),
-    cpus: cpus().length, cpuModel: cpus()[0]?.model ?? '', msClientConfigured: !!clientId(), gameDir: paths.game(),
+    cpus: cpus().length, cpuModel: cpus()[0]?.model ?? '', msClientConfigured: !!clientId(), msClientBuiltIn: !!MS_CLIENT_ID, gameDir: paths.game(),
   }));
   ipcMain.on('window', (_e, action: string) => {
     if (action === 'minimize') win?.minimize();

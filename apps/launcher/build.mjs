@@ -13,7 +13,7 @@ rmSync(out, { recursive: true, force: true });
 mkdirSync(join(out, 'renderer', 'fonts'), { recursive: true });
 
 const define = {
-  __MS_CLIENT_ID__: JSON.stringify(process.env.LEGO_MS_CLIENT_ID ?? ''),
+  __MS_CLIENT_ID__: JSON.stringify(process.env.LEGO_MS_CLIENT_ID ?? '134af811-c0d4-4390-91fb-299ddf5626ca'),
   __BACKEND_URL__: JSON.stringify(process.env.LEGO_BACKEND_URL ?? ''),
   __CURSEFORGE_KEY__: JSON.stringify(process.env.LEGO_CURSEFORGE_KEY ?? ''),
 };
@@ -36,4 +36,4 @@ const fonts = [
 for (const [src, name] of fonts) copyFileSync(require.resolve(src), join(out, 'renderer', 'fonts', name));
 for (const w of ['Regular', 'Medium', 'Bold']) copyFileSync(`../../lego-client/src/main/resources/assets/legoclient/fonts/Poppins-${w}.ttf`, join(out, 'renderer', 'fonts', `Poppins-${w}.ttf`));
 copyFileSync('../../lego-client/src/main/resources/assets/legoclient/fonts/OFL.txt', join(out, 'renderer', 'fonts', 'OFL-Poppins.txt'));
-console.log('launcher built into', out, process.env.LEGO_MS_CLIENT_ID ? '(Microsoft client id set)' : '(no Microsoft client id: sign-in disabled)');
+console.log('launcher built into', out, '(Microsoft client id: ' + (process.env.LEGO_MS_CLIENT_ID ? 'env override' : 'built-in') + ')');
