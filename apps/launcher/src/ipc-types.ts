@@ -30,6 +30,7 @@ export interface AppInfo {
   cpuModel: string;
   msClientConfigured: boolean; msClientBuiltIn: boolean;
   gameDir: string;
+  e2e?: boolean;
 }
 
 export interface SkinData { skin: string | null; variant: 'classic' | 'slim'; cape: string | null }
