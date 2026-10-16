@@ -4,7 +4,11 @@
   "version": "0.1.0",
   "private": true,
   "description": "LEGO Launcher – Minecraft launcher for the LEGO client",
-  "author": "LEGO Launcher contributors",
+  "author": {
+    "name": "LEGO Launcher contributors",
+    "email": "lego-launcher@users.noreply.github.com"
+  },
+  "homepage": "https://github.com/Luca12r5/oyvey-ported",
   "license": "MIT",
   "main": "dist/main.cjs",
   "scripts": {

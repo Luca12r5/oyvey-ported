@@ -56,3 +56,4 @@ linux:
   category: Game
   synopsis: Minecraft launcher with mod support
   executableName: lego-launcher
+  maintainer: LEGO Launcher contributors
