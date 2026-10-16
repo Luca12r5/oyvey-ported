@@ -1,10 +1,24 @@
-// Download page: finds the newest launcher installer in the GitHub releases,
-// shows version, size and SHA-256 (when GitHub provides an asset digest), and
-// draws a light animated brick background.
+// Download page: finds the newest launcher installer in the GitHub releases
+// for Windows, macOS and Linux, auto-detects the visitor's OS, and draws a
+// light animated brick background.
 import { CONFIG } from '../config.js';
 
 const $ = (id) => document.getElementById(id);
 const releasesUrl = `https://github.com/${CONFIG.repo}/releases`;
+
+const PATTERNS = {
+  win:   /LEGO-Launcher-Setup-.+\.exe$/,
+  mac:   /LEGO-Launcher-.+\.dmg$/,
+  linux: /LEGO-Launcher-.+\.(?:AppImage|deb)$/,
+};
+const OS_LABELS = { win: 'Windows', mac: 'macOS', linux: 'Linux' };
+
+function detectOS() {
+  const ua = navigator.userAgent;
+  if (/Mac/i.test(ua)) return 'mac';
+  if (/Linux/i.test(ua) && !/Android/i.test(ua)) return 'linux';
+  return 'win';
+}
 
 function siteLinks() {
   $('allReleases').href = releasesUrl;
@@ -14,16 +28,20 @@ function siteLinks() {
     a.href = `${CONFIG.website.replace(/\/$/, '')}/${a.dataset.site}`;
     a.hidden = false;
   });
-  if (CONFIG.website) $('faqFeedback').textContent = `Im Launcher unter „Feedback“ oder auf ${CONFIG.website.replace(/^https:\/\//, '')}/feedback.`;
+  if (CONFIG.website) $('faqFeedback').textContent = `Im Launcher unter „Feedback" oder auf ${CONFIG.website.replace(/^https:\/\//, '')}/feedback.`;
 }
 
-async function latestInstaller() {
+async function fetchRelease() {
   const res = await fetch(`https://api.github.com/repos/${CONFIG.repo}/releases?per_page=20`, { headers: { Accept: 'application/vnd.github+json' } });
   if (!res.ok) throw new Error(`GitHub ${res.status}`);
   for (const rel of await res.json()) {
     if (rel.draft || rel.prerelease) continue;
-    const asset = rel.assets.find((a) => /^LEGO-Launcher-Setup-.+\.exe$/.test(a.name));
-    if (asset) return { rel, asset };
+    const assets = {};
+    for (const [os, re] of Object.entries(PATTERNS)) {
+      const a = rel.assets.find((x) => re.test(x.name));
+      if (a) assets[os] = a;
+    }
+    if (Object.keys(assets).length) return { rel, assets };
   }
   return null;
 }
@@ -31,21 +49,36 @@ async function latestInstaller() {
 async function setupDownload() {
   const btn = $('download');
   const meta = $('dlMeta');
+  const label = $('dlLabel');
+  const os = detectOS();
   try {
-    const found = await latestInstaller();
+    const found = await fetchRelease();
     if (!found) {
       btn.href = releasesUrl;
       btn.dataset.state = 'none';
       meta.textContent = 'Noch keine Version veröffentlicht – bald verfügbar.';
       return;
     }
-    const { rel, asset } = found;
-    btn.href = asset.browser_download_url;
+    const { rel, assets } = found;
+    const primary = assets[os] ?? assets.win ?? Object.values(assets)[0];
+    btn.href = primary.browser_download_url;
     btn.dataset.state = 'ready';
-    meta.textContent = `${rel.tag_name.replace(/^launcher-/, '')} · ${(asset.size / 1048576).toFixed(0)} MB · ${new Date(rel.published_at).toLocaleDateString('de-DE')}`;
-    if (typeof asset.digest === 'string' && asset.digest.startsWith('sha256:')) {
-      $('hashValue').textContent = asset.digest.slice(7);
+    label.textContent = `Für ${OS_LABELS[os]} herunterladen`;
+    meta.textContent = `${rel.tag_name.replace(/^launcher-/, '')} · ${(primary.size / 1048576).toFixed(0)} MB · ${new Date(rel.published_at).toLocaleDateString('de-DE')}`;
+    if (typeof primary.digest === 'string' && primary.digest.startsWith('sha256:')) {
+      $('hashValue').textContent = primary.digest.slice(7);
       $('hash').hidden = false;
+    }
+    // Platform buttons
+    for (const a of document.querySelectorAll('.plat-btn')) {
+      const p = a.dataset.os;
+      if (assets[p]) {
+        a.href = assets[p].browser_download_url;
+        if (p === os) a.classList.add('current');
+      } else {
+        a.classList.add('unavailable');
+        a.title = 'Noch nicht verfügbar';
+      }
     }
   } catch {
     btn.href = releasesUrl;

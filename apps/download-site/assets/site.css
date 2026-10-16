@@ -29,6 +29,12 @@ h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); line-height: 1.08; margin: 16px 0; l
 .btn[data-state=loading] small::after { content: ""; display: inline-block; width: 10px; height: 10px; margin-left: 6px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: -1px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .btn.ghost { color: var(--muted); }
+.platforms { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.plat-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: .88rem; border: 1px solid var(--line); background: var(--glass); color: var(--muted); transition: transform .2s, border-color .2s, color .2s; }
+.plat-btn:hover { transform: translateY(-1px); color: var(--text); border-color: var(--accent); }
+.plat-btn.current { border-color: var(--accent); color: var(--text); }
+.plat-btn.unavailable { opacity: .4; pointer-events: none; }
+.plat-btn svg { width: 16px; height: 16px; fill: currentColor; }
 .hash { margin-top: 14px; font-size: .78rem; color: var(--muted); word-break: break-all; }
 .hash code { font-family: "JetBrains Mono", Consolas, monospace; color: var(--text); }
 .hero-shot { position: relative; margin: 0; }
