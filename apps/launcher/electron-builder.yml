@@ -39,3 +39,21 @@ publish:
   owner: Luca12r5
   repo: oyvey-ported
   releaseType: release
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  artifactName: LEGO-Launcher-${version}-${arch}.${ext}
+  category: public.app-category.games
+  darkModeSupport: true
+linux:
+  target:
+    - target: AppImage
+      arch: [x64]
+    - target: deb
+      arch: [x64]
+  artifactName: LEGO-Launcher-${version}.${ext}
+  category: Game
+  synopsis: Minecraft launcher with mod support
+  desktop:
+    StartupWMClass: lego-launcher

@@ -1,9 +1,8 @@
-name: LEGO Launcher (Windows)
+name: LEGO Launcher
 
 on:
   push:
     branches: ['**']
-    # Path filters are not evaluated for tag pushes, so release tags always build.
     tags:
       - 'launcher-v*'
     paths:
@@ -37,7 +36,6 @@ jobs:
     needs: test
     runs-on: windows-latest
     permissions:
-      # write is only used to publish releases for launcher-v* tags
       contents: write
     steps:
       - uses: actions/checkout@v4
@@ -51,7 +49,7 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Build LEGO client (shipped inside the installer)
+      - name: Build LEGO client
         shell: bash
         run: |
           ./gradlew -p lego-client build -x test --no-daemon
@@ -63,10 +61,8 @@ jobs:
           LEGO_MS_CLIENT_ID: ${{ secrets.LEGO_MS_CLIENT_ID }}
           LEGO_BACKEND_URL: ${{ vars.LEGO_BACKEND_URL }}
           LEGO_CURSEFORGE_KEY: ${{ secrets.LEGO_CURSEFORGE_KEY }}
-          # Option A: classic code signing certificate (.pfx, base64) – see docs/CODE-SIGNING.md
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          # Option B: Azure Trusted Signing
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
@@ -86,7 +82,7 @@ jobs:
             echo "Signing with code signing certificate"
             [ -n "$SIGN_PUBLISHER" ] && args+=(-c.win.signtoolOptions.publisherName="$SIGN_PUBLISHER")
           else
-            echo "::warning::Unsigned build – Windows SmartScreen and some antivirus products may warn (docs/CODE-SIGNING.md)."
+            echo "::warning::Unsigned build – Windows SmartScreen may warn (docs/CODE-SIGNING.md)."
             export CSC_IDENTITY_AUTO_DISCOVERY=false; unset CSC_LINK CSC_KEY_PASSWORD
           fi
           publish=never
@@ -108,5 +104,106 @@ jobs:
             apps/launcher/release/*.exe
             apps/launcher/release/*.blockmap
             apps/launcher/release/latest.yml
+          if-no-files-found: error
+          retention-days: 30
+
+  macos:
+    needs: test
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build LEGO client
+        run: |
+          ./gradlew -p lego-client build -x test --no-daemon
+          jar=$(ls lego-client/build/libs/legoclient-*.jar | grep -v -- '-sources' | head -1)
+          cp "$jar" apps/launcher/resources/legoclient.jar
+      - name: Build installer
+        env:
+          LEGO_MS_CLIENT_ID: ${{ secrets.LEGO_MS_CLIENT_ID }}
+          LEGO_BACKEND_URL: ${{ vars.LEGO_BACKEND_URL }}
+          LEGO_CURSEFORGE_KEY: ${{ secrets.LEGO_CURSEFORGE_KEY }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          publish=never
+          if [[ "$GITHUB_REF" == refs/tags/launcher-v* ]]; then
+            want="${GITHUB_REF#refs/tags/launcher-v}"
+            have=$(node -p "require('./apps/launcher/package.json').version")
+            if [ "$want" != "$have" ]; then echo "::error::Tag version $want does not match package.json $have"; exit 1; fi
+            publish=always
+          fi
+          npm run build -w apps/launcher
+          cd apps/launcher && npx electron-builder --mac --x64 --arm64 --publish "$publish"
+      - name: Checksums
+        run: shasum -a 256 apps/launcher/release/*.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lego-launcher-macos
+          path: |
+            apps/launcher/release/*.dmg
+            apps/launcher/release/*.blockmap
+            apps/launcher/release/latest-mac.yml
+          if-no-files-found: error
+          retention-days: 30
+
+  linux:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build LEGO client
+        run: |
+          ./gradlew -p lego-client build -x test --no-daemon
+          jar=$(ls lego-client/build/libs/legoclient-*.jar | grep -v -- '-sources' | head -1)
+          cp "$jar" apps/launcher/resources/legoclient.jar
+      - name: Build installer
+        env:
+          LEGO_MS_CLIENT_ID: ${{ secrets.LEGO_MS_CLIENT_ID }}
+          LEGO_BACKEND_URL: ${{ vars.LEGO_BACKEND_URL }}
+          LEGO_CURSEFORGE_KEY: ${{ secrets.LEGO_CURSEFORGE_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          publish=never
+          if [[ "$GITHUB_REF" == refs/tags/launcher-v* ]]; then
+            want="${GITHUB_REF#refs/tags/launcher-v}"
+            have=$(node -p "require('./apps/launcher/package.json').version")
+            if [ "$want" != "$have" ]; then echo "::error::Tag version $want does not match package.json $have"; exit 1; fi
+            publish=always
+          fi
+          npm run build -w apps/launcher
+          cd apps/launcher && npx electron-builder --linux --x64 --publish "$publish"
+      - name: Checksums
+        run: sha256sum apps/launcher/release/*.AppImage apps/launcher/release/*.deb 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lego-launcher-linux
+          path: |
+            apps/launcher/release/*.AppImage
+            apps/launcher/release/*.deb
+            apps/launcher/release/latest-linux.yml
           if-no-files-found: error
           retention-days: 30
