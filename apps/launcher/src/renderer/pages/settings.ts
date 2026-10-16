@@ -7,13 +7,15 @@ import { go, loadIdentity, retheme, state } from '../app.ts';
 import { api, confirm, errorToast, html, mount, toast, type Raw } from '../ui.ts';
 import { icon } from '../icons.ts';
 import { headFromSkin } from '../avatar.ts';
-import { t } from '../i18n.ts';
+import { languageTemplate, t } from '../i18n.ts';
+import { sanitizeLanguage } from '../../core/design.ts';
 import type { Settings } from '../../core/settings.ts';
 import { signInFlow } from './account.ts';
 
-type Section = 'general' | 'appearance' | 'game' | 'accounts' | 'rarity' | 'advanced' | 'about';
+type Section = 'general' | 'language' | 'appearance' | 'game' | 'accounts' | 'rarity' | 'advanced' | 'about';
 const SECTIONS: [Section, string, () => string][] = [
   ['general', 'sliders', () => t('set.general')],
+  ['language', 'globe', () => t('set.language')],
   ['appearance', 'palette', () => t('set.appearance')],
   ['game', 'gamepad', () => t('set.game')],
   ['accounts', 'users', () => t('set.accounts')],
@@ -61,6 +63,7 @@ export async function settingsPage(el: HTMLElement, section: Section | string = 
     rowSections(box, q);
   });
   if (ROW_SECTIONS.includes(sec)) rowSections(box, '', sec);
+  else if (sec === 'language') languageTab(box);
   else if (sec === 'accounts') await accountsTab(box);
   else if (sec === 'rarity') rarityTab(box);
   else await aboutTab(box);
@@ -71,7 +74,7 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
   const s = state.settings;
   const parts: Record<string, Raw> = {
     general: html`
-      ${row(t('set.language'), t('set.language.d'), html`<div class="seg" data-seg="language"><button data-v="de" class="${s.language === 'de' ? 'on' : ''}">Deutsch</button><button data-v="en" class="${s.language === 'en' ? 'on' : ''}">English</button></div>`)}
+      ${row(t('set.language'), t('set.language.d'), html`<div class="seg" data-seg="language"><button data-v="de" class="${s.language === 'de' ? 'on' : ''}">Deutsch</button><button data-v="en" class="${s.language === 'en' ? 'on' : ''}">English</button>${s.customLanguage ? html`<button data-v="custom" class="${s.language === 'custom' ? 'on' : ''}">${s.customLanguage.name}</button>` : ''}</div>`)}
       ${row(t('set.intro'), t('set.intro.d'), html`<div class="row"><button class="btn sm" id="introPlay">${icon('play', 'sm')} ${t('set.introPlay')}</button>${sw('introEnabled', s.introEnabled)}</div>`)}
       ${row(t('set.introSound'), t('set.introSound.d'), sw('introSound', s.introSound))}
       ${row(t('set.closeOnLaunch'), t('set.closeOnLaunch.d'), sw('closeOnLaunch', s.closeOnLaunch))}
@@ -113,7 +116,7 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!b) return;
     if (b.id === 'toDesigns') return void go('designs');
-    if (b.parentElement?.dataset.seg === 'language') { await save({ language: b.dataset.v === 'en' ? 'en' : 'de' }); return void settingsPage(page(box), only ?? 'general'); }
+    if (b.parentElement?.dataset.seg === 'language') { await save({ language: b.dataset.v === 'en' ? 'en' : b.dataset.v === 'custom' ? 'custom' : 'de' }); return void settingsPage(page(box), only ?? 'general'); }
     if (b.id === 'game') return void api.openFolder('game');
     if (b.id === 'introPlay') {
       const { playIntro3d, webglAvailable } = await import('../intro3d.ts');
@@ -149,6 +152,74 @@ async function accountsTab(box: HTMLElement): Promise<void> {
       void accountsTab(box);
     } catch (err) { errorToast(err); }
   };
+}
+
+/** Own language: translate every text of the launcher, save, export and import packs. */
+function languageTab(box: HTMLElement): void {
+  const s = state.settings;
+  const rows = languageTemplate();
+  const draft: Record<string, string> = { ...(s.customLanguage?.strings ?? {}) };
+  let q = '';
+  const done = () => rows.filter((r) => draft[r.key]?.trim()).length;
+  mount(box, html`<section class="set-sec"><h2>${t('set.language')}</h2><div class="glass rows">
+      <div class="setting"><div><b>${t('set.language')}</b><small>${t('set.language.d')}</small></div><div class="ctl"><div class="seg" id="langSeg"><button data-v="de" class="${s.language === 'de' ? 'on' : ''}">Deutsch</button><button data-v="en" class="${s.language === 'en' ? 'on' : ''}">English</button>${s.customLanguage ? html`<button data-v="custom" class="${s.language === 'custom' ? 'on' : ''}">${s.customLanguage.name}</button>` : ''}</div></div></div></div></section>
+    <section class="set-sec"><h2>Eigene Sprache</h2><div class="card">
+      <p class="small muted">Übersetze die Texte des Launchers in deine eigene Sprache (oder schreib sie einfach so, wie du sie magst). Leere Felder bleiben Deutsch. Sprachpakete kannst du exportieren und mit Freunden teilen.</p>
+      <div class="row"><input id="lname" class="grow" maxlength="30" placeholder="Name der Sprache, z. B. Türkçe" value="${s.customLanguage?.name ?? ''}"><span class="badge" id="lcount">${done()} / ${rows.length}</span></div>
+      <div class="row gap"><button class="btn primary" id="lsave">${icon('check', 'sm')} Speichern & aktivieren</button><button class="btn" id="lexport">${icon('download', 'sm')} Exportieren</button><label class="btn">${icon('import', 'sm')} Importieren<input type="file" id="limport" accept="application/json" hidden></label>${s.customLanguage ? html`<button class="btn danger" id="ldel">${icon('trash', 'sm')} Löschen</button>` : ''}</div>
+      <div class="searchbar sm gap">${icon('search', 'sm')}<input id="lq" placeholder="Text suchen …" autocomplete="off"></div>
+      <div class="lang-table" id="ltable"></div></div></section>`);
+  const table = box.querySelector<HTMLElement>('#ltable')!;
+  const draw = () => {
+    const list = rows.filter((r) => !q || `${r.key} ${r.de} ${r.en} ${draft[r.key] ?? ''}`.toLowerCase().includes(q)).slice(0, 400);
+    mount(table, html`${list.map((r) => html`<label class="lang-row"><span class="lr-ref"><small class="mono">${r.key}</small><span>${r.de}</span>${r.en ? html`<span class="muted">${r.en}</span>` : ''}</span><input data-k="${r.key}" value="${draft[r.key] ?? ''}" placeholder="${r.de}" maxlength="400"></label>`)}`);
+  };
+  draw();
+  box.querySelector('#lq')!.addEventListener('input', (e) => { q = (e.target as HTMLInputElement).value.trim().toLowerCase(); draw(); });
+  table.addEventListener('input', (e) => {
+    const i = e.target as HTMLInputElement;
+    if (!i.dataset.k) return;
+    if (i.value.trim()) draft[i.dataset.k] = i.value; else delete draft[i.dataset.k];
+    box.querySelector('#lcount')!.textContent = `${done()} / ${rows.length}`;
+  });
+  const pack = () => ({ name: box.querySelector<HTMLInputElement>('#lname')!.value.trim() || 'Eigene Sprache', strings: draft });
+  box.onchange = null;
+  box.onclick = async (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
+    if (!b) return;
+    if (b.parentElement?.id === 'langSeg') { await save({ language: b.dataset.v as 'de' | 'en' | 'custom' }); return void settingsPage(page(box), 'language'); }
+    if (b.id === 'lsave') {
+      const p = sanitizeLanguage(pack());
+      if (!p) return errorToast(new Error('Bitte einen Namen eingeben.'));
+      await save({ customLanguage: p, language: 'custom' });
+      toast(`Sprache „${p.name}“ aktiv`, 'ok');
+      return void settingsPage(page(box), 'language');
+    }
+    if (b.id === 'lexport') {
+      // Export contains every key; untranslated ones carry the German text as a hint for translators.
+      const full = { name: pack().name, strings: Object.fromEntries(rows.map((r) => [r.key, draft[r.key] ?? ''])), reference: Object.fromEntries(rows.map((r) => [r.key, { de: r.de, en: r.en }])) };
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(full, null, 2)], { type: 'application/json' }));
+      a.download = `${full.name.replace(/[^\w-]+/g, '_')}.lego-lang.json`;
+      a.click();
+      return URL.revokeObjectURL(a.href);
+    }
+    if (b.id === 'ldel' && await confirm('Sprache löschen?', 'Das eigene Sprachpaket wird entfernt.', 'Löschen', true)) {
+      await save({ customLanguage: null, language: s.language === 'custom' ? 'de' : s.language });
+      return void settingsPage(page(box), 'language');
+    }
+  };
+  box.querySelector('#limport')!.addEventListener('change', async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file || file.size > 500_000) return errorToast(new Error('Datei zu groß oder leer.'));
+    try {
+      const p = sanitizeLanguage(JSON.parse(await file.text()));
+      if (!p) return errorToast(new Error('Das ist kein gültiges Sprachpaket.'));
+      await save({ customLanguage: p, language: 'custom' });
+      toast(`Sprache „${p.name}“ importiert (${Object.keys(p.strings).length} Texte)`, 'ok');
+      void settingsPage(page(box), 'language');
+    } catch (err) { errorToast(err); }
+  });
 }
 
 function rarityTab(box: HTMLElement): void {

@@ -671,7 +671,7 @@ export class Bg3D {
     const p90 = sorted[Math.floor(sorted.length * 0.9)]!;
     this.frameMs = [];
     this.lastAdapt = now;
-    if (p90 > 24 && this.scale > 0.5) { this.scale = Math.max(0.5, this.scale * 0.8); this.resize(); }
+    if (p90 > 24 && this.scale > 0.6) { this.scale = Math.max(0.6, this.scale * 0.85); this.resize(); }
     else if (p90 < 13 && this.scale < 1) { this.scale = Math.min(1, this.scale * 1.15); this.resize(); }
   }
 

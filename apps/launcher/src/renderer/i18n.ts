@@ -83,16 +83,25 @@ const en: Partial<Record<Key, string>> = {
 };
 
 let lang: 'de' | 'en' = 'de';
+let custom: Record<string, string> | null = null;
 
-export function setLang(l: 'de' | 'en'): void {
-  lang = l;
-  document.documentElement.lang = l;
+/** 'custom' uses a user language pack on top of German (missing keys stay German). */
+export function setLang(l: 'de' | 'en' | 'custom', pack?: { name: string; strings: Record<string, string> } | null): void {
+  custom = l === 'custom' && pack ? pack.strings : null;
+  lang = l === 'en' ? 'en' : 'de';
+  document.documentElement.lang = l === 'custom' ? 'x-custom' : l;
 }
 
+/** Language for data that only exists in German/English (background names etc.). */
 export function getLang(): 'de' | 'en' {
   return lang;
 }
 
 export function t(key: Key): string {
-  return (lang === 'en' ? en[key] : undefined) ?? de[key];
+  return custom?.[key] ?? (lang === 'en' ? en[key] : undefined) ?? de[key];
+}
+
+/** All translatable texts (German + English) for the language pack editor / export. */
+export function languageTemplate(): { key: string; de: string; en: string }[] {
+  return (Object.keys(de) as Key[]).map((k) => ({ key: k, de: de[k], en: en[k] ?? '' }));
 }

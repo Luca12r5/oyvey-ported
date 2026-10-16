@@ -14,13 +14,14 @@ import { icon } from '../icons.ts';
 import { BACKGROUNDS as LAUNCHER_BACKGROUNDS, drawPreview } from '../bg.ts';
 import { is3D, thumbnail } from '../bg3d.ts';
 import { getLang, t as tr } from '../i18n.ts';
-import { DEFAULT_FX, sanitizePreset, type DesignFx, type DesignPreset } from '../../core/design.ts';
+import { DEFAULT_FX, sanitizePreset, type ButtonStyle, type DesignFx, type DesignPreset, type HeadFont, type UiFont } from '../../core/design.ts';
 import type { Settings } from '../../core/settings.ts';
 
-type Tab = 'scene' | 'colors' | 'effects' | 'presets' | 'editor';
+type Tab = 'scene' | 'colors' | 'style' | 'effects' | 'presets' | 'editor';
 const TABS: [Tab, string, string][] = [
   ['scene', 'image', 'Szene'],
   ['colors', 'palette', 'Farben & Themes'],
+  ['style', 'brush', 'Schrift & Buttons'],
   ['effects', 'sliders', 'Effekte'],
   ['presets', 'star', 'Presets'],
   ['editor', 'brush', 'Theme-Editor'],
@@ -96,6 +97,7 @@ export async function designsPage(el: HTMLElement, tab: Tab | string = 'scene'):
   const box = el.querySelector<HTMLElement>('#tab')!;
   if (sec === 'scene') sceneTab(box);
   else if (sec === 'colors') { colorsTab(box); }
+  else if (sec === 'style') styleTab(box);
   else if (sec === 'effects') effectsTab(box);
   else if (sec === 'presets') presetsTab(box);
   else editorTab(box);
@@ -169,6 +171,53 @@ function colorsTab(box: HTMLElement): void {
   };
   box.querySelector('#customAccent')!.addEventListener('input', (e) => live({ accentColor: (e.target as HTMLInputElement).value }));
   themesTab(box.querySelector<HTMLElement>('#themes')!);
+}
+
+const UI_FONT_LIST: [UiFont, string, string][] = [
+  ['theme', 'Vom Theme', 'var(--font)'], ['inter', 'Inter', 'Inter'], ['poppins', 'Poppins', 'Poppins'], ['nunito', 'Nunito', 'Nunito'],
+  ['orbitron', 'Orbitron', 'Orbitron'], ['mono', 'JetBrains Mono', '"JetBrains Mono"'], ['pixel', 'Silkscreen', 'Silkscreen'], ['custom', 'Eigene Schrift', 'LegoCustom'],
+];
+const HEAD_FONT_LIST: [HeadFont, string, string][] = [
+  ['poppins', 'Poppins', 'Poppins'], ['creepster', 'Creepster', 'Creepster'], ['nosifer', 'Nosifer', 'Nosifer'], ['orbitron', 'Orbitron', 'Orbitron'],
+  ['pixel', 'Silkscreen', 'Silkscreen'], ['press', 'Press Start', '"Press Start 2P"'], ['inter', 'Inter', 'Inter'], ['custom', 'Eigene Schrift', 'LegoCustom'],
+];
+const BUTTONS: [ButtonStyle, string, string][] = [
+  ['nocturne', 'Nocturne', 'Verlauf mit Lichtkante'], ['brick', 'LEGO-Stein', '3D-Stein mit Noppen zum Drücken'], ['neon', 'Neon', 'Leuchtende Umrandung'],
+  ['glass', 'Glas', 'Mattglas, durchscheinend'], ['pixel', 'Pixel', 'Wie die Buttons im Spiel'],
+];
+
+function styleTab(box: HTMLElement): void {
+  const s = state.settings;
+  const tile = (kind: 'ui' | 'head', id: string, label: string, family: string, on: boolean) =>
+    html`<button class="font-tile ${on ? 'on' : ''}" data-${kind}="${id}" ${id === 'custom' && !s.customFont ? 'disabled' : ''}><span class="ft-sample" data-ff="${family}">${kind === 'head' ? 'LEGO Launcher' : 'Aa Bb 123'}</span><small>${id === 'custom' && s.customFont ? s.customFont.name : label}</small></button>`;
+  mount(box, html`<section class="set-sec"><h2>Überschriften</h2><div class="font-grid">${HEAD_FONT_LIST.map(([id, l, f]) => tile('head', id, l, f, s.headFont === id))}</div></section>
+    <section class="set-sec"><h2>Text</h2><div class="font-grid">${UI_FONT_LIST.map(([id, l, f]) => tile('ui', id, l, f, s.uiFont === id))}</div></section>
+    <section class="set-sec"><h2>Eigene Schrift</h2><div class="glass rows"><div class="setting"><div><b>${s.customFont ? s.customFont.name : 'Keine eigene Schrift'}</b><small>TTF, OTF, WOFF oder WOFF2 bis 3 MB. Danach oben „Eigene Schrift“ für Überschriften oder Text wählen.</small></div>
+      <div class="ctl row"><label class="btn">${icon('upload', 'sm')} Schrift hochladen<input type="file" id="fontFile" accept=".ttf,.otf,.woff,.woff2" hidden></label>${s.customFont ? html`<button class="btn danger sm" id="fontDel">${icon('trash', 'sm')}</button>` : ''}</div></div></div></section>
+    <section class="set-sec"><h2>Buttons</h2><div class="btn-styles">${BUTTONS.map(([id, l, d]) => html`<div class="btn-style ${s.buttonStyle === id ? 'on' : ''}" data-style="${id}"><div class="bs-demo btn-${id}"><button class="btn primary" type="button" tabindex="-1">Spielen</button><button class="btn" type="button" tabindex="-1">Profil</button></div><b>${l}</b><small>${d}</small><button class="btn sm ${s.buttonStyle === id ? 'primary' : ''}" data-btnstyle="${id}">${s.buttonStyle === id ? 'Aktiv' : 'Verwenden'}</button></div>`)}</div></section>`);
+  box.querySelectorAll<HTMLElement>('[data-ff]').forEach((e) => { e.style.fontFamily = e.dataset.ff!; });
+  box.onclick = (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
+    if (!b || b.disabled) return;
+    if (b.dataset.head) { live({ headFont: b.dataset.head as HeadFont }); styleTab(box); }
+    else if (b.dataset.ui) { live({ uiFont: b.dataset.ui as UiFont }); styleTab(box); }
+    else if (b.dataset.btnstyle) { live({ buttonStyle: b.dataset.btnstyle as ButtonStyle }); styleTab(box); }
+    else if (b.id === 'fontDel') void saveNow({ customFont: null, ...(state.settings.uiFont === 'custom' ? { uiFont: 'theme' as const } : {}), ...(state.settings.headFont === 'custom' ? { headFont: 'poppins' as const } : {}) }).then(() => styleTab(box));
+  };
+  box.querySelector('#fontFile')!.addEventListener('change', async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    if (file.size > 3_000_000) return errorToast(new Error('Schrift zu groß (max. 3 MB)'));
+    const ext = file.name.split('.').pop()!.toLowerCase();
+    const mime = ({ ttf: 'font/ttf', otf: 'font/otf', woff: 'font/woff', woff2: 'font/woff2' } as Record<string, string>)[ext];
+    if (!mime) return errorToast(new Error('Bitte eine TTF-, OTF-, WOFF- oder WOFF2-Datei wählen.'));
+    const b64 = await new Promise<string>((r) => { const fr = new FileReader(); fr.onload = () => r(String(fr.result).split(',')[1] ?? ''); fr.readAsDataURL(file); });
+    const probe = new FontFace('LegoProbe', Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)).buffer);
+    try { await probe.load(); } catch { return errorToast(new Error('Diese Datei ist keine gültige Schrift.')); }
+    await saveNow({ customFont: { name: file.name.replace(/\.[^.]+$/, ''), data: `data:${mime};base64,${b64}` }, headFont: 'custom' });
+    toast('Eigene Schrift aktiv (Überschriften)', 'ok');
+    styleTab(box);
+  });
 }
 
 function effectsTab(box: HTMLElement): void {

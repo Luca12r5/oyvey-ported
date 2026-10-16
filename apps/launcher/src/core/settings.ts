@@ -1,6 +1,6 @@
 // Launcher settings and game profiles (stored as JSON in the user data dir).
 
-import { DEFAULT_FX, type DesignFx, type DesignPreset, type StageStyle, type SurfaceStyle } from './design.ts';
+import { DEFAULT_FX, type ButtonStyle, type CustomFont, type CustomLanguage, type DesignFx, type DesignPreset, type HeadFont, type StageStyle, type SurfaceStyle, type UiFont } from './design.ts';
 
 export const LOADER_TYPES = ['fabric', 'quilt', 'forge', 'neoforge'] as const;
 export type LoaderType = (typeof LOADER_TYPES)[number];
@@ -52,7 +52,7 @@ export interface Settings {
   settingsVersion: number;
   themeId: string;
   customThemes: unknown[];
-  language: 'de' | 'en';
+  language: 'de' | 'en' | 'custom';
   backendUrl: string;
   selectedProfile: string;
   profiles: GameProfile[];
@@ -87,6 +87,11 @@ export interface Settings {
   bgImage: string;
   /** User chose to try the launcher without signing in (guest mode). */
   guest: boolean;
+  uiFont: UiFont;
+  headFont: HeadFont;
+  customFont: CustomFont | null;
+  buttonStyle: ButtonStyle;
+  customLanguage: CustomLanguage | null;
 }
 
 export const DEFAULT_PROFILE: GameProfile = {
@@ -131,6 +136,7 @@ export function defaultSettings(): Settings {
     accentColor: null, background: 'graveyard', backgroundQuality: 0.6, snow: false, showSnapshots: false, showHistorical: false, curseforgeKey: '', msClientId: '',
     introEnabled: true, introSound: true, autoConsole: true,
     fx: { ...DEFAULT_FX }, surface: 'glass', stage: 'portal', designPresets: [], bgImage: '', guest: false,
+    uiFont: 'theme', headFont: 'poppins', customFont: null, buttonStyle: 'nocturne', customLanguage: null,
   };
 }
 

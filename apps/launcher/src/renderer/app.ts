@@ -67,19 +67,47 @@ export function backgroundInfo(): { w: number; h: number; tier: string } | null 
   return bg?.renderInfo() ?? null;
 }
 
+let fontKey = '';
+/** Registers the user's font file as "LegoCustom" (from bytes, so no CSP change is needed). */
+async function loadCustomFont(f: { name: string; data: string } | null): Promise<void> {
+  const key = f ? `${f.name}:${f.data.length}` : '';
+  if (key === fontKey) return;
+  fontKey = key;
+  for (const ff of [...document.fonts]) if (ff.family === 'LegoCustom') document.fonts.delete(ff);
+  if (!f) return;
+  try {
+    const bin = Uint8Array.from(atob(f.data.slice(f.data.indexOf(',') + 1)), (c) => c.charCodeAt(0));
+    const face = new FontFace('LegoCustom', bin.buffer);
+    await face.load();
+    document.fonts.add(face);
+  } catch {
+    errorToast(new Error('Die eigene Schrift konnte nicht geladen werden.'));
+  }
+}
+
 /** Lower frame rate while Minecraft runs. */
 export function backgroundLowPower(on: boolean): void {
   bg?.setLowPower(on);
 }
 
+let lastLang = '';
+
 export function retheme(): void {
   const s = state.settings;
-  setLang(s.language);
+  setLang(s.language, s.customLanguage);
+  // Language changes must show up in the dock and title bar right away.
+  const langKey = `${s.language}|${JSON.stringify(s.customLanguage?.strings ?? null)}`;
+  if (langKey !== lastLang) {
+    const first = lastLang === '';
+    lastLang = langKey;
+    if (!first && state.auth) refreshChrome();
+  }
   applyTheme(findTheme(s.themeId, s.customThemes), { reducedMotion: s.reducedMotion, uiScale: s.uiScale });
   if (s.accentColor) document.documentElement.style.setProperty('--accent', s.accentColor);
   bg ??= new Background(document.getElementById('bg') as HTMLCanvasElement, document.getElementById('bg3d') as HTMLCanvasElement);
   bg.configure({ id: s.background, quality: s.backgroundQuality, snow: s.snow, still: s.reducedMotion, fx: s.fx, image: s.bgImage });
-  document.body.classList.add('nocturne', `surf-${s.surface}`, `stage-${s.stage}`);
+  document.body.classList.add('nocturne', `surf-${s.surface}`, `stage-${s.stage}`, `uif-${s.uiFont}`, `hf-${s.headFont}`, `btn-${s.buttonStyle}`);
+  void loadCustomFont(s.customFont);
   document.body.classList.toggle('no-vignette', !s.fx.vignette);
   document.body.classList.toggle('no-glow', !s.fx.glow);
 }

@@ -76,3 +76,37 @@ export function sanitizePreset(x: unknown): DesignPreset | null {
 export function sanitizeImage(x: unknown): string {
   return typeof x === 'string' && x.length < 11_000_000 && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(x) ? x : '';
 }
+
+export const UI_FONTS = ['theme', 'inter', 'poppins', 'nunito', 'orbitron', 'mono', 'pixel', 'custom'] as const;
+export type UiFont = (typeof UI_FONTS)[number];
+export const HEAD_FONTS = ['poppins', 'creepster', 'nosifer', 'orbitron', 'pixel', 'press', 'inter', 'custom'] as const;
+export type HeadFont = (typeof HEAD_FONTS)[number];
+export const BUTTON_STYLES = ['nocturne', 'brick', 'neon', 'glass', 'pixel'] as const;
+export type ButtonStyle = (typeof BUTTON_STYLES)[number];
+
+export interface CustomFont { name: string; data: string }
+export interface CustomLanguage { name: string; strings: Record<string, string> }
+
+/** User font file as data URL (woff2/woff/ttf/otf, up to ~3 MB). */
+export function sanitizeFont(x: unknown): CustomFont | null {
+  if (!x || typeof x !== 'object') return null;
+  const o = x as Record<string, unknown>;
+  const name = typeof o.name === 'string' ? o.name.replace(/[^\w .-]/g, '').trim().slice(0, 40) : '';
+  const data = typeof o.data === 'string' && o.data.length < 4_200_000 && /^data:(font\/(woff2|woff|ttf|otf)|application\/(font-woff2?|x-font-(ttf|otf)|octet-stream|vnd\.ms-opentype));base64,[A-Za-z0-9+/=]+$/.test(o.data) ? o.data : '';
+  return name && data ? { name, data } : null;
+}
+
+/** Translation pack: only "group.key" string keys and plain text values. */
+export function sanitizeLanguage(x: unknown): CustomLanguage | null {
+  if (!x || typeof x !== 'object') return null;
+  const o = x as Record<string, unknown>;
+  const name = typeof o.name === 'string' ? o.name.trim().slice(0, 30) : '';
+  if (!name || !o.strings || typeof o.strings !== 'object') return null;
+  const strings: Record<string, string> = {};
+  for (const [k, v] of Object.entries(o.strings as Record<string, unknown>).slice(0, 800)) {
+    if (/^[a-z]+\.[A-Za-z0-9.]{1,60}$/.test(k) && typeof v === 'string' && v.trim()) strings[k] = v.slice(0, 400);
+  }
+  return { name, strings };
+}
+
+export const pick = <T extends string>(list: readonly T[], v: unknown, d: T): T => ((list as readonly string[]).includes(String(v)) ? (v as T) : d);

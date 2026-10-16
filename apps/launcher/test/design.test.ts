@@ -29,3 +29,12 @@ test('background images must be image data URLs', () => {
   assert.equal(sanitizeImage('data:text/html;base64,PHNjcmlwdD4='), '');
   assert.equal(sanitizeImage('data:image/png;base64,iVBORw0KGgo='), 'data:image/png;base64,iVBORw0KGgo=');
 });
+
+test('custom fonts and language packs are validated', async () => {
+  const { sanitizeFont, sanitizeLanguage } = await import('../src/core/design.ts');
+  assert.equal(sanitizeFont({ name: 'X', data: 'data:text/javascript;base64,AAAA' }), null);
+  assert.deepEqual(sanitizeFont({ name: 'Spooky<script>', data: 'data:font/woff2;base64,d09GMg==' }), { name: 'Spookyscript', data: 'data:font/woff2;base64,d09GMg==' });
+  const l = sanitizeLanguage({ name: 'Türkçe', strings: { 'nav.home': 'Ana sayfa', 'bad key': 'x', 'nav.more': 42, 'play.play': 'OYNA' } });
+  assert.deepEqual(l, { name: 'Türkçe', strings: { 'nav.home': 'Ana sayfa', 'play.play': 'OYNA' } });
+  assert.equal(sanitizeLanguage({ strings: {} }), null);
+});

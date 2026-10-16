@@ -208,8 +208,33 @@ for (const id of ['nightfall', 'matrix', 'lego-graphite']) {
 }
 if (shots) await win.screenshot({ path: join(shots, 'launcher-theme-matrix.png') });
 
-// Buy something through the launcher shop.
 await win.click('[data-theme=lego-graphite]');
+// Fonts, button styles and an own language.
+await page('designs', 'Designs');
+await win.click('[data-tab=style]');
+await win.click('[data-btnstyle=brick]');
+await win.click('[data-head=creepster]');
+await win.waitForTimeout(400);
+const cls = await win.evaluate(() => document.body.className);
+if (!cls.includes('btn-brick') || !cls.includes('hf-creepster')) problems.push(`button/font style not applied: ${cls}`);
+if (shots) await win.screenshot({ path: join(shots, 'launcher-designs-style.png') });
+await page('play', 'LegoDev');
+if (shots) await win.screenshot({ path: join(shots, 'launcher-play-brick.png') });
+await page('designs', 'Designs');
+await win.click('[data-tab=style]');
+await win.click('[data-btnstyle=nocturne]');
+await win.click('[data-head=poppins]');
+await page('settings', 'Einstellungen');
+await win.click('[data-tab=language]');
+await win.fill('#lname', 'Testisch');
+await win.fill('input[data-k="nav.home"]', 'Zuhause');
+await win.click('#lsave');
+await win.waitForTimeout(600);
+if (!(await win.locator('#sidebar [data-page=play]').innerText()).includes('Zuhause')) problems.push('custom language not applied to the dock');
+await win.click('#langSeg [data-v=de]');
+await win.waitForTimeout(400);
+
+// Buy something through the launcher shop.
 await win.click('#more');
 await win.click('[data-page=shop]');
 await win.waitForSelector('[data-buy]');

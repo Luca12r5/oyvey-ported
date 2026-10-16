@@ -14,6 +14,11 @@
 @font-face { font-family: "JetBrains Mono"; src: url(fonts/jetbrains-mono-400.woff2); }
 @font-face { font-family: Nunito; src: url(fonts/nunito-400.woff2); font-weight: 400; }
 @font-face { font-family: Nunito; src: url(fonts/nunito-700.woff2); font-weight: 600 900; }
+@font-face { font-family: Creepster; src: url(fonts/creepster-400.woff2) format("woff2"); }
+@font-face { font-family: Nosifer; src: url(fonts/nosifer-400.woff2) format("woff2"); }
+@font-face { font-family: Orbitron; src: url(fonts/orbitron-500.woff2) format("woff2"); font-weight: 400 600; }
+@font-face { font-family: Orbitron; src: url(fonts/orbitron-800.woff2) format("woff2"); font-weight: 700 900; }
+@font-face { font-family: "Press Start 2P"; src: url(fonts/press-start-400.woff2) format("woff2"); }
 
 :root {
   --bg: #141519; --bg2: #1e1f25; --surface: #1e1f25; --surface-hover: #2a2b33; --border: #34353e; --text: #ececf1; --muted: #9a9bab;
@@ -576,3 +581,84 @@ body.stage-plain .halo, body.stage-plain .floor, body.stage-plain .pedestal, bod
 .guest-note b { color: var(--accent); }
 body.guest .wordmark::after { content: "GAST"; margin-left: 8px; padding: 1px 6px; border-radius: 6px; font-size: .58rem; letter-spacing: .1em; color: #fff; background: var(--accent); -webkit-text-fill-color: #fff; }
 @media (max-width: 1180px) { .social { grid-template-columns: minmax(0, 1fr); } }
+
+/* fonts chosen in Designs (after the theme font classes, so they win) */
+body.uif-inter { --font: Inter, "Segoe UI", sans-serif; }
+body.uif-poppins { --font: Poppins, Inter, sans-serif; }
+body.uif-nunito { --font: Nunito, Inter, sans-serif; }
+body.uif-orbitron { --font: Orbitron, Inter, sans-serif; }
+body.uif-mono { --font: "JetBrains Mono", Consolas, monospace; }
+body.uif-pixel { --font: Silkscreen, "JetBrains Mono", monospace; }
+body.uif-custom { --font: LegoCustom, Inter, sans-serif; }
+body.hf-poppins { --head: Poppins, Inter, sans-serif; }
+body.hf-creepster { --head: Creepster, Poppins, sans-serif; }
+body.hf-nosifer { --head: Nosifer, Poppins, sans-serif; }
+body.hf-orbitron { --head: Orbitron, Poppins, sans-serif; }
+body.hf-pixel { --head: Silkscreen, monospace; }
+body.hf-press { --head: "Press Start 2P", monospace; }
+body.hf-inter { --head: Inter, sans-serif; }
+body.hf-custom { --head: LegoCustom, Poppins, sans-serif; }
+body.hf-creepster h1, body.hf-nosifer h1 { letter-spacing: .04em; font-weight: 400; }
+body.hf-creepster .pb-title, body.hf-nosifer .pb-title, body.hf-press .pb-title { font-weight: 400; letter-spacing: .08em; }
+body.hf-press .pb-title, body.hf-nosifer .pb-title { font-size: 1.25rem; }
+body.font-mono h1, body.font-mono h2, body.font-mono h3, body.font-pixel h1, body.font-pixel h2, body.font-pixel h3 { font-family: var(--head); }
+
+/* button styles */
+/* LEGO brick: solid colour, studs on top, thick bottom edge that you press down */
+body.btn-brick .btn { border-radius: 6px; border: 0; box-shadow: inset 0 -4px 0 rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.25); padding-bottom: 10px; position: relative; overflow: visible; }
+body.btn-brick .btn:active { transform: translateY(3px); box-shadow: inset 0 -1px 0 rgba(0,0,0,.35); padding-bottom: 8px; padding-top: 10px; }
+body.btn-brick .btn.primary { background: var(--accent); box-shadow: inset 0 -5px 0 color-mix(in srgb, var(--accent) 55%, #000), inset 0 1px 0 rgba(255,255,255,.35), 0 6px 18px color-mix(in srgb, var(--accent) 30%, transparent); }
+body.btn-brick .btn.primary::before { content: ""; position: absolute; left: 14%; right: 14%; top: -5px; height: 6px; background: radial-gradient(circle at 50% 100%, var(--accent) 0 4px, transparent 4.5px) 0 0 / 18px 6px repeat-x; filter: brightness(1.15); pointer-events: none; }
+body.btn-brick .play-group { padding: 0; border-radius: 8px; background: color-mix(in srgb, var(--accent) 85%, #000); animation: none; box-shadow: inset 0 -6px 0 color-mix(in srgb, var(--accent) 45%, #000), 0 14px 40px color-mix(in srgb, var(--accent) 35%, transparent); overflow: visible; position: relative; }
+body.btn-brick .play-group::after { content: ""; position: absolute; left: 8%; right: 8%; top: -9px; height: 10px; background: radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--accent) 95%, #fff) 0 7px, transparent 7.5px) 0 0 / 34px 10px repeat-x; pointer-events: none; }
+body.btn-brick .play-btn, body.btn-brick .play-drop { background: none; border-radius: 0; }
+body.btn-brick .play-group:active { transform: translateY(4px); box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--accent) 45%, #000); }
+/* neon outline */
+body.btn-neon .btn { background: transparent; border: 1.5px solid color-mix(in srgb, var(--accent) 70%, transparent); color: var(--text); }
+body.btn-neon .btn.primary { background: transparent; border-color: var(--accent); color: var(--accent); text-shadow: 0 0 8px var(--accent); box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 45%, transparent), inset 0 0 12px color-mix(in srgb, var(--accent) 25%, transparent); }
+body.btn-neon .btn.primary:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+body.btn-neon .play-btn, body.btn-neon .play-drop { background: color-mix(in srgb, var(--bg) 85%, transparent); }
+body.btn-neon .pb-title { color: var(--accent); }
+/* frosted glass */
+body.btn-glass .btn { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.22); backdrop-filter: blur(14px); }
+body.btn-glass .btn.primary { background: linear-gradient(135deg, rgba(255,255,255,.28), rgba(255,255,255,.06)); color: #fff; box-shadow: 0 8px 26px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.5); }
+body.btn-glass .play-btn, body.btn-glass .play-drop { background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.04)); backdrop-filter: blur(16px); }
+/* blocky pixel bevel (like the game's own buttons) */
+body.btn-pixel .btn, body.btn-pixel .play-btn, body.btn-pixel .play-drop { border-radius: 0; font-family: Silkscreen, monospace; font-weight: 400; border: 2px solid #000; box-shadow: inset 2px 2px 0 rgba(255,255,255,.35), inset -2px -3px 0 rgba(0,0,0,.45); }
+body.btn-pixel .btn.primary { background: color-mix(in srgb, var(--accent) 80%, #000); }
+body.btn-pixel .btn:active { box-shadow: inset -2px -2px 0 rgba(255,255,255,.25), inset 2px 3px 0 rgba(0,0,0,.45); }
+body.btn-pixel .play-group { border-radius: 0; padding: 0; animation: none; background: #000; }
+body.btn-pixel .play-btn { background: color-mix(in srgb, var(--accent) 70%, #1a1a1a); }
+body.btn-pixel .pb-title { font-family: Silkscreen, monospace; font-weight: 400; }
+
+.font-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.font-tile { display: flex; flex-direction: column; gap: 4px; padding: 14px 12px; border-radius: 14px; border: 2px solid var(--glass-b); background: var(--panel); color: var(--text); cursor: pointer; text-align: left; transition: transform .2s var(--spring), border-color var(--dur); }
+.font-tile:hover:not(:disabled) { transform: translateY(-2px); }
+.font-tile.on { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.font-tile:disabled { opacity: .4; cursor: not-allowed; }
+.ft-sample { font-size: 1.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.font-tile small { color: var(--muted); font-size: .72rem; }
+.btn-styles { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.btn-style { display: flex; flex-direction: column; gap: 6px; padding: 14px; border-radius: var(--r-lg); border: 2px solid var(--glass-b); background: var(--panel); }
+.btn-style.on { border-color: var(--accent); }
+.btn-style small { color: var(--muted); font-size: .74rem; }
+.bs-demo { display: flex; gap: 8px; padding: 14px 4px 6px; pointer-events: none; }
+/* the demo applies its own style regardless of the active one */
+.bs-demo.btn-brick .btn { border-radius: 6px; border: 0; box-shadow: inset 0 -4px 0 rgba(0,0,0,.35); position: relative; overflow: visible; background: color-mix(in srgb, var(--surface-hover) 80%, transparent); }
+.bs-demo.btn-brick .btn.primary { background: var(--accent); box-shadow: inset 0 -5px 0 color-mix(in srgb, var(--accent) 55%, #000); }
+.bs-demo.btn-brick .btn.primary::before { content: ""; position: absolute; left: 14%; right: 14%; top: -5px; height: 6px; background: radial-gradient(circle at 50% 100%, var(--accent) 0 4px, transparent 4.5px) 0 0 / 18px 6px repeat-x; filter: brightness(1.15); }
+.bs-demo.btn-neon .btn { background: transparent; border: 1.5px solid color-mix(in srgb, var(--accent) 70%, transparent); }
+.bs-demo.btn-neon .btn.primary { color: var(--accent); background: transparent; border-color: var(--accent); text-shadow: 0 0 8px var(--accent); box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 45%, transparent); }
+.bs-demo.btn-glass .btn { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.22); }
+.bs-demo.btn-glass .btn.primary { background: linear-gradient(135deg, rgba(255,255,255,.28), rgba(255,255,255,.06)); box-shadow: inset 0 1px 0 rgba(255,255,255,.5); }
+.bs-demo.btn-pixel .btn { border-radius: 0; font-family: Silkscreen, monospace; font-weight: 400; border: 2px solid #000; box-shadow: inset 2px 2px 0 rgba(255,255,255,.35), inset -2px -3px 0 rgba(0,0,0,.45); background: #5b5b66; }
+.bs-demo.btn-pixel .btn.primary { background: color-mix(in srgb, var(--accent) 80%, #000); }
+.bs-demo.btn-nocturne .btn.primary { background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 40%, var(--accent2)) 55%, var(--accent2)); border-radius: 12px; border: 0; box-shadow: none; }
+.bs-demo.btn-nocturne .btn { border-radius: 12px; }
+
+.lang-table { display: flex; flex-direction: column; gap: 4px; max-height: 520px; overflow-y: auto; margin-top: 10px; padding-right: 4px; }
+.lang-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: center; padding: 6px 8px; margin: 0; border-radius: 10px; font-size: .84rem; font-weight: 400; color: var(--text); letter-spacing: 0; }
+.lang-row:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+.lr-ref { display: flex; flex-direction: column; min-width: 0; }
+.lr-ref small { color: var(--muted); font-size: .66rem; }
+.lr-ref span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

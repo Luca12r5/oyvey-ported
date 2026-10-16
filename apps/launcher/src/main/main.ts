@@ -28,7 +28,7 @@ import { encryptionAvailable, loadAccounts, loadSettings, paths, saveAccounts, s
 import { setupUpdater, checkForUpdate, installUpdate } from './updater.ts';
 import type { AuthState, LaunchProgress, ModEntry, SkinData } from '../ipc-types.ts';
 import { validateTheme } from '@lego/shared';
-import { sanitizeFx, sanitizeImage, sanitizePreset, STAGES, SURFACES, type DesignPreset } from '../core/design.ts';
+import { BUTTON_STYLES, HEAD_FONTS, pick, sanitizeFont, sanitizeFx, sanitizeImage, sanitizeLanguage, sanitizePreset, STAGES, SURFACES, UI_FONTS, type DesignPreset } from '../core/design.ts';
 
 declare const __MS_CLIENT_ID__: string;
 declare const __BACKEND_URL__: string;
@@ -438,7 +438,7 @@ function registerIpc(): void {
     const allowed: (keyof Settings)[] = [
       'themeId', 'customThemes', 'language', 'backendUrl', 'selectedProfile', 'closeOnLaunch', 'reducedMotion', 'uiScale', 'autoUpdate', 'rarityColors',
       'accentColor', 'background', 'backgroundQuality', 'snow', 'showSnapshots', 'showHistorical', 'curseforgeKey', 'msClientId',
-      'introEnabled', 'introSound', 'autoConsole', 'fx', 'surface', 'stage', 'designPresets', 'bgImage', 'guest',
+      'introEnabled', 'introSound', 'autoConsole', 'fx', 'surface', 'stage', 'designPresets', 'bgImage', 'guest', 'uiFont', 'headFont', 'customFont', 'buttonStyle', 'customLanguage',
     ];
     for (const k of allowed) if (k in patch) (settings as unknown as Record<string, unknown>)[k] = patch[k];
     // Never trust the renderer: re-validate imported themes and clamp numbers.
@@ -447,7 +447,12 @@ function registerIpc(): void {
     settings.backgroundQuality = Math.max(0, Math.min(1, Number(settings.backgroundQuality) || 0));
     if (settings.accentColor !== null && !HEX.test(String(settings.accentColor))) settings.accentColor = null;
     if (typeof settings.background !== 'string' || !/^[a-z0-9-]{1,32}$/.test(settings.background)) settings.background = 'nebula';
-    if (!['de', 'en'].includes(settings.language)) settings.language = 'de';
+    settings.customLanguage = sanitizeLanguage(settings.customLanguage);
+    if (!['de', 'en', 'custom'].includes(settings.language) || (settings.language === 'custom' && !settings.customLanguage)) settings.language = 'de';
+    settings.uiFont = pick(UI_FONTS, settings.uiFont, 'theme');
+    settings.headFont = pick(HEAD_FONTS, settings.headFont, 'poppins');
+    settings.customFont = sanitizeFont(settings.customFont);
+    settings.buttonStyle = pick(BUTTON_STYLES, settings.buttonStyle, 'nocturne');
     for (const k of ['snow', 'showSnapshots', 'showHistorical', 'closeOnLaunch', 'reducedMotion', 'introEnabled', 'introSound', 'autoConsole', 'guest'] as const) settings[k] = !!settings[k];
     settings.msClientId = typeof settings.msClientId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(settings.msClientId.trim()) ? settings.msClientId.trim().toLowerCase() : '';
     settings.curseforgeKey = typeof settings.curseforgeKey === 'string' ? settings.curseforgeKey.trim().slice(0, 200) : '';
