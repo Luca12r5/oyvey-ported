@@ -76,10 +76,12 @@ win.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
 win.on('console', (m) => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
 await win.setViewportSize?.({ width: 1280, height: 800 });
 await win.waitForSelector('.nav-item');
-// Wait until the stored LEGO session was validated (roles arrive -> Dev tab appears).
-await win.waitForSelector('[data-page=dev]', { timeout: 10_000 });
+// Wait until the stored LEGO session was validated (roles arrive -> Dev page appears in "Mehr").
+await win.waitForSelector('body[data-staff="1"]', { timeout: 10_000 });
 
 async function page(id, expect) {
+  // Secondary pages live in the dock's "Mehr" menu.
+  if (!(await win.locator(`#sidebar [data-page=${id}]`).count())) await win.click('#more');
   await win.click(`[data-page=${id}]`);
   await win.waitForTimeout(600);
   const text = await win.locator('#view').innerText();
@@ -91,15 +93,25 @@ async function page(id, expect) {
 await win.waitForSelector('#launch');
 await win.waitForTimeout(1500); // character + background settle
 await page('play', 'SPIELEN');
-// Default look is the gray "LEGO Graphite" theme.
+// Old default settings are migrated to the "Halloween Nocturne" look.
 const bgColor = await win.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
-if (bgColor !== '#141519') problems.push(`old settings were not migrated to graphite: --bg is ${bgColor}`);
+if (bgColor !== '#07060b') problems.push(`old settings were not migrated to Halloween Nocturne: --bg is ${bgColor}`);
+// Custom window controls: minimize, fullscreen, maximize/restore, close.
+for (const w of ['minimize', 'fullscreen', 'maximize', 'close']) if (!(await win.locator(`[data-win=${w}]`).count())) problems.push(`window button ${w} missing`);
+// The button must mirror the real window state (xvfb has no window manager, so
+// the window may not actually maximize there).
+await win.click('[data-win=maximize]');
+await win.waitForTimeout(800);
+const maxed = await eapp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isMaximized());
+const label = await win.getAttribute('[data-win=maximize]', 'aria-label');
+if ((label === 'Wiederherstellen') !== maxed) problems.push(`maximize button out of sync (maximized=${maxed}, label=${label})`);
+if (maxed) { await win.click('[data-win=maximize]'); await win.waitForTimeout(500); }
 // The window layout must fill the window in every theme.
 async function layoutOk(label) {
   const r = await win.evaluate(() => ({ shell: document.querySelector('.shell').getBoundingClientRect().width, bar: document.querySelector('.titlebar').getBoundingClientRect().width, w: innerWidth }));
   if (r.shell < r.w - 2 || r.bar < r.w - 2) problems.push(`${label}: layout collapsed (shell ${r.shell}px, titlebar ${r.bar}px, window ${r.w}px)`);
 }
-await layoutOk('graphite');
+await layoutOk('nocturne');
 // Profile dropdown lists the profiles.
 await win.click('#drop');
 await win.waitForSelector('.menu [data-profile]');
@@ -116,7 +128,13 @@ await win.click('#new');
 await win.waitForSelector('#loaders [data-loader=fabric]');
 await win.waitForTimeout(400);
 if (shots) await win.screenshot({ path: join(shots, 'launcher-profile-editor.png') });
-await page('mods', 'Mods');
+// Mods are managed per profile (no separate tab any more).
+if (await win.locator('#sidebar [data-page=mods]').count()) problems.push('mods tab should be gone');
+await page('profiles', 'LEGO Client');
+await win.locator('[data-mods]').first().click();
+await win.waitForTimeout(600);
+if (!(await win.locator('#view').innerText()).includes('Mods & Inhalte')) problems.push('profile mods view did not open');
+if (shots) await win.screenshot({ path: join(shots, 'launcher-profile-mods.png') });
 await page('cosmetics', 'Sammlung');
 await page('shop', 'Shop');
 await page('friends', 'Alex');
@@ -166,6 +184,7 @@ if (shots) await win.screenshot({ path: join(shots, 'launcher-theme-matrix.png')
 
 // Buy something through the launcher shop.
 await win.click('[data-theme=lego-graphite]');
+await win.click('#more');
 await win.click('[data-page=shop]');
 await win.waitForSelector('[data-buy]');
 await win.locator('[data-buy]').first().click();

@@ -12,7 +12,6 @@ import { setLang, t } from './i18n.ts';
 import { playPage } from './pages/play.ts';
 import { playSplash } from './splash.ts';
 import { profilesPage } from './pages/profiles.ts';
-import { modsPage } from './pages/mods.ts';
 import { cosmeticsPage, shopPage } from './pages/cosmetics.ts';
 import { friendsPage } from './pages/social.ts';
 import { rewardsPage } from './pages/rewards.ts';
@@ -34,24 +33,24 @@ export interface State {
 export const state = { head: '', skin: { skin: null, variant: 'classic', cape: null }, coins: null } as unknown as State;
 
 type Page = (el: HTMLElement) => Promise<void> | void;
-interface PageDef { id: string; label: () => string; icon: string; page: Page; needsLego?: boolean; staff?: boolean; bottom?: boolean }
+/** `slot`: main dock, bottom of the dock, or the "Mehr" menu. */
+interface PageDef { id: string; label: () => string; icon: string; page: Page; needsLego?: boolean; staff?: boolean; slot: 'main' | 'bottom' | 'more' }
 const PAGES: PageDef[] = [
-  { id: 'play', label: () => t('nav.play'), icon: 'play', page: playPage },
-  { id: 'profiles', label: () => t('nav.profiles'), icon: 'profiles', page: profilesPage },
-  { id: 'mods', label: () => t('nav.mods'), icon: 'mods', page: modsPage },
-  { id: 'cosmetics', label: () => t('nav.cosmetics'), icon: 'cosmetics', page: cosmeticsPage, needsLego: true },
-  { id: 'shop', label: () => t('nav.shop'), icon: 'shop', page: shopPage, needsLego: true },
-  { id: 'friends', label: () => t('nav.friends'), icon: 'friends', page: friendsPage, needsLego: true },
-  { id: 'rewards', label: () => t('nav.rewards'), icon: 'rewards', page: rewardsPage, needsLego: true },
-  { id: 'news', label: () => t('nav.news'), icon: 'news', page: newsPage },
-  { id: 'feedback', label: () => t('nav.feedback'), icon: 'feedback', page: feedbackPage, needsLego: true },
-  { id: 'account', label: () => t('nav.account'), icon: 'account', page: accountPage, bottom: true },
-  { id: 'dev', label: () => t('nav.dev'), icon: 'dev', page: devPage, staff: true, bottom: true },
-  { id: 'settings', label: () => t('nav.settings'), icon: 'settings', page: settingsPage, bottom: true },
+  { id: 'play', label: () => t('nav.home'), icon: 'home', page: playPage, slot: 'main' },
+  { id: 'profiles', label: () => t('nav.profiles'), icon: 'profiles', page: profilesPage, slot: 'main' },
+  { id: 'friends', label: () => t('nav.friends'), icon: 'friends', page: friendsPage, needsLego: true, slot: 'main' },
+  { id: 'cosmetics', label: () => t('nav.cosmetics'), icon: 'cosmetics', page: cosmeticsPage, needsLego: true, slot: 'main' },
+  { id: 'shop', label: () => t('nav.shop'), icon: 'shop', page: shopPage, needsLego: true, slot: 'more' },
+  { id: 'rewards', label: () => t('nav.rewards'), icon: 'rewards', page: rewardsPage, needsLego: true, slot: 'more' },
+  { id: 'news', label: () => t('nav.news'), icon: 'news', page: newsPage, slot: 'more' },
+  { id: 'feedback', label: () => t('nav.feedback'), icon: 'feedback', page: feedbackPage, needsLego: true, slot: 'more' },
+  { id: 'account', label: () => t('nav.account'), icon: 'account', page: accountPage, slot: 'more' },
+  { id: 'dev', label: () => t('nav.dev'), icon: 'dev', page: devPage, staff: true, slot: 'more' },
+  { id: 'settings', label: () => t('nav.settings'), icon: 'settings', page: settingsPage, slot: 'bottom' },
 ];
 
-/** Shorter labels for the sidebar (full names stay in tooltips/aria). */
-const SHORT: Record<string, () => string> = { rewards: () => 'Rewards', settings: () => (state.settings.language === 'en' ? 'Settings' : 'Optionen'), dev: () => 'Dev', cosmetics: () => 'Cosmetics' };
+/** Shorter labels for the dock (full names stay in tooltips/aria). */
+const SHORT: Record<string, () => string> = { settings: () => (state.settings.language === 'en' ? 'Settings' : 'Optionen'), cosmetics: () => 'Cosmetics' };
 
 let bg: Background | null = null;
 let leaveHooks: (() => void)[] = [];
@@ -63,19 +62,73 @@ export function onLeave(fn: () => void): void {
 
 export function retheme(): void {
   const s = state.settings;
-  if (new Date().getMonth() === 9 && s.themeId === 'lego-graphite' && !state.info?.e2e) { s.themeId = 'halloween'; s.background = 'haunted'; }
   setLang(s.language);
   applyTheme(findTheme(s.themeId, s.customThemes), { reducedMotion: s.reducedMotion, uiScale: s.uiScale });
   if (s.accentColor) document.documentElement.style.setProperty('--accent', s.accentColor);
   bg ??= new Background(document.getElementById('bg') as HTMLCanvasElement);
   bg.configure({ id: s.background, quality: s.backgroundQuality, snow: s.snow, still: s.reducedMotion });
+  document.body.classList.add('nocturne');
+}
+
+function visiblePages(): PageDef[] {
+  const staff = state.auth.lego.roles.length > 0;
+  return PAGES.filter((p) => !p.staff || staff);
 }
 
 function renderSidebar(): void {
-  const staff = state.auth.lego.roles.length > 0;
+  document.body.dataset.staff = state.auth.lego.roles.length > 0 ? '1' : '0';
+  const more = visiblePages().filter((p) => p.slot === 'more');
+  const inMore = more.some((p) => p.id === state.page);
   const item = (p: PageDef) => html`<button class="nav-item ${state.page === p.id ? 'active' : ''}" data-page="${p.id}" aria-label="${p.label()}" title="${p.label()}">${icon(p.icon)}<span class="lbl">${SHORT[p.id]?.() ?? p.label()}</span></button>`;
-  const visible = PAGES.filter((p) => !p.staff || staff);
-  mount(document.getElementById('sidebar')!, html`${visible.filter((p) => !p.bottom).map(item)}<div class="spacer"></div>${visible.filter((p) => p.bottom).map(item)}`);
+  const list = visiblePages();
+  mount(document.getElementById('sidebar')!, html`<span class="rail-ind" aria-hidden="true"></span>
+    ${list.filter((p) => p.slot === 'main').map(item)}<div class="spacer"></div>
+    <button class="nav-item ${inMore ? 'active' : ''}" id="more" aria-haspopup="menu" aria-label="${t('nav.more')}" title="${t('nav.more')}">${icon('grid')}<span class="lbl">${t('nav.more')}</span></button>
+    ${list.filter((p) => p.slot === 'bottom').map(item)}`);
+  requestAnimationFrame(moveIndicator);
+}
+
+/** Slides the glowing marker to the active dock item. */
+function moveIndicator(): void {
+  const rail = document.getElementById('sidebar');
+  const ind = rail?.querySelector<HTMLElement>('.rail-ind');
+  const act = rail?.querySelector<HTMLElement>('.nav-item.active');
+  if (!rail || !ind) return;
+  ind.classList.toggle('on', !!act);
+  if (act) ind.style.transform = `translateY(${act.offsetTop}px)`;
+}
+
+function moreMenu(anchor: HTMLElement): void {
+  document.querySelector('.menu')?.remove();
+  const m = document.createElement('div');
+  m.className = 'menu more-menu';
+  m.setAttribute('role', 'menu');
+  mount(m, html`<div class="menu-h">${t('nav.more')}</div><div class="more-grid">${visiblePages().filter((p) => p.slot === 'more').map((p) => html`<button class="more-i ${state.page === p.id ? 'on' : ''}" data-page="${p.id}" role="menuitem">${icon(p.icon)}<span>${p.label()}</span></button>`)}</div>`);
+  document.body.append(m);
+  const r = anchor.getBoundingClientRect();
+  m.style.left = `${r.right + 12}px`;
+  m.style.top = `${Math.max(60, Math.min(r.top - 40, innerHeight - m.offsetHeight - 16))}px`;
+  const close = (e?: Event) => {
+    if (e && (m.contains(e.target as Node) || anchor.contains(e.target as Node))) return;
+    m.remove();
+    document.removeEventListener('mousedown', close);
+  };
+  setTimeout(() => document.addEventListener('mousedown', close));
+  m.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-page]');
+    if (!b) return;
+    close();
+    void go(b.dataset.page!);
+  });
+}
+
+function renderWindowButtons(st: { maximized: boolean; fullscreen: boolean }): void {
+  mount(document.getElementById('win')!, html`<button class="tb-btn" data-win="minimize" aria-label="Minimieren" title="Minimieren">${icon('minimize', 'sm')}</button>
+    <button class="tb-btn" data-win="fullscreen" aria-label="Vollbild" title="Vollbild (F11)">${icon(st.fullscreen ? 'exitFullscreen' : 'fullscreen', 'sm')}</button>
+    <button class="tb-btn" data-win="maximize" aria-label="${st.maximized || st.fullscreen ? 'Wiederherstellen' : 'Maximieren'}" title="${st.maximized || st.fullscreen ? 'Wiederherstellen' : 'Maximieren'}">${icon(st.maximized || st.fullscreen ? 'restore' : 'maximize', 'sm')}</button>
+    <button class="tb-btn close" data-win="close" aria-label="Schließen" title="Schließen">${icon('close', 'sm')}</button>`);
+  document.body.classList.toggle('is-fullscreen', st.fullscreen);
+  document.body.classList.toggle('is-maximized', st.maximized);
 }
 
 function renderTitlebar(): void {
@@ -187,13 +240,20 @@ async function boot(): Promise<void> {
   [state.settings, state.auth, state.info] = await Promise.all([api.getSettings(), api.authState(), api.info()]);
   retheme();
   mount(document.getElementById('tbLogo')!, brickLogo());
-  mount(document.getElementById('win')!, html`<button class="tb-btn" data-win="minimize" aria-label="Minimieren">${icon('minimize', 'sm')}</button><button class="tb-btn" data-win="maximize" aria-label="Maximieren">${icon('maximize', 'sm')}</button><button class="tb-btn close" data-win="close" aria-label="Schließen">${icon('close', 'sm')}</button>`);
+  renderWindowButtons(await api.windowState());
+  api.on('window-state', renderWindowButtons);
   refreshChrome();
   document.getElementById('sidebar')!.addEventListener('click', (e) => {
+    const more = (e.target as HTMLElement).closest<HTMLButtonElement>('#more');
+    if (more) return moreMenu(more);
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-page]');
     if (b) void go(b.dataset.page!);
   });
-  document.querySelectorAll<HTMLButtonElement>('[data-win]').forEach((b) => b.addEventListener('click', () => api.window(b.dataset.win as 'minimize')));
+  document.getElementById('win')!.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-win]');
+    if (b) api.window(b.dataset.win as 'minimize');
+  });
+  addEventListener('resize', moveIndicator);
   document.getElementById('acct')!.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('#acctBtn');
     if (!b) return;

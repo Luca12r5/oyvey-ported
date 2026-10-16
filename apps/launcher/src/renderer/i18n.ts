@@ -2,6 +2,7 @@
 // translated stay German; keys missing in English fall back to German.
 
 const de = {
+  'nav.home': 'Home', 'nav.more': 'Mehr', 'nav.designs': 'Designs', 'nav.vr': 'VR-Modus',
   'nav.play': 'Spielen', 'nav.profiles': 'Profile', 'nav.mods': 'Mods', 'nav.cosmetics': 'Cosmetics', 'nav.shop': 'Shop', 'nav.friends': 'Freunde',
   'nav.rewards': 'Belohnungen', 'nav.news': 'News', 'nav.feedback': 'Feedback', 'nav.account': 'Konto', 'nav.dev': 'Entwickler', 'nav.settings': 'Einstellungen',
   'acc.signin': 'Anmelden', 'acc.add': 'Konto hinzufügen', 'acc.signout': 'Abmelden', 'acc.manage': 'Konten verwalten', 'acc.offline': 'LEGO offline',
@@ -41,6 +42,7 @@ const de = {
 type Key = keyof typeof de;
 
 const en: Partial<Record<Key, string>> = {
+  'nav.more': 'More', 'nav.vr': 'VR mode',
   'nav.play': 'Play', 'nav.profiles': 'Profiles', 'nav.mods': 'Mods', 'nav.friends': 'Friends', 'nav.rewards': 'Rewards', 'nav.account': 'Account', 'nav.dev': 'Developer', 'nav.settings': 'Settings',
   'acc.signin': 'Sign in', 'acc.add': 'Add account', 'acc.signout': 'Sign out', 'acc.manage': 'Manage accounts', 'acc.offline': 'LEGO offline',
   'play.play': 'PLAY', 'play.running': 'RUNNING', 'play.installing': 'INSTALLING', 'play.signin': 'Sign in with Microsoft', 'play.welcome': 'Welcome back',

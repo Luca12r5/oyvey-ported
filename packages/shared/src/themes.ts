@@ -213,7 +213,8 @@ const SEEDS: Seed[] = [
   ['one-dark', 'One Dark', 'desktop', '#282c34', '#2f343f', '#abb2bf', '#61afef', '#e06c75'],
   // Seasonal (matches the client's existing winter menu)
   ['winter-holiday', 'Winter Holiday', 'seasonal', '#0b1730', '#13254a', '#eaf4ff', '#e53935', '#7cd1ff'],
-  ['halloween', 'Halloween', 'seasonal', '#0a0808', '#1a1010', '#f5e6d0', '#f97316', '#9333ea', { background: 'noise', intensity: 0.5 }],
+  // Default since the Halloween edition ("Nocturne" palette, see design.ts)
+  ['halloween', 'Halloween Nocturne', 'seasonal', '#07060b', '#15101e', '#f3ecff', '#ff7a1a', '#8b5cf6', { radius: 14, blur: 14, surfaceAlpha: 0.72, shadow: 'glow', background: 'gradient', intensity: 0.55, font: 'sans', motion: 'lively' }],
 ];
 
 function derive(mode: 'dark' | 'light', bg: string, surface: string, text: string, accent: string, accent2: string): ThemeColors {
@@ -257,7 +258,7 @@ function build(seed: Seed): Theme {
 }
 
 export const THEMES: readonly Theme[] = Object.freeze(SEEDS.map(build));
-export const DEFAULT_THEME_ID = 'lego-graphite';
+export const DEFAULT_THEME_ID = 'halloween';
 
 export function getTheme(id: string): Theme | undefined {
   return THEMES.find((t) => t.id === id);

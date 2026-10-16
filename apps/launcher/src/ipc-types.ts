@@ -43,7 +43,8 @@ export interface ModEntry extends Partial<InstalledMod> {
 
 export interface LauncherApi {
   info(): Promise<AppInfo>;
-  window(action: 'minimize' | 'maximize' | 'close'): void;
+  window(action: 'minimize' | 'maximize' | 'fullscreen' | 'reset' | 'close'): void;
+  windowState(): Promise<{ maximized: boolean; fullscreen: boolean }>;
   getSettings(): Promise<Settings>;
   setSettings(patch: Partial<Settings>): Promise<Settings>;
   saveProfile(p: GameProfile): Promise<{ ok: boolean; errors: string[]; settings: Settings }>;
@@ -82,5 +83,5 @@ export interface LauncherApi {
   diagnostics(): Promise<string>;
   checkUpdate(): Promise<{ available: boolean; version?: string; error?: string }>;
   installUpdate(): Promise<void>;
-  on(channel: 'auth' | 'launch-progress' | 'game-log' | 'game-exit' | 'lego-event' | 'update', cb: (data: any) => void): () => void;
+  on(channel: 'auth' | 'launch-progress' | 'game-log' | 'game-exit' | 'lego-event' | 'update' | 'window-state', cb: (data: any) => void): () => void;
 }

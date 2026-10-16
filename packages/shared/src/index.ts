@@ -7,3 +7,4 @@ export * from './catalog.ts';
 export * from './progression.ts';
 export * from './permissions.ts';
 export * from './feedback.ts';
+export * from './design.ts';

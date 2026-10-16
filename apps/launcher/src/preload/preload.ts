@@ -3,11 +3,12 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { LauncherApi } from '../ipc-types.ts';
 
-const CHANNELS = new Set(['auth', 'launch-progress', 'game-log', 'game-exit', 'lego-event', 'update']);
+const CHANNELS = new Set(['auth', 'launch-progress', 'game-log', 'game-exit', 'lego-event', 'update', 'window-state']);
 
 const api: LauncherApi = {
   info: () => ipcRenderer.invoke('info'),
   window: (a) => ipcRenderer.send('window', a),
+  windowState: () => ipcRenderer.invoke('window:state'),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   setSettings: (p) => ipcRenderer.invoke('settings:set', p),
   saveProfile: (p) => ipcRenderer.invoke('profile:save', p),

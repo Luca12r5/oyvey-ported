@@ -1,4 +1,4 @@
-// Mods & content per profile: installed mods (toggle/remove), Modrinth search
+// Mods & content per profile (opened from the profile cards/editor): installed mods (toggle/remove), Modrinth search
 // for mods, resource packs, shaders and modpacks (installed as new profiles).
 
 import { go, state } from '../app.ts';
@@ -21,11 +21,12 @@ export async function modsPage(el: HTMLElement): Promise<void> {
   const profile = s.profiles.find((p) => p.id === (profileId ?? s.selectedProfile)) ?? s.profiles[0]!;
   profileId = profile.id;
   const tabs: ['installed' | ProjectType, string][] = [['installed', t('mods.installed')], ['mod', t('mods.mods')], ['resourcepack', t('mods.resourcepacks')], ['shader', t('mods.shaders')], ['modpack', t('mods.modpacks')]];
-  mount(el, html`<div class="page-head"><div><h1>${t('mods.title')}</h1><p class="muted small">${pixel(profile.icon, 'xs')} ${profile.name} · ${profileLine(profile)}</p></div>
+  mount(el, html`<div class="page-head"><div class="row"><button class="icon-btn" id="back" title="${t('prof.back')}">${icon('chevronRight', 'sm flip')}</button><div><h1>${t('mods.title')}</h1><p class="muted small">${pixel(profile.icon, 'xs')} ${profile.name} · ${profileLine(profile)}</p></div></div>
       <div class="row"><select id="prof" class="compact">${s.profiles.map((p) => html`<option value="${p.id}" ${p.id === profile.id ? 'selected' : ''}>${p.name}</option>`)}</select>
       <button class="icon-btn" id="folder" title="${t('mods.folder')}">${icon('folder', 'sm')}</button></div></div>
     <div class="tabs pill" id="tabs">${tabs.map(([id, l]) => html`<button data-tab="${id}" class="${id === tab ? 'active' : ''}">${l}</button>`)}</div>
     <div id="body"></div>`);
+  el.querySelector('#back')!.addEventListener('click', () => void go('profiles'));
   el.querySelector('#prof')!.addEventListener('change', (e) => { profileId = (e.target as HTMLSelectElement).value; void modsPage(el); });
   el.querySelector('#folder')!.addEventListener('click', () => void api.openFolder(tab === 'resourcepack' ? 'resourcepacks' : tab === 'shader' ? 'shaderpacks' : 'mods', profile.id));
   el.querySelector('#tabs')!.addEventListener('click', (e) => {

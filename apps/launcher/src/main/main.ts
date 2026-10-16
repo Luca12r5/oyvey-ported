@@ -379,11 +379,8 @@ function registerIpc(): void {
     cpus: cpus().length, cpuModel: cpus()[0]?.model ?? '', msClientConfigured: !!clientId(), msClientBuiltIn: !!MS_CLIENT_ID, gameDir: paths.game(),
     ...(process.env.LEGO_E2E === '1' && { e2e: true }),
   }));
-  ipcMain.on('window', (_e, action: string) => {
-    if (action === 'minimize') win?.minimize();
-    else if (action === 'maximize') win?.isMaximized() ? win.unmaximize() : win?.maximize();
-    else if (action === 'close') win?.close();
-  });
+  ipcMain.on('window', (_e, action: string) => windowAction(action));
+  ipcMain.handle('window:state', () => windowState());
   ipcMain.handle('settings:get', () => settings);
   ipcMain.handle('settings:set', async (_e, patch: Partial<Settings>) => {
     const allowed: (keyof Settings)[] = [
@@ -654,13 +651,46 @@ function registerIpc(): void {
   ipcMain.handle('update:install', () => installUpdate());
 }
 
+function windowState(): { maximized: boolean; fullscreen: boolean } {
+  return { maximized: !!win?.isMaximized(), fullscreen: !!win?.isFullScreen() };
+}
+
+/** Custom title bar buttons and the rescue shortcuts (F11, Ctrl+Shift+R). */
+function windowAction(action: string): void {
+  if (!win) return;
+  if (action === 'minimize') win.minimize();
+  else if (action === 'maximize') {
+    if (win.isFullScreen()) win.setFullScreen(false);
+    else if (win.isMaximized()) win.unmaximize();
+    else win.maximize();
+  } else if (action === 'fullscreen') win.setFullScreen(!win.isFullScreen());
+  else if (action === 'reset') {
+    // Brings a lost or broken window back: windowed, default size, centred, focused.
+    win.setFullScreen(false);
+    win.unmaximize();
+    win.setBounds({ width: 1280, height: 800 });
+    win.center();
+    win.show();
+    win.focus();
+  } else if (action === 'close') win.close();
+}
+
 function createWindow(): void {
   win = new BrowserWindow({
-    width: 1280, height: 800, minWidth: 1024, minHeight: 680, frame: false, backgroundColor: '#141519', show: false,
+    width: 1280, height: 800, minWidth: 1024, minHeight: 680, frame: false, backgroundColor: '#07060b', show: false,
     title: 'LEGO Launcher',
     webPreferences: { preload: join(__dirname, 'preload.cjs'), contextIsolation: true, sandbox: true, nodeIntegration: false, webviewTag: false, spellcheck: false },
   });
   win.once('ready-to-show', () => win?.show());
+  for (const ev of ['maximize', 'unmaximize', 'enter-full-screen', 'leave-full-screen'] as const) {
+    win.on(ev as 'maximize', () => send('window-state', windowState()));
+  }
+  // Handled here (not in the page) so they work even if the UI fails to render.
+  win.webContents.on('before-input-event', (e, input) => {
+    if (input.type !== 'keyDown') return;
+    if (input.key === 'F11') { e.preventDefault(); windowAction('fullscreen'); }
+    else if ((input.control || input.meta) && input.shift && input.key.toLowerCase() === 'r') { e.preventDefault(); windowAction('reset'); win?.webContents.reload(); }
+  });
   // No in-app navigation or popups: external links open in the system browser.
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https://')) void shell.openExternal(url);

@@ -8,7 +8,7 @@ import { t } from '../i18n.ts';
 import { LEGO_CLIENT_GAME_VERSION, LOADER_TYPES, loaderSupports, type GameProfile, type LoaderType } from '../../core/settings.ts';
 import type { FoundInstance } from '../../core/importers.ts';
 import { profileLine, takeNewProfileRequest } from './play.ts';
-import { openModsFor } from './mods.ts';
+import { modsPage, openModsFor } from './mods.ts';
 
 const LOADER_LABEL: Record<LoaderType, string> = { fabric: 'Fabric', quilt: 'Quilt', forge: 'Forge', neoforge: 'NeoForge' };
 
@@ -24,7 +24,7 @@ export async function profilesPage(el: HTMLElement): Promise<void> {
       <div class="pc-actions">
         <button class="btn sm primary" data-play="${p.id}">${icon('play', 'sm')} ${t('prof.play')}</button>
         <button class="icon-btn" data-edit="${p.id}" title="${t('prof.edit')}">${icon('sliders', 'sm')}</button>
-        <button class="icon-btn" data-mods="${p.id}" title="${t('prof.mods')}">${icon('mods', 'sm')}</button>
+        <button class="btn sm" data-mods="${p.id}" title="${t('mods.title')}">${icon('mods', 'sm')} ${t('prof.mods')}</button>
         <button class="icon-btn" data-folder="${p.id}" title="${t('mods.folder')}">${icon('folder', 'sm')}</button>
         ${s.profiles.length > 1 ? html`<button class="icon-btn danger" data-del="${p.id}" title="${t('prof.delete')}">${icon('trash', 'sm')}</button>` : ''}
       </div></article>`)}</div>`);
@@ -37,7 +37,7 @@ export async function profilesPage(el: HTMLElement): Promise<void> {
       if (b.id === 'import') return importDialog(el);
       if (d.edit) return await editor(el, s.profiles.find((p) => p.id === d.edit)!);
       if (d.play) { state.settings = await api.setSettings({ selectedProfile: d.play }); return void go('play'); }
-      if (d.mods) { openModsFor(d.mods); return void go('mods'); }
+      if (d.mods) { el.onclick = null; openModsFor(d.mods); return await modsPage(el); }
       if (d.folder) return await api.openFolder('game', d.folder);
       if (d.del && await confirm('Profil löschen?', 'Das Profil wird aus der Liste entfernt. Der Spielordner bleibt auf der Festplatte erhalten.', t('prof.delete'), true)) {
         state.settings = await api.deleteProfile(d.del);
@@ -83,7 +83,7 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
         <input type="range" name="memoryMb" min="1024" max="${maxMem}" step="256" value="${draft.memoryMb}">
         <label>${t('prof.jvm')}</label><input name="jvmArgs" value="${draft.jvmArgs}" placeholder="-XX:+UseG1GC">
         <div class="row"><div class="grow"><label>${t('prof.width')}</label><input name="w" type="number" min="320" max="7680" value="${draft.resolution?.width ?? ''}" placeholder="${t('prof.default')}"></div><div class="grow"><label>${t('prof.height')}</label><input name="h" type="number" min="240" max="4320" value="${draft.resolution?.height ?? ''}" placeholder="${t('prof.default')}"></div></div>
-        <div class="row gap"><button class="btn primary">${icon('check', 'sm')} ${t('prof.save')}</button><button class="btn" type="button" id="cancel">${t('prof.back')}</button></div>
+        <div class="row gap"><button class="btn primary">${icon('check', 'sm')} ${t('prof.save')}</button>${p ? html`<button class="btn" type="button" id="editMods">${icon('mods', 'sm')} ${t('mods.title')}</button>` : ''}<button class="btn" type="button" id="cancel">${t('prof.back')}</button></div>
       </section>
     </form>`);
   const f = el.querySelector<HTMLFormElement>('#f')!;
@@ -157,6 +157,7 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
   (f.elements.namedItem('memoryMb') as HTMLInputElement).addEventListener('input', (e) => { el.querySelector('#memv')!.textContent = (e.target as HTMLInputElement).value; });
   el.querySelector('#back')!.addEventListener('click', () => void profilesPage(el));
   el.querySelector('#cancel')!.addEventListener('click', () => void profilesPage(el));
+  el.querySelector('#editMods')?.addEventListener('click', () => { openModsFor(p!.id); void modsPage(el); });
   f.addEventListener('submit', async (e) => {
     e.preventDefault();
     const fd = new FormData(f);
@@ -215,7 +216,7 @@ function importDialog(el: HTMLElement): void {
         await finish(r.profileId);
         if (r.missing.length) {
           dialog(html`<h2>Fast fertig</h2><p>Konfigurationen wurden übernommen. Diese Dateien konnten nicht automatisch geladen werden (CurseForge-API-Schlüssel fehlt oder der Autor erlaubt keine Drittanbieter-Downloads):</p>
-            <ul class="small scroll-list">${r.missing.slice(0, 200).map((m) => html`<li>${m}</li>`)}</ul><p class="small muted">Du kannst sie im Mods-Tab über Modrinth suchen oder manuell in den Mods-Ordner legen.</p><form method="dialog"><button class="btn primary">OK</button></form>`);
+            <ul class="small scroll-list">${r.missing.slice(0, 200).map((m) => html`<li>${m}</li>`)}</ul><p class="small muted">Du kannst sie unter Profile → Mods über Modrinth suchen oder manuell in den Mods-Ordner legen.</p><form method="dialog"><button class="btn primary">OK</button></form>`);
         }
       } else if (b.dataset.imp === 'scan') {
         mount(list, html`<div class="progress indet"><i data-p="100"></i></div>`);
