@@ -72,6 +72,11 @@ export interface Settings {
   curseforgeKey: string;
   /** Azure app (client) id for Microsoft sign-in; empty = the one built into the launcher. */
   msClientId: string;
+  /** Cinematic 3D intro on every start, and its sound. */
+  introEnabled: boolean;
+  introSound: boolean;
+  /** Open the console panel automatically when a game starts. */
+  autoConsole: boolean;
 }
 
 export const DEFAULT_PROFILE: GameProfile = {
@@ -114,6 +119,7 @@ export function defaultSettings(): Settings {
     selectedProfile: DEFAULT_PROFILE.id, profiles: [{ ...DEFAULT_PROFILE, createdAt: Date.now() }],
     closeOnLaunch: false, reducedMotion: false, uiScale: 1, autoUpdate: 'ask', rarityColors: {},
     accentColor: null, background: 'graveyard', backgroundQuality: 0.6, snow: false, showSnapshots: false, showHistorical: false, curseforgeKey: '', msClientId: '',
+    introEnabled: true, introSound: true, autoConsole: true,
   };
 }
 

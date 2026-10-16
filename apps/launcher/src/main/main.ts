@@ -386,6 +386,7 @@ function registerIpc(): void {
     const allowed: (keyof Settings)[] = [
       'themeId', 'customThemes', 'language', 'backendUrl', 'selectedProfile', 'closeOnLaunch', 'reducedMotion', 'uiScale', 'autoUpdate', 'rarityColors',
       'accentColor', 'background', 'backgroundQuality', 'snow', 'showSnapshots', 'showHistorical', 'curseforgeKey', 'msClientId',
+      'introEnabled', 'introSound', 'autoConsole',
     ];
     for (const k of allowed) if (k in patch) (settings as unknown as Record<string, unknown>)[k] = patch[k];
     // Never trust the renderer: re-validate imported themes and clamp numbers.
@@ -395,7 +396,7 @@ function registerIpc(): void {
     if (settings.accentColor !== null && !HEX.test(String(settings.accentColor))) settings.accentColor = null;
     if (typeof settings.background !== 'string' || !/^[a-z0-9-]{1,32}$/.test(settings.background)) settings.background = 'nebula';
     if (!['de', 'en'].includes(settings.language)) settings.language = 'de';
-    for (const k of ['snow', 'showSnapshots', 'showHistorical', 'closeOnLaunch', 'reducedMotion'] as const) settings[k] = !!settings[k];
+    for (const k of ['snow', 'showSnapshots', 'showHistorical', 'closeOnLaunch', 'reducedMotion', 'introEnabled', 'introSound', 'autoConsole'] as const) settings[k] = !!settings[k];
     settings.msClientId = typeof settings.msClientId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(settings.msClientId.trim()) ? settings.msClientId.trim().toLowerCase() : '';
     settings.curseforgeKey = typeof settings.curseforgeKey === 'string' ? settings.curseforgeKey.trim().slice(0, 200) : '';
     if (!['ask', 'auto', 'off'].includes(settings.autoUpdate)) settings.autoUpdate = 'ask';

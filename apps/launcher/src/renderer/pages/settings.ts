@@ -83,6 +83,8 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
   const parts: Record<string, Raw> = {
     general: html`
       ${row(t('set.language'), t('set.language.d'), html`<div class="seg" data-seg="language"><button data-v="de" class="${s.language === 'de' ? 'on' : ''}">Deutsch</button><button data-v="en" class="${s.language === 'en' ? 'on' : ''}">English</button></div>`)}
+      ${row(t('set.intro'), t('set.intro.d'), html`<div class="row"><button class="btn sm" id="introPlay">${icon('play', 'sm')} ${t('set.introPlay')}</button>${sw('introEnabled', s.introEnabled)}</div>`)}
+      ${row(t('set.introSound'), t('set.introSound.d'), sw('introSound', s.introSound))}
       ${row(t('set.closeOnLaunch'), t('set.closeOnLaunch.d'), sw('closeOnLaunch', s.closeOnLaunch))}
       ${row(t('set.updates'), t('set.updates.d'), html`<select data-key="autoUpdate" class="compact"><option value="ask" ${s.autoUpdate === 'ask' ? 'selected' : ''}>${t('set.upd.ask')}</option><option value="auto" ${s.autoUpdate === 'auto' ? 'selected' : ''}>${t('set.upd.auto')}</option><option value="off" ${s.autoUpdate === 'off' ? 'selected' : ''}>${t('set.upd.off')}</option></select>`)}`,
     appearance: html`
@@ -134,6 +136,11 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
     if (b.dataset.bg) { await save({ background: b.dataset.bg }); return rerender(); }
     if (b.parentElement?.dataset.seg === 'language') { await save({ language: b.dataset.v === 'en' ? 'en' : 'de' }); return void settingsPage(page(box), only ?? 'general'); }
     if (b.id === 'game') return void api.openFolder('game');
+    if (b.id === 'introPlay') {
+      const { playIntro3d, webglAvailable } = await import('../intro3d.ts');
+      if (webglAvailable()) await playIntro3d({ sound: s.introSound, quality: s.backgroundQuality, skipLabel: t('intro.skip') });
+      return;
+    }
     if (b.id === 'diag') { await navigator.clipboard.writeText(await api.diagnostics()); toast('Diagnose in die Zwischenablage kopiert', 'ok'); }
   };
 }

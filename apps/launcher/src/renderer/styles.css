@@ -483,3 +483,15 @@ body.is-fullscreen .titlebar { -webkit-app-region: no-drag; }
 .news-card:hover .nc-banner .px.lg { transform: scale(1.14) rotate(-5deg); }
 .nc-date { position: absolute; right: 8px; bottom: 6px; font-size: .68rem; color: rgba(255,255,255,.8); text-shadow: 0 1px 2px rgba(0,0,0,.6); }
 .btn.official { margin-top: 4px; }
+
+/* cinematic intro overlay (intro3d.ts) */
+.intro3d { position: fixed; inset: 0; z-index: 500; background: #07060b; cursor: pointer; transition: opacity 1.2s ease; }
+.intro3d canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.intro3d.out { opacity: 0; }
+.intro3d.out-fast { opacity: 0; transition-duration: .5s; }
+.intro-flash { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(circle at 50% 50%, #fff, #e9dcff 40%, rgba(139,92,246,.6)); mix-blend-mode: screen; }
+.intro-ui { position: absolute; right: 22px; bottom: 20px; display: flex; gap: 8px; animation: introUi 1s 1.5s both; }
+@keyframes introUi { from { opacity: 0; transform: translateY(8px); } }
+.intro-btn { padding: 8px 16px; border-radius: 99px; border: 1px solid rgba(243,236,255,.22); background: rgba(7,6,11,.55); color: #f3ecff; font: 600 .8rem var(--head); letter-spacing: .08em; cursor: pointer; backdrop-filter: blur(10px); transition: background .2s, border-color .2s, transform .2s var(--spring); }
+.intro-btn:hover { background: rgba(255,122,26,.25); border-color: #ff7a1a; transform: translateY(-1px); }
+.intro-btn.skip::after { content: " \25B8\25B8"; }

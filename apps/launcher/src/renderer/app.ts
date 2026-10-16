@@ -11,6 +11,7 @@ import { headFromSkin } from './avatar.ts';
 import { setLang, t } from './i18n.ts';
 import { playPage } from './pages/play.ts';
 import { playSplash } from './splash.ts';
+import { playIntro3d, webglAvailable } from './intro3d.ts';
 import { profilesPage } from './pages/profiles.ts';
 import { cosmeticsPage, shopPage } from './pages/cosmetics.ts';
 import { friendsPage } from './pages/social.ts';
@@ -277,11 +278,23 @@ async function boot(): Promise<void> {
     if (u.state === 'available' && state.settings.autoUpdate === 'ask') toast(`Update ${u.version} verfügbar – Einstellungen → Über`);
     if (u.state === 'ready') toast(`Update ${u.version} bereit. Wird beim Beenden installiert.`, 'ok');
   });
-  if (new Date().getMonth() === 9 && !state.settings.reducedMotion && !state.info.e2e) {
-    try { if (!sessionStorage.getItem('splash-shown')) { sessionStorage.setItem('splash-shown', '1'); await playSplash(); } } catch { /* storage blocked */ }
-  }
+  // The intro covers the window while the real UI is built underneath it, so
+  // the final portal opens straight into the launcher.
+  const intro = startIntro();
   await loadIdentity();
   await go('play');
+  await intro;
+  bg?.start();
+}
+
+function startIntro(): Promise<void> {
+  const s = state.settings;
+  let shown = false;
+  try { shown = !!sessionStorage.getItem('intro-shown'); sessionStorage.setItem('intro-shown', '1'); } catch { /* storage blocked */ }
+  if (shown || !s.introEnabled || s.reducedMotion || state.info.e2e) return Promise.resolve();
+  bg?.stop();
+  if (!webglAvailable()) return playSplash();
+  return playIntro3d({ sound: s.introSound, quality: s.backgroundQuality, skipLabel: t('intro.skip') }).catch((e) => console.warn('intro failed', e));
 }
 
 void boot();

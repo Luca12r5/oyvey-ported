@@ -2,6 +2,7 @@
 // translated stay German; keys missing in English fall back to German.
 
 const de = {
+  'intro.skip': 'Überspringen', 'set.intro': 'Startanimation', 'set.intro.d': 'Filmische 3D-Animation beim Start des Launchers (Klick oder Esc überspringt).', 'set.introSound': 'Ton der Startanimation', 'set.introSound.d': 'Synthetische Klänge während der Startanimation.', 'set.introPlay': 'Jetzt abspielen',
   'nav.home': 'Home', 'nav.more': 'Mehr', 'nav.designs': 'Designs', 'nav.vr': 'VR-Modus',
   'nav.play': 'Spielen', 'nav.profiles': 'Profile', 'nav.mods': 'Mods', 'nav.cosmetics': 'Cosmetics', 'nav.shop': 'Shop', 'nav.friends': 'Freunde',
   'nav.rewards': 'Belohnungen', 'nav.news': 'News', 'nav.feedback': 'Feedback', 'nav.account': 'Konto', 'nav.dev': 'Entwickler', 'nav.settings': 'Einstellungen',
@@ -42,6 +43,7 @@ const de = {
 type Key = keyof typeof de;
 
 const en: Partial<Record<Key, string>> = {
+  'intro.skip': 'Skip', 'set.intro': 'Start animation', 'set.intro.d': 'Cinematic 3D animation when the launcher starts (click or Esc skips).', 'set.introSound': 'Start animation sound', 'set.introSound.d': 'Synthesised sounds during the start animation.', 'set.introPlay': 'Play now',
   'nav.more': 'More', 'nav.vr': 'VR mode',
   'nav.play': 'Play', 'nav.profiles': 'Profiles', 'nav.mods': 'Mods', 'nav.friends': 'Friends', 'nav.rewards': 'Rewards', 'nav.account': 'Account', 'nav.dev': 'Developer', 'nav.settings': 'Settings',
   'acc.signin': 'Sign in', 'acc.add': 'Add account', 'acc.signout': 'Sign out', 'acc.manage': 'Manage accounts', 'acc.offline': 'LEGO offline',
