@@ -14,6 +14,7 @@ export const BACKGROUNDS: BackgroundDef[] = [
   { id: 'waves', name: { de: 'Wellen', en: 'Waves' } },
   { id: 'voxels', name: { de: 'Voxel-Feld', en: 'Voxel field' } },
   { id: 'plain', name: { de: 'Schlicht', en: 'Plain' } },
+  { id: 'haunted', name: { de: 'Spukhaus', en: 'Haunted' } },
 ];
 
 interface Palette { bg: string; bg2: string; accent: string; accent2: string; text: string }
@@ -60,6 +61,84 @@ function brick(ctx: CanvasRenderingContext2D, x: number, y: number, s: number, c
   }
   ctx.fillStyle = 'rgba(255,255,255,.18)';
   ctx.fillRect(-w / 2 + s * 0.12, -h / 2 + s * 0.1, w - s * 0.24, s * 0.08);
+  ctx.restore();
+}
+
+
+// ---- haunted background helpers ----
+
+function batShape(ctx: CanvasRenderingContext2D, x: number, y: number, s: number, color: string, phase: number, alpha: number): void {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(0, 0, s * 0.28, 0, Math.PI * 2);
+  ctx.fill();
+  const wy = Math.sin(phase) * s * 0.22;
+  for (const dir of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(dir * s * 0.2, 0);
+    ctx.quadraticCurveTo(dir * s * 0.65, -s * 0.5 + wy, dir * s, wy * 0.4);
+    ctx.quadraticCurveTo(dir * s * 0.5, s * 0.1 + wy * 0.3, dir * s * 0.2, 0);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function pumpkinShape(ctx: CanvasRenderingContext2D, x: number, y: number, s: number, color: string, glow: string, alpha: number): void {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, s, s * 0.78, 0, 0, Math.PI * 2);
+  ctx.fill();
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, s * 0.55);
+  g.addColorStop(0, rgba(glow, 0.6));
+  g.addColorStop(1, rgba(glow, 0));
+  ctx.fillStyle = g;
+  ctx.fillRect(-s, -s, s * 2, s * 2);
+  ctx.fillStyle = glow;
+  for (const sx of [-s * 0.28, s * 0.12]) {
+    ctx.beginPath();
+    ctx.moveTo(sx, -s * 0.12);
+    ctx.lineTo(sx + s * 0.18, -s * 0.12);
+    ctx.lineTo(sx + s * 0.09, -s * 0.32);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.moveTo(-s * 0.3, s * 0.12);
+  for (let i = 0; i < 5; i++) ctx.lineTo(-s * 0.3 + (i + 0.5) * s * 0.12, i % 2 ? s * 0.28 : s * 0.08);
+  ctx.lineTo(s * 0.3, s * 0.12);
+  ctx.fill();
+  ctx.restore();
+}
+
+function spiderWeb(ctx: CanvasRenderingContext2D, ox: number, oy: number, size: number, color: string, alpha: number): void {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 0.8;
+  const rays = 7, rings = 4;
+  for (let r = 0; r < rays; r++) {
+    const a = (r / rays) * Math.PI * 0.5;
+    ctx.beginPath();
+    ctx.moveTo(ox, oy);
+    ctx.lineTo(ox + Math.cos(a) * size, oy + Math.sin(a) * size);
+    ctx.stroke();
+  }
+  for (let ring = 1; ring <= rings; ring++) {
+    const d = (ring / rings) * size;
+    ctx.beginPath();
+    for (let r = 0; r <= rays; r++) {
+      const a = (Math.min(r, rays - 1) / rays) * Math.PI * 0.5;
+      const px = ox + Math.cos(a) * d, py = oy + Math.sin(a) * d;
+      r === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
@@ -229,6 +308,51 @@ const DRAW: Record<string, Draw> = {
         ctx.fillStyle = rgba((x + y) % 2 ? p.accent : p.accent2, Math.min(0.28, (v - 1.4) * 0.25));
         ctx.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
       }
+    }
+  },
+  haunted(ctx, w, h, t, p, q) {
+    DRAW.plain!(ctx, w, h, t, p, q);
+    // fog
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 3; i++) {
+      const fx = w * (0.3 + i * 0.25 + Math.sin(t * 0.00008 + i * 2) * 0.15);
+      const fy = h * (0.4 + Math.cos(t * 0.00006 + i) * 0.1);
+      const fr = Math.max(w, h) * (0.35 + 0.08 * Math.sin(t * 0.0001 + i));
+      const fg = ctx.createRadialGradient(fx, fy, 0, fx, fy, fr);
+      fg.addColorStop(0, rgba(i % 2 ? p.accent2 : p.accent, 0.08));
+      fg.addColorStop(1, rgba(i % 2 ? p.accent2 : p.accent, 0));
+      ctx.fillStyle = fg;
+      ctx.fillRect(0, 0, w, h);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    // spider webs
+    spiderWeb(ctx, 0, 0, Math.min(w, h) * 0.18, p.text, 0.07);
+    spiderWeb(ctx, w, 0, Math.min(w, h) * 0.14, p.text, 0.05);
+    // pumpkins
+    const pr = rng(31);
+    const pumpkins = [[0.15, 0.55], [0.5, 0.4], [0.82, 0.6]] as const;
+    for (const [px, py] of pumpkins) {
+      const bob = Math.sin(t * 0.0008 + px * 10) * 8;
+      const gAlpha = 0.5 + 0.2 * Math.sin(t * 0.0015 + px * 5);
+      pumpkinShape(ctx, w * px, h * py + bob, 18 + pr() * 10, p.accent, '#ffaa00', gAlpha * 0.3);
+    }
+    // bats
+    const br = rng(666);
+    const nb = Math.round(4 + 6 * q);
+    for (let i = 0; i < nb; i++) {
+      const bx = (br() * w + t * (0.02 + br() * 0.03)) % (w + 80) - 40;
+      const by = h * (0.1 + br() * 0.35) + Math.sin(t * 0.002 + i * 1.7) * 30;
+      batShape(ctx, bx, by, 10 + br() * 8, p.text, t * 0.008 + i * 2, 0.2 + br() * 0.15);
+    }
+    // embers
+    const er = rng(13);
+    const ne = Math.round(15 + 30 * q);
+    for (let i = 0; i < ne; i++) {
+      const ex = er() * w;
+      const ey = h - ((er() * h + t * (0.01 + er() * 0.02)) % (h + 20));
+      const ea = 0.15 + 0.25 * Math.abs(Math.sin(t * 0.002 + i));
+      ctx.fillStyle = rgba(i % 3 === 0 ? '#4ade80' : p.accent, ea);
+      ctx.fillRect(ex, ey, 1.6, 1.6);
     }
   },
 };

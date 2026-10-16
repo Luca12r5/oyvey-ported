@@ -213,6 +213,7 @@ const SEEDS: Seed[] = [
   ['one-dark', 'One Dark', 'desktop', '#282c34', '#2f343f', '#abb2bf', '#61afef', '#e06c75'],
   // Seasonal (matches the client's existing winter menu)
   ['winter-holiday', 'Winter Holiday', 'seasonal', '#0b1730', '#13254a', '#eaf4ff', '#e53935', '#7cd1ff'],
+  ['halloween', 'Halloween', 'seasonal', '#0a0808', '#1a1010', '#f5e6d0', '#f97316', '#9333ea', { background: 'noise', intensity: 0.5 }],
 ];
 
 function derive(mode: 'dark' | 'light', bg: string, surface: string, text: string, accent: string, accent2: string): ThemeColors {

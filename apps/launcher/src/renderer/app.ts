@@ -10,6 +10,7 @@ import { Background } from './bg.ts';
 import { headFromSkin } from './avatar.ts';
 import { setLang, t } from './i18n.ts';
 import { playPage } from './pages/play.ts';
+import { playSplash } from './splash.ts';
 import { profilesPage } from './pages/profiles.ts';
 import { modsPage } from './pages/mods.ts';
 import { cosmeticsPage, shopPage } from './pages/cosmetics.ts';
@@ -62,6 +63,8 @@ export function onLeave(fn: () => void): void {
 
 export function retheme(): void {
   const s = state.settings;
+  // Auto-apply Halloween theme in October if on default
+  if (new Date().getMonth() === 9 && s.themeId === "lego-graphite") { s.themeId = "halloween"; s.background = "haunted"; }
   setLang(s.language);
   applyTheme(findTheme(s.themeId, s.customThemes), { reducedMotion: s.reducedMotion, uiScale: s.uiScale });
   if (s.accentColor) document.documentElement.style.setProperty('--accent', s.accentColor);
@@ -120,6 +123,10 @@ function accountMenu(anchor: HTMLElement): void {
     try {
       if (b.dataset.switch && b.dataset.switch !== a.uuid) {
         state.auth = await api.switchAccount(b.dataset.switch);
+  // Halloween splash (October only, once per session)
+  if (new Date().getMonth() === 9 && !state.settings.reducedMotion) {
+    try { if (!sessionStorage.getItem("splash-shown")) { sessionStorage.setItem("splash-shown", "1"); await playSplash(); } } catch { /* storage blocked */ }
+  }
         await loadIdentity();
         toast(`${state.auth.name}`, 'ok');
         void go(state.page);
@@ -127,6 +134,10 @@ function accountMenu(anchor: HTMLElement): void {
       else if (b.dataset.act === 'account') void go('account');
       else if (b.dataset.act === 'signout') {
         state.auth = await api.signOut();
+  // Halloween splash (October only, once per session)
+  if (new Date().getMonth() === 9 && !state.settings.reducedMotion) {
+    try { if (!sessionStorage.getItem("splash-shown")) { sessionStorage.setItem("splash-shown", "1"); await playSplash(); } } catch { /* storage blocked */ }
+  }
         await loadIdentity();
         void go('play');
       }
@@ -215,6 +226,10 @@ async function boot(): Promise<void> {
     if (u.state === 'available' && state.settings.autoUpdate === 'ask') toast(`Update ${u.version} verfügbar – Einstellungen → Über`);
     if (u.state === 'ready') toast(`Update ${u.version} bereit. Wird beim Beenden installiert.`, 'ok');
   });
+  // Halloween splash (October only, once per session)
+  if (new Date().getMonth() === 9 && !state.settings.reducedMotion) {
+    try { if (!sessionStorage.getItem("splash-shown")) { sessionStorage.setItem("splash-shown", "1"); await playSplash(); } } catch { /* storage blocked */ }
+  }
   await loadIdentity();
   await go('play');
 }
