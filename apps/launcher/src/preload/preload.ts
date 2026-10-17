@@ -3,12 +3,18 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { LauncherApi } from '../ipc-types.ts';
 
-const CHANNELS = new Set(['auth', 'launch-progress', 'game-log', 'game-exit', 'lego-event', 'update', 'window-state']);
+const CHANNELS = new Set(['auth', 'launch-progress', 'game-log', 'game-exit', 'lego-event', 'update', 'window-state', 'vrb-frame', 'vrb-state']);
 
 const api: LauncherApi = {
   info: () => ipcRenderer.invoke('info'),
   window: (a) => ipcRenderer.send('window', a),
   windowState: () => ipcRenderer.invoke('window:state'),
+  vrBrowserOpen: () => ipcRenderer.invoke('vrb:open'),
+  vrBrowserInput: (e) => ipcRenderer.send('vrb:input', e),
+  vrBrowserNav: (a, t) => ipcRenderer.invoke('vrb:nav', a, t),
+  vrBrowserClose: () => ipcRenderer.send('vrb:close'),
+  clientModules: (id) => ipcRenderer.invoke('client:modules', id),
+  setClientModule: (p, id, on) => ipcRenderer.invoke('client:module', p, id, on),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   setSettings: (p) => ipcRenderer.invoke('settings:set', p),
   saveProfile: (p) => ipcRenderer.invoke('profile:save', p),

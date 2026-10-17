@@ -20,8 +20,8 @@ export const is3D = (id: string): id is Scene3DId => (SCENES_3D as readonly stri
 
 export interface Palette3D { bg: string; accent: string; accent2: string }
 
-interface Ctx { scene: THREE.Scene; camera: THREE.PerspectiveCamera; density: number; q: number; pal: Palette3D; dot: THREE.Texture }
-interface Built {
+export interface Ctx { scene: THREE.Scene; camera: THREE.PerspectiveCamera; density: number; q: number; pal: Palette3D; dot: THREE.Texture }
+export interface Built {
   /** Camera rest position and look-at target. */
   cam: THREE.Vector3;
   look: THREE.Vector3;
@@ -37,7 +37,7 @@ const col = (c: string) => new THREE.Color(c);
 
 // ---- shared pieces -------------------------------------------------------------
 
-function wisps(c: Ctx, n: number, box: { x: number; y: [number, number]; z: [number, number] }, colors: string[], size = 0.18): (t: number) => void {
+export function wisps(c: Ctx, n: number, box: { x: number; y: [number, number]; z: [number, number] }, colors: string[], size = 0.18): (t: number) => void {
   const count = Math.max(4, Math.round(n));
   const pos = new Float32Array(count * 3);
   const base = new Float32Array(count * 3);
@@ -66,7 +66,7 @@ function wisps(c: Ctx, n: number, box: { x: number; y: [number, number]; z: [num
   };
 }
 
-function moon(c: Ctx, at: THREE.Vector3, size: number): void {
+export function moon(c: Ctx, at: THREE.Vector3, size: number): void {
   const disc = new THREE.Mesh(new THREE.CircleGeometry(size, 64), new THREE.MeshBasicMaterial({ color: new THREE.Color('#fff4e0').multiplyScalar(1.4), toneMapped: false, fog: false }));
   disc.position.copy(at);
   disc.lookAt(0, at.y * 0.4, 20);
@@ -76,7 +76,7 @@ function moon(c: Ctx, at: THREE.Vector3, size: number): void {
   c.scene.add(disc, glow);
 }
 
-function ground(c: Ctx, color: string, rough = 1): THREE.Mesh {
+export function ground(c: Ctx, color: string, rough = 1): THREE.Mesh {
   const g = new THREE.PlaneGeometry(220, 220, 90, 90);
   g.rotateX(-Math.PI / 2);
   const p = g.attributes.position as THREE.BufferAttribute;
@@ -90,7 +90,7 @@ function ground(c: Ctx, color: string, rough = 1): THREE.Mesh {
   return m;
 }
 
-function fogLayers(c: Ctx, y: number, tint: string): (t: number) => void {
+export function fogLayers(c: Ctx, y: number, tint: string): (t: number) => void {
   const uniforms = { uTime: { value: 0 }, uColor: { value: col(tint) } };
   const mat = new THREE.ShaderMaterial({
     uniforms, transparent: true, depthWrite: false,
@@ -131,7 +131,7 @@ function treeMatrices(origin: THREE.Vector3, height: number, out: THREE.Matrix4[
   grow(origin, new THREE.Vector3(R(-0.08, 0.08), 1, R(-0.08, 0.08)).normalize(), height * 0.45, height * 0.06, 3);
 }
 
-function forestInstances(c: Ctx, trees: THREE.Vector3[], heights: number[], color = '#0d0912'): void {
+export function forestInstances(c: Ctx, trees: THREE.Vector3[], heights: number[], color = '#0d0912'): void {
   const ms: THREE.Matrix4[] = [];
   trees.forEach((p, i) => treeMatrices(p, heights[i]!, ms));
   const inst = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.7, 1, 1, 6), new THREE.MeshStandardMaterial({ color, roughness: 1 }), ms.length);
@@ -139,7 +139,7 @@ function forestInstances(c: Ctx, trees: THREE.Vector3[], heights: number[], colo
   c.scene.add(inst);
 }
 
-function batFlock(c: Ctx, n: number, center: THREE.Vector3, radius: number): (t: number) => void {
+export function batFlock(c: Ctx, n: number, center: THREE.Vector3, radius: number): (t: number) => void {
   const flock = Array.from({ length: n }, () => {
     const b = bat();
     b.group.scale.setScalar(R(0.5, 0.9));
@@ -157,11 +157,11 @@ function batFlock(c: Ctx, n: number, center: THREE.Vector3, radius: number): (t:
   });
 }
 
-function stoneMat(): THREE.MeshStandardMaterial {
+export function stoneMat(): THREE.MeshStandardMaterial {
   return new THREE.MeshStandardMaterial({ color: '#4a4358', roughness: 0.92 });
 }
 
-function tombstone(mat: THREE.Material): THREE.Group {
+export function tombstone(mat: THREE.Material): THREE.Group {
   const g = new THREE.Group();
   const w = R(0.8, 1.3), h = R(1.1, 1.9);
   const slab = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.25), mat);
@@ -183,7 +183,7 @@ function tombstone(mat: THREE.Material): THREE.Group {
   return g;
 }
 
-function pumpkinPatch(c: Ctx, spots: THREE.Vector3[], lit: number): { lights: Built['lights']; update: (t: number) => void } {
+export function pumpkinPatch(c: Ctx, spots: THREE.Vector3[], lit: number): { lights: Built['lights']; update: (t: number) => void } {
   const lights: Built['lights'] = [];
   const ls: THREE.PointLight[] = [];
   spots.forEach((p, i) => {

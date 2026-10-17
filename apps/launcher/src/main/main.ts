@@ -4,7 +4,7 @@
 import { app, BrowserWindow, ipcMain, shell, session, dialog } from 'electron';
 import { cpus, freemem, release, totalmem } from 'node:os';
 import { join } from 'node:path';
-import { mkdir, readFile, readdir, stat } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rename, stat, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { createHash, randomUUID } from 'node:crypto';
 import { authorizeRequest, exchangeCode, minecraftFromMicrosoft, parseRedirect, pollDeviceCode, refreshMicrosoft, startDeviceCode, AuthError, type MinecraftSession } from '../core/msauth.ts';
@@ -26,6 +26,8 @@ import { createLogCleaner, diagnose, startGame } from '../core/launch.ts';
 import { DEFAULT_PROFILE, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
 import { encryptionAvailable, loadAccounts, loadSettings, paths, saveAccounts, saveSettings, type Account, type AccountStore } from './store.ts';
 import { setupUpdater, checkForUpdate, installUpdate } from './updater.ts';
+import { VrBrowser } from './vrbrowser.ts';
+import { listModules, setModule } from '../core/clientcfg.ts';
 import type { AuthState, LaunchProgress, ModEntry, SkinData } from '../ipc-types.ts';
 import { validateTheme } from '@lego/shared';
 import { BUTTON_STYLES, HEAD_FONTS, pick, sanitizeFont, sanitizeFx, sanitizeImage, sanitizeLanguage, sanitizePreset, STAGES, SURFACES, UI_FONTS, type DesignPreset } from '../core/design.ts';
@@ -40,6 +42,7 @@ const BACKEND_URL = typeof __BACKEND_URL__ === 'string' ? __BACKEND_URL__ : '';
 const CURSEFORGE_KEY = typeof __CURSEFORGE_KEY__ === 'string' ? __CURSEFORGE_KEY__ : '';
 
 let win: BrowserWindow | null = null;
+const vrBrowser = new VrBrowser((channel, data) => send(channel, data));
 let settings: Settings;
 let store: AccountStore = { accounts: [], active: null };
 let legoError: string | null = null;
@@ -432,6 +435,31 @@ function registerIpc(): void {
     ...(process.env.LEGO_E2E === '1' && { e2e: true }),
   }));
   ipcMain.on('window', (_e, action: string) => windowAction(action));
+  // VR lobby browser (offscreen Chromium) and client module config.
+  ipcMain.handle('vrb:open', () => vrBrowser.open());
+  ipcMain.on('vrb:input', (_e, ev: unknown) => vrBrowser.input(ev));
+  ipcMain.handle('vrb:nav', (_e, action: string, text?: string) => vrBrowser.nav(String(action), typeof text === 'string' ? text : undefined));
+  ipcMain.on('vrb:close', () => vrBrowser.close());
+  ipcMain.handle('client:modules', async (_e, profileId: string) => {
+    const p = settings.profiles.find((x) => x.id === profileId);
+    if (!p?.legoClient) return { available: false, modules: [] };
+    try {
+      return { available: true, modules: listModules(await readFile(join(profileDir(p), 'config', 'legoclient.json'), 'utf8')) };
+    } catch {
+      return { available: true, modules: [] };
+    }
+  });
+  ipcMain.handle('client:module', async (_e, profileId: string, id: string, on: boolean) => {
+    const p = settings.profiles.find((x) => x.id === profileId);
+    if (!p?.legoClient) throw new Error('Dieses Profil nutzt den LEGO Client nicht.');
+    if (running?.id === p.id) throw new Error('Während das Spiel läuft, stellst du Module direkt im Spiel um (Rechte Shift-Taste).');
+    const file = join(profileDir(p), 'config', 'legoclient.json');
+    const next = setModule(await readFile(file, 'utf8'), String(id), !!on);
+    if (next === null) throw new Error('Unbekanntes Modul.');
+    await writeFile(`${file}.tmp`, next);
+    await rename(`${file}.tmp`, file);
+    return listModules(next);
+  });
   ipcMain.handle('window:state', () => windowState());
   ipcMain.handle('settings:get', () => settings);
   ipcMain.handle('settings:set', async (_e, patch: Partial<Settings>) => {
@@ -776,7 +804,8 @@ if (!app.requestSingleInstanceLock()) {
     }
   });
   app.whenReady().then(async () => {
-    session.defaultSession.setPermissionRequestHandler((_wc, _perm, cb) => cb(false));
+    // Only WebXR (VR mode) may be granted; everything else is denied.
+    session.defaultSession.setPermissionRequestHandler((_wc, perm, cb) => cb(/^(xr|vr|ar)|xr-spatial|spatial-tracking/i.test(String(perm))));
     settings = await loadSettings();
     store = await loadAccounts();
     if (!app.isPackaged && process.env.LEGO_E2E === '1' && process.env.LEGO_E2E_ACCOUNT) {

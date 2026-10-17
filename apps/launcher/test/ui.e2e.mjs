@@ -234,6 +234,16 @@ if (!(await win.locator('#sidebar [data-page=play]').innerText()).includes('Zuha
 await win.click('#langSeg [data-v=de]');
 await win.waitForTimeout(400);
 
+// VR mode: page, desktop preview (no headset in CI), click GUI + browser panels, exit with Esc.
+await page('vr', 'VR-Modus');
+await win.waitForSelector('#vrStatus:not(:has(.spinner))', { timeout: 10_000 }).catch(() => problems.push('VR status never resolved'));
+await win.click('#vrPreview');
+await win.waitForSelector('.vr-root');
+await win.waitForFunction(() => Number(document.querySelector('.vr-root')?.dataset.t) >= 4, null, { timeout: 120_000, polling: 200 }).catch(() => problems.push('VR lobby did not run'));
+if (shots) await win.screenshot({ path: join(shots, 'launcher-vr-lobby.png') });
+await win.keyboard.press('Escape');
+await win.waitForSelector('.vr-root', { state: 'detached', timeout: 8000 }).catch(() => problems.push('VR did not close on Esc'));
+
 // Buy something through the launcher shop.
 await win.click('#more');
 await win.click('[data-page=shop]');

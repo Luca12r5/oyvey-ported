@@ -33,6 +33,8 @@ export interface AppInfo {
   e2e?: boolean;
 }
 
+export interface VrbState { url: string; title: string; canBack: boolean; canForward: boolean; loading: boolean }
+
 export interface SkinData { skin: string | null; variant: 'classic' | 'slim'; cape: string | null }
 
 export interface ModEntry extends Partial<InstalledMod> {
@@ -45,6 +47,14 @@ export interface LauncherApi {
   info(): Promise<AppInfo>;
   window(action: 'minimize' | 'maximize' | 'fullscreen' | 'reset' | 'close'): void;
   windowState(): Promise<{ maximized: boolean; fullscreen: boolean }>;
+  /** VR lobby browser: frames arrive on 'vrb-frame' (JPEG bytes), state on 'vrb-state'. */
+  vrBrowserOpen(): Promise<{ w: number; h: number; state: VrbState }>;
+  vrBrowserInput(e: unknown): void;
+  vrBrowserNav(action: 'back' | 'forward' | 'reload' | 'home' | 'go', text?: string): Promise<VrbState>;
+  vrBrowserClose(): void;
+  /** LEGO client modules of a profile (config/legoclient.json). */
+  clientModules(profileId: string): Promise<{ available: boolean; modules: { id: string; on: boolean }[] }>;
+  setClientModule(profileId: string, id: string, on: boolean): Promise<{ id: string; on: boolean }[]>;
   getSettings(): Promise<Settings>;
   setSettings(patch: Partial<Settings>): Promise<Settings>;
   saveProfile(p: GameProfile): Promise<{ ok: boolean; errors: string[]; settings: Settings }>;
@@ -83,5 +93,5 @@ export interface LauncherApi {
   diagnostics(): Promise<string>;
   checkUpdate(): Promise<{ available: boolean; version?: string; error?: string }>;
   installUpdate(): Promise<void>;
-  on(channel: 'auth' | 'launch-progress' | 'game-log' | 'game-exit' | 'lego-event' | 'update' | 'window-state', cb: (data: any) => void): () => void;
+  on(channel: 'auth' | 'launch-progress' | 'game-log' | 'game-exit' | 'lego-event' | 'update' | 'window-state' | 'vrb-frame' | 'vrb-state', cb: (data: any) => void): () => void;
 }

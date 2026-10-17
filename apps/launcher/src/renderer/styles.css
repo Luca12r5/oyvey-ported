@@ -662,3 +662,21 @@ body.btn-pixel .pb-title { font-family: Silkscreen, monospace; font-weight: 400;
 .lr-ref { display: flex; flex-direction: column; min-width: 0; }
 .lr-ref small { color: var(--muted); font-size: .66rem; }
 .lr-ref span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* VR mode */
+.vr-root { position: fixed; inset: 0; z-index: 400; background: #07060b; transition: opacity 1s ease; }
+.vr-root canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+.vr-root.out { opacity: 0; }
+.vr-hud { position: absolute; left: 20px; right: 20px; bottom: 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; pointer-events: none; animation: introUi 1s 3s both; }
+.vr-hud .intro-btn { pointer-events: auto; }
+.vr-help { padding: 8px 14px; border-radius: 99px; background: rgba(7,6,11,.6); color: #d9d0ee; font-size: .78rem; backdrop-filter: blur(10px); }
+.vr-page { display: flex; flex-direction: column; gap: 14px; }
+.vr-hero { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 26px; align-items: center; overflow: hidden; }
+.vr-art { height: 230px; border-radius: 20px; display: grid; place-items: center; background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--accent2) 45%, transparent), transparent 65%), linear-gradient(160deg, #1b1230, #07060b); perspective: 600px; }
+.vr-glasses { color: var(--accent); filter: drop-shadow(0 0 18px var(--accent)); animation: vrfloat 5s ease-in-out infinite; }
+.vr-glasses .i { width: 150px; height: 150px; stroke-width: 1.2; }
+@keyframes vrfloat { 50% { transform: translateY(-10px) rotateY(18deg) rotateX(8deg); } }
+.vr-copy h1 { font-size: 2.2rem; }
+.vr-status { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 99px; font-size: .84rem; color: var(--muted); background: color-mix(in srgb, var(--bg) 60%, transparent); border: 1px solid var(--glass-b); }
+.vr-status.ok { color: var(--slime); border-color: color-mix(in srgb, var(--slime) 50%, transparent); }
+@media (max-width: 1180px) { .vr-hero { grid-template-columns: minmax(0, 1fr); } }

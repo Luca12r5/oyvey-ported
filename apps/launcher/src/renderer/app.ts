@@ -19,6 +19,7 @@ import { rewardsPage } from './pages/rewards.ts';
 import { accountPage, signInFlow } from './pages/account.ts';
 import { settingsPage } from './pages/settings.ts';
 import { designsPage } from './pages/designs.ts';
+import { vrPage } from './pages/vr.ts';
 import { newsPage, feedbackPage, devPage } from './pages/misc.ts';
 
 export interface State {
@@ -43,6 +44,7 @@ const PAGES: PageDef[] = [
   { id: 'friends', label: () => t('nav.friends'), icon: 'friends', page: friendsPage, needsLego: true, slot: 'main' },
   { id: 'cosmetics', label: () => t('nav.cosmetics'), icon: 'cosmetics', page: cosmeticsPage, needsLego: true, slot: 'main' },
   { id: 'designs', label: () => t('nav.designs'), icon: 'brush', page: (el) => designsPage(el), slot: 'main' },
+  { id: 'vr', label: () => t('nav.vr'), icon: 'vr', page: vrPage, slot: 'main' },
   { id: 'shop', label: () => t('nav.shop'), icon: 'shop', page: shopPage, needsLego: true, slot: 'more' },
   { id: 'rewards', label: () => t('nav.rewards'), icon: 'rewards', page: rewardsPage, needsLego: true, slot: 'more' },
   { id: 'news', label: () => t('nav.news'), icon: 'news', page: newsPage, slot: 'more' },
@@ -53,7 +55,7 @@ const PAGES: PageDef[] = [
 ];
 
 /** Shorter labels for the dock (full names stay in tooltips/aria). */
-const SHORT: Record<string, () => string> = { settings: () => (state.settings.language === 'en' ? 'Settings' : 'Optionen'), cosmetics: () => 'Cosmetics' };
+const SHORT: Record<string, () => string> = { vr: () => 'VR', settings: () => (state.settings.language === 'en' ? 'Settings' : 'Optionen'), cosmetics: () => 'Cosmetics' };
 
 let bg: Background | null = null;
 let leaveHooks: (() => void)[] = [];
