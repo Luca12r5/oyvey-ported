@@ -189,7 +189,7 @@ export function enterVr(opts: VrOptions): Promise<void> {
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.9;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.shadowMap.enabled = q > 0.45;
+    renderer.shadowMap.enabled = q > 0.45 && !state.info.e2e; // software GL in CI is too slow for shadows
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.xr.enabled = opts.xr;
     const scene = new THREE.Scene();

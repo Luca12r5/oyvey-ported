@@ -52,7 +52,17 @@ public final class LegoNet extends Module {
    private long lastRequest = 0L;
    private volatile String lastError = null;
 
-   public record Entry(Map<Cos.Slot, String> items, String nameTag, String customTag, long fetchedAt) {
+   public record Entry(Map<Cos.Slot, String> items, String nameTag, String customTag, long fetchedAt, String emote, long emoteStart) {
+      public Entry(Map<Cos.Slot, String> items, String nameTag, String customTag, long fetchedAt) {
+         this(items, nameTag, customTag, fetchedAt, null, 0L);
+      }
+   }
+
+   /** Emote another LEGO player is playing right now (id + local start time), or null. */
+   public static String[] emoteOf(UUID id) {
+      Entry e = get(id);
+      if (e == null || e.emote() == null || System.currentTimeMillis() - e.emoteStart() > 12_000L) return null;
+      return new String[]{e.emote(), Long.toString(e.emoteStart())};
    }
 
    public LegoNet() {
@@ -129,7 +139,9 @@ public final class LegoNet extends Module {
          // Offline-mode servers give version-3 (name based) UUIDs that never match Microsoft accounts.
          if (id.version() != 4 || IN_FLIGHT.contains(id)) continue;
          Entry e = CACHE.get(id);
-         if (e == null || now - e.fetchedAt() > TTL_MS) wanted.add(id.toString());
+         // Nearby LEGO players are refreshed every few seconds so their emotes show up.
+         long ttl = ALLOWED.contains(id) ? 3_000L : TTL_MS;
+         if (e == null || now - e.fetchedAt() > ttl) wanted.add(id.toString());
          if (wanted.size() >= 100) break;
       }
       if (wanted.isEmpty()) return;
@@ -185,7 +197,11 @@ public final class LegoNet extends Module {
          }
       }
       String custom = Json.str(player, "customTag", null);
-      return new Entry(Map.copyOf(items), tag, custom, t);
+      Map<String, Object> em = Json.obj(player, "emote");
+      String emote = em == null ? null : Json.str(em, "id", null);
+      long age = em == null ? 0L : Json.num(em, "age", 0L);
+      if (emote != null && !emote.matches("[a-z0-9_]{1,40}")) emote = null;
+      return new Entry(Map.copyOf(items), tag, custom, t, emote, t - age);
    }
 
    /** Drops cached entries for players that left (called on world change). */

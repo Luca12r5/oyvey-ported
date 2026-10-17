@@ -32,6 +32,7 @@ public final class Cos {
          Pets.registerAll();
          Vehicles.registerAll();
          XmasCos.registerAll();
+         Knives.register();
       }
    }
 
@@ -128,7 +129,7 @@ public final class Cos {
 
    public static void renderEquipped(G var0, Cos.A var1, boolean var2) {
       for (Cos.Slot var6 : Cos.Slot.values()) {
-         if (var6.head == var2 && var6 != Cos.Slot.CAPE && var6 != Cos.Slot.PET && var6 != Cos.Slot.VEHICLE) {
+         if (var6.head == var2 && var6 != Cos.Slot.CAPE && var6 != Cos.Slot.PET && var6 != Cos.Slot.VEHICLE && var6 != Cos.Slot.KNIFE) {
             Cos.Item var7 = equipped(var6);
             if (var7 != null) {
                var0.push();
@@ -150,7 +151,7 @@ public final class Cos {
    /** Like renderEquipped, but for an explicit slot->item map (other LEGO players). */
    public static void renderItems(G var0, Cos.A var1, boolean var2, Map<Cos.Slot, String> items) {
       for (Cos.Slot var6 : Cos.Slot.values()) {
-         if (var6.head == var2 && var6 != Cos.Slot.CAPE && var6 != Cos.Slot.PET && var6 != Cos.Slot.VEHICLE) {
+         if (var6.head == var2 && var6 != Cos.Slot.CAPE && var6 != Cos.Slot.PET && var6 != Cos.Slot.VEHICLE && var6 != Cos.Slot.KNIFE) {
             Cos.Item var7 = items.get(var6) == null ? null : get(items.get(var6));
             if (var7 != null) {
                var0.push();
@@ -162,6 +163,19 @@ public final class Cos {
                }
             }
          }
+      }
+   }
+
+   /** Renders one slot's item (local: equipped item, remote: from the item map). Used for the knife in the hand. */
+   public static void renderSlot(G g, Cos.A a, Cos.Slot slot, Map<Cos.Slot, String> items) {
+      Cos.Item it = items == null ? equipped(slot) : (items.get(slot) == null ? null : get(items.get(slot)));
+      if (it == null) return;
+      g.push();
+      g.color(-1).glow(false);
+      try {
+         it.model.render(g, a);
+      } finally {
+         g.pop();
       }
    }
 
@@ -226,7 +240,8 @@ public final class Cos {
       BACK("Rücken", "backpack", false),
       AURA("Auren", "aura", false),
       PET("Haustiere", "paw", false),
-      VEHICLE("Fahrzeuge", "car", false);
+      VEHICLE("Fahrzeuge", "car", false),
+      KNIFE("Messer", "sword", false);
 
       public final String title;
       public final String icon;

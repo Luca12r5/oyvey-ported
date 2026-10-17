@@ -148,6 +148,41 @@ public final class CosRender {
    private static final java.util.Map<java.util.UUID, CosRender.Built[]> REMOTE = new java.util.concurrent.ConcurrentHashMap<>();
 
    /** Builds (cached ~33 ms) and submits the geometry of another player's equipped items. */
+   private static final CosRender.Built[] KNIFE_LOCAL = new CosRender.Built[1];
+   private static final java.util.Map<java.util.UUID, CosRender.Built[]> KNIFE_REMOTE = new java.util.concurrent.ConcurrentHashMap<>();
+
+   /** Knife cosmetic in the right hand (only while that hand is empty). items == null: the local player's equipped knife. */
+   static void drawKnife(java.util.UUID id, java.util.Map<Cos.Slot, String> items, PoseStack var0, SubmitNodeCollector var1, int var2, ModelPart arm, Cos.A var4) {
+      String key = items == null ? (Cos.equipped(Cos.Slot.KNIFE) == null ? null : Cos.equipped(Cos.Slot.KNIFE).id) : items.get(Cos.Slot.KNIFE);
+      if (key == null) return;
+      long now = System.currentTimeMillis();
+      CosRender.Built[] slot = items == null ? KNIFE_LOCAL : KNIFE_REMOTE.computeIfAbsent(id, k -> new CosRender.Built[1]);
+      int ver = key.hashCode();
+      CosRender.Built b = slot[0];
+      if (b == null || now - b.t > 33L || b.ver != ver) {
+         LinkedHashMap<String, List<CosRender.Q>> normal = new LinkedHashMap<>();
+         LinkedHashMap<String, List<CosRender.Q>> glow = new LinkedHashMap<>();
+         G g = new G((tex, p, uv, argb, glowing, n0, n1, n2) -> (glowing ? glow : normal).computeIfAbsent(tex, k -> new ArrayList<>()).add(new CosRender.Q(p, uv, argb, n0, n1, n2)));
+         Cos.renderSlot(g, var4, Cos.Slot.KNIFE, items);
+         smooth(normal);
+         b = new CosRender.Built();
+         b.t = now;
+         b.ver = ver;
+         b.normal = normal;
+         b.glow = glow;
+         slot[0] = b;
+      }
+      if (!b.normal.isEmpty() || !b.glow.isEmpty()) {
+         var0.pushPose();
+         arm.translateAndRotate(var0);
+         var0.scale(-0.0625F, -0.0625F, -0.0625F);
+         submit(var0, var1, b.normal, false, var2);
+         submit(var0, var1, b.glow, true, var2);
+         var0.popPose();
+      }
+      if (KNIFE_REMOTE.size() > 256) KNIFE_REMOTE.clear();
+   }
+
    static void drawRemote(java.util.UUID id, java.util.Map<Cos.Slot, String> items, PoseStack var0, SubmitNodeCollector var1, int var2, ModelPart var3, Cos.A var4, boolean head) {
       long now = System.currentTimeMillis();
       CosRender.Built[] slot = REMOTE.computeIfAbsent(id, k -> new CosRender.Built[2]);
@@ -512,6 +547,7 @@ public final class CosRender {
          PlayerModel model = this.getParentModel();
          CosRender.drawRemote(id, e.items(), pose, out, light, model.body, a, false);
          CosRender.drawRemote(id, e.items(), pose, out, light, model.head, a, true);
+         if (p.getMainHandItem().isEmpty()) CosRender.drawKnife(id, e.items(), pose, out, light, model.rightArm, a);
       }
 
       @Override
@@ -574,6 +610,7 @@ public final class CosRender {
                PlayerModel var12 = this.getParentModel();
                CosRender.draw(var1, var2, var3, var12.body, var8, false);
                CosRender.draw(var1, var2, var3, var12.head, var8, true);
+               if (var7.getMainHandItem().isEmpty()) CosRender.drawKnife(null, null, var1, var2, var3, var12.rightArm, var8);
                return;
             }
          } catch (Throwable var18) {

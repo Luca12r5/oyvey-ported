@@ -22,7 +22,19 @@ public abstract class PlayerModelMixin {
    )
    private void lego$emote(AvatarRenderState var1, CallbackInfo var2) {
       try {
-         if (Mc.player() == null || var1.id != Mc.id(Mc.player())) {
+         if (Mc.player() == null) {
+            return;
+         }
+         if (var1.id != Mc.id(Mc.player())) {
+            // Another LEGO player's emote (synced through the LEGO server).
+            net.minecraft.world.entity.Entity other = Mc.mc().level == null ? null : Mc.mc().level.getEntity(var1.id);
+            if (other != null && dev.lego.net.LegoNet.allowed(other.getUUID())) {
+               String[] em = dev.lego.net.LegoNet.emoteOf(other.getUUID());
+               if (em != null) {
+                  HumanoidModel m = (HumanoidModel)(Object)this;
+                  Emotes.poseRemote(em[0], System.currentTimeMillis() - Long.parseLong(em[1]), m.head, m.body, m.rightArm, m.leftArm, m.rightLeg, m.leftLeg);
+               }
+            }
             return;
          }
 

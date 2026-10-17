@@ -3,7 +3,7 @@ import { CATALOG, NAME_TAGS, RARITY_INFO, tagCharColor, type CatalogItem, type N
 import { state } from '../app.ts';
 import { confirm, errorToast, fmtNum, html, idem, lego, mount, slotIcon, toast, type Raw } from '../ui.ts';
 
-const SLOTS: [string, string][] = [['', 'Alle'], ['cape', 'Capes'], ['wings', 'Flügel'], ['hat', 'Hüte'], ['face', 'Gesicht'], ['back', 'Rücken'], ['aura', 'Auren'], ['pet', 'Pets'], ['vehicle', 'Fahrzeuge'], ['nametag', 'Name Tags']];
+const SLOTS: [string, string][] = [['', 'Alle'], ['cape', 'Capes'], ['wings', 'Flügel'], ['hat', 'Hüte'], ['face', 'Gesicht'], ['back', 'Rücken'], ['aura', 'Auren'], ['pet', 'Pets'], ['vehicle', 'Fahrzeuge'], ['knife', 'Messer'], ['nametag', 'Name Tags']];
 const UNLOCK: Record<string, string> = { default: 'Kostenlos', shop: 'Shop', battlepass: 'Battle Pass', achievement: 'Erfolg', event: 'Event', staff: 'Team' };
 
 export function rarityColor(r: Rarity): string {

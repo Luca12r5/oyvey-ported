@@ -119,7 +119,7 @@ export function rarityBadge(rarity) {
   return html`<span class="badge c" data-c="${info?.color ?? '#888'}">${info?.label?.de ?? rarity}</span>`;
 }
 
-const SLOT_ICONS = { cape: 'cape', wings: 'wings', hat: 'hat', face: 'glasses', back: 'backpack', aura: 'sparkle', pet: 'paw', vehicle: 'car', nametag: 'tag' };
+const SLOT_ICONS = { cape: 'cape', wings: 'wings', hat: 'hat', face: 'glasses', back: 'backpack', aura: 'sparkle', pet: 'paw', vehicle: 'car', knife: 'sword', nametag: 'tag' };
 /** Pixel-art icon for a cosmetic slot (same icon set as the launcher). */
 export const slotIcon = (s, size = 'lg') => pixel(SLOT_ICONS[s] ?? 'package', size);
 

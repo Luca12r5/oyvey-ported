@@ -934,3 +934,24 @@ kbd { font: 500 .72rem var(--mono); padding: 2px 6px; border: 1px solid var(--li
 .vr-mc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 14px; }
 .vr-mc-grid h3 { margin: 0 0 6px; }
 @media (max-width: 900px) { .vr-modes, .vr-mc-grid { grid-template-columns: 1fr; } }
+
+/* games page */
+.games { display: flex; flex-direction: column; gap: 12px; }
+.game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; padding: 12px; }
+.game-card { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--line, var(--border)); background: color-mix(in srgb, var(--surface) 70%, #000); }
+.game-card p { margin: 0; }
+.gc-top { display: flex; align-items: center; gap: 8px; }
+.gc-top .i { color: var(--accent); }
+.invites .inv-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--line, var(--border)); }
+.invites .inv-row .muted { flex: 1; }
+.game-player { height: calc(100vh - 60px - 24px); }
+.game-player .gp-score { margin-left: auto; font: 400 .7rem var(--pix, monospace); color: var(--accent); }
+.gp-stage { position: relative; flex: 1; min-height: 0; }
+.gp-stage canvas { position: absolute; inset: 0; display: block; }
+.gp-over { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.55); }
+.gp-over-box { padding: 22px 26px; border: 1px solid var(--line-hi, var(--border)); background: var(--pbg, var(--surface)); display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; }
+.gp-record { color: var(--accent); }
+.opp-list { display: flex; flex-direction: column; gap: 2px; max-height: 40vh; overflow-y: auto; margin: 8px 0; }
+.opp-list .dot { width: 8px; height: 8px; background: #555; }
+.opp-list .dot.s-online, .opp-list .dot.s-in_game { background: #22c55e; }
+.opp-list .dot.s-away { background: #f59e0b; }

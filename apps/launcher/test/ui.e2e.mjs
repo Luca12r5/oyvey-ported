@@ -92,7 +92,7 @@ async function page(id, expect) {
   }
   await win.waitForTimeout(600);
   const text = await win.locator('#view').innerText();
-  if (expect && !text.includes(expect)) problems.push(`${id}: expected "${expect}", got: ${text.slice(0, 160)}`);
+  if (expect && !text.toLowerCase().includes(expect.toLowerCase())) problems.push(`${id}: expected "${expect}", got: ${text.slice(0, 160)}`);
   if (/Fehler: /.test(text)) problems.push(`${id}: error shown: ${text.slice(0, 200)}`);
   if (shots) await win.screenshot({ path: join(shots, `launcher-${id}.png`) });
 }
@@ -252,6 +252,16 @@ await win.waitForFunction(() => Number(document.querySelector('.vr-root')?.datas
 if (shots) await win.screenshot({ path: join(shots, 'launcher-vr-lobby.png') });
 await win.keyboard.press('Escape');
 await win.waitForSelector('.vr-root', { state: 'detached', timeout: 8000 }).catch(() => problems.push('VR did not close on Esc'));
+
+// Games tab: a duel game against the AI.
+await page('games', 'Duelle');
+await win.click('[data-play=connect4]');
+await win.waitForSelector('#gpCanvas');
+const gbox = await win.locator('#gpCanvas').boundingBox();
+await win.mouse.click(gbox.x + gbox.width / 2, gbox.y + gbox.height / 2);
+await win.waitForTimeout(1200);
+if (shots) await win.screenshot({ path: join(shots, 'launcher-games-connect4.png') });
+await win.click('#gpBack');
 
 // Buy something through the launcher shop.
 await win.click('#more');

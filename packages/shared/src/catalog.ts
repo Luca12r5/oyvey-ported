@@ -62,5 +62,5 @@ export function getItem(id: string): CatalogItem | undefined {
   return BY_ID.get(id);
 }
 
-export const EQUIP_SLOTS = ['cape', 'wings', 'hat', 'face', 'back', 'aura', 'pet', 'vehicle', 'nametag'] as const;
+export const EQUIP_SLOTS = ['cape', 'wings', 'hat', 'face', 'back', 'aura', 'pet', 'vehicle', 'knife', 'nametag'] as const;
 export type EquipSlot = (typeof EQUIP_SLOTS)[number];

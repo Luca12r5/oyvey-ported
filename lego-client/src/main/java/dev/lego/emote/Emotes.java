@@ -53,6 +53,11 @@ public final class Emotes {
             fading = null;
             current = var2;
             startMs = System.currentTimeMillis();
+            // Other LEGO players see it via the server (cosmetics lookup).
+            String eid = var2.id.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9_]", "_");
+            dev.lego.net.LegoAuth.session().thenAcceptAsync(t -> {
+               try { dev.lego.net.LegoAuth.api("POST", "/api/emotes/play", java.util.Map.of("emote", eid)); } catch (Exception ignored) { }
+            });
             spin = 0.0F;
             startX = Mc.x(var1);
             startZ = Mc.z(var1);
@@ -172,6 +177,24 @@ public final class Emotes {
             var1.z = -12.0F * (float)Math.sin(var11);
          }
       }
+   }
+
+   /** Pose of another LEGO player's emote (started `ageMs` ago); no camera, no cutscene. */
+   public static void poseRemote(String emoteId, long ageMs, ModelPart head, ModelPart body, ModelPart rArm, ModelPart lArm, ModelPart rLeg, ModelPart lLeg) {
+      EmoteLib.Emote e = EmoteLib.get(emoteId);
+      if (e == null) return;
+      float t = ageMs / 1000.0F;
+      if (!e.loop && t > e.duration) return;
+      if (e.loop && t > 10.0F) return;
+      float[] p = e.pose(t);
+      float w = smooth(Math.max(0.0F, Math.min(Math.min(1.0F, t / 0.25F), e.loop ? 1.0F : Math.min(1.0F, (e.duration - t) / 0.25F))));
+      if (w <= 0.0F) return;
+      apply(head, p, 0, w);
+      apply(body, p, 3, w);
+      apply(rArm, p, 6, w);
+      apply(lArm, p, 9, w);
+      apply(rLeg, p, 12, w);
+      apply(lLeg, p, 15, w);
    }
 
    private static void pivotBend(ModelPart var0, float var1) {

@@ -1,7 +1,7 @@
 import { api, confirmDialog, errorToast, fmtDate, fmtNum, html, idemKey, loadCatalog, mount, rarityBadge, slotIcon, state, tagPreview, toast } from '../core.js';
 import { icon, pixel } from '../icons.js';
 
-const SLOTS = [['', 'Alle'], ['cape', 'Capes'], ['wings', 'Flügel'], ['hat', 'Hüte'], ['face', 'Gesicht'], ['back', 'Rücken'], ['aura', 'Auren'], ['pet', 'Pets'], ['vehicle', 'Fahrzeuge'], ['nametag', 'Name Tags']];
+const SLOTS = [['', 'Alle'], ['cape', 'Capes'], ['wings', 'Flügel'], ['hat', 'Hüte'], ['face', 'Gesicht'], ['back', 'Rücken'], ['aura', 'Auren'], ['pet', 'Pets'], ['vehicle', 'Fahrzeuge'], ['knife', 'Messer'], ['nametag', 'Name Tags']];
 const UNLOCK = { default: 'Kostenlos', shop: 'Shop', battlepass: 'Battle Pass', achievement: 'Erfolg', event: 'Event', staff: 'Team' };
 
 async function inventory() {

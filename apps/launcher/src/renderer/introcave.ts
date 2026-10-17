@@ -153,8 +153,8 @@ export function woodTexture(): THREE.CanvasTexture {
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       let wx = x;
       for (const k of knots) { const d = Math.hypot(x - k.x, (y - k.y) * 0.5); if (d < k.r * 3) wx += (k.r * 3 - d) * 0.4 * Math.sign(x - k.x); }
-      const grain = Math.sin(wx * 0.55 + Math.sin(y * 0.02) * 3) * 0.5 + 0.5;
-      const fine = Math.random() * 0.25;
+      const grain = Math.sin(wx * 0.14 + Math.sin(y * 0.008) * 2.2) * 0.5 + 0.5;
+      const fine = Math.random() * 0.12 + Math.sin(y * 0.9 + x) * 0.03;
       let v = 0.45 + grain * 0.35 + fine;
       for (const k of knots) if (Math.hypot(x - k.x, (y - k.y) * 0.8) < k.r) v *= 0.55;
       if ((x * 7 + Math.floor(y / 40)) % 61 === 0) v *= 0.4; // cracks
@@ -602,7 +602,7 @@ export function playIntroCave(opts: IntroOptions): Promise<void> {
         flameGroup.add(sp);
         return sp;
       });
-      const light = i < (q > 0.5 ? 8 : 5) ? new THREE.PointLight('#ffa050', 0, 14, 1.7) : null;
+      const light = i < (q > 0.5 ? 8 : 5) ? new THREE.PointLight('#ffa050', 0, 18, 1.6) : null;
       if (light) {
         light.position.copy(pos).add(new THREE.Vector3(0, -0.15, 0));
         if (i === 0 && renderer.shadowMap.enabled) { light.castShadow = true; light.shadow.mapSize.set(512, 512); light.shadow.bias = -0.002; }
@@ -618,17 +618,24 @@ export function playIntroCave(opts: IntroOptions): Promise<void> {
       m.position.set(x, y, z);
       cart.add(m);
     };
-    wall(1.5, 0.55, 0.07, 0, -0.78, -0.75);
-    wall(0.07, 0.55, 1.3, -0.74, -0.78, -0.12);
-    wall(0.07, 0.55, 1.3, 0.74, -0.78, -0.12);
-    wall(1.56, 0.05, 0.11, 0, -0.5, -0.75);
-    for (const x of [-0.74, 0.74]) wall(0.11, 0.05, 1.32, x, -0.5, -0.12);
+    wall(1.5, 0.55, 0.07, 0, -0.66, -0.85);
+    wall(0.07, 0.55, 1.3, -0.74, -0.66, -0.22);
+    wall(0.07, 0.55, 1.3, 0.74, -0.66, -0.22);
+    wall(1.56, 0.05, 0.11, 0, -0.38, -0.85);
+    for (const x of [-0.74, 0.74]) wall(0.11, 0.05, 1.32, x, -0.38, -0.22);
     for (const [x, z] of [[-0.66, -0.68], [0.66, -0.68]] as const) {
       const rivet = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), steelMat);
-      rivet.position.set(x, -0.6, z + 0.04);
+      rivet.position.set(x, -0.48, z - 0.06);
       cart.add(rivet);
     }
     camera.add(cart);
+    // Miner's helmet lamp: a soft warm cone that lights the tunnel ahead.
+    const helmet = new THREE.SpotLight('#ffe2b8', 0, 24, 0.42, 0.65, 1.4);
+    helmet.position.set(0.05, 0.15, 0);
+    const helmetTarget = new THREE.Object3D();
+    helmetTarget.position.set(0, -0.15, -5);
+    camera.add(helmet, helmetTarget);
+    helmet.target = helmetTarget;
     scene.add(camera);
 
     // ---- chamber: lava river, huge brick walls and ceiling
@@ -915,6 +922,7 @@ export function playIntroCave(opts: IntroOptions): Promise<void> {
       last = now;
       if (!ending && t >= DURATION - 1.1) end(false);
 
+      helmet.intensity = 45 * smooth(3.4, 3.9, t) * (1 - smooth(11.5, 13, t) * 0.7);
       // Exposure stays low: the scene is lit by fire, not by a grading curve.
       const torchOn = smooth(3, 3.5, t);
       renderer.toneMappingExposure = 0.15 + torchOn * 0.75 + smooth(12, 14, t) * 0.15 + smooth(22.8, 23.6, t) * 2.2;
@@ -948,10 +956,10 @@ export function playIntroCave(opts: IntroOptions): Promise<void> {
         tc2.cage.rotation.z = Math.sin(t * 1.6 + tc2.ph) * 0.06;
         const on = smooth(tc2.on, tc2.on + 0.35, t);
         const fl = 0.82 + Math.sin(t * 13 + tc2.ph) * 0.08 + Math.sin(t * 31 + tc2.ph * 2) * 0.06 + (Math.random() - 0.5) * 0.08;
-        if (tc2.light) tc2.light.intensity = 22 * on * fl;
+        if (tc2.light) tc2.light.intensity = 70 * on * fl;
         tc2.sprites.forEach((sp, j) => {
           sp.position.set(Math.sin(t * 9 + j * 2 + tc2.ph) * 0.01, j * 0.02, 0);
-          sp.scale.setScalar((0.12 + j * 0.12) * on * (0.9 + Math.sin(t * 17 + j * 3 + tc2.ph) * 0.12));
+          sp.scale.setScalar((0.2 + j * 0.16) * on * (0.9 + Math.sin(t * 17 + j * 3 + tc2.ph) * 0.12));
         });
       });
 

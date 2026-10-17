@@ -1,6 +1,7 @@
 // Profiles: cards with pixel icons, an editor for every Minecraft version and
 // mod loader, and imports (modpack files, other launchers, folders).
 
+import { groupVersions } from '../../core/versions.ts';
 import { go, state } from '../app.ts';
 import { api, confirm, dialog, errorToast, fmtDate, html, mount, toast } from '../ui.ts';
 import { icon, pixel, PIXEL_ICONS } from '../icons.ts';
@@ -95,8 +96,9 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
   const fillVersions = () => {
     const snap = el.querySelector<HTMLInputElement>('#snap')!.checked;
     const hist = el.querySelector<HTMLInputElement>('#hist')!.checked;
-    const list = versions.filter((v) => v.type === 'release' || (snap && v.type === 'snapshot') || (hist && v.type.startsWith('old_')) || v.id === draft.gameVersion);
-    mount(gv, html`${list.map((v) => html`<option value="${v.id}" ${v.id === draft.gameVersion ? 'selected' : ''}>${v.id}${v.type === 'release' ? '' : ` (${v.type.replace('old_', '')})`}</option>`)}`);
+    // Every release from 1.8 up to the newest (26.x …), grouped; snapshots/older on request.
+    const groups = groupVersions(versions, { snapshots: snap, historical: hist, keep: draft.gameVersion });
+    mount(gv, html`${groups.map((g) => html`<optgroup label="${g.label}">${g.versions.map((v) => html`<option value="${v.id}" ${v.id === draft.gameVersion ? 'selected' : ''}>${v.id}${v.type === 'release' ? '' : ` (${v.type.replace('old_', '')})`}</option>`)}</optgroup>`)}`);
   };
   let loaderReq = 0;
   const fillLoader = async () => {

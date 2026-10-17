@@ -78,7 +78,7 @@ export const fmtDate = (ms: number | null | undefined) => (ms ? new Date(ms).toL
 export const fmtNum = (n: number | null | undefined) => Number(n ?? 0).toLocaleString('de-DE');
 export const idem = () => crypto.randomUUID();
 
-const SLOT_ICONS: Record<string, string> = { cape: 'cape', wings: 'wings', hat: 'hat', face: 'glasses', back: 'backpack', aura: 'sparkle', pet: 'paw', vehicle: 'car', nametag: 'tag' };
+const SLOT_ICONS: Record<string, string> = { cape: 'cape', wings: 'wings', hat: 'hat', face: 'glasses', back: 'backpack', aura: 'sparkle', pet: 'paw', vehicle: 'car', knife: 'sword', nametag: 'tag' };
 /** Pixel-art icon for a cosmetic slot. */
 export const slotIcon = (s: string, size = 'lg'): Raw => pixel(SLOT_ICONS[s] ?? 'package', size);
 

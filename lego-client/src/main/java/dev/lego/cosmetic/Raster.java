@@ -260,6 +260,8 @@ public final class Raster {
                return new float[]{0.0F, 5.0F, 0.0F};
             case VEHICLE:
                return new float[]{0.0F, -17.0F, 0.0F};
+            case KNIFE:
+               return new float[]{1.0F, -10.0F, 4.0F};
             case PET:
                return new float[]{0.0F, 5.0F, 0.0F};
             case AURA:
@@ -286,6 +288,8 @@ public final class Raster {
                return 28.0F;
             case VEHICLE:
                return 130.0F;
+            case KNIFE:
+               return 30.0F;
             case PET:
                return 30.0F;
             case AURA:
