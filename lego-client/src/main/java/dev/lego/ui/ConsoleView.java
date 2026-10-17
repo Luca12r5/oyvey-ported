@@ -172,8 +172,4 @@ public final class ConsoleView extends View {
       Gx.pop();
       Gx.popAlpha();
    }
-
-   private boolean hover(int x, int y, int w, int h) {
-      return this.mx >= x && this.mx <= x + w && this.my >= y && this.my <= y + h;
-   }
 }
