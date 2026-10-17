@@ -105,7 +105,7 @@ final class VehBoard {
       var0.pop();
    }
 
-   private static void truck(G var0, Cos.A var1, float var2, float var3) {
+   static void truck(G var0, Cos.A var1, float var2, float var3) {
       var0.push();
       var0.translate(0.0F, 1.2F, var2);
       var0.rotY(var3);

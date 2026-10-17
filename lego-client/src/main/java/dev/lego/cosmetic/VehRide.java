@@ -28,7 +28,7 @@ final class VehRide {
    private VehRide() {
    }
 
-   private static void wheelAt(G var0, float var1, float var2, float var3, float var4, float var5, float var6, int var7, float var8, String var9, String var10) {
+   static void wheelAt(G var0, float var1, float var2, float var3, float var4, float var5, float var6, int var7, float var8, String var9, String var10) {
       var0.push();
       var0.translate(var1, var2, var3);
       VehGeo.wheel(var0, var4, var5, var6, var7, var8, "veh_tread", "veh_side", var9, var10, 16);
@@ -176,7 +176,7 @@ final class VehRide {
       var0.pop();
    }
 
-   private static void bikeWheel(G var0, float var1) {
+   static void bikeWheel(G var0, float var1) {
       var0.push();
       var0.rotX(var1);
       var0.rotZ(-90.0F);
