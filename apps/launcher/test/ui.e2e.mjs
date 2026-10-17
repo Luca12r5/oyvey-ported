@@ -80,9 +80,16 @@ await win.waitForSelector('.nav-item');
 await win.waitForSelector('body[data-staff="1"]', { timeout: 10_000 });
 
 async function page(id, expect) {
-  // Secondary pages live in the dock's "Mehr" menu.
-  if (!(await win.locator(`#sidebar [data-page=${id}]`).count())) await win.click('#more');
-  await win.click(`[data-page=${id}]`);
+  if (id === 'designs') {
+    // Designs live under Optionen.
+    await win.click('#sidebar [data-page=settings]');
+    await win.waitForSelector('[data-tab=designs]');
+    await win.click('[data-tab=designs]');
+  } else {
+    // Secondary pages live in the dock's "Mehr" menu.
+    if (!(await win.locator(`#sidebar [data-page=${id}]`).count())) await win.click('#more');
+    await win.click(`[data-page=${id}]`);
+  }
   await win.waitForTimeout(600);
   const text = await win.locator('#view').innerText();
   if (expect && !text.includes(expect)) problems.push(`${id}: expected "${expect}", got: ${text.slice(0, 160)}`);
@@ -93,9 +100,11 @@ async function page(id, expect) {
 await win.waitForSelector('#launch');
 await win.waitForTimeout(1500); // character + background settle
 await page('play', 'SPIELEN');
-// Old default settings are migrated to the "Halloween Nocturne" look.
+// Old default settings are migrated to the "Halloween Crypt" look.
 const bgColor = await win.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
-if (bgColor !== '#07060b') problems.push(`old settings were not migrated to Halloween Nocturne: --bg is ${bgColor}`);
+if (bgColor !== '#05040a') problems.push(`old settings were not migrated to Halloween Crypt: --bg is ${bgColor}`);
+if (!(await win.locator('#sidebar [data-page=skins]').count())) problems.push('skins tab missing');
+if (await win.locator('#sidebar [data-page=designs]').count()) problems.push('designs should live under Optionen');
 // Custom window controls: minimize, fullscreen, maximize/restore, close.
 for (const w of ['minimize', 'fullscreen', 'maximize', 'close']) if (!(await win.locator(`[data-win=${w}]`).count())) problems.push(`window button ${w} missing`);
 // The button must mirror the real window state (xvfb has no window manager, so
@@ -108,8 +117,8 @@ if ((label === 'Wiederherstellen') !== maxed) problems.push(`maximize button out
 if (maxed) { await win.click('[data-win=maximize]'); await win.waitForTimeout(500); }
 // The window layout must fill the window in every theme.
 async function layoutOk(label) {
-  const r = await win.evaluate(() => ({ shell: document.querySelector('.shell').getBoundingClientRect().width, bar: document.querySelector('.titlebar').getBoundingClientRect().width, w: innerWidth }));
-  if (r.shell < r.w - 2 || r.bar < r.w - 2) problems.push(`${label}: layout collapsed (shell ${r.shell}px, titlebar ${r.bar}px, window ${r.w}px)`);
+  const r = await win.evaluate(() => ({ shell: document.querySelector('.frame').getBoundingClientRect().width, bar: document.querySelector('.titlebar').getBoundingClientRect().width, w: innerWidth }));
+  if (r.shell < r.w - 2 || r.bar < r.w - 90) problems.push(`${label}: layout collapsed (shell ${r.shell}px, titlebar ${r.bar}px, window ${r.w}px)`);
 }
 await layoutOk('nocturne');
 // Profile dropdown lists the profiles.
@@ -230,7 +239,7 @@ await win.fill('#lname', 'Testisch');
 await win.fill('input[data-k="nav.home"]', 'Zuhause');
 await win.click('#lsave');
 await win.waitForTimeout(600);
-if (!(await win.locator('#sidebar [data-page=play]').innerText()).includes('Zuhause')) problems.push('custom language not applied to the dock');
+if (!(await win.locator('#sidebar [data-page=play]').innerText()).toLowerCase().includes('zuhause')) problems.push('custom language not applied to the dock');
 await win.click('#langSeg [data-v=de]');
 await win.waitForTimeout(400);
 

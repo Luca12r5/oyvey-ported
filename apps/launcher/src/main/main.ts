@@ -4,10 +4,10 @@
 import { app, BrowserWindow, ipcMain, shell, session, dialog } from 'electron';
 import { cpus, freemem, release, totalmem } from 'node:os';
 import { join } from 'node:path';
-import { mkdir, readFile, readdir, rename, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { createHash, randomUUID } from 'node:crypto';
-import { authorizeRequest, exchangeCode, minecraftFromMicrosoft, parseRedirect, pollDeviceCode, refreshMicrosoft, startDeviceCode, AuthError, type MinecraftSession } from '../core/msauth.ts';
+import { authorizeRequest, exchangeCode, minecraftFromMicrosoft, parseRedirect, pollDeviceCode, refreshMicrosoft, resetSkin, startDeviceCode, uploadSkin, AuthError, type MinecraftSession } from '../core/msauth.ts';
 import { LegoApi } from '../core/lego.ts';
 import { currentEnv, buildArguments, redactArgs } from '../core/mojang.ts';
 import {
@@ -19,18 +19,20 @@ import {
   type ProjectType,
 } from '../core/modrinth.ts';
 import { cfLoader, copyInstance, installCfPack, readCfManifest, readFolder, scanInstances, type FoundInstance } from '../core/importers.ts';
-import { listEntries } from '../core/zip.ts';
+import { listEntries, readEntry } from '../core/zip.ts';
 import { exportToOfficial, officialLauncherPresent, officialMinecraftDir, openOfficialLauncher } from '../core/official.ts';
 import { fetchJson } from '../core/net.ts';
 import { createLogCleaner, diagnose, startGame } from '../core/launch.ts';
-import { DEFAULT_PROFILE, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
+import { DEFAULT_PROFILE, fastJvmFlags, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
 import { encryptionAvailable, loadAccounts, loadSettings, paths, saveAccounts, saveSettings, type Account, type AccountStore } from './store.ts';
 import { setupUpdater, checkForUpdate, installUpdate } from './updater.ts';
 import { VrBrowser } from './vrbrowser.ts';
 import { listModules, setModule } from '../core/clientcfg.ts';
 import type { AuthState, LaunchProgress, ModEntry, SkinData } from '../ipc-types.ts';
 import { validateTheme } from '@lego/shared';
-import { BUTTON_STYLES, HEAD_FONTS, pick, sanitizeFont, sanitizeFx, sanitizeImage, sanitizeLanguage, sanitizePreset, STAGES, SURFACES, UI_FONTS, type DesignPreset } from '../core/design.ts';
+import { LANG_CODES } from '../renderer/lang.ts';
+import { analyzeLog, type Diagnosis, type Fix, type ModInfo } from '../core/crashdoc.ts';
+import { BUTTON_STYLES, TRANSITIONS, HEAD_FONTS, pick, sanitizeFont, sanitizeSkinLib, sanitizeFx, sanitizeImage, sanitizeLanguage, sanitizePreset, STAGES, SURFACES, UI_FONTS, type DesignPreset } from '../core/design.ts';
 
 declare const __MS_CLIENT_ID__: string;
 declare const __BACKEND_URL__: string;
@@ -314,7 +316,7 @@ async function launch(profileId: string): Promise<{ ok: boolean; error?: string 
       player: { name: mc.name, uuid: mc.uuid, accessToken: mc.accessToken, xuid: mc.xuid, userType: 'msa' },
       launcherName: 'lego-launcher', launcherVersion: app.getVersion(),
       memoryMb: { min: Math.min(1024, profile.memoryMb), max: profile.memoryMb },
-      extraJvmArgs: [...jvm.args, ...(active()?.lego ? [`-Dlegoclient.api=${backendUrl()}`] : []), ...(profile.legoClient && settings.autoConsole ? ['-Dlegoclient.console=1'] : [])],
+      extraJvmArgs: [...(profile.performancePack ? fastJvmFlags(jvm.args) : []), ...jvm.args, ...(active()?.lego ? [`-Dlegoclient.api=${backendUrl()}`] : []), ...(profile.legoClient && settings.autoConsole ? ['-Dlegoclient.console=1'] : []), ...(profile.legoClient && !settings.introEnabled ? ['-Dlegoclient.intro=0'] : [])],
       resolution: profile.resolution ?? undefined, loggingConfigPath: installed.loggingConfig ?? undefined,
     });
     report('Starte Minecraft');
@@ -332,11 +334,16 @@ async function launch(profileId: string): Promise<{ ok: boolean; error?: string 
     void game.exited.then(async (r) => {
       running = null;
       let hint: string | null = null;
+      let diagnoses: Diagnosis[] = [];
       if (r.code !== 0) {
-        const text = await readFile(r.crashReport ?? game.logFile, 'utf8').catch(() => '');
+        const report = r.crashReport ? await readFile(r.crashReport, 'utf8').catch(() => '') : '';
+        const log = await readFile(game.logFile, 'utf8').catch(() => '');
+        const text = `${report}\n${log.slice(-400_000)}`;
         hint = diagnose(text);
+        diagnoses = analyzeLog(text, { mods: await modInfos(profile).catch(() => []), memoryMb: profile.memoryMb });
+        lastCrash = { profileId: profile.id, diagnoses };
       }
-      send('game-exit', { ...r, logFile: game.logFile, hint });
+      send('game-exit', { ...r, logFile: game.logFile, hint, diagnoses, profileId: profile.id });
       if (settings.closeOnLaunch) win?.restore();
     }).catch((e) => {
       running = null;
@@ -362,21 +369,83 @@ async function textureDataUrl(url: string | null | undefined): Promise<string | 
   return `data:image/png;base64,${buf.toString('base64')}`;
 }
 
+/** Public skin of any Minecraft name (Mojang's public profile API; used for the guest preview). */
+async function skinByName(name: string): Promise<SkinData> {
+  const p = await fetchJson<{ id: string }>(fetch, `https://api.mojang.com/users/profiles/minecraft/${encodeURIComponent(name)}`);
+  return texturesOf(p.id, null);
+}
+
+async function texturesOf(uuid: string, fallbackUrl: string | null): Promise<SkinData> {
+  const p = await fetchJson<{ properties: { name: string; value: string }[] }>(fetch, `https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`);
+  const tex = p.properties.find((x) => x.name === 'textures');
+  const data = tex ? (JSON.parse(Buffer.from(tex.value, 'base64').toString('utf8')) as { textures: { SKIN?: { url: string; metadata?: { model?: string } }; CAPE?: { url: string } } }) : null;
+  return {
+    skin: await textureDataUrl(data?.textures.SKIN?.url ?? fallbackUrl),
+    variant: data?.textures.SKIN?.metadata?.model === 'slim' ? 'slim' : 'classic',
+    cape: await textureDataUrl(data?.textures.CAPE?.url),
+  };
+}
+
 async function skinFor(uuid?: string): Promise<SkinData> {
   const a = uuid ? store.accounts.find((x) => x.mc.uuid === uuid) : active();
+  if (!a && !uuid && settings.guestName) return skinByName(settings.guestName).catch(() => ({ skin: null, variant: 'classic' as const, cape: null }));
   if (!a) return { skin: null, variant: 'classic', cape: null };
   try {
     // Ask the session server so skin changes made elsewhere show up.
-    const p = await fetchJson<{ properties: { name: string; value: string }[] }>(fetch, `https://sessionserver.mojang.com/session/minecraft/profile/${a.mc.uuid}`);
-    const tex = p.properties.find((x) => x.name === 'textures');
-    const data = tex ? (JSON.parse(Buffer.from(tex.value, 'base64').toString('utf8')) as { textures: { SKIN?: { url: string; metadata?: { model?: string } }; CAPE?: { url: string } } }) : null;
-    return {
-      skin: await textureDataUrl(data?.textures.SKIN?.url ?? a.mc.skinUrl),
-      variant: data?.textures.SKIN?.metadata?.model === 'slim' ? 'slim' : 'classic',
-      cape: await textureDataUrl(data?.textures.CAPE?.url),
-    };
+    return await texturesOf(a.mc.uuid, a.mc.skinUrl);
   } catch {
     return { skin: await textureDataUrl(a.mc.skinUrl).catch(() => null), variant: a.mc.skinVariant ?? 'classic', cape: null };
+  }
+}
+
+
+// ---- crash doctor ------------------------------------------------------------
+/** Mods of a profile with their Fabric/Quilt mod id read from the jar. */
+async function modInfos(p: GameProfile): Promise<ModInfo[]> {
+  const dir = join(profileDir(p), 'mods');
+  const list = await listMods(p);
+  return Promise.all(list.map(async (m) => {
+    let id: string | null = null;
+    try {
+      const buf = await readFile(join(dir, m.filename));
+      const e = listEntries(buf).find((x) => x.name === 'fabric.mod.json' || x.name === 'quilt.mod.json');
+      if (e) {
+        const j = JSON.parse(readEntry(buf, e).toString('utf8').replace(/^\uFEFF/, '')) as { id?: string; quilt_loader?: { id?: string } };
+        id = j.id ?? j.quilt_loader?.id ?? null;
+      }
+    } catch { /* unreadable jar: the doctor falls back to file names */ }
+    return { filename: m.filename, id, title: m.title ?? null, enabled: m.enabled };
+  }));
+}
+
+let lastCrash: { profileId: string; diagnoses: Diagnosis[] } | null = null;
+
+async function applyFix(profileId: string, fix: Fix): Promise<{ undo: Fix | { kind: 'enable-mod'; filename: string } | null; message: string }> {
+  const p = profileById(profileId);
+  const dir = profileDir(p);
+  switch (fix.kind) {
+    case 'disable-mod': {
+      if (!/^[^/\\]+\.jar$/.test(fix.filename)) throw new Error('invalid file');
+      await toggleMod(dir, fix.filename, false);
+      return { undo: { kind: 'enable-mod', filename: fix.filename }, message: `${fix.filename} deaktiviert` };
+    }
+    case 'install-mod': {
+      if (!/^[\w-]{1,64}$/.test(fix.slug)) throw new Error('invalid project');
+      await installProject(fetch, dir, fix.slug, p.gameVersion, p.loaderType, 'mod', { title: fix.slug, iconUrl: null });
+      return { undo: null, message: `${fix.slug} installiert` };
+    }
+    case 'set-memory': {
+      const old = p.memoryMb;
+      p.memoryMb = Math.max(1024, Math.min(32768, Math.round(fix.mb)));
+      await saveSettings(settings);
+      return { undo: { kind: 'set-memory', mb: old }, message: `RAM auf ${p.memoryMb} MB gesetzt` };
+    }
+    case 'redownload': {
+      await rm(join(layout(paths.game()).versions, p.gameVersion), { recursive: true, force: true }).catch(() => {});
+      return { undo: null, message: 'Spieldateien werden beim nächsten Start neu geladen' };
+    }
+    case 'reauth':
+      return { undo: null, message: 'Bitte im Konto-Menü neu anmelden' };
   }
 }
 
@@ -466,7 +535,7 @@ function registerIpc(): void {
     const allowed: (keyof Settings)[] = [
       'themeId', 'customThemes', 'language', 'backendUrl', 'selectedProfile', 'closeOnLaunch', 'reducedMotion', 'uiScale', 'autoUpdate', 'rarityColors',
       'accentColor', 'background', 'backgroundQuality', 'snow', 'showSnapshots', 'showHistorical', 'curseforgeKey', 'msClientId',
-      'introEnabled', 'introSound', 'autoConsole', 'fx', 'surface', 'stage', 'designPresets', 'bgImage', 'guest', 'uiFont', 'headFont', 'customFont', 'buttonStyle', 'customLanguage',
+      'introEnabled', 'introSound', 'autoConsole', 'fx', 'surface', 'stage', 'designPresets', 'bgImage', 'guest', 'uiFont', 'headFont', 'customFont', 'buttonStyle', 'customLanguage', 'transition', 'jumpscares', 'skinLibrary', 'guestName',
     ];
     for (const k of allowed) if (k in patch) (settings as unknown as Record<string, unknown>)[k] = patch[k];
     // Never trust the renderer: re-validate imported themes and clamp numbers.
@@ -476,12 +545,15 @@ function registerIpc(): void {
     if (settings.accentColor !== null && !HEX.test(String(settings.accentColor))) settings.accentColor = null;
     if (typeof settings.background !== 'string' || !/^[a-z0-9-]{1,32}$/.test(settings.background)) settings.background = 'nebula';
     settings.customLanguage = sanitizeLanguage(settings.customLanguage);
-    if (!['de', 'en', 'custom'].includes(settings.language) || (settings.language === 'custom' && !settings.customLanguage)) settings.language = 'de';
+    if (!(LANG_CODES.includes(settings.language) || settings.language === 'custom') || (settings.language === 'custom' && !settings.customLanguage)) settings.language = 'de';
     settings.uiFont = pick(UI_FONTS, settings.uiFont, 'theme');
     settings.headFont = pick(HEAD_FONTS, settings.headFont, 'poppins');
     settings.customFont = sanitizeFont(settings.customFont);
-    settings.buttonStyle = pick(BUTTON_STYLES, settings.buttonStyle, 'nocturne');
-    for (const k of ['snow', 'showSnapshots', 'showHistorical', 'closeOnLaunch', 'reducedMotion', 'introEnabled', 'introSound', 'autoConsole', 'guest'] as const) settings[k] = !!settings[k];
+    settings.buttonStyle = pick(BUTTON_STYLES, settings.buttonStyle, 'crypt');
+    settings.transition = pick(TRANSITIONS, settings.transition, 'slide');
+    settings.skinLibrary = sanitizeSkinLib(settings.skinLibrary);
+    settings.guestName = typeof settings.guestName === 'string' && /^[A-Za-z0-9_]{3,16}$/.test(settings.guestName.trim()) ? settings.guestName.trim() : '';
+    for (const k of ['snow', 'showSnapshots', 'showHistorical', 'closeOnLaunch', 'reducedMotion', 'introEnabled', 'introSound', 'autoConsole', 'guest', 'jumpscares'] as const) settings[k] = !!settings[k];
     settings.msClientId = typeof settings.msClientId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(settings.msClientId.trim()) ? settings.msClientId.trim().toLowerCase() : '';
     settings.curseforgeKey = typeof settings.curseforgeKey === 'string' ? settings.curseforgeKey.trim().slice(0, 200) : '';
     if (!['ask', 'auto', 'off'].includes(settings.autoUpdate)) settings.autoUpdate = 'ask';
@@ -622,6 +694,17 @@ function registerIpc(): void {
     return authState();
   });
   ipcMain.handle('skin', (_e, uuid?: string) => skinFor(uuid));
+  ipcMain.handle('skin:upload', async (_e, dataUrl: unknown, variant: unknown) => {
+    if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/png;base64,')) throw new Error('Ungültige Datei');
+    const mc = await freshSession();
+    await uploadSkin(fetch, mc.accessToken, Buffer.from(dataUrl.slice(22), 'base64'), variant === 'slim' ? 'slim' : 'classic');
+    return skinFor();
+  });
+  ipcMain.handle('skin:reset', async () => {
+    const mc = await freshSession();
+    await resetSkin(fetch, mc.accessToken);
+    return skinFor();
+  });
 
   ipcMain.handle('game:versions', async () => (await getManifest(fetch)).versions.map((v) => ({ id: v.id, type: v.type, releaseTime: v.releaseTime })));
   ipcMain.handle('game:loaders', async (_e, type: LoaderType, gv: string) => {
@@ -653,6 +736,27 @@ function registerIpc(): void {
     return installProject(fetch, profileDir(p), projectId, p.gameVersion, p.loaderType, type, { title: String(title).slice(0, 80), iconUrl: icon });
   });
   ipcMain.handle('mods:remove', (_e, profileId: string, filename: string) => removeMod(profileDir(profileById(profileId)), filename));
+  ipcMain.handle('crash:last', () => lastCrash);
+  ipcMain.handle('crash:analyze', async (_e, profileId: string) => {
+    const p = profileById(profileId);
+    const dir = join(profileDir(p), 'crash-reports');
+    const reports = (await readdir(dir).catch(() => [] as string[])).filter((n) => n.endsWith('.txt')).sort();
+    const report = reports.length ? await readFile(join(dir, reports[reports.length - 1]!), 'utf8').catch(() => '') : '';
+    const log = await readFile(join(profileDir(p), 'logs', 'latest.log'), 'utf8').catch(() => '');
+    const diagnoses = analyzeLog(`${report}\n${log.slice(-400_000)}`, { mods: await modInfos(p).catch(() => []), memoryMb: p.memoryMb });
+    lastCrash = { profileId, diagnoses };
+    return lastCrash;
+  });
+  ipcMain.handle('crash:fix', async (_e, profileId: string, fix: Fix | { kind: 'enable-mod'; filename: string }) => {
+    if (!fix || typeof fix !== 'object') throw new Error('invalid fix');
+    if (fix.kind === 'enable-mod') {
+      if (!/^[^/\\]+\.jar$/.test(fix.filename)) throw new Error('invalid file');
+      await toggleMod(profileDir(profileById(profileId)), fix.filename, true);
+      return { undo: null, message: `${fix.filename} wieder aktiviert` };
+    }
+    if (!['disable-mod', 'install-mod', 'set-memory', 'redownload', 'reauth'].includes(fix.kind)) throw new Error('invalid fix');
+    return applyFix(profileId, fix);
+  });
   ipcMain.handle('mods:toggle', async (_e, profileId: string, filename: string, enabled: boolean) => {
     await toggleMod(profileDir(profileById(profileId)), filename, !!enabled);
   });

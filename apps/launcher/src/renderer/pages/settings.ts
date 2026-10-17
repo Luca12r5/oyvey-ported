@@ -5,6 +5,8 @@
 import { RARITY_INFO, type Rarity } from '@lego/shared';
 import { go, loadIdentity, retheme, state } from '../app.ts';
 import { api, confirm, errorToast, html, mount, toast, type Raw } from '../ui.ts';
+import { designsPage } from './designs.ts';
+import { LANGS } from '../lang.ts';
 import { icon } from '../icons.ts';
 import { headFromSkin } from '../avatar.ts';
 import { languageTemplate, t } from '../i18n.ts';
@@ -12,11 +14,13 @@ import { sanitizeLanguage } from '../../core/design.ts';
 import type { Settings } from '../../core/settings.ts';
 import { signInFlow } from './account.ts';
 
-type Section = 'general' | 'language' | 'appearance' | 'game' | 'accounts' | 'rarity' | 'advanced' | 'about';
+type Section = 'general' | 'language' | 'appearance' | 'designs' | 'animations' | 'game' | 'accounts' | 'rarity' | 'advanced' | 'about';
 const SECTIONS: [Section, string, () => string][] = [
   ['general', 'sliders', () => t('set.general')],
   ['language', 'globe', () => t('set.language')],
   ['appearance', 'palette', () => t('set.appearance')],
+  ['designs', 'brush', () => t('nav.designs')],
+  ['animations', 'pumpkin', () => (state.settings.language === 'en' ? 'Animations' : 'Animationen')],
   ['game', 'gamepad', () => t('set.game')],
   ['accounts', 'users', () => t('set.accounts')],
   ['rarity', 'cosmetics', () => t('set.rarity')],
@@ -24,11 +28,13 @@ const SECTIONS: [Section, string, () => string][] = [
   ['about', 'info', () => t('set.about')],
 ];
 /** Sections made of searchable rows. */
-const ROW_SECTIONS: Section[] = ['general', 'appearance', 'game', 'advanced'];
+const ROW_SECTIONS: Section[] = ['general', 'appearance', 'animations', 'game', 'advanced'];
 
 function page(box: HTMLElement): HTMLElement {
   return box.closest<HTMLElement>('.view-enter') ?? (box.parentElement as HTMLElement);
 }
+
+const TRANSITION_NAMES: [Settings['transition'], string][] = [['slide', 'Slide'], ['fade', 'Fade'], ['zoom', 'Zoom'], ['glitch', 'Glitch'], ['pumpkin', 'Kürbis'], ['none', 'Aus']];
 
 async function save(patch: Partial<Settings>): Promise<void> {
   try {
@@ -63,6 +69,7 @@ export async function settingsPage(el: HTMLElement, section: Section | string = 
     rowSections(box, q);
   });
   if (ROW_SECTIONS.includes(sec)) rowSections(box, '', sec);
+  else if (sec === 'designs') { box.onclick = null; box.onchange = null; await designsPage(box); }
   else if (sec === 'language') languageTab(box);
   else if (sec === 'accounts') await accountsTab(box);
   else if (sec === 'rarity') rarityTab(box);
@@ -74,7 +81,7 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
   const s = state.settings;
   const parts: Record<string, Raw> = {
     general: html`
-      ${row(t('set.language'), t('set.language.d'), html`<div class="seg" data-seg="language"><button data-v="de" class="${s.language === 'de' ? 'on' : ''}">Deutsch</button><button data-v="en" class="${s.language === 'en' ? 'on' : ''}">English</button>${s.customLanguage ? html`<button data-v="custom" class="${s.language === 'custom' ? 'on' : ''}">${s.customLanguage.name}</button>` : ''}</div>`)}
+      ${row(t('set.language'), t('set.language.d'), html`<select data-key="language" class="compact">${LANGS.map(([c, n]) => html`<option value="${c}" ${s.language === c ? 'selected' : ''}>${n}</option>`)}${s.customLanguage ? html`<option value="custom" ${s.language === 'custom' ? 'selected' : ''}>${s.customLanguage.name}</option>` : ''}</select>`)}
       ${row(t('set.intro'), t('set.intro.d'), html`<div class="row"><button class="btn sm" id="introPlay">${icon('play', 'sm')} ${t('set.introPlay')}</button>${sw('introEnabled', s.introEnabled)}</div>`)}
       ${row(t('set.introSound'), t('set.introSound.d'), sw('introSound', s.introSound))}
       ${row(t('set.closeOnLaunch'), t('set.closeOnLaunch.d'), sw('closeOnLaunch', s.closeOnLaunch))}
@@ -82,6 +89,11 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
     appearance: html`
       ${row(t('set.designsMoved'), t('set.designsMoved.d'), html`<button class="btn sm primary" id="toDesigns">${icon('brush', 'sm')} ${t('nav.designs')}</button>`)}
       ${row(t('set.scale'), `${t('set.scale.d')} (${Math.round(s.uiScale * 100)} %)`, html`<input type="range" data-key="uiScale" min="0.75" max="2" step="0.05" value="${s.uiScale}">`)}
+      ${row(t('set.motion'), t('set.motion.d'), sw('reducedMotion', s.reducedMotion))}`,
+    animations: html`
+      ${row('Seitenübergang', 'Animation beim Wechseln zwischen den Seiten.', html`<div class="seg" data-seg="transition">${TRANSITION_NAMES.map(([v, l]) => html`<button data-v="${v}" class="${s.transition === v ? 'on' : ''}">${l}</button>`)}</div>`)}
+      ${row(t('set.intro'), t('set.intro.d'), html`<div class="row"><button class="btn sm" id="introPlay">${icon('play', 'sm')} ${t('set.introPlay')}</button>${sw('introEnabled', s.introEnabled)}</div>`)}
+      ${row('Jumpscares', 'Selten und zufällig springt etwas Gruseliges ins Bild (mit Ton). Nie beim Anmelden, Installieren oder Spielstart. Nichts für schwache Nerven!', html`<div class="row"><button class="btn sm" id="scareTest">Vorschau</button>${sw('jumpscares', s.jumpscares)}</div>`)}
       ${row(t('set.motion'), t('set.motion.d'), sw('reducedMotion', s.reducedMotion))}`,
     game: html`
       ${row(t('set.autoConsole'), t('set.autoConsole.d'), sw('autoConsole', s.autoConsole))}
@@ -93,7 +105,7 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
       ${row(t('set.gameDir'), `${t('set.gameDir.d')} ${state.info.gameDir}`, html`<button class="btn sm" id="game">${icon('folder', 'sm')} ${t('set.open')}</button>`)}
       ${row(t('set.diag'), t('set.diag.d'), html`<button class="btn sm" id="diag">${t('set.copy')}</button>`)}`,
   };
-  const titles: Record<string, string> = { general: t('set.general'), appearance: t('set.appearance'), game: t('set.game'), advanced: t('set.advanced') };
+  const titles: Record<string, string> = { general: t('set.general'), appearance: t('set.appearance'), animations: state.settings.language === 'en' ? 'Animations' : 'Animationen', game: t('set.game'), advanced: t('set.advanced') };
   const list = only ? [only] : ROW_SECTIONS;
   mount(box, html`${list.map((id) => html`<section class="set-sec" data-sec="${id}"><h2>${titles[id]}</h2><div class="glass rows">${parts[id]!}</div></section>`)}`);
   if (q) {
@@ -109,18 +121,22 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
     const value = i.type === 'checkbox' ? i.checked : i.type === 'range' ? Number(i.value) : i.value.trim();
     await save({ [key]: value } as Partial<Settings>);
     if (key === 'backendUrl') { state.auth = await api.reconnectLego(); await loadIdentity(); }
+    if (key === 'language') return void settingsPage(page(box), only ?? 'general');
     if (i.type !== 'text' && i.type !== 'password') rerender();
     toast(t('set.saved'), 'ok');
   };
   box.onclick = async (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!b) return;
-    if (b.id === 'toDesigns') return void go('designs');
+    if (b.id === 'toDesigns') return void settingsPage(page(box), 'designs');
+    if (b.parentElement?.dataset.seg === 'transition') { await save({ transition: b.dataset.v as Settings['transition'] }); rerender(); toast(t('set.saved'), 'ok'); return; }
     if (b.parentElement?.dataset.seg === 'language') { await save({ language: b.dataset.v === 'en' ? 'en' : b.dataset.v === 'custom' ? 'custom' : 'de' }); return void settingsPage(page(box), only ?? 'general'); }
     if (b.id === 'game') return void api.openFolder('game');
+    if (b.id === 'scareTest') { const { scare } = await import('../jumpscare.ts'); scare(); return; }
     if (b.id === 'introPlay') {
-      const { playIntro3d, webglAvailable } = await import('../intro3d.ts');
-      if (webglAvailable()) await playIntro3d({ sound: s.introSound, quality: s.backgroundQuality, skipLabel: t('intro.skip') });
+      const { webglAvailable } = await import('../intro3d.ts');
+      const { playIntroCave } = await import('../introcave.ts');
+      if (webglAvailable()) await playIntroCave({ sound: s.introSound, quality: s.backgroundQuality, skipLabel: t('intro.skip') });
       return;
     }
     if (b.id === 'diag') { await navigator.clipboard.writeText(await api.diagnostics()); toast('Diagnose in die Zwischenablage kopiert', 'ok'); }
@@ -187,7 +203,7 @@ function languageTab(box: HTMLElement): void {
   box.onclick = async (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!b) return;
-    if (b.parentElement?.id === 'langSeg') { await save({ language: b.dataset.v as 'de' | 'en' | 'custom' }); return void settingsPage(page(box), 'language'); }
+    if (b.parentElement?.id === 'langSeg') { await save({ language: b.dataset.v! }); return void settingsPage(page(box), 'language'); }
     if (b.id === 'lsave') {
       const p = sanitizeLanguage(pack());
       if (!p) return errorToast(new Error('Bitte einen Namen eingeben.'));

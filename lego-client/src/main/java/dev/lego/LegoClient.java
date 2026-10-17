@@ -22,6 +22,7 @@ import dev.lego.perf.Perf;
 import dev.lego.perf.Performance;
 import dev.lego.ui.ConsoleLog;
 import dev.lego.ui.ConsoleView;
+import dev.lego.ui.StartupView;
 import dev.lego.ui.Env;
 import dev.lego.ui.Gx;
 import dev.lego.ui.LegoScreen;
@@ -73,6 +74,7 @@ public final class LegoClient implements ClientModInitializer {
    private static KeyMapping hudKey;
    private static KeyMapping consoleKey;
    private static boolean consoleAutoShown = false;
+   private static boolean introShown = false;
    private static SpotifyModule spotify;
    private static long joinedAt = 0L;
    private static final boolean[] lastDown = new boolean[512];
@@ -374,7 +376,15 @@ public final class LegoClient implements ClientModInitializer {
          }
 
          // The launcher asks for the console on start (-Dlegoclient.console=1): show it once on the title screen.
-         if (!consoleAutoShown && var0.screen instanceof TitleScreen && "1".equals(System.getProperty("legoclient.console"))) {
+         // Short LEGO start animation on the first title screen (before the console).
+         if (!introShown && var0.screen instanceof TitleScreen) {
+            introShown = true;
+            if (StartupView.enabled()) {
+               LegoScreen.show(new StartupView());
+            }
+         }
+
+         if (introShown && !consoleAutoShown && var0.screen instanceof TitleScreen && "1".equals(System.getProperty("legoclient.console"))) {
             consoleAutoShown = true;
             LegoScreen.show(new ConsoleView());
          }

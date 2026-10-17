@@ -166,6 +166,7 @@ export const PERFORMANCE_PACK: { slug: string; title: string }[] = [
   { slug: 'ferrite-core', title: 'FerriteCore' },
   { slug: 'immediatelyfast', title: 'ImmediatelyFast' },
   { slug: 'entityculling', title: 'EntityCulling' },
+  { slug: 'modernfix', title: 'ModernFix' },
 ];
 
 /** Resolves the performance pack files that exist for this game version/loader. */

@@ -247,3 +247,29 @@ export async function exchangeCode(f: FetchLike, clientId: string, code: string,
     throw e;
   }
 }
+
+/** True for a 64×64 or legacy 64×32 PNG (checked from the IHDR header, no decoder needed). */
+export function validSkinPng(png: Uint8Array): boolean {
+  if (png.length < 33 || png.length > 64 * 1024) return false;
+  const sig = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  if (!sig.every((b, i) => png[i] === b)) return false;
+  const dv = new DataView(png.buffer, png.byteOffset, png.byteLength);
+  const w = dv.getUint32(16), h = dv.getUint32(20);
+  return w === 64 && (h === 64 || h === 32);
+}
+
+/** Changes the account's skin through the official Minecraft services API. */
+export async function uploadSkin(f: FetchLike, accessToken: string, png: Uint8Array, variant: 'classic' | 'slim'): Promise<void> {
+  if (!validSkinPng(png)) throw new Error('Der Skin muss eine PNG-Datei mit 64×64 (oder 64×32) Pixeln sein.');
+  const body = new FormData();
+  body.append('variant', variant);
+  body.append('file', new Blob([new Uint8Array(png)], { type: 'image/png' }), 'skin.png');
+  const res = await f('https://api.minecraftservices.com/minecraft/profile/skins', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body });
+  if (!res.ok) throw new HttpStatusError(res.url || 'https://api.minecraftservices.com/minecraft/profile/skins', res.status, await res.text().catch(() => ''));
+}
+
+/** Resets to the default skin. */
+export async function resetSkin(f: FetchLike, accessToken: string): Promise<void> {
+  const res = await f('https://api.minecraftservices.com/minecraft/profile/skins/active', { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } });
+  if (!res.ok) throw new HttpStatusError(res.url || 'https://api.minecraftservices.com/minecraft/profile/skins/active', res.status, await res.text().catch(() => ''));
+}

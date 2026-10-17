@@ -20,6 +20,8 @@ export interface Avatar {
   react(r: Reaction): void;
   /** Freezes or resumes the animation ("Skin-Animation" switch). */
   setPaused(paused: boolean): void;
+  /** Zoom step (+1 closer, -1 further); the mouse wheel zooms as well. */
+  zoom(step: number): void;
   resize(): void;
   dispose(): void;
 }
@@ -124,8 +126,13 @@ export function createAvatar(canvas: HTMLCanvasElement, reducedMotion: boolean):
   // Three-quarter view like a character select screen.
   viewer.playerWrapper.rotation.y = 0.5;
   viewer.playerObject.position.y = -1;
-  viewer.controls.enableZoom = false;
+  // Wheel zoom within limits (close-up of the face … whole body).
+  viewer.controls.enableZoom = true;
+  viewer.controls.zoomSpeed = 0.6;
   viewer.controls.enablePan = false;
+  const zoomRange = (() => { const d = viewer.camera.position.length(); return { min: d * 0.38, max: d * 1.35 }; })();
+  viewer.controls.minDistance = zoomRange.min;
+  viewer.controls.maxDistance = zoomRange.max;
   viewer.globalLight.intensity = 2.2;
   viewer.cameraLight.intensity = 0.9;
   viewer.autoRotateSpeed = 1.2;
@@ -184,6 +191,12 @@ export function createAvatar(canvas: HTMLCanvasElement, reducedMotion: boolean):
   const ro = new ResizeObserver(() => { const b = box(); viewer.setSize(b.width, b.height); });
   ro.observe(canvas.parentElement!);
   return {
+    zoom(step) {
+      const cam = viewer.camera;
+      const d = Math.max(zoomRange.min, Math.min(zoomRange.max, cam.position.length() * (step > 0 ? 0.82 : 1.22)));
+      cam.position.setLength(d);
+      viewer.controls.update();
+    },
     async setSkin(skin, variant, cape) {
       await viewer.loadSkin(skin ?? DEFAULT_SKIN, { model: skin ? (variant === 'slim' ? 'slim' : 'default') : 'default' });
       if (cape) await viewer.loadCape(cape);
@@ -246,6 +259,7 @@ function flatAvatar(canvas: HTMLCanvasElement): Avatar {
   ro.observe(canvas.parentElement!);
   return {
     async setSkin(skin) { await load(skin ?? DEFAULT_SKIN); },
+    zoom() { /* static */ },
     play() { /* static */ },
     react() { /* static */ },
     setPaused() { /* static */ },

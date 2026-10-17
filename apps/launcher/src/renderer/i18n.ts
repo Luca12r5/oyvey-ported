@@ -1,3 +1,5 @@
+import { packFor } from './lang.ts';
+
 // Launcher translations (German default, English). Pages that are not yet
 // translated stay German; keys missing in English fall back to German.
 
@@ -5,7 +7,7 @@ const de = {
   'set.designsMoved': 'Designs & Hintergründe', 'set.designsMoved.d': 'Farben, Themes, 3D-Szenen, Effekte und Presets findest du jetzt im Bereich Designs.',
   'set.autoConsole': 'Konsole beim Spielstart öffnen', 'set.autoConsole.d': 'Zeigt Startmeldungen, Warnungen und Fehler mit Zeitstempel, sobald das Spiel startet.',
   'intro.skip': 'Überspringen', 'set.intro': 'Startanimation', 'set.intro.d': 'Filmische 3D-Animation beim Start des Launchers (Klick oder Esc überspringt).', 'set.introSound': 'Ton der Startanimation', 'set.introSound.d': 'Synthetische Klänge während der Startanimation.', 'set.introPlay': 'Jetzt abspielen',
-  'nav.home': 'Home', 'nav.more': 'Mehr', 'nav.designs': 'Designs', 'nav.vr': 'VR-Modus',
+  'nav.home': 'Play', 'nav.more': 'Mehr', 'nav.designs': 'Designs', 'nav.vr': 'VR-Modus',
   'nav.play': 'Spielen', 'nav.profiles': 'Profile', 'nav.mods': 'Mods', 'nav.cosmetics': 'Cosmetics', 'nav.shop': 'Shop', 'nav.friends': 'Freunde',
   'nav.rewards': 'Belohnungen', 'nav.news': 'News', 'nav.feedback': 'Feedback', 'nav.account': 'Konto', 'nav.dev': 'Entwickler', 'nav.settings': 'Einstellungen',
   'acc.signin': 'Anmelden', 'acc.add': 'Konto hinzufügen', 'acc.signout': 'Abmelden', 'acc.manage': 'Konten verwalten', 'acc.offline': 'LEGO offline',
@@ -33,7 +35,7 @@ const de = {
   'mods.managed': 'vom Launcher', 'mods.folder': 'Ordner öffnen', 'mods.more': 'Mehr laden', 'mods.downloads': 'Downloads', 'mods.import': 'Importieren',
   'prof.title': 'Profile', 'prof.new': 'Neues Profil', 'prof.edit': 'Profil bearbeiten', 'prof.name': 'Name', 'prof.version': 'Minecraft-Version', 'prof.loader': 'Mod-Loader',
   'prof.loaderVersion': 'Loader-Version', 'prof.newest': 'Neueste stabile', 'prof.lego': 'LEGO Client', 'prof.lego.d': 'Installiert den LEGO Client + Fabric API (nur Fabric 1.21.11).',
-  'prof.fps': 'FPS-Paket', 'prof.fps.d': 'Sodium, Lithium, FerriteCore, ImmediatelyFast und EntityCulling, soweit für Version und Loader verfügbar.',
+  'prof.fps': 'FPS-Paket', 'prof.fps.d': 'Sodium, Lithium, FerriteCore, ImmediatelyFast, EntityCulling und ModernFix (soweit verfügbar) plus optimierte Java-Einstellungen gegen Ruckler.',
   'prof.memory': 'Arbeitsspeicher', 'prof.jvm': 'JVM-Argumente (nur -X…, -XX:…, -D…)', 'prof.width': 'Fensterbreite', 'prof.height': 'Fensterhöhe', 'prof.default': 'Standard',
   'prof.icon': 'Symbol', 'prof.save': 'Speichern', 'prof.back': 'Zurück', 'prof.delete': 'Löschen', 'prof.saved': 'Profil gespeichert', 'prof.play': 'Spielen', 'prof.mods': 'Mods',
   'prof.import': 'Importieren', 'prof.importFile': 'Modpack-Datei (.mrpack / CurseForge .zip)', 'prof.importScan': 'Andere Launcher durchsuchen', 'prof.importFolder': 'Ordner wählen',
@@ -74,7 +76,7 @@ const en: Partial<Record<Key, string>> = {
   'mods.managed': 'by launcher', 'mods.folder': 'Open folder', 'mods.more': 'Load more', 'mods.import': 'Import',
   'prof.title': 'Profiles', 'prof.new': 'New profile', 'prof.edit': 'Edit profile', 'prof.name': 'Name', 'prof.version': 'Minecraft version', 'prof.loader': 'Mod loader',
   'prof.loaderVersion': 'Loader version', 'prof.newest': 'Newest stable', 'prof.lego.d': 'Installs the LEGO client + Fabric API (Fabric 1.21.11 only).',
-  'prof.fps': 'FPS pack', 'prof.fps.d': 'Sodium, Lithium, FerriteCore, ImmediatelyFast and EntityCulling where available for version and loader.',
+  'prof.fps': 'FPS pack', 'prof.fps.d': 'Sodium, Lithium, FerriteCore, ImmediatelyFast, EntityCulling and ModernFix (where available) plus tuned Java flags against stutter.',
   'prof.memory': 'Memory', 'prof.jvm': 'JVM arguments (-X…, -XX:…, -D… only)', 'prof.width': 'Window width', 'prof.height': 'Window height', 'prof.default': 'Default',
   'prof.icon': 'Icon', 'prof.save': 'Save', 'prof.back': 'Back', 'prof.delete': 'Delete', 'prof.saved': 'Profile saved', 'prof.play': 'Play',
   'prof.import': 'Import', 'prof.importFile': 'Modpack file (.mrpack / CurseForge .zip)', 'prof.importScan': 'Scan other launchers', 'prof.importFolder': 'Choose folder',
@@ -84,11 +86,14 @@ const en: Partial<Record<Key, string>> = {
 
 let lang: 'de' | 'en' = 'de';
 let custom: Record<string, string> | null = null;
+let builtin: Record<string, string> | null = null;
 
 /** 'custom' uses a user language pack on top of German (missing keys stay German). */
-export function setLang(l: 'de' | 'en' | 'custom', pack?: { name: string; strings: Record<string, string> } | null): void {
+export function setLang(l: string, pack?: { name: string; strings: Record<string, string> } | null): void {
   custom = l === 'custom' && pack ? pack.strings : null;
-  lang = l === 'en' ? 'en' : 'de';
+  builtin = packFor(l);
+  // Other built-in languages fall back to English for keys they don't cover.
+  lang = l === 'de' || l === 'custom' ? 'de' : 'en';
   document.documentElement.lang = l === 'custom' ? 'x-custom' : l;
 }
 
@@ -98,7 +103,7 @@ export function getLang(): 'de' | 'en' {
 }
 
 export function t(key: Key): string {
-  return custom?.[key] ?? (lang === 'en' ? en[key] : undefined) ?? de[key];
+  return custom?.[key] ?? builtin?.[key] ?? (lang === 'en' ? en[key] : undefined) ?? de[key];
 }
 
 /** All translatable texts (German + English) for the language pack editor / export. */

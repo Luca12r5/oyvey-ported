@@ -57,6 +57,13 @@ export class EventHub {
     return { status: 'offline', gameVersion: null, activity: null, updatedAt: p?.updatedAt ?? 0 };
   }
 
+  /** Users with a live stream or a fresh heartbeat (only a number is ever exposed). */
+  onlineCount(now = Date.now()): number {
+    const ids = new Set(this.streams.keys());
+    for (const [id, p] of this.presence) if (p.status !== 'offline' && now - p.updatedAt < PRESENCE_TTL) ids.add(id);
+    return ids.size;
+  }
+
   connected(userId: string): boolean {
     return this.streams.has(userId);
   }

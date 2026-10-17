@@ -4,18 +4,20 @@
 import { backgroundLowPower, go, loadIdentity, onLeave, state } from '../app.ts';
 import { api, errorToast, fmtDate, fmtNum, html, lego, mount, toast } from '../ui.ts';
 import { icon, pixel } from '../icons.ts';
+import { thumbnail, type Scene3DId } from '../bg3d.ts';
 import { createAvatar, type Anim, type Avatar } from '../avatar.ts';
 import { t } from '../i18n.ts';
 import type { GameProfile } from '../../core/settings.ts';
 import type { LaunchProgress } from '../../ipc-types.ts';
 import { signInFlow } from './account.ts';
 import { isProblem, parseLine, type LogEntry } from '../logparse.ts';
+import { showCrashDoctor } from '../crashdoc-ui.ts';
+import type { Diagnosis } from '../../core/crashdoc.ts';
 
 const logLines: LogEntry[] = [];
 let logFilter: 'all' | 'warn' | 'error' = 'all';
 const shown = (e: LogEntry) => logFilter === 'all' || (logFilter === 'error' ? isProblem(e) : e.level !== 'INFO' && e.level !== 'DEBUG');
-const skinAnimOn = () => { try { return localStorage.getItem('lego.skinAnim') !== '0'; } catch { return true; } };
-let anim: Anim = 'idle';
+const anim: Anim = 'idle';
 
 const LOADER_NAMES: Record<string, string> = { fabric: 'Fabric', quilt: 'Quilt', forge: 'Forge', neoforge: 'NeoForge' };
 
@@ -33,24 +35,15 @@ export async function playPage(el: HTMLElement): Promise<void> {
   const running = await api.gameRunning();
   const a = state.auth;
   mount(el, html`<div class="play">
-    <div class="play-top">
-      <div class="greet"><small>${a.signedIn ? t('play.welcome') : t('play.notSigned')}</small><h1>${a.signedIn ? a.name : 'LEGO Launcher'}</h1></div>
-      <div class="row top-ctl">
-      <label class="skin-anim">${t('play.skinAnim')}<span class="switch"><input type="checkbox" id="skinAnim" ${skinAnimOn() ? 'checked' : ''}><i></i></span></label>
-      <div class="seg" id="anims" role="group">
-        ${(['idle', 'walk', 'wave', 'spin'] as Anim[]).map((x) => html`<button class="${x === anim ? 'on' : ''}" data-anim="${x}" title="${t(`play.anim.${x}` as 'play.anim.idle')}">${icon(x === 'idle' ? 'users' : x === 'walk' ? 'gamepad' : x === 'wave' ? 'wave' : 'rotate', 'sm')}</button>`)}
-      </div></div>
-    </div>
-    <section class="stage" aria-hidden="true">
-      <div class="floor"></div>
-      <div class="halo"></div><div class="halo ring"></div><div class="halo ring r2"></div>
-      <div class="pedestal"></div>
-      <div class="nametag">${pixel('brick', 'xs')}<span>${a.signedIn ? a.name : 'LEGO'}</span></div>
+    <section class="stage panel">
+      <div class="grid-floor" aria-hidden="true"><i class="gf-floor"></i><i class="gf-ceil"></i></div>
+      <div class="nametag">${icon('pumpkin', 'sm')}<span>${a.signedIn ? a.name : s.guestName || 'Gast'}</span></div>
       <canvas id="avatar"></canvas>
     </section>
-    <aside class="side">
-      <div class="glass" id="progressCard"><div class="skeleton"></div></div>
-      <div class="news"><div class="news-h">${icon('news', 'sm')}<span>${t('play.news')}</span><button class="link" id="allNews">${icon('chevronRight', 'sm')}</button></div><div id="news"><div class="skeleton"></div></div></div>
+    <aside class="side panel">
+      <div class="panel-h">${icon('news', 'sm')}<span>${t('play.news')}</span><button class="link" id="allNews" title="Alle News">${icon('chevronRight', 'sm')}</button></div>
+      <div id="progressCard" class="coin-row"><div class="skeleton"></div></div>
+      <div class="news" id="news"><div class="skeleton"></div></div>
     </aside>
     <div class="launchbar">
       ${a.signedIn ? html`
@@ -69,7 +62,7 @@ export async function playPage(el: HTMLElement): Promise<void> {
     <div class="glass console-card" id="consoleCard" hidden>
       <div class="console-head"><h3>${icon('terminal', 'sm')} ${t('play.console')}</h3>
         <div class="seg" id="lvl"><button data-lvl="all">Alle</button><button data-lvl="warn">Warnungen <b id="cWarn">0</b></button><button data-lvl="error">Fehler <b id="cErr">0</b></button></div>
-        <div class="row"><button class="btn sm" id="firstErr" disabled>Zum ersten Fehler</button><button class="icon-btn" id="openLogs" title="Log-Ordner">${icon('folder', 'sm')}</button><button class="btn sm" id="copyLog">Kopieren</button><button class="icon-btn" id="closeConsole" title="Schließen">${icon('close', 'sm')}</button></div></div>
+        <div class="row"><button class="btn sm" id="firstErr" disabled>Zum ersten Fehler</button><button class="btn sm" id="crashDoc">${icon('wrench', 'sm')} Crash-Analyse</button><button class="icon-btn" id="openLogs" title="Log-Ordner">${icon('folder', 'sm')}</button><button class="btn sm" id="copyLog">Kopieren</button><button class="icon-btn" id="closeConsole" title="Schließen">${icon('close', 'sm')}</button></div></div>
       <div class="console" id="log" role="log" aria-live="off"></div></div>
   </div>`);
 
@@ -79,24 +72,10 @@ export async function playPage(el: HTMLElement): Promise<void> {
     avatar = createAvatar(el.querySelector<HTMLCanvasElement>('#avatar')!, s.reducedMotion);
     void avatar.setSkin(state.skin.skin, state.skin.variant, state.skin.cape).catch(() => {});
     avatar.play(anim);
-    avatar.setPaused(!skinAnimOn());
     setTimeout(() => avatar?.react('greet'), 700);
   } catch (e) {
     console.warn('avatar unavailable', e);
   }
-  el.querySelector('#skinAnim')!.addEventListener('change', (e) => {
-    const on = (e.target as HTMLInputElement).checked;
-    try { localStorage.setItem('lego.skinAnim', on ? '1' : '0'); } catch { /* storage blocked */ }
-    avatar?.setPaused(!on);
-  });
-  el.querySelector('#anims')!.addEventListener('click', (e) => {
-    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-anim]');
-    if (!b) return;
-    anim = b.dataset.anim as Anim;
-    el.querySelectorAll('#anims button').forEach((x) => x.classList.toggle('on', x === b));
-    avatar?.play(anim);
-  });
-
   // ---- launch / progress / log
   el.querySelector('#signin')?.addEventListener('click', () => void signInFlow());
   el.querySelector('#allNews')!.addEventListener('click', () => void go('news'));
@@ -149,6 +128,9 @@ export async function playPage(el: HTMLElement): Promise<void> {
     first?.classList.add('flash');
   });
   el.querySelector('#openLogs')!.addEventListener('click', () => void api.openFolder('logs'));
+  el.querySelector('#crashDoc')!.addEventListener('click', async () => {
+    try { const r = await api.crashAnalyze(profile.id); showCrashDoctor(r.profileId, r.diagnoses); } catch (e) { errorToast(e); }
+  });
   el.querySelector('#copyLog')!.addEventListener('click', () => void navigator.clipboard.writeText(logLines.map((l) => `[${l.time}] [${l.source}/${l.level}] ${l.text}`).join('\n')).then(() => toast('Log kopiert', 'ok')));
 
   const unsub = [
@@ -165,9 +147,10 @@ export async function playPage(el: HTMLElement): Promise<void> {
       if (logLines.length > 5000) logLines.splice(0, 1000);
       if (!consoleCard.hidden) appendLog(entry);
     }),
-    api.on('game-exit', (r: { code: number; hint: string | null }) => {
+    api.on('game-exit', (r: { code: number; hint: string | null; diagnoses?: Diagnosis[]; profileId?: string }) => {
       backgroundLowPower(false);
       if (r.code === 0) toast('Minecraft wurde beendet.');
+      else if (r.profileId) showCrashDoctor(r.profileId, r.diagnoses ?? [], r.code);
       else toast(`Minecraft ist abgestürzt (Code ${r.code}). ${r.hint ?? 'Details im Log.'}`, 'error');
       void loadIdentity();
       if (state.page === 'play') void go('play');
@@ -229,18 +212,36 @@ export async function playPage(el: HTMLElement): Promise<void> {
       mount(card, html`<p class="small muted">${t('play.dailyHint')}</p>`);
     }
   }
-  const newsBox = el.querySelector('#news')!;
+  const newsBox = el.querySelector<HTMLElement>('#news')!;
+  type News = { id: number; title: string; body: string; created_at: number };
+  let items: News[] = [];
   try {
-    const n = await lego<{ news: { id: number; title: string; body: string; created_at: number; kind: string }[] }>('GET', '/api/public/news');
-    const art = ['brick', 'diamond', 'rocket', 'creeper', 'trophy', 'sword', 'star', 'chest'];
-    mount(newsBox, n.news.length ? html`${n.news.slice(0, 6).map((x, i) => html`<article class="news-card">
-        <div class="nc-title">${x.title}</div>
-        <div class="nc-banner" data-k="${i % 4}">${pixel(art[(x.id ?? i) % art.length]!, 'lg')}<span class="nc-date">${fmtDate(x.created_at)}</span></div>
-        <p class="small">${x.body.slice(0, 120)}${x.body.length > 120 ? '…' : ''}</p></article>`)}` : html`<p class="small muted">${t('play.noNews')}</p>`);
-  } catch {
-    mount(newsBox, html`<p class="small muted">${t('play.newsOffline')}</p>`);
-  }
+    items = (await lego<{ news: News[] }>('GET', '/api/public/news')).news.slice(0, 6);
+  } catch { /* offline: built-in notes below */ }
+  if (!items.length) items = BUILTIN_NEWS;
+  const scenes: Scene3DId[] = ['graveyard', 'castle', 'portal', 'forest', 'tunnel', 'rooms'];
+  mount(newsBox, html`${items.map((x, i) => html`<article class="news-card">
+      <div class="nc-title">${x.title}</div>
+      <div class="nc-img"><img data-scene="${scenes[i % scenes.length]!}" alt=""><span class="nc-date">${fmtDate(x.created_at)}</span>${icon('pumpkin', 'sm')}</div>
+      <p class="small">${x.body.slice(0, 110)}${x.body.length > 110 ? '…' : ''}</p></article>`)}`);
+  // News art: small renders of the 3D scenes, one after another to stay responsive.
+  const cs = getComputedStyle(document.documentElement);
+  const pal = { bg: cs.getPropertyValue('--bg').trim() || '#05040a', accent: cs.getPropertyValue('--accent').trim() || '#ff7a1a', accent2: cs.getPropertyValue('--accent2').trim() || '#7c3aed' };
+  const imgs = [...newsBox.querySelectorAll<HTMLImageElement>('img[data-scene]')];
+  const next = () => {
+    const img = imgs.shift();
+    if (!img || !img.isConnected) return;
+    try { img.src = thumbnail(img.dataset.scene as Scene3DId, pal); } catch { /* no WebGL */ }
+    setTimeout(next, 40);
+  };
+  setTimeout(next, 120);
 }
+
+const BUILTIN_NEWS = [
+  { id: -1, title: 'Halloween Crypt', body: 'Neuer dunkler Look, Höllen-Intro, Skins-Tab und Seitenübergänge zum Auswählen.', created_at: Date.UTC(2026, 9, 17) },
+  { id: -2, title: 'VR-Modus', body: 'Visueller VR-Modus mit Tastatur und Maus oder echtes VR mit Headset – mit Browser in der Lobby.', created_at: Date.UTC(2026, 9, 16) },
+  { id: -3, title: 'Konsole & Crash-Hilfe', body: 'Die Konsole öffnet sich beim Spielstart und zeigt Fehler farbig an.', created_at: Date.UTC(2026, 9, 15) },
+];
 
 /** Set by the profile menu; the profiles page opens the editor directly. */
 export let newProfileRequested = false;
@@ -250,11 +251,11 @@ export function takeNewProfileRequest(): boolean {
   return v;
 }
 
-function profileMenu(anchor: HTMLElement): void {
+export function profileMenu(anchor: HTMLElement, dir: 'up' | 'down' = 'up'): void {
   document.querySelector('.menu')?.remove();
   const s = state.settings;
   const m = document.createElement('div');
-  m.className = 'menu up';
+  m.className = `menu ${dir}`;
   m.setAttribute('role', 'menu');
   const sorted = [...s.profiles].sort((a, b) => (b.lastPlayed ?? 0) - (a.lastPlayed ?? 0));
   mount(m, html`<div class="menu-h">${t('play.profile')}</div>
@@ -263,10 +264,17 @@ function profileMenu(anchor: HTMLElement): void {
     <button class="menu-i" data-act="new" role="menuitem">${icon('plus', 'sm')}<span class="grow">${t('play.newProfile')}</span></button>
     <button class="menu-i" data-act="manage" role="menuitem">${icon('profiles', 'sm')}<span class="grow">${t('nav.profiles')}</span></button>`);
   document.body.append(m);
-  const group = anchor.parentElement!.getBoundingClientRect();
-  m.style.left = `${group.left}px`;
-  m.style.width = `${group.width}px`;
-  m.style.bottom = `${innerHeight - group.top + 8}px`;
+  if (dir === 'up') {
+    const group = anchor.parentElement!.getBoundingClientRect();
+    m.style.left = `${group.left}px`;
+    m.style.width = `${group.width}px`;
+    m.style.bottom = `${innerHeight - group.top + 8}px`;
+  } else {
+    const r = anchor.getBoundingClientRect();
+    m.style.top = `${r.bottom + 6}px`;
+    m.style.left = `${Math.max(8, Math.min(r.left, innerWidth - 340))}px`;
+    m.style.width = '320px';
+  }
   const close = (e?: Event) => {
     if (e && m.contains(e.target as Node)) return;
     m.remove();

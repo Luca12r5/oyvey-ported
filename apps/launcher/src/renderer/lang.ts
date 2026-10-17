@@ -1,0 +1,152 @@
+// Built-in language packs beyond German/English. They cover the navigation,
+// play screen, accounts, the main settings and profiles; any key not listed
+// here falls back to English (then German).
+
+export const LANGS = [
+  ['de', 'Deutsch'], ['en', 'English'], ['es', 'Español'], ['fr', 'Français'], ['it', 'Italiano'], ['nl', 'Nederlands'], ['pl', 'Polski'], ['pt', 'Português'],
+  ['tr', 'Türkçe'], ['ru', 'Русский'], ['uk', 'Українська'], ['cs', 'Čeština'], ['sv', 'Svenska'], ['ja', '日本語'], ['zh', '中文'], ['ar', 'العربية'],
+] as const;
+export type LangCode = (typeof LANGS)[number][0];
+export const LANG_CODES: readonly string[] = LANGS.map(([c]) => c);
+
+// Key order for the packs below (one array per language, same order).
+const KEYS = [
+  'nav.profiles', 'nav.friends', 'nav.rewards', 'nav.account', 'nav.dev', 'nav.settings', 'nav.more', 'nav.vr',
+  'acc.signin', 'acc.add', 'acc.signout', 'acc.manage',
+  'play.play', 'play.running', 'play.installing', 'play.signin', 'play.welcome', 'play.notSigned', 'play.profile', 'play.newProfile', 'play.console', 'play.cancel',
+  'play.news', 'play.today', 'play.noNews', 'play.newsOffline', 'play.dailyHint', 'play.fun',
+  'set.title', 'set.search', 'set.general', 'set.appearance', 'set.game', 'set.accounts', 'set.advanced', 'set.about', 'set.language', 'set.language.d', 'set.saved',
+  'set.motion', 'set.intro', 'set.introPlay', 'intro.skip',
+  'mods.title', 'mods.installed', 'mods.search', 'mods.install', 'mods.remove',
+  'prof.title', 'prof.new', 'prof.edit', 'prof.name', 'prof.version', 'prof.loader', 'prof.memory', 'prof.save', 'prof.back', 'prof.delete', 'prof.play',
+] as const;
+
+const P: Record<string, string[]> = {
+  es: ['Perfiles', 'Amigos', 'Recompensas', 'Cuenta', 'Desarrollador', 'Ajustes', 'Más', 'Modo VR',
+    'Iniciar sesión', 'Añadir cuenta', 'Cerrar sesión', 'Gestionar cuentas',
+    'JUGAR', 'EN EJECUCIÓN', 'INSTALANDO', 'Iniciar sesión con Microsoft', 'Bienvenido de nuevo', 'Sin sesión', 'Elegir perfil', 'Nuevo perfil', 'Consola', 'Cancelar',
+    'Noticias', 'Ganado hoy', 'No hay noticias.', 'Noticias no disponibles (sin conexión).', 'Las monedas se ganan jugando y con minijuegos LEGO.', '¡Diviértete!',
+    'Ajustes', 'Buscar ajustes…', 'General', 'Apariencia', 'Juego', 'Cuentas', 'Avanzado', 'Acerca de', 'Idioma', 'Idioma de la interfaz del launcher.', 'Guardado',
+    'Reducir movimiento', 'Animación de inicio', 'Reproducir', 'Saltar',
+    'Mods y contenido', 'Instalados', 'Buscar en Modrinth…', 'Instalar', 'Quitar',
+    'Perfiles', 'Nuevo perfil', 'Editar perfil', 'Nombre', 'Versión de Minecraft', 'Cargador de mods', 'Memoria', 'Guardar', 'Atrás', 'Eliminar', 'Jugar'],
+  fr: ['Profils', 'Amis', 'Récompenses', 'Compte', 'Développeur', 'Paramètres', 'Plus', 'Mode VR',
+    'Se connecter', 'Ajouter un compte', 'Se déconnecter', 'Gérer les comptes',
+    'JOUER', 'EN COURS', 'INSTALLATION', 'Se connecter avec Microsoft', 'Bon retour', 'Non connecté', 'Choisir un profil', 'Nouveau profil', 'Console', 'Annuler',
+    'Actualités', 'Gagné aujourd’hui', 'Aucune actualité.', 'Actualités indisponibles (hors ligne).', 'Les pièces se gagnent en jouant et avec les mini-jeux LEGO.', 'Amuse-toi bien !',
+    'Paramètres', 'Rechercher…', 'Général', 'Apparence', 'Jeu', 'Comptes', 'Avancé', 'À propos', 'Langue', 'Langue de l’interface du launcher.', 'Enregistré',
+    'Réduire les animations', 'Animation de démarrage', 'Lire', 'Passer',
+    'Mods et contenu', 'Installés', 'Rechercher sur Modrinth…', 'Installer', 'Retirer',
+    'Profils', 'Nouveau profil', 'Modifier le profil', 'Nom', 'Version de Minecraft', 'Chargeur de mods', 'Mémoire', 'Enregistrer', 'Retour', 'Supprimer', 'Jouer'],
+  it: ['Profili', 'Amici', 'Ricompense', 'Account', 'Sviluppatore', 'Impostazioni', 'Altro', 'Modalità VR',
+    'Accedi', 'Aggiungi account', 'Esci', 'Gestisci account',
+    'GIOCA', 'IN ESECUZIONE', 'INSTALLAZIONE', 'Accedi con Microsoft', 'Bentornato', 'Non connesso', 'Scegli profilo', 'Nuovo profilo', 'Console', 'Annulla',
+    'Notizie', 'Guadagnato oggi', 'Nessuna notizia.', 'Notizie non disponibili (offline).', 'Le monete si guadagnano giocando e con i minigiochi LEGO.', 'Buon divertimento!',
+    'Impostazioni', 'Cerca impostazioni…', 'Generale', 'Aspetto', 'Gioco', 'Account', 'Avanzate', 'Info', 'Lingua', 'Lingua dell’interfaccia del launcher.', 'Salvato',
+    'Riduci animazioni', 'Animazione iniziale', 'Riproduci', 'Salta',
+    'Mod e contenuti', 'Installati', 'Cerca su Modrinth…', 'Installa', 'Rimuovi',
+    'Profili', 'Nuovo profilo', 'Modifica profilo', 'Nome', 'Versione di Minecraft', 'Mod loader', 'Memoria', 'Salva', 'Indietro', 'Elimina', 'Gioca'],
+  nl: ['Profielen', 'Vrienden', 'Beloningen', 'Account', 'Ontwikkelaar', 'Instellingen', 'Meer', 'VR-modus',
+    'Inloggen', 'Account toevoegen', 'Uitloggen', 'Accounts beheren',
+    'SPELEN', 'ACTIEF', 'INSTALLEREN', 'Inloggen met Microsoft', 'Welkom terug', 'Niet ingelogd', 'Profiel kiezen', 'Nieuw profiel', 'Console', 'Annuleren',
+    'Nieuws', 'Vandaag verdiend', 'Geen nieuws.', 'Nieuws niet beschikbaar (offline).', 'Munten verdien je met speeltijd en LEGO-minigames.', 'Veel plezier!',
+    'Instellingen', 'Instellingen zoeken…', 'Algemeen', 'Uiterlijk', 'Spel', 'Accounts', 'Geavanceerd', 'Over', 'Taal', 'Taal van de launcher.', 'Opgeslagen',
+    'Minder beweging', 'Startanimatie', 'Afspelen', 'Overslaan',
+    'Mods en inhoud', 'Geïnstalleerd', 'Zoeken op Modrinth…', 'Installeren', 'Verwijderen',
+    'Profielen', 'Nieuw profiel', 'Profiel bewerken', 'Naam', 'Minecraft-versie', 'Modloader', 'Geheugen', 'Opslaan', 'Terug', 'Verwijderen', 'Spelen'],
+  pl: ['Profile', 'Znajomi', 'Nagrody', 'Konto', 'Deweloper', 'Ustawienia', 'Więcej', 'Tryb VR',
+    'Zaloguj się', 'Dodaj konto', 'Wyloguj', 'Zarządzaj kontami',
+    'GRAJ', 'URUCHOMIONO', 'INSTALOWANIE', 'Zaloguj się przez Microsoft', 'Witaj ponownie', 'Niezalogowany', 'Wybierz profil', 'Nowy profil', 'Konsola', 'Anuluj',
+    'Aktualności', 'Zarobione dziś', 'Brak aktualności.', 'Aktualności niedostępne (offline).', 'Monety zdobywasz za czas gry i minigry LEGO.', 'Miłej zabawy!',
+    'Ustawienia', 'Szukaj ustawień…', 'Ogólne', 'Wygląd', 'Gra', 'Konta', 'Zaawansowane', 'O programie', 'Język', 'Język interfejsu launchera.', 'Zapisano',
+    'Ogranicz ruch', 'Animacja startowa', 'Odtwórz', 'Pomiń',
+    'Mody i zawartość', 'Zainstalowane', 'Szukaj w Modrinth…', 'Zainstaluj', 'Usuń',
+    'Profile', 'Nowy profil', 'Edytuj profil', 'Nazwa', 'Wersja Minecrafta', 'Loader modów', 'Pamięć', 'Zapisz', 'Wstecz', 'Usuń', 'Graj'],
+  pt: ['Perfis', 'Amigos', 'Recompensas', 'Conta', 'Desenvolvedor', 'Configurações', 'Mais', 'Modo VR',
+    'Entrar', 'Adicionar conta', 'Sair', 'Gerenciar contas',
+    'JOGAR', 'EM EXECUÇÃO', 'INSTALANDO', 'Entrar com a Microsoft', 'Bem-vindo de volta', 'Não conectado', 'Escolher perfil', 'Novo perfil', 'Console', 'Cancelar',
+    'Notícias', 'Ganho hoje', 'Sem notícias.', 'Notícias indisponíveis (offline).', 'Moedas são ganhas jogando e com minijogos LEGO.', 'Divirta-se!',
+    'Configurações', 'Pesquisar…', 'Geral', 'Aparência', 'Jogo', 'Contas', 'Avançado', 'Sobre', 'Idioma', 'Idioma da interface do launcher.', 'Salvo',
+    'Reduzir movimento', 'Animação inicial', 'Reproduzir', 'Pular',
+    'Mods e conteúdo', 'Instalados', 'Pesquisar no Modrinth…', 'Instalar', 'Remover',
+    'Perfis', 'Novo perfil', 'Editar perfil', 'Nome', 'Versão do Minecraft', 'Mod loader', 'Memória', 'Salvar', 'Voltar', 'Excluir', 'Jogar'],
+  tr: ['Profiller', 'Arkadaşlar', 'Ödüller', 'Hesap', 'Geliştirici', 'Ayarlar', 'Daha fazla', 'VR modu',
+    'Giriş yap', 'Hesap ekle', 'Çıkış yap', 'Hesapları yönet',
+    'OYNA', 'ÇALIŞIYOR', 'KURULUYOR', 'Microsoft ile giriş yap', 'Tekrar hoş geldin', 'Giriş yapılmadı', 'Profil seç', 'Yeni profil', 'Konsol', 'İptal',
+    'Haberler', 'Bugün kazanılan', 'Haber yok.', 'Haberler kullanılamıyor (çevrimdışı).', 'Paralar oyun süresi ve LEGO mini oyunlarıyla kazanılır.', 'İyi eğlenceler!',
+    'Ayarlar', 'Ayarlarda ara…', 'Genel', 'Görünüm', 'Oyun', 'Hesaplar', 'Gelişmiş', 'Hakkında', 'Dil', 'Launcher arayüzünün dili.', 'Kaydedildi',
+    'Hareketi azalt', 'Başlangıç animasyonu', 'Oynat', 'Geç',
+    'Modlar ve içerik', 'Kurulu', 'Modrinth’te ara…', 'Kur', 'Kaldır',
+    'Profiller', 'Yeni profil', 'Profili düzenle', 'Ad', 'Minecraft sürümü', 'Mod yükleyici', 'Bellek', 'Kaydet', 'Geri', 'Sil', 'Oyna'],
+  ru: ['Профили', 'Друзья', 'Награды', 'Аккаунт', 'Разработчик', 'Настройки', 'Ещё', 'Режим VR',
+    'Войти', 'Добавить аккаунт', 'Выйти', 'Управление аккаунтами',
+    'ИГРАТЬ', 'ЗАПУЩЕНО', 'УСТАНОВКА', 'Войти через Microsoft', 'С возвращением', 'Вход не выполнен', 'Выбрать профиль', 'Новый профиль', 'Консоль', 'Отмена',
+    'Новости', 'Заработано сегодня', 'Новостей нет.', 'Новости недоступны (офлайн).', 'Монеты даются за время игры и мини-игры LEGO.', 'Приятной игры!',
+    'Настройки', 'Поиск настроек…', 'Общие', 'Внешний вид', 'Игра', 'Аккаунты', 'Дополнительно', 'О программе', 'Язык', 'Язык интерфейса лаунчера.', 'Сохранено',
+    'Меньше анимаций', 'Стартовая анимация', 'Воспроизвести', 'Пропустить',
+    'Моды и контент', 'Установлено', 'Поиск на Modrinth…', 'Установить', 'Удалить',
+    'Профили', 'Новый профиль', 'Изменить профиль', 'Имя', 'Версия Minecraft', 'Загрузчик модов', 'Память', 'Сохранить', 'Назад', 'Удалить', 'Играть'],
+  uk: ['Профілі', 'Друзі', 'Нагороди', 'Обліковий запис', 'Розробник', 'Налаштування', 'Більше', 'Режим VR',
+    'Увійти', 'Додати обліковий запис', 'Вийти', 'Керувати обліковими записами',
+    'ГРАТИ', 'ЗАПУЩЕНО', 'ВСТАНОВЛЕННЯ', 'Увійти через Microsoft', 'З поверненням', 'Не виконано вхід', 'Вибрати профіль', 'Новий профіль', 'Консоль', 'Скасувати',
+    'Новини', 'Зароблено сьогодні', 'Новин немає.', 'Новини недоступні (офлайн).', 'Монети даються за час гри та міні-ігри LEGO.', 'Гарної гри!',
+    'Налаштування', 'Пошук налаштувань…', 'Загальні', 'Вигляд', 'Гра', 'Облікові записи', 'Додатково', 'Про програму', 'Мова', 'Мова інтерфейсу лаунчера.', 'Збережено',
+    'Менше анімацій', 'Стартова анімація', 'Відтворити', 'Пропустити',
+    'Моди та вміст', 'Встановлено', 'Пошук на Modrinth…', 'Встановити', 'Видалити',
+    'Профілі', 'Новий профіль', 'Редагувати профіль', 'Назва', 'Версія Minecraft', 'Завантажувач модів', 'Пам’ять', 'Зберегти', 'Назад', 'Видалити', 'Грати'],
+  cs: ['Profily', 'Přátelé', 'Odměny', 'Účet', 'Vývojář', 'Nastavení', 'Více', 'Režim VR',
+    'Přihlásit se', 'Přidat účet', 'Odhlásit se', 'Spravovat účty',
+    'HRÁT', 'SPUŠTĚNO', 'INSTALACE', 'Přihlásit se přes Microsoft', 'Vítej zpět', 'Nepřihlášen', 'Vybrat profil', 'Nový profil', 'Konzole', 'Zrušit',
+    'Novinky', 'Dnes získáno', 'Žádné novinky.', 'Novinky nedostupné (offline).', 'Mince získáš za čas hraní a LEGO minihry.', 'Bav se!',
+    'Nastavení', 'Hledat v nastavení…', 'Obecné', 'Vzhled', 'Hra', 'Účty', 'Pokročilé', 'O aplikaci', 'Jazyk', 'Jazyk rozhraní launcheru.', 'Uloženo',
+    'Omezit pohyb', 'Úvodní animace', 'Přehrát', 'Přeskočit',
+    'Mody a obsah', 'Nainstalováno', 'Hledat na Modrinth…', 'Nainstalovat', 'Odebrat',
+    'Profily', 'Nový profil', 'Upravit profil', 'Název', 'Verze Minecraftu', 'Mod loader', 'Paměť', 'Uložit', 'Zpět', 'Smazat', 'Hrát'],
+  sv: ['Profiler', 'Vänner', 'Belöningar', 'Konto', 'Utvecklare', 'Inställningar', 'Mer', 'VR-läge',
+    'Logga in', 'Lägg till konto', 'Logga ut', 'Hantera konton',
+    'SPELA', 'KÖRS', 'INSTALLERAR', 'Logga in med Microsoft', 'Välkommen tillbaka', 'Inte inloggad', 'Välj profil', 'Ny profil', 'Konsol', 'Avbryt',
+    'Nyheter', 'Intjänat idag', 'Inga nyheter.', 'Nyheter otillgängliga (offline).', 'Mynt tjänas genom speltid och LEGO-minispel.', 'Ha kul!',
+    'Inställningar', 'Sök inställningar…', 'Allmänt', 'Utseende', 'Spel', 'Konton', 'Avancerat', 'Om', 'Språk', 'Launcherns språk.', 'Sparat',
+    'Minska rörelse', 'Startanimation', 'Spela upp', 'Hoppa över',
+    'Moddar och innehåll', 'Installerade', 'Sök på Modrinth…', 'Installera', 'Ta bort',
+    'Profiler', 'Ny profil', 'Redigera profil', 'Namn', 'Minecraft-version', 'Modladdare', 'Minne', 'Spara', 'Tillbaka', 'Radera', 'Spela'],
+  ja: ['プロフィール', 'フレンド', '報酬', 'アカウント', '開発者', '設定', 'その他', 'VRモード',
+    'サインイン', 'アカウントを追加', 'サインアウト', 'アカウント管理',
+    'プレイ', '実行中', 'インストール中', 'Microsoftでサインイン', 'おかえりなさい', '未サインイン', 'プロフィールを選択', '新しいプロフィール', 'コンソール', 'キャンセル',
+    'ニュース', '今日の獲得', 'ニュースはありません。', 'ニュースを取得できません（オフライン）。', 'コインはプレイ時間とLEGOミニゲームで獲得できます。', '楽しんでね！',
+    '設定', '設定を検索…', '一般', '外観', 'ゲーム', 'アカウント', '詳細', '情報', '言語', 'ランチャーの表示言語。', '保存しました',
+    '動きを減らす', 'スタートアニメーション', '再生', 'スキップ',
+    'Modとコンテンツ', 'インストール済み', 'Modrinthで検索…', 'インストール', '削除',
+    'プロフィール', '新しいプロフィール', 'プロフィールを編集', '名前', 'Minecraftのバージョン', 'Modローダー', 'メモリ', '保存', '戻る', '削除', 'プレイ'],
+  zh: ['配置', '好友', '奖励', '账户', '开发者', '设置', '更多', 'VR 模式',
+    '登录', '添加账户', '退出登录', '管理账户',
+    '开始游戏', '运行中', '安装中', '使用 Microsoft 登录', '欢迎回来', '未登录', '选择配置', '新建配置', '控制台', '取消',
+    '新闻', '今日获得', '暂无新闻。', '新闻不可用（离线）。', '通过游戏时长和 LEGO 小游戏获得金币。', '玩得开心！',
+    '设置', '搜索设置…', '常规', '外观', '游戏', '账户', '高级', '关于', '语言', '启动器界面语言。', '已保存',
+    '减少动画', '启动动画', '播放', '跳过',
+    '模组与内容', '已安装', '在 Modrinth 搜索…', '安装', '移除',
+    '配置', '新建配置', '编辑配置', '名称', 'Minecraft 版本', '模组加载器', '内存', '保存', '返回', '删除', '开始游戏'],
+  ar: ['الملفات الشخصية', 'الأصدقاء', 'المكافآت', 'الحساب', 'المطوّر', 'الإعدادات', 'المزيد', 'وضع الواقع الافتراضي',
+    'تسجيل الدخول', 'إضافة حساب', 'تسجيل الخروج', 'إدارة الحسابات',
+    'العب', 'قيد التشغيل', 'جارٍ التثبيت', 'تسجيل الدخول عبر Microsoft', 'مرحبًا بعودتك', 'غير مسجّل الدخول', 'اختر ملفًا', 'ملف جديد', 'وحدة التحكم', 'إلغاء',
+    'الأخبار', 'المكتسب اليوم', 'لا توجد أخبار.', 'الأخبار غير متاحة (دون اتصال).', 'تُكسب العملات من وقت اللعب وألعاب LEGO المصغّرة.', 'استمتع!',
+    'الإعدادات', 'ابحث في الإعدادات…', 'عام', 'المظهر', 'اللعبة', 'الحسابات', 'متقدّم', 'حول', 'اللغة', 'لغة واجهة المشغّل.', 'تم الحفظ',
+    'تقليل الحركة', 'رسوم البداية', 'تشغيل', 'تخطٍّ',
+    'المودات والمحتوى', 'المثبّتة', 'ابحث في Modrinth…', 'تثبيت', 'إزالة',
+    'الملفات الشخصية', 'ملف جديد', 'تعديل الملف', 'الاسم', 'إصدار Minecraft', 'محمّل المودات', 'الذاكرة', 'حفظ', 'رجوع', 'حذف', 'العب'],
+};
+
+/** Strings of a built-in pack (key → text), or null for de/en. */
+export function packFor(code: string): Record<string, string> | null {
+  const arr = P[code];
+  if (!arr) return null;
+  const out: Record<string, string> = {};
+  KEYS.forEach((k, i) => { if (arr[i]) out[k] = arr[i]!; });
+  return out;
+}
+
+/** For tests: every pack has exactly one text per key. */
+export function packSizes(): Record<string, number> {
+  return Object.fromEntries(Object.entries(P).map(([k, v]) => [k, v.length]));
+}
+export const PACK_KEY_COUNT = KEYS.length;

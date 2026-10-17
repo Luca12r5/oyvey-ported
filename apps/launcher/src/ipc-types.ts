@@ -2,6 +2,7 @@
 
 import type { GameProfile, LoaderType, Settings } from './core/settings.ts';
 import type { InstalledMod, ProjectType, SearchHit } from './core/modrinth.ts';
+import type { Diagnosis, Fix } from './core/crashdoc.ts';
 import type { FoundInstance } from './core/importers.ts';
 
 export interface AccountInfo { uuid: string; name: string; active: boolean }
@@ -69,6 +70,11 @@ export interface LauncherApi {
   switchAccount(uuid: string): Promise<AuthState>;
   reconnectLego(): Promise<AuthState>;
   skin(uuid?: string): Promise<SkinData>;
+  uploadSkin(dataUrl: string, variant: 'classic' | 'slim'): Promise<SkinData>;
+  resetSkin(): Promise<SkinData>;
+  crashLast(): Promise<{ profileId: string; diagnoses: Diagnosis[] } | null>;
+  crashAnalyze(profileId: string): Promise<{ profileId: string; diagnoses: Diagnosis[] }>;
+  crashFix(profileId: string, fix: Fix | { kind: 'enable-mod'; filename: string }): Promise<{ undo: Fix | { kind: 'enable-mod'; filename: string } | null; message: string }>;
   versions(): Promise<{ id: string; type: string; releaseTime: string }[]>;
   loaderVersions(type: LoaderType, gameVersion: string): Promise<{ version: string; stable: boolean }[]>;
   launch(profileId: string): Promise<{ ok: boolean; error?: string }>;

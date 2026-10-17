@@ -1,6 +1,6 @@
 // Launcher settings and game profiles (stored as JSON in the user data dir).
 
-import { DEFAULT_FX, type ButtonStyle, type CustomFont, type CustomLanguage, type DesignFx, type DesignPreset, type HeadFont, type StageStyle, type SurfaceStyle, type UiFont } from './design.ts';
+import { DEFAULT_FX, type ButtonStyle, type CustomFont, type CustomLanguage, type DesignFx, type DesignPreset, type HeadFont, type StageStyle, type SurfaceStyle, type SkinEntry, type Transition, type UiFont } from './design.ts';
 
 export const LOADER_TYPES = ['fabric', 'quilt', 'forge', 'neoforge'] as const;
 export type LoaderType = (typeof LOADER_TYPES)[number];
@@ -52,7 +52,8 @@ export interface Settings {
   settingsVersion: number;
   themeId: string;
   customThemes: unknown[];
-  language: 'de' | 'en' | 'custom';
+  /** UI language code (de, en, es, fr, …) or 'custom' for a user pack. */
+  language: string;
   backendUrl: string;
   selectedProfile: string;
   profiles: GameProfile[];
@@ -92,6 +93,14 @@ export interface Settings {
   customFont: CustomFont | null;
   buttonStyle: ButtonStyle;
   customLanguage: CustomLanguage | null;
+  /** Animation between pages. */
+  transition: Transition;
+  /** Rare Halloween jumpscares (opt-in, never during sign-in/install/launch). */
+  jumpscares: boolean;
+  /** Skins tab library. */
+  skinLibrary: SkinEntry[];
+  /** Guest mode: Minecraft name whose public skin is shown (no sign-in, display only). */
+  guestName: string;
 }
 
 export const DEFAULT_PROFILE: GameProfile = {
@@ -116,7 +125,7 @@ export function migrateProfile(p: Partial<GameProfile> & { loader?: string | nul
   } as GameProfile;
 }
 
-export const SETTINGS_VERSION = 3;
+export const SETTINGS_VERSION = 4;
 
 /** Settings saved by older launcher versions: adopt the new default look once. */
 export function migrateSettings(s: Partial<Settings>): Partial<Settings> {
@@ -124,19 +133,23 @@ export function migrateSettings(s: Partial<Settings>): Partial<Settings> {
   if (v < 2) s = { ...s, themeId: 'lego-graphite', background: 'nebula', accentColor: null };
   // Halloween edition: users still on the old default get the new look; picked themes stay.
   if (v < 3 && s.themeId === 'lego-graphite') s = { ...s, themeId: 'halloween', background: 'graveyard' };
+  // Round 2: the darker "Crypt" look replaces the Nocturne default (chosen themes stay).
+  if (v < 4 && s.themeId === 'halloween') s = { ...s, themeId: 'crypt' };
+  if (v < 4 && (s.buttonStyle ?? 'nocturne') === 'nocturne') s = { ...s, buttonStyle: 'crypt' };
+  if (v < 4 && (s.headFont ?? 'poppins') === 'poppins') s = { ...s, headFont: 'press' };
   return { ...s, settingsVersion: SETTINGS_VERSION };
 }
 
 export function defaultSettings(): Settings {
   return {
     settingsVersion: SETTINGS_VERSION,
-    themeId: 'halloween', customThemes: [], language: 'de', backendUrl: 'https://api.lego-launcher.example',
+    themeId: 'crypt', customThemes: [], language: 'de', backendUrl: 'https://api.lego-launcher.example',
     selectedProfile: DEFAULT_PROFILE.id, profiles: [{ ...DEFAULT_PROFILE, createdAt: Date.now() }],
     closeOnLaunch: false, reducedMotion: false, uiScale: 1, autoUpdate: 'ask', rarityColors: {},
     accentColor: null, background: 'graveyard', backgroundQuality: 0.6, snow: false, showSnapshots: false, showHistorical: false, curseforgeKey: '', msClientId: '',
     introEnabled: true, introSound: true, autoConsole: true,
     fx: { ...DEFAULT_FX }, surface: 'glass', stage: 'portal', designPresets: [], bgImage: '', guest: false,
-    uiFont: 'theme', headFont: 'poppins', customFont: null, buttonStyle: 'nocturne', customLanguage: null,
+    uiFont: 'theme', headFont: 'press', customFont: null, buttonStyle: 'crypt', customLanguage: null, transition: 'slide', jumpscares: false, skinLibrary: [], guestName: '',
   };
 }
 
@@ -166,4 +179,16 @@ export function validateProfile(p: Partial<GameProfile>, totalMemMb: number): st
   if (p.jvmArgs && parseJvmArgs(p.jvmArgs).rejected.length) e.push(`Nicht erlaubte JVM-Argumente: ${parseJvmArgs(p.jvmArgs).rejected.join(' ')}`);
   if (p.resolution && (p.resolution.width < 320 || p.resolution.height < 240 || p.resolution.width > 7680 || p.resolution.height > 4320)) e.push('Auflösung 320x240 bis 7680x4320');
   return e;
+}
+
+/**
+ * Tuned G1 flags for the client (short pauses, less stutter), only when the
+ * user chose no garbage collector of their own.
+ */
+export function fastJvmFlags(userArgs: string[]): string[] {
+  if (userArgs.some((a) => /^-XX:[+-]Use\w+GC$/.test(a))) return [];
+  return [
+    '-XX:+UnlockExperimentalVMOptions', '-XX:+UseG1GC', '-XX:G1NewSizePercent=20', '-XX:G1ReservePercent=20',
+    '-XX:MaxGCPauseMillis=50', '-XX:G1HeapRegionSize=32M', '-XX:+ParallelRefProcEnabled', '-XX:+DisableExplicitGC', '-XX:+AlwaysPreTouch',
+  ];
 }

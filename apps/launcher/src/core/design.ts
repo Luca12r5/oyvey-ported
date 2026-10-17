@@ -1,3 +1,4 @@
+import { validSkinPng } from './msauth.ts';
 // Design editor data: effect parameters, surface style and saved presets.
 // Shared by the renderer (live preview) and the main process (validation).
 
@@ -81,8 +82,11 @@ export const UI_FONTS = ['theme', 'inter', 'poppins', 'nunito', 'orbitron', 'mon
 export type UiFont = (typeof UI_FONTS)[number];
 export const HEAD_FONTS = ['poppins', 'creepster', 'nosifer', 'orbitron', 'pixel', 'press', 'inter', 'custom'] as const;
 export type HeadFont = (typeof HEAD_FONTS)[number];
-export const BUTTON_STYLES = ['nocturne', 'brick', 'neon', 'glass', 'pixel'] as const;
+export const BUTTON_STYLES = ['crypt', 'nocturne', 'brick', 'neon', 'glass', 'pixel'] as const;
 export type ButtonStyle = (typeof BUTTON_STYLES)[number];
+/** Page transition animations (Optionen → Animationen). */
+export const TRANSITIONS = ['slide', 'fade', 'zoom', 'glitch', 'pumpkin', 'none'] as const;
+export type Transition = (typeof TRANSITIONS)[number];
 
 export interface CustomFont { name: string; data: string }
 export interface CustomLanguage { name: string; strings: Record<string, string> }
@@ -110,3 +114,22 @@ export function sanitizeLanguage(x: unknown): CustomLanguage | null {
 }
 
 export const pick = <T extends string>(list: readonly T[], v: unknown, d: T): T => ((list as readonly string[]).includes(String(v)) ? (v as T) : d);
+
+export interface SkinEntry { id: string; name: string; data: string; variant: 'classic' | 'slim' }
+
+/** Saved skins (Skins tab): PNG data URLs that pass the 64×64 header check. */
+export function sanitizeSkinLib(v: unknown): SkinEntry[] {
+  if (!Array.isArray(v)) return [];
+  const out: SkinEntry[] = [];
+  for (const raw of v.slice(0, 40)) {
+    if (!raw || typeof raw !== 'object') continue;
+    const e = raw as Record<string, unknown>;
+    if (typeof e.data !== 'string' || !e.data.startsWith('data:image/png;base64,') || e.data.length > 120_000) continue;
+    const bytes = Uint8Array.from(atob(e.data.slice(22)), (c) => c.charCodeAt(0));
+    if (!validSkinPng(bytes)) continue;
+    const id = typeof e.id === 'string' && /^[a-z0-9-]{1,40}$/.test(e.id) ? e.id : `s-${out.length}-${bytes.length}`;
+    const name = typeof e.name === 'string' ? e.name.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 32) || 'Skin' : 'Skin';
+    out.push({ id, name, data: e.data, variant: e.variant === 'slim' ? 'slim' : 'classic' });
+  }
+  return out;
+}

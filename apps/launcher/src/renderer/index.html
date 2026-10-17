@@ -10,17 +10,27 @@
 <body>
   <canvas id="bg3d" class="bg-canvas" aria-hidden="true" hidden></canvas>
   <canvas id="bg" class="bg-canvas" aria-hidden="true"></canvas>
-  <header class="titlebar">
-    <div class="tb-left"><span id="tbLogo"></span><span class="wordmark">LEGO<b>LAUNCHER</b></span><span class="tb-sub" id="tbVersion"></span></div>
-    <div class="tb-right">
-      <div id="tbCoins" class="tb-coins" hidden></div>
-      <div class="acct" id="acct"></div>
-      <div class="win" id="win"></div>
-    </div>
-  </header>
-  <div class="shell">
+  <div class="frame">
     <nav class="rail" id="sidebar" aria-label="Navigation"></nav>
-    <main class="content" id="view" tabindex="-1"></main>
+    <div class="col">
+      <header class="titlebar">
+        <div class="tb-left">
+          <button class="tb-nav" id="navBack" aria-label="Zurück" title="Zurück" disabled></button>
+          <button class="tb-nav" id="navFwd" aria-label="Vor" title="Vor" disabled></button>
+          <div class="tb-title"><span id="tbLogo"></span><span class="wordmark">LEGO<b>LAUNCHER</b></span><small class="tb-online" id="tbOnline" hidden></small></div>
+          <span class="tb-sub" id="tbVersion"></span>
+        </div>
+        <div class="tb-right">
+          <button class="tb-sq" id="tbBell" aria-label="Benachrichtigungen" title="Benachrichtigungen"></button>
+          <div id="tbInst"></div>
+          <div id="tbCoins" class="tb-coins" hidden></div>
+          <div class="acct" id="acct"></div>
+          <button class="tb-sq" id="tbFriends" aria-label="Freunde" title="Freunde"></button>
+          <div class="win" id="win"></div>
+        </div>
+      </header>
+      <main class="content" id="view" tabindex="-1"></main>
+    </div>
   </div>
   <div id="toasts" class="toasts" aria-live="polite"></div>
   <dialog id="dialog" class="dialog"></dialog>

@@ -17,7 +17,7 @@ export function registerPublic(app: App): void {
   const db = app.db;
 
   r.get('/api/public/status', () => ({
-    ok: true, apiVersion: API_VERSION, maintenance: app.config.maintenance, time: Date.now(),
+    ok: true, apiVersion: API_VERSION, maintenance: app.config.maintenance, time: Date.now(), online: app.events.onlineCount(),
     paymentsEnabled: !!(app.config.stripeSecretKey && app.config.stripeWebhookSecret),
   }), { auth: 'none' });
 
