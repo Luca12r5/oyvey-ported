@@ -191,6 +191,7 @@ public final class Visuals {
                sec("Namensschild", () -> NameFx.render(var1));
                sec("Haustier", () -> PetWorld.render(var1));
                sec("Fahrzeug", () -> VehicleWorld.render(var1));
+               sec("Sky HUD", () -> SkyLyrics.render(var1));
                sec("Emotes", () -> {
                   Emotes.renderBubble(var1);
                   Cutscenes.renderFx(var1);
