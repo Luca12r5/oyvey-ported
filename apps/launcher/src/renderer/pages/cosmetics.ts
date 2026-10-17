@@ -1,4 +1,5 @@
 import { pixel } from '../icons.ts';
+import { itemArt } from '../itemart.ts';
 import { CATALOG, NAME_TAGS, RARITY_INFO, tagCharColor, type CatalogItem, type NameTagStyle, type Rarity } from '@lego/shared';
 import { state } from '../app.ts';
 import { confirm, errorToast, fmtNum, html, idem, lego, mount, slotIcon, toast, type Raw } from '../ui.ts';
@@ -25,7 +26,7 @@ function card(i: CatalogItem, inv: Inv, mode: 'collection' | 'shop'): Raw {
   const tag = i.kind === 'nametag' ? NAME_TAGS.find((t) => t.id === i.id) : undefined;
   const info = RARITY_INFO[i.rarity];
   return html`<div class="item ${info.animatedFrame ? 'anim' : ''}" data-c="${rarityColor(i.rarity)}">
-    <div class="thumb">${tag ? tagHtml(tag, state.auth.name ?? 'Steve') : slotIcon(i.slot)}</div>
+    <div class="thumb">${tag ? tagHtml(tag, state.auth.name ?? 'Steve') : itemArt(i.id, i.name, i.slot)}</div>
     <div class="row between"><b>${i.name}</b><span class="badge c" data-c="${rarityColor(i.rarity)}">${info.label.de}</span></div>
     <div class="small muted">${UNLOCK[i.unlock] ?? i.unlock}${i.price ? ` · ${fmtNum(i.price)} Coins` : ''}${i.seasonal ? ' · Saisonal' : ''}</div>
     <div class="row">${owned
@@ -41,7 +42,7 @@ async function browser(el: HTMLElement, mode: 'collection' | 'shop'): Promise<vo
     ${mode === 'collection'
       ? html`<p class="muted">Sammlung ${inv.owned.length} / ${CATALOG.length}. Ausgerüstete Cosmetics sehen andere Spieler mit LEGO Client auf jedem Server und in jedem Spielmodus, solange beide mit dem LEGO-Server verbunden sind. Spieler mit anderen Clients (Vanilla, NoRisk, Lunar …) sehen sie nicht.</p><div class="progress"><i data-p="${(inv.owned.length / CATALOG.length) * 100}"></i></div>`
       : html`<p class="muted">Feste Preise, keine Lootboxen. Gekauft wird mit LEGO Coins.</p>`}
-    <div class="row gap"><input id="q" class="grow" placeholder="Suchen…"><select id="rar"><option value="">Alle Seltenheiten</option>${(Object.keys(RARITY_INFO) as Rarity[]).map((r) => html`<option value="${r}">${RARITY_INFO[r].label.de}</option>`)}</select>
+    <div class="row gap filterbar"><input id="q" class="grow" placeholder="Suchen…"><select id="rar"><option value="">Alle Seltenheiten</option>${(Object.keys(RARITY_INFO) as Rarity[]).map((r) => html`<option value="${r}">${RARITY_INFO[r].label.de}</option>`)}</select>
       ${mode === 'collection' ? html`<label class="check"><input type="checkbox" id="owned"> Nur im Besitz</label>` : ''}</div>
     <div class="tabs gap" id="slots">${SLOTS.map(([id, l], i) => html`<button data-slot="${id}" class="${i === 0 ? 'active' : ''}">${l}</button>`)}</div>
     <div class="grid g4" id="items"></div>`);

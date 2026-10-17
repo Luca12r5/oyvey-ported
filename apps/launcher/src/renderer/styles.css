@@ -946,3 +946,33 @@ kbd { font: 500 .72rem var(--mono); padding: 2px 6px; border: 1px solid var(--li
 #spotifyHud canvas { display: block; }
 #spotifyHud canvas[hidden] { display: none; }
 .seg.wrap { flex-wrap: wrap; }
+
+/* ---- Crypt: one consistent, square look everywhere (NoRisk-like) ---- */
+body.crypt .tabs { gap: 0; border: 1px solid var(--line-hi); background: var(--pbg2); padding: 2px; width: fit-content; max-width: 100%; }
+body.crypt .tabs button { border-radius: 0; border: 0; background: none; padding: 9px 13px; font: 400 .5rem/1 var(--pix); text-transform: uppercase; letter-spacing: .03em; box-shadow: none; }
+body.crypt .tabs button:hover { background: color-mix(in srgb, var(--text) 6%, transparent); }
+body.crypt .tabs button.active { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text); box-shadow: inset 0 0 0 1px var(--accent); }
+body.crypt .progress { height: 6px; border-radius: 0; background: color-mix(in srgb, var(--text) 8%, transparent); }
+body.crypt .progress > i { border-radius: 0; background: var(--accent); box-shadow: none; }
+body.crypt .badge { border-radius: 0; font-weight: 600; }
+body.crypt .icon-btn { border-radius: 0; border-color: var(--line-hi); background: var(--pbg2); }
+body.crypt .icon-btn:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--pbg2)); }
+body.crypt .searchbar, body.crypt .searchbar.sm { border-radius: 0; border-color: var(--line-hi); background: var(--pbg2); }
+body.crypt input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]), body.crypt select, body.crypt textarea { border-radius: 0; border: 1px solid var(--line-hi); background: var(--pbg2); box-shadow: none; }
+body.crypt input:not([type=checkbox]):not([type=radio]):not([type=range]):focus, body.crypt select:focus, body.crypt textarea:focus { border-color: var(--accent); outline: none; }
+body.crypt .tag { border-radius: 0; }
+body.crypt .pill, body.crypt .chip, body.crypt .kpi, body.crypt .quest, body.crypt .req-card, body.crypt .theme-tile, body.crypt .bg-tile, body.crypt .font-tile, body.crypt .preset, body.crypt .swatch, body.crypt .thumb, body.crypt .pc-icon, body.crypt .mc-icon, body.crypt .li-icon, body.crypt .friend, body.crypt .status, body.crypt .empty { border-radius: 0; }
+body.crypt .filterbar { flex-wrap: nowrap; align-items: center; margin: 4px 0 12px; }
+body.crypt .filterbar select { width: auto; min-width: 200px; flex: none; }
+body.crypt .filterbar .check { flex: none; white-space: nowrap; }
+body.crypt .item { padding: 10px; gap: 8px; transition: border-color .15s, transform .15s; border-top: 2px solid var(--c, var(--line)); }
+body.crypt .item:hover { border-color: color-mix(in srgb, var(--c, var(--accent)) 70%, transparent); transform: translateY(-2px); }
+body.crypt .item .thumb { height: 108px; display: grid; place-items: center; border: 1px solid var(--line); background: radial-gradient(ellipse at 50% 60%, color-mix(in srgb, var(--c, var(--accent)) 14%, transparent), transparent 70%), color-mix(in srgb, var(--bg) 75%, #000); }
+.item-art { width: 100%; height: 100%; max-width: 150px; display: block; filter: drop-shadow(0 4px 6px rgba(0,0,0,.5)); }
+body.crypt .page-head h1, body.crypt .row.between > h1 { margin: 0 0 4px; }
+body.crypt .set-nav nav button { border-radius: 0; }
+body.crypt .set-nav nav button.active { background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: inset 2px 0 0 var(--accent); }
+body.crypt ::-webkit-scrollbar { width: 8px; height: 8px; }
+body.crypt ::-webkit-scrollbar-thumb { background: var(--line-hi); border-radius: 0; }
+body.crypt ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+body.crypt ::-webkit-scrollbar-track { background: transparent; }
