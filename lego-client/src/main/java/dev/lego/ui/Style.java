@@ -3,8 +3,8 @@ package dev.lego.ui;
 import dev.lego.core.Modules;
 
 public final class Style {
-   public static final String[] THEMES = new String[]{"winter", "standard", "midnight", "glass", "purple", "ocean", "sunset", "christmas", "light"};
-   public static final String[] THEME_NAMES = new String[]{"Winterzauber", "Standard", "Mitternacht", "Glas", "Lila", "Ozean", "Sunset", "Weihnachten", "Hell"};
+   public static final String[] THEMES = new String[]{"halloween", "winter", "standard", "midnight", "glass", "purple", "ocean", "sunset", "christmas", "light"};
+   public static final String[] THEME_NAMES = new String[]{"Halloween Nocturne", "Winterzauber", "Standard", "Mitternacht", "Glas", "Lila", "Ozean", "Sunset", "Weihnachten", "Hell"};
    public static int bg;
    public static int bg2;
    public static int surface;
@@ -41,6 +41,14 @@ public final class Style {
       String var0 = Modules.theme;
       light = "light".equals(var0);
       switch (var0) {
+         case "halloween":
+            // Nocturne palette shared with the launcher (packages/shared/src/design.ts).
+            bg = 0xF007060B;
+            bg2 = 0xF015101E;
+            surface = 0xFF1C1527;
+            surface2 = 0xFF271D36;
+            surfaceHover = 0xFF302443;
+            break;
          case "winter":
             bg = -267709400;
             bg2 = -267379659;

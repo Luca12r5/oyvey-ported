@@ -148,7 +148,9 @@ public final class ModsPart implements HubView.Part {
             float var29 = Ease.outCubic(Ease.clamp((var21 - Math.min(var28, 12) * 22.0F) / 260.0F));
             Gx.pushAlpha(var29);
             Gx.push();
-            Gx.translate(0.0F, var1.pf(8.0) * (1.0F - var29));
+            // 2.5D entrance: each card rises out of the depth, staggered per position.
+            Gx.translate(0.0F, var1.pf(18.0) * (1.0F - var29));
+            Gx.scaleAt(var26 + var18 / 2.0F, var27 + var19 / 2.0F, 0.86F + 0.14F * var29);
             this.card(var1, (Module)var15.get(var23), var26, var27, var18, var19, var6);
             Gx.pop();
             Gx.popAlpha();
@@ -210,10 +212,17 @@ public final class ModsPart implements HubView.Part {
       float var9 = Ease.to("card:" + var2.id, var8 ? 1.0F : 0.0F, 14.0F);
       float var10 = Ease.to("cardon:" + var2.id, var2.enabled ? 1.0F : 0.0F, 12.0F);
       int var11 = var1.p(10.0);
+      int depth = var1.p(3.0) + Math.round(var1.pf(3.0) * var9);
       Gx.push();
-      Gx.translate(0.0F, -var1.pf(1.5) * var9);
+      Gx.translate(0.0F, -var1.pf(3.0) * var9);
       if (var9 > 0.01F || var10 > 0.01F) {
-         Gx.shadow(var3, var4, var5, var6, var11, var1.p(7.0), 0.18F * var10 + 0.3F * var9);
+         Gx.shadow(var3, var4 + depth, var5, var6, var11, var1.p(9.0), 0.2F * var10 + 0.35F * var9);
+      }
+
+      // 2.5D slab: stacked darker layers under the card give it real thickness (accent-tinted when active).
+      int slab = Gx.mix(Gx.mix(Style.surface, -16777216, 0.55F), Gx.mix(Style.accent, -16777216, 0.45F), var10);
+      for (int layer = depth; layer > 0; layer -= Math.max(1, var1.p(1.0))) {
+         Gx.rect(var3, var4 + layer, var5, var6, var11, Gx.mix(slab, -16777216, 0.25F * layer / Math.max(1.0F, depth)));
       }
 
       int var12 = Gx.mix(Style.surface, Style.surfaceHover, var9);

@@ -20,6 +20,8 @@ import dev.lego.hud.HudManager;
 import dev.lego.hud.HudModules;
 import dev.lego.perf.Perf;
 import dev.lego.perf.Performance;
+import dev.lego.ui.ConsoleLog;
+import dev.lego.ui.ConsoleView;
 import dev.lego.ui.Env;
 import dev.lego.ui.Gx;
 import dev.lego.ui.LegoScreen;
@@ -53,6 +55,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping.Category;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.renderer.entity.player.AvatarRenderer;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
@@ -68,6 +71,8 @@ public final class LegoClient implements ClientModInitializer {
    private static KeyMapping ecseeKey;
    private static KeyMapping waypointKey;
    private static KeyMapping hudKey;
+   private static KeyMapping consoleKey;
+   private static boolean consoleAutoShown = false;
    private static SpotifyModule spotify;
    private static long joinedAt = 0L;
    private static final boolean[] lastDown = new boolean[512];
@@ -84,6 +89,7 @@ public final class LegoClient implements ClientModInitializer {
 
    @Override
    public void onInitializeClient() {
+      ConsoleLog.install();
       boolean var1 = FabricLoader.getInstance().isModLoaded("spotifyhud");
       if (!var1) {
          try {
@@ -118,6 +124,7 @@ public final class LegoClient implements ClientModInitializer {
       ecseeKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.ecsee", 71, var2));
       waypointKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.waypoint", 78, var2));
       hudKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.hud", -1, var2));
+      consoleKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.console", 299, var2));
       setupEnv();
       ClientTickEvents.END_CLIENT_TICK.register(LegoClient::tick);
       ScreenEvents.AFTER_INIT.register((var0, var1x, var2x, var3x) -> {
@@ -358,6 +365,18 @@ public final class LegoClient implements ClientModInitializer {
             if (var0.screen == null) {
                LegoScreen.show(new MenuView());
             }
+         }
+
+         while (consoleKey.consumeClick()) {
+            if (var0.screen == null || var0.screen instanceof TitleScreen) {
+               LegoScreen.show(new ConsoleView());
+            }
+         }
+
+         // The launcher asks for the console on start (-Dlegoclient.console=1): show it once on the title screen.
+         if (!consoleAutoShown && var0.screen instanceof TitleScreen && "1".equals(System.getProperty("legoclient.console"))) {
+            consoleAutoShown = true;
+            LegoScreen.show(new ConsoleView());
          }
 
          while (emoteKey.consumeClick()) {

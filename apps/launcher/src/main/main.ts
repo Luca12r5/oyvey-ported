@@ -314,7 +314,7 @@ async function launch(profileId: string): Promise<{ ok: boolean; error?: string 
       player: { name: mc.name, uuid: mc.uuid, accessToken: mc.accessToken, xuid: mc.xuid, userType: 'msa' },
       launcherName: 'lego-launcher', launcherVersion: app.getVersion(),
       memoryMb: { min: Math.min(1024, profile.memoryMb), max: profile.memoryMb },
-      extraJvmArgs: [...jvm.args, ...(active()?.lego ? [`-Dlegoclient.api=${backendUrl()}`] : [])],
+      extraJvmArgs: [...jvm.args, ...(active()?.lego ? [`-Dlegoclient.api=${backendUrl()}`] : []), ...(profile.legoClient && settings.autoConsole ? ['-Dlegoclient.console=1'] : [])],
       resolution: profile.resolution ?? undefined, loggingConfigPath: installed.loggingConfig ?? undefined,
     });
     report('Starte Minecraft');

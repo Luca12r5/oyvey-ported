@@ -17,10 +17,10 @@ import net.fabricmc.loader.api.FabricLoader;
 
 public final class Modules {
    public static final List<Module> ALL = new ArrayList<>();
-   public static String theme = "winter";
+   public static String theme = "halloween";
    public static String hudTheme = "standard";
    public static int hudAccent = 0;
-   public static int accent = 1;
+   public static int accent = 7;
    private static volatile long saveAt = 0L;
    private static final Map<String, Modules.Persist> EXTRA = new LinkedHashMap<>();
 
@@ -96,7 +96,7 @@ public final class Modules {
       try {
          LinkedHashMap var0 = new LinkedHashMap();
          var0.put("theme", theme);
-         var0.put("designVersion", 3L);
+         var0.put("designVersion", 4L);
          var0.put("hudTheme", hudTheme);
          var0.put("hudAccent", (long)hudAccent);
          var0.put("accent", (long)accent);
@@ -160,11 +160,18 @@ public final class Modules {
          accent = (int)Json.num(var1, "accent", accent);
          hudTheme = Json.str(var1, "hudTheme", hudTheme);
          hudAccent = (int)Json.num(var1, "hudAccent", hudAccent);
-         if (Json.num(var1, "designVersion", 0L) < 3L) {
+         long designVer = Json.num(var1, "designVersion", 0L);
+         if (designVer < 3L) {
             hudTheme = theme;
             hudAccent = accent;
             theme = "winter";
             accent = 1;
+         }
+
+         // Halloween edition: players still on the old default get the Nocturne look (orange accent).
+         if (designVer < 4L && "winter".equals(theme)) {
+            theme = "halloween";
+            accent = 7;
          }
 
          if (var1 instanceof Map) {

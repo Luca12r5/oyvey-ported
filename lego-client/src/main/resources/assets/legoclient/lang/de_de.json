@@ -7,5 +7,6 @@
   "key.legoclient.ecsee": "EcSee (Spieler ansehen)",
   "key.legoclient.waypoint": "Wegpunkt setzen",
   "key.legoclient.hud": "HUD-Editor",
-  "key.legoclient.tv": "Fernseher (Browser)"
+  "key.legoclient.tv": "Fernseher (Browser)",
+  "key.legoclient.console": "Konsole öffnen"
 }
