@@ -7,6 +7,7 @@ import type { Raw } from './ui.ts';
 const P: Record<string, string> = {
   // navigation
   skins: '<rect x="8" y="3.5" width="8" height="7" rx=".6"/><path d="M6 10.5h12v6h-2.5v4h-7v-4H6z"/><path d="M10.3 6.6h.1M13.6 6.6h.1"/>',
+  music: '<path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
   games: '<path d="M7 8h10a4 4 0 0 1 4 4v1.5a3.5 3.5 0 0 1-6.3 2.1L14 14.5h-4l-.7 1.1A3.5 3.5 0 0 1 3 13.5V12a4 4 0 0 1 4-4z"/><path d="M7.5 10.5v3M6 12h3M15.5 11.2h.1M17.5 12.8h.1"/>',
   back: '<path d="m14.5 6-6 6 6 6"/>',
   forward: '<path d="m9.5 6 6 6-6 6"/>',

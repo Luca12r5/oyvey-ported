@@ -3,7 +3,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { LauncherApi } from '../ipc-types.ts';
 
-const CHANNELS = new Set(['auth', 'launch-progress', 'game-log', 'game-exit', 'lego-event', 'update', 'window-state', 'vrb-frame', 'vrb-state']);
+const CHANNELS = new Set(['auth', 'launch-progress', 'game-log', 'game-exit', 'lego-event', 'update', 'window-state', 'vrb-frame', 'vrb-state', 'spotify', 'spotify-art']);
 
 const api: LauncherApi = {
   info: () => ipcRenderer.invoke('info'),
@@ -59,6 +59,9 @@ const api: LauncherApi = {
   diagnostics: () => ipcRenderer.invoke('diagnostics'),
   checkUpdate: () => ipcRenderer.invoke('update:check'),
   installUpdate: () => ipcRenderer.invoke('update:install'),
+  spotifyState: () => ipcRenderer.invoke('spotify:state'),
+  spotifyCommand: (c) => ipcRenderer.invoke('spotify:cmd', c),
+  spotifyLyrics: (t, a, d) => ipcRenderer.invoke('spotify:lyrics', t, a, d),
   on: (channel, cb) => {
     if (!CHANNELS.has(channel)) throw new Error('unknown channel');
     const listener = (_e: unknown, data: unknown) => cb(data);

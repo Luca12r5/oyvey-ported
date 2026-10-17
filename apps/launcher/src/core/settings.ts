@@ -101,6 +101,43 @@ export interface Settings {
   skinLibrary: SkinEntry[];
   /** Guest mode: Minecraft name whose public skin is shown (no sign-in, display only). */
   guestName: string;
+  /** Spotify HUD in the launcher (same look as the in-game one). */
+  spotifyHud: SpotifyHudSettings;
+}
+
+export const SPOTIFY_THEMES = ['standard', 'cover', 'glass', 'midnight', 'purple', 'christmas', 'sunset', 'ocean'] as const;
+export interface SpotifyHudSettings {
+  enabled: boolean;
+  theme: (typeof SPOTIFY_THEMES)[number];
+  scale: number;
+  lyrics: boolean;
+  karaoke: boolean;
+  wordGrow: boolean;
+  showTime: boolean;
+  showControls: boolean;
+  lyricsOffsetMs: number;
+  /** Position of the HUD's top-left corner as a fraction of the window (0..1). */
+  x: number;
+  y: number;
+}
+export const DEFAULT_SPOTIFY_HUD: SpotifyHudSettings = {
+  enabled: true, theme: 'standard', scale: 1.6, lyrics: true, karaoke: true, wordGrow: true, showTime: true, showControls: true, lyricsOffsetMs: 0, x: 0.015, y: 0.72,
+};
+
+export function sanitizeSpotifyHud(v: unknown): SpotifyHudSettings {
+  const o = (v && typeof v === 'object' ? v : {}) as Partial<SpotifyHudSettings>;
+  const d = DEFAULT_SPOTIFY_HUD;
+  const num = (x: unknown, lo: number, hi: number, def: number) => (typeof x === 'number' && Number.isFinite(x) ? Math.max(lo, Math.min(hi, x)) : def);
+  const bool = (x: unknown, def: boolean) => (typeof x === 'boolean' ? x : def);
+  return {
+    enabled: bool(o.enabled, d.enabled),
+    theme: (SPOTIFY_THEMES as readonly string[]).includes(String(o.theme)) ? (o.theme as SpotifyHudSettings['theme']) : d.theme,
+    scale: num(o.scale, 0.8, 3, d.scale),
+    lyrics: bool(o.lyrics, d.lyrics), karaoke: bool(o.karaoke, d.karaoke), wordGrow: bool(o.wordGrow, d.wordGrow),
+    showTime: bool(o.showTime, d.showTime), showControls: bool(o.showControls, d.showControls),
+    lyricsOffsetMs: Math.round(num(o.lyricsOffsetMs, -5000, 5000, 0)),
+    x: num(o.x, 0, 1, d.x), y: num(o.y, 0, 1, d.y),
+  };
 }
 
 export const DEFAULT_PROFILE: GameProfile = {
@@ -150,6 +187,7 @@ export function defaultSettings(): Settings {
     introEnabled: true, introSound: true, autoConsole: true,
     fx: { ...DEFAULT_FX }, surface: 'glass', stage: 'portal', designPresets: [], bgImage: '', guest: false,
     uiFont: 'theme', headFont: 'press', customFont: null, buttonStyle: 'crypt', customLanguage: null, transition: 'slide', jumpscares: false, skinLibrary: [], guestName: '',
+    spotifyHud: { ...DEFAULT_SPOTIFY_HUD },
   };
 }
 

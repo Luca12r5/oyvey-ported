@@ -20,7 +20,8 @@ import { cosmeticsPage, shopPage } from './pages/cosmetics.ts';
 import { friendsPage } from './pages/social.ts';
 import { rewardsPage } from './pages/rewards.ts';
 import { accountPage, signInFlow } from './pages/account.ts';
-import { settingsPage } from './pages/settings.ts';
+import { openSettingsAt, settingsPage } from './pages/settings.ts';
+import { mountSpotifyHud, updateSpotifyHud } from './spotifyhud.ts';
 import { designsPage } from './pages/designs.ts';
 import { vrPage } from './pages/vr.ts';
 import { newsPage, feedbackPage, devPage } from './pages/misc.ts';
@@ -167,7 +168,9 @@ export function retheme(): void {
   document.body.classList.toggle('no-vignette', !s.fx.vignette);
   document.body.classList.toggle('no-glow', !s.fx.glow);
   if (state.info && !state.info.e2e) armJumpscare(s.jumpscares, s.reducedMotion);
+  if (spotifyMounted) updateSpotifyHud(s.spotifyHud);
 }
+let spotifyMounted = false;
 
 function visiblePages(): PageDef[] {
   const staff = state.auth.lego.roles.length > 0;
@@ -356,6 +359,10 @@ export function refreshChrome(): void {
 async function boot(): Promise<void> {
   [state.settings, state.auth, state.info] = await Promise.all([api.getSettings(), api.authState(), api.info()]);
   retheme();
+  mountSpotifyHud(state.settings.spotifyHud, () => { openSettingsAt('spotify'); void go('settings'); }, (p) => {
+    void api.setSettings({ spotifyHud: { ...state.settings.spotifyHud, ...p } }).then((next) => { state.settings = next; });
+  });
+  spotifyMounted = true;
   mount(document.getElementById('tbLogo')!, brickLogo());
   renderWindowButtons(await api.windowState());
   api.on('window-state', renderWindowButtons);

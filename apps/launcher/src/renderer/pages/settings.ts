@@ -11,16 +11,17 @@ import { icon } from '../icons.ts';
 import { headFromSkin } from '../avatar.ts';
 import { languageTemplate, t } from '../i18n.ts';
 import { sanitizeLanguage } from '../../core/design.ts';
-import type { Settings } from '../../core/settings.ts';
+import type { Settings, SpotifyHudSettings } from '../../core/settings.ts';
 import { signInFlow } from './account.ts';
 
-type Section = 'general' | 'language' | 'appearance' | 'designs' | 'animations' | 'game' | 'accounts' | 'rarity' | 'advanced' | 'about';
+type Section = 'general' | 'language' | 'appearance' | 'designs' | 'animations' | 'spotify' | 'game' | 'accounts' | 'rarity' | 'advanced' | 'about';
 const SECTIONS: [Section, string, () => string][] = [
   ['general', 'sliders', () => t('set.general')],
   ['language', 'globe', () => t('set.language')],
   ['appearance', 'palette', () => t('set.appearance')],
   ['designs', 'brush', () => t('nav.designs')],
   ['animations', 'pumpkin', () => (state.settings.language === 'en' ? 'Animations' : 'Animationen')],
+  ['spotify', 'music', () => 'Spotify HUD'],
   ['game', 'gamepad', () => t('set.game')],
   ['accounts', 'users', () => t('set.accounts')],
   ['rarity', 'cosmetics', () => t('set.rarity')],
@@ -48,7 +49,13 @@ function row(title: string, desc: string, control: Raw, extra = ''): Raw {
 }
 const sw = (key: keyof Settings, on: boolean) => html`<label class="switch"><input type="checkbox" data-key="${key}" ${on ? 'checked' : ''}><i></i></label>`;
 
-export async function settingsPage(el: HTMLElement, section: Section | string = 'general'): Promise<void> {
+let pending: Section | null = null;
+/** Makes the next settings page open on `section` (e.g. from the Spotify HUD's gear). */
+export function openSettingsAt(section: Section): void { pending = section; }
+
+export async function settingsPage(el: HTMLElement, section?: Section | string): Promise<void> {
+  section ??= pending ?? 'general';
+  pending = null;
   const sec = (SECTIONS.find(([id]) => id === section)?.[0] ?? 'general') as Section;
   mount(el, html`<div class="settings">
     <aside class="set-nav">
@@ -73,6 +80,7 @@ export async function settingsPage(el: HTMLElement, section: Section | string = 
   else if (sec === 'language') languageTab(box);
   else if (sec === 'accounts') await accountsTab(box);
   else if (sec === 'rarity') rarityTab(box);
+  else if (sec === 'spotify') spotifyTab(box);
   else await aboutTab(box);
 }
 
@@ -140,6 +148,41 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
       return;
     }
     if (b.id === 'diag') { await navigator.clipboard.writeText(await api.diagnostics()); toast('Diagnose in die Zwischenablage kopiert', 'ok'); }
+  };
+}
+
+const SPOTIFY_THEME_NAMES: [SpotifyHudSettings['theme'], string][] = [
+  ['standard', 'Standard'], ['cover', 'Cover'], ['glass', 'Glas'], ['midnight', 'Mitternacht'], ['purple', 'Lila'], ['christmas', 'Weihnachten'], ['sunset', 'Sunset'], ['ocean', 'Ozean'],
+];
+
+/** Spotify HUD: same options as the in-game HUD's settings screen. */
+function spotifyTab(box: HTMLElement): void {
+  const h = state.settings.spotifyHud;
+  const tg = (k: keyof SpotifyHudSettings, on: boolean) => html`<label class="switch"><input type="checkbox" data-sp="${k}" ${on ? 'checked' : ''}><i></i></label>`;
+  mount(box, html`<section class="set-sec"><h2>Spotify HUD</h2><div class="glass rows">
+    ${row('Spotify HUD anzeigen', 'Zeigt den laufenden Song (Spotify oder jede andere Windows-Wiedergabe) im Launcher, genau wie im LEGO Client. Mit der Maus verschieben, Steuerung direkt im HUD.', tg('enabled', h.enabled))}
+    ${row('Design', 'Gleiche Themes wie im Spiel.', html`<div class="seg wrap" data-seg="sptheme">${SPOTIFY_THEME_NAMES.map(([v, l]) => html`<button data-v="${v}" class="${h.theme === v ? 'on' : ''}">${l}</button>`)}</div>`)}
+    ${row('Größe', `${Math.round(h.scale * 100)} %`, html`<input type="range" data-sp="scale" min="0.8" max="3" step="0.1" value="${h.scale}">`)}
+    ${row('Lyrics', 'Synchronisierte Songtexte von LRCLIB unter dem HUD.', tg('lyrics', h.lyrics))}
+    ${row('Karaoke', 'Das aktuelle Wort wird in der Akzentfarbe hervorgehoben.', tg('karaoke', h.karaoke))}
+    ${row('Wort wächst', 'Das gesungene Wort wird kurz größer.', tg('wordGrow', h.wordGrow))}
+    ${row('Zeit anzeigen', 'Position und Länge des Songs.', tg('showTime', h.showTime))}
+    ${row('Steuerung anzeigen', 'Lautstärke, Zurück, Play/Pause, Weiter, Wiederholen, Zufall.', tg('showControls', h.showControls))}
+    ${row('Lyrics-Versatz', `${h.lyricsOffsetMs > 0 ? '+' : ''}${h.lyricsOffsetMs} ms – falls der Text zu früh oder zu spät kommt.`, html`<input type="range" data-sp="lyricsOffsetMs" min="-2000" max="2000" step="50" value="${h.lyricsOffsetMs}">`)}
+    ${row('Position zurücksetzen', 'HUD wieder unten links anzeigen.', html`<button class="btn sm" id="spReset">${icon('refresh', 'sm')} Zurücksetzen</button>`)}
+  </div><p class="muted small">Funktioniert unter Windows 10/11 über die Windows-Mediensteuerung, ohne Spotify-Anmeldung. Lyrics: lrclib.net.</p></section>`);
+  const put = async (p: Partial<SpotifyHudSettings>) => { await save({ spotifyHud: { ...state.settings.spotifyHud, ...p } }); spotifyTab(box); };
+  box.onchange = (e) => {
+    const i = e.target as HTMLInputElement;
+    const k = i.dataset.sp as keyof SpotifyHudSettings | undefined;
+    if (!k) return;
+    void put({ [k]: i.type === 'checkbox' ? i.checked : Number(i.value) } as Partial<SpotifyHudSettings>);
+  };
+  box.onclick = (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
+    if (!b) return;
+    if (b.parentElement?.dataset.seg === 'sptheme') void put({ theme: b.dataset.v as SpotifyHudSettings['theme'] });
+    if (b.id === 'spReset') void put({ x: 0.015, y: 0.72 });
   };
 }
 

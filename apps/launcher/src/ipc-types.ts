@@ -102,5 +102,9 @@ export interface LauncherApi {
   diagnostics(): Promise<string>;
   checkUpdate(): Promise<{ available: boolean; version?: string; error?: string }>;
   installUpdate(): Promise<void>;
-  on(channel: 'auth' | 'launch-progress' | 'game-log' | 'game-exit' | 'lego-event' | 'update' | 'window-state' | 'vrb-frame' | 'vrb-state', cb: (data: any) => void): () => void;
+  /** Spotify HUD: now-playing state (also pushed on 'spotify', cover on 'spotify-art'), media commands, LRCLIB lyrics. */
+  spotifyState(): Promise<import('./main/spotify.ts').SpotifyState | null>;
+  spotifyCommand(cmd: string): Promise<boolean>;
+  spotifyLyrics(title: string, artist: string, durMs: number): Promise<import('./core/lyrics.ts').LyricsResult>;
+  on(channel: 'auth' | 'launch-progress' | 'game-log' | 'game-exit' | 'lego-event' | 'update' | 'window-state' | 'vrb-frame' | 'vrb-state' | 'spotify' | 'spotify-art', cb: (data: any) => void): () => void;
 }

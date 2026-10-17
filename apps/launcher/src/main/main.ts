@@ -23,10 +23,12 @@ import { listEntries, readEntry } from '../core/zip.ts';
 import { exportToOfficial, officialLauncherPresent, officialMinecraftDir, openOfficialLauncher } from '../core/official.ts';
 import { fetchJson } from '../core/net.ts';
 import { createLogCleaner, diagnose, startGame } from '../core/launch.ts';
-import { DEFAULT_PROFILE, fastJvmFlags, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
+import { DEFAULT_PROFILE, sanitizeSpotifyHud, fastJvmFlags, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
 import { encryptionAvailable, loadAccounts, loadSettings, paths, saveAccounts, saveSettings, type Account, type AccountStore } from './store.ts';
 import { setupUpdater, checkForUpdate, installUpdate } from './updater.ts';
 import { VrBrowser } from './vrbrowser.ts';
+import { SpotifyBridge } from './spotify.ts';
+import { fetchLyrics, type LyricsResult } from '../core/lyrics.ts';
 import { listModules, setModule } from '../core/clientcfg.ts';
 import type { AuthState, LaunchProgress, ModEntry, SkinData } from '../ipc-types.ts';
 import { validateTheme } from '@lego/shared';
@@ -45,6 +47,18 @@ const CURSEFORGE_KEY = typeof __CURSEFORGE_KEY__ === 'string' ? __CURSEFORGE_KEY
 
 let win: BrowserWindow | null = null;
 const vrBrowser = new VrBrowser((channel, data) => send(channel, data));
+let spotify: SpotifyBridge | null = null;
+const lyricsCache = new Map<string, LyricsResult>();
+
+/** Starts or stops the now-playing bridge to match the Spotify HUD setting. */
+function syncSpotify(): void {
+  if (settings.spotifyHud.enabled) {
+    spotify ??= new SpotifyBridge(join(__dirname, 'smtc.ps1'), join(app.getPath('userData'), 'spotifyhud'), (ch, data) => send(ch, data));
+    spotify.start();
+  } else {
+    spotify?.stop();
+  }
+}
 let settings: Settings;
 let store: AccountStore = { accounts: [], active: null };
 let legoError: string | null = null;
@@ -531,12 +545,27 @@ function registerIpc(): void {
     return listModules(next);
   });
   ipcMain.handle('window:state', () => windowState());
+  ipcMain.handle('spotify:state', () => spotify?.current() ?? null);
+  ipcMain.handle('spotify:cmd', (_e, cmd: unknown) => (typeof cmd === 'string' ? spotify?.command(cmd) ?? false : false));
+  ipcMain.handle('spotify:lyrics', async (_e, title: unknown, artist: unknown, durMs: unknown) => {
+    const t = String(title ?? '').slice(0, 300), a = String(artist ?? '').slice(0, 300), d = Math.max(0, Number(durMs) || 0);
+    if (!t.trim()) return { status: 'none', lines: [] };
+    const key = `${t}\u0000${a}`.toLowerCase();
+    const hit = lyricsCache.get(key);
+    if (hit) return hit;
+    const r = await fetchLyrics(fetch, t, a, d);
+    if (r.status !== 'error') {
+      lyricsCache.set(key, r);
+      if (lyricsCache.size > 40) lyricsCache.delete(lyricsCache.keys().next().value!);
+    }
+    return r;
+  });
   ipcMain.handle('settings:get', () => settings);
   ipcMain.handle('settings:set', async (_e, patch: Partial<Settings>) => {
     const allowed: (keyof Settings)[] = [
       'themeId', 'customThemes', 'language', 'backendUrl', 'selectedProfile', 'closeOnLaunch', 'reducedMotion', 'uiScale', 'autoUpdate', 'rarityColors',
       'accentColor', 'background', 'backgroundQuality', 'snow', 'showSnapshots', 'showHistorical', 'curseforgeKey', 'msClientId',
-      'introEnabled', 'introSound', 'autoConsole', 'fx', 'surface', 'stage', 'designPresets', 'bgImage', 'guest', 'uiFont', 'headFont', 'customFont', 'buttonStyle', 'customLanguage', 'transition', 'jumpscares', 'skinLibrary', 'guestName',
+      'introEnabled', 'introSound', 'autoConsole', 'fx', 'surface', 'stage', 'designPresets', 'bgImage', 'guest', 'uiFont', 'headFont', 'customFont', 'buttonStyle', 'customLanguage', 'transition', 'jumpscares', 'skinLibrary', 'guestName', 'spotifyHud',
     ];
     for (const k of allowed) if (k in patch) (settings as unknown as Record<string, unknown>)[k] = patch[k];
     // Never trust the renderer: re-validate imported themes and clamp numbers.
@@ -553,6 +582,8 @@ function registerIpc(): void {
     settings.buttonStyle = pick(BUTTON_STYLES, settings.buttonStyle, 'crypt');
     settings.transition = pick(TRANSITIONS, settings.transition, 'slide');
     settings.skinLibrary = sanitizeSkinLib(settings.skinLibrary);
+    settings.spotifyHud = sanitizeSpotifyHud(settings.spotifyHud);
+    syncSpotify();
     settings.guestName = typeof settings.guestName === 'string' && /^[A-Za-z0-9_]{3,16}$/.test(settings.guestName.trim()) ? settings.guestName.trim() : '';
     for (const k of ['snow', 'showSnapshots', 'showHistorical', 'closeOnLaunch', 'reducedMotion', 'introEnabled', 'introSound', 'autoConsole', 'guest', 'jumpscares'] as const) settings[k] = !!settings[k];
     settings.msClientId = typeof settings.msClientId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(settings.msClientId.trim()) ? settings.msClientId.trim().toLowerCase() : '';
@@ -941,6 +972,7 @@ if (!app.requestSingleInstanceLock()) {
     }
     registerIpc();
     createWindow();
+    syncSpotify();
     setupUpdater(send, () => settings.autoUpdate);
     if (active()) void restoreLego();
     if (!encryptionAvailable()) {
@@ -948,4 +980,5 @@ if (!app.requestSingleInstanceLock()) {
     }
   });
   app.on('window-all-closed', () => app.quit());
+  app.on('will-quit', () => spotify?.stop());
 }
