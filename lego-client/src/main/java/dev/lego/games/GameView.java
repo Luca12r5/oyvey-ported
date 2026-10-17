@@ -37,6 +37,11 @@ public abstract class GameView extends View {
     protected float u = 2;
 
     private boolean initialized = false;
+    /** Frame-level juice shared by every game: record confetti, game-over shake and flash, score bump. */
+    private final GameFx frameFx = new GameFx();
+    private long lastScore = 0;
+    private float scoreBump = 0;
+    private static final int[] CONFETTI = {0xFFFF7A1A, 0xFFFFC53D, 0xFF8B5CF6, 0xFF22C55E, 0xFF38BDF8, 0xFFF43F5E};
 
     protected GameView(String id) {
         this.info = GameInfo.get(id);
@@ -75,8 +80,10 @@ public abstract class GameView extends View {
     protected void start() {
         reset();
         score = 0;
+        lastScore = 0;
         time = 0;
         record = false;
+        frameFx.clear();
         state = State.PLAYING;
         stateAt = System.currentTimeMillis();
     }
@@ -89,6 +96,8 @@ public abstract class GameView extends View {
         state = State.OVER;
         stateAt = System.currentTimeMillis();
         record = submit && GameInfo.submit(info.id, score);
+        if (record) frameFx.confetti(boardW() / 2, boardH() * 0.35f, 110, CONFETTI, 260, 5);
+        else if (submit) { frameFx.shake(0.3f); frameFx.flash(info.color, 0.35f); }
         // Counted results go to the LEGO server, which awards LEGO Coins (daily cap).
         if (submit) dev.lego.net.LegoAuth.reportGame(info.id, score, record);
         Sound.play(record ? "minecraft:ui.toast.challenge_complete" : "minecraft:block.note_block.bass", record ? 1.2f : 0.7f, 0.35f);
@@ -169,6 +178,10 @@ public abstract class GameView extends View {
                 acc -= 1 / 60f;
             }
         } else acc = 0;
+        frameFx.update(Math.min(0.1f, Gx.dt));
+        if (score > lastScore && state == State.PLAYING) scoreBump = 1;
+        lastScore = score;
+        scoreBump = Math.max(0, scoreBump - Gx.dt * 4);
 
         float t = Ease.outQuint(open);
         Gx.fill(0, 0, W, H, Gx.rgba(0x000000, 0.35f * open));
@@ -180,7 +193,13 @@ public abstract class GameView extends View {
         Gx.scaleAt(W / 2f, H / 2f, 0.94f + 0.06f * t);
         Gx.shadow(px, py, pw, ph, p(18), p(14), 0.55f);
         Gx.rect(px, py, pw, ph, p(18), Style.bg);
+        // Soft light from the game's colour behind the header, and an accent rim.
+        Gx.clip(px, py, pw, ph);
+        Gx.glow(px + pw / 2, py, Math.round(pw * 0.55f), Gx.withAlpha(info.color, 0.16f));
+        Gx.unclip();
         Gx.outline(px, py, pw, ph, p(18), Math.max(1, p(0.6)), Style.stroke);
+        float pulse = 0.5f + 0.5f * (float) Math.sin(System.currentTimeMillis() / 900.0);
+        Gx.outline(px - p(1), py - p(1), pw + p(2), ph + p(2), p(19), Math.max(1, p(0.8)), Gx.withAlpha(info.color, 0.18f + 0.12f * pulse));
 
         // top bar
         int tb = py + p(14);
@@ -206,9 +225,23 @@ public abstract class GameView extends View {
         u = P;
         Gx.rect(bx, by, bw, bh, p(12), Style.light ? 0xFFE9EBF0 : 0xFF0B0C10);
         Gx.clip(bx, by, bw, bh);
+        // Backdrop (only visible where a game leaves the board empty): a slow glow in the game's colour.
+        float drift = (float) Math.sin(System.currentTimeMillis() / 2400.0);
+        Gx.glow(bx + bw / 2 + Math.round(drift * bw * 0.2f), by + bh / 3, Math.round(Math.max(bw, bh) * 0.6f), Gx.withAlpha(info.color, Style.light ? 0.10f : 0.08f));
+        Gx.push();
+        Gx.translate(frameFx.sx * u, frameFx.sy * u);
         try { render(); } catch (Throwable e) { dev.lego.LegoClient.LOG("Spiel-Fehler: " + e); }
+        frameFx.draw(this, 0, 0);
+        Gx.pop();
+        // Lighting pass: top sheen, bottom shade and darkened corners give the flat board depth.
+        Gx.gradientV(bx, by, bw, Math.round(bh * 0.28f), 0x14FFFFFF, 0x00FFFFFF);
+        Gx.gradientV(bx, by + Math.round(bh * 0.72f), bw, bh - Math.round(bh * 0.72f), 0x00000000, Style.light ? 0x12000000 : 0x2A000000);
+        int vr = Math.round(Math.max(bw, bh) * 0.45f);
+        for (int cx2 = 0; cx2 <= 1; cx2++) for (int cy2 = 0; cy2 <= 1; cy2++) Gx.glow(bx + cx2 * bw, by + cy2 * bh, vr, Style.light ? 0x10000000 : 0x30000000);
+        frameFx.drawFlash(this, boardW(), boardH());
         Gx.unclip();
         Gx.outline(bx, by, bw, bh, p(12), Math.max(1, p(0.6)), Style.stroke);
+        Gx.outline(bx + p(1), by + p(1), bw - p(2), bh - p(2), p(11), Math.max(1, p(0.5)), 0x18FFFFFF);
         // board input
         Kit.hit(bx, by, bw, bh).drag((mx, my) -> {
             float gx = (mx - bx) / u, gy = (my - by) / u;
@@ -237,9 +270,14 @@ public abstract class GameView extends View {
     }
 
     private void scoreBox(int x, int y, int w, int h, String label, String value, boolean main) {
-        Gx.rect(x, y, w, h, p(8), main ? Gx.withAlpha(Style.accent, 0.14f) : Style.surface);
+        Gx.rect(x, y, w, h, p(8), main ? Gx.withAlpha(Style.accent, 0.14f + 0.18f * scoreBump) : Style.surface);
+        if (main && scoreBump > 0) Gx.outline(x, y, w, h, p(8), Math.max(1, p(0.8)), Gx.withAlpha(Style.accent, scoreBump));
         Gx.textCenter(label, x + w / 2f, y + pf(9), pf(5.6f), Fonts.BOLD, main ? Style.accent : Style.muted);
+        float sc = main ? 1 + 0.18f * Ease.outCubic(scoreBump) : 1;
+        Gx.push();
+        Gx.scaleAt(x + w / 2f, y + pf(21.5f), sc);
         Gx.textCenter(value, x + w / 2f, y + pf(21.5f), pf(10), Fonts.BOLD, Style.text);
+        Gx.pop();
     }
 
     private void overlay(int x, int y, int w, int h) {
