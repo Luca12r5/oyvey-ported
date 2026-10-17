@@ -1,403 +1,303 @@
 package dev.lego.games;
 
-import dev.lego.ui.Ease;
-import dev.lego.ui.Gx;
-import dev.lego.ui.Sound;
-import dev.lego.ui.Style;
 import java.util.ArrayList;
 import java.util.List;
 
+import dev.lego.ui.Ease;
+import dev.lego.ui.Fonts;
+import dev.lego.ui.Gx;
+import dev.lego.ui.Sound;
+import dev.lego.ui.Style;
+
+/** Reaction test: 5 rounds, wait for green, click as fast as possible. Score = average ms (lower is better). */
 public final class Reaction extends GameView {
-   private static final float W = 360.0F;
-   private static final float H = 260.0F;
-   private static final float STRIP = 52.0F;
-   private static final int ROUNDS = 5;
-   private static final int RED_TOP = -10873310;
-   private static final int RED_BOT = -14022126;
-   private static final int GREEN_TOP = -13705104;
-   private static final int GREEN_BOT = -15423412;
-   private static final int EARLY_TOP = -2065890;
-   private static final int EARLY_BOT = -6667768;
-   private Reaction.Phase phase = Reaction.Phase.WAIT;
-   private float phaseT;
-   private float waitDur;
-   private long greenNs;
-   private int lastMs;
-   private boolean fresh;
-   private final List<Integer> results = new ArrayList<>();
-   private final List<float[]> parts = new ArrayList<>();
-   private int curTop = -10873310;
-   private int curBot = -14022126;
-   private static final String[] RATING = new String[]{"Blitzschnell!", "Sehr gut!", "Gut", "Okay", "Langsam"};
+    private static final float W = 360, H = 260, STRIP = 52;
+    private static final int ROUNDS = 5;
+    private static final int RED_TOP = 0xFF5A1622, RED_BOT = 0xFF2A0A12;
+    private static final int GREEN_TOP = 0xFF2EE070, GREEN_BOT = 0xFF14A84C;
+    private static final int EARLY_TOP = 0xFFE07A1E, EARLY_BOT = 0xFF9A4208;
 
-   public Reaction() {
-      super("reaction");
-   }
+    private enum Phase { WAIT, GO, EARLY, RESULT }
 
-   @Override
-   protected float boardW() {
-      return 360.0F;
-   }
+    private Phase phase = Phase.WAIT;
+    private float phaseT, waitDur;
+    private long greenNs;
+    private int lastMs;
+    private boolean fresh;
+    private final List<Integer> results = new ArrayList<>();
+    private final List<float[]> parts = new ArrayList<>();   // x, y, vx, vy, age, life, size, color
+    /** Displayed background colors (eased towards the phase colors). */
+    private int curTop = RED_TOP, curBot = RED_BOT;
 
-   @Override
-   protected float boardH() {
-      return 260.0F;
-   }
+    public Reaction() { super("reaction"); }
 
-   @Override
-   protected String scoreLabel() {
-      return "Schnitt";
-   }
+    @Override protected float boardW() { return W; }
+    @Override protected float boardH() { return H; }
+    @Override protected String scoreLabel() { return "Schnitt"; }
+    @Override protected String scoreText() { return results.isEmpty() ? "-" : average() + " ms"; }
+    @Override protected String bestText(long best) { return best + " ms"; }
+    @Override protected String overTitle() { return "Fertig!"; }
 
-   @Override
-   protected String scoreText() {
-      return this.results.isEmpty() ? "-" : this.average() + " ms";
-   }
+    @Override
+    protected void reset() {
+        results.clear();
+        parts.clear();
+        lastMs = 0;
+        fresh = true;
+        enterWait();
+        curTop = RED_TOP;
+        curBot = RED_BOT;
+    }
 
-   @Override
-   protected String bestText(long var1) {
-      return var1 + " ms";
-   }
+    private void enterWait() {
+        phase = Phase.WAIT;
+        phaseT = 0;
+        waitDur = 1.5f + rnd.nextFloat() * 2.5f;
+    }
 
-   @Override
-   protected String overTitle() {
-      return "Fertig!";
-   }
+    private long average() {
+        if (results.isEmpty()) return 0;
+        long s = 0;
+        for (int r : results) s += r;
+        return Math.round(s / (double) results.size());
+    }
 
-   @Override
-   protected void reset() {
-      this.results.clear();
-      this.parts.clear();
-      this.lastMs = 0;
-      this.fresh = true;
-      this.enterWait();
-      this.curTop = -10873310;
-      this.curBot = -14022126;
-   }
+    // ------------------------------------------------------------------ input
+    @Override protected void onClick(float x, float y, int button) { press(x, y); }
 
-   private void enterWait() {
-      this.phase = Reaction.Phase.WAIT;
-      this.phaseT = 0.0F;
-      this.waitDur = 1.5F + this.rnd.nextFloat() * 2.5F;
-   }
+    @Override
+    protected void onKey(int k) {
+        if (k == K_SPACE || k == K_ENTER) press(W / 2, (H - STRIP) / 2);
+    }
 
-   private long average() {
-      if (this.results.isEmpty()) {
-         return 0L;
-      } else {
-         long var1 = 0L;
-
-         for (int var4 : this.results) {
-            var1 += var4;
-         }
-
-         return Math.round((double)var1 / this.results.size());
-      }
-   }
-
-   @Override
-   protected void onClick(float var1, float var2, int var3) {
-      this.press(var1, var2);
-   }
-
-   @Override
-   protected void onKey(int var1) {
-      if (var1 == 32 || var1 == 257) {
-         this.press(180.0F, 104.0F);
-      }
-   }
-
-   private void press(float var1, float var2) {
-      if (!this.fresh) {
-         switch (this.phase) {
-            case WAIT:
-               this.phase = Reaction.Phase.EARLY;
-               this.phaseT = 0.0F;
-               Sound.play("minecraft:block.note_block.bass", 0.6F, 0.4F);
-               break;
-            case GO:
-               long var3 = System.nanoTime() - this.greenNs;
-               this.lastMs = (int)Math.max(1L, Math.round(var3 / 1000000.0));
-               this.results.add(this.lastMs);
-               this.phase = Reaction.Phase.RESULT;
-               this.phaseT = 0.0F;
-               this.burst(var1, var2, rating(this.lastMs)[1]);
-               Sound.play("minecraft:entity.experience_orb.pickup", 0.9F + Math.max(0, 450 - this.lastMs) / 450.0F * 0.9F, 0.35F);
-            case EARLY:
-            default:
-               break;
-            case RESULT:
-               if (this.results.size() < 5 && this.phaseT > 0.3F) {
-                  this.enterWait();
-                  Sound.click();
-               }
-         }
-      }
-   }
-
-   private void burst(float var1, float var2, int var3) {
-      for (int var4 = 0; var4 < 26; var4++) {
-         float var5 = (float)(this.rnd.nextFloat() * Math.PI * 2.0);
-         float var6 = 50.0F + this.rnd.nextFloat() * 150.0F;
-         int var7 = var4 % 3 == 0 ? -1 : var3;
-         this.parts
-            .add(
-               new float[]{
-                  var1,
-                  var2,
-                  (float)Math.cos(var5) * var6,
-                  (float)Math.sin(var5) * var6 - 40.0F,
-                  0.0F,
-                  0.6F + this.rnd.nextFloat() * 0.5F,
-                  2.0F + this.rnd.nextFloat() * 3.0F,
-                  var7
-               }
-            );
-      }
-   }
-
-   @Override
-   protected void update(float var1) {
-      this.fresh = false;
-      this.phaseT += var1;
-
-      for (float[] var3 : this.parts) {
-         var3[0] += var3[2] * var1;
-         var3[1] += var3[3] * var1;
-         var3[3] += 380.0F * var1;
-         var3[2] *= 0.985F;
-         var3[4] += var1;
-      }
-
-      this.parts.removeIf(var0 -> var0[4] >= var0[5]);
-      switch (this.phase) {
-         case WAIT:
-            if (this.phaseT >= this.waitDur) {
-               this.phase = Reaction.Phase.GO;
-               this.phaseT = 0.0F;
-               this.greenNs = System.nanoTime();
-               this.curTop = -13705104;
-               this.curBot = -15423412;
-               Sound.play("minecraft:block.note_block.pling", 1.8F, 0.35F);
+    private void press(float x, float y) {
+        if (fresh) return;   // the key / click that started the round
+        switch (phase) {
+            case WAIT -> {
+                phase = Phase.EARLY;
+                phaseT = 0;
+                Sound.play("minecraft:block.note_block.bass", 0.6f, 0.4f);
             }
-         case GO:
-         default:
-            break;
-         case EARLY:
-            if (this.phaseT >= 1.0F) {
-               this.enterWait();
+            case GO -> {
+                long ns = System.nanoTime() - greenNs;
+                lastMs = (int) Math.max(1, Math.round(ns / 1_000_000.0));
+                results.add(lastMs);
+                phase = Phase.RESULT;
+                phaseT = 0;
+                burst(x, y, rating(lastMs)[1]);
+                Sound.play("minecraft:entity.experience_orb.pickup", 0.9f + Math.max(0, 450 - lastMs) / 450f * 0.9f, 0.35f);
             }
-            break;
-         case RESULT:
-            if (this.results.size() >= 5) {
-               if (this.phaseT >= 1.5F) {
-                  this.score = this.average();
-                  this.gameOver(true);
-               }
-            } else if (this.phaseT >= 1.8F) {
-               this.enterWait();
+            case RESULT -> {
+                if (results.size() < ROUNDS && phaseT > 0.3f) { enterWait(); Sound.click(); }
             }
-      }
-   }
+            default -> { }
+        }
+    }
 
-   private static int[] rating(int var0) {
-      if (var0 < 180) {
-         return new int[]{0, -15043};
-      } else if (var0 < 230) {
-         return new int[]{1, -14756000};
-      } else if (var0 < 280) {
-         return new int[]{2, -12597249};
-      } else {
-         return var0 < 350 ? new int[]{3, -7859} : new int[]{4, -34235};
-      }
-   }
+    private void burst(float x, float y, int col) {
+        for (int i = 0; i < 26; i++) {
+            float a = (float) (rnd.nextFloat() * Math.PI * 2), s = 50 + rnd.nextFloat() * 150;
+            int c = i % 3 == 0 ? 0xFFFFFFFF : col;
+            parts.add(new float[]{x, y, (float) Math.cos(a) * s, (float) Math.sin(a) * s - 40, 0, 0.6f + rnd.nextFloat() * 0.5f, 2 + rnd.nextFloat() * 3, c});
+        }
+    }
 
-   @Override
-   protected void render() {
-      float var1 = 208.0F;
-      int var2;
-      int var3;
-      switch (this.phase) {
-         case GO:
-            var2 = -13705104;
-            var3 = -15423412;
-            break;
-         case EARLY:
-            var2 = -2065890;
-            var3 = -6667768;
-            break;
-         case RESULT:
-            int var4 = Style.light ? -14012352 : -15328732;
-            var2 = Gx.mix(var4, Style.accent, 0.22F);
-            var3 = Gx.mix(var4, -16777216, 0.25F);
-            break;
-         default:
-            var2 = -10873310;
-            var3 = -14022126;
-      }
+    // ------------------------------------------------------------------ update
+    @Override
+    protected void update(float dt) {
+        fresh = false;
+        phaseT += dt;
+        for (float[] p : parts) {
+            p[0] += p[2] * dt;
+            p[1] += p[3] * dt;
+            p[3] += 380 * dt;
+            p[2] *= 0.985f;
+            p[4] += dt;
+        }
+        parts.removeIf(p -> p[4] >= p[5]);
+        switch (phase) {
+            case WAIT -> {
+                if (phaseT >= waitDur) {
+                    phase = Phase.GO;
+                    phaseT = 0;
+                    greenNs = System.nanoTime();
+                    curTop = GREEN_TOP;   // green must appear instantly
+                    curBot = GREEN_BOT;
+                    Sound.play("minecraft:block.note_block.pling", 1.8f, 0.35f);
+                }
+            }
+            case EARLY -> { if (phaseT >= 1.0f) enterWait(); }
+            case RESULT -> {
+                if (results.size() >= ROUNDS) {
+                    if (phaseT >= 1.5f) {
+                        score = average();
+                        gameOver(true);
+                    }
+                } else if (phaseT >= 1.8f) enterWait();
+            }
+            default -> { }
+        }
+    }
 
-      float var21 = Math.min(1.0F, Gx.dt * 12.0F);
-      if (this.state != GameView.State.PLAYING) {
-         var21 = 1.0F;
-      }
+    // ------------------------------------------------------------------ helpers
+    /** {text, color} of a reaction time. */
+    private static int[] rating(int ms) {
+        if (ms < 180) return new int[]{0, 0xFFFFC53D};
+        if (ms < 230) return new int[]{1, 0xFF1ED760};
+        if (ms < 280) return new int[]{2, 0xFF3FC7FF};
+        if (ms < 350) return new int[]{3, 0xFFFFE14D};
+        return new int[]{4, 0xFFFF7A45};
+    }
 
-      this.curTop = Gx.mix(this.curTop, var2, var21);
-      this.curBot = Gx.mix(this.curBot, var3, var21);
-      this.boxV(0.0F, 0.0F, 360.0F, var1, 12.0F, this.curTop, this.curBot);
-      this.boxV(0.0F, var1 - 14.0F, 360.0F, 14.0F, 0.0F, Gx.mix(this.curTop, this.curBot, (var1 - 14.0F) / var1), this.curBot);
+    private static final String[] RATING = {"Blitzschnell!", "Sehr gut!", "Gut", "Okay", "Langsam"};
 
-      for (float var5 = 14.0F; var5 < var1; var5 += 20.0F) {
-         for (float var6 = 14.0F; var6 < 360.0F; var6 += 20.0F) {
-            this.circle(var6, var5 + 0.6F, 3.6F, 335544320);
-            this.circle(var6, var5, 3.4F, 218103807);
-         }
-      }
-
-      float var22 = 180.0F;
-      float var23 = var1 / 2.0F - 6.0F;
-      String var7 = "Runde " + Math.min(5, this.results.size() + (this.phase == Reaction.Phase.RESULT ? 0 : 1)) + " / 5";
-      this.pill(var7, var22, 16.0F, 855638016, -570425345);
-      switch (this.phase) {
-         case WAIT:
-            float var26 = (float)(0.5 + 0.5 * Math.sin(this.time * 3.2));
-            Gx.glow(this.X(var22), this.Y(var23 - 22.0F), this.S(52.0F + var26 * 8.0F), Gx.withAlpha(-45730, 0.22F + var26 * 0.1F));
-
-            for (int var31 = 0; var31 < 8; var31++) {
-               double var36 = this.time * 4.0F + var31 * Math.PI / 4.0;
-               float var40 = 0.25F + 0.75F * (var31 / 7.0F);
-               this.circle(var22 + (float)Math.cos(var36) * 17.0F, var23 - 22.0F + (float)Math.sin(var36) * 17.0F, 2.2F, Gx.withAlpha(-19526, var40));
+    // ------------------------------------------------------------------ render
+    @Override
+    protected void render() {
+        float mh = H - STRIP;
+        // background colors (eased, except the instant switch to green)
+        int tTop, tBot;
+        switch (phase) {
+            case GO -> { tTop = GREEN_TOP; tBot = GREEN_BOT; }
+            case EARLY -> { tTop = EARLY_TOP; tBot = EARLY_BOT; }
+            case RESULT -> {
+                int base = Style.light ? 0xFF2A3040 : 0xFF161A24;
+                tTop = Gx.mix(base, Style.accent, 0.22f);
+                tBot = Gx.mix(base, 0xFF000000, 0.25f);
+            }
+            default -> { tTop = RED_TOP; tBot = RED_BOT; }
+        }
+        float k = Math.min(1, Gx.dt * 12);
+        if (state != State.PLAYING) k = 1;
+        curTop = Gx.mix(curTop, tTop, k);
+        curBot = Gx.mix(curBot, tBot, k);
+        boxV(0, 0, W, mh, 12, curTop, curBot);
+        boxV(0, mh - 14, W, 14, 0, Gx.mix(curTop, curBot, (mh - 14) / mh), curBot);
+        // Lego baseplate studs
+        for (float y = 14; y < mh; y += 20)
+            for (float x = 14; x < W; x += 20) {
+                circle(x, y + 0.6f, 3.6f, 0x14000000);
+                circle(x, y, 3.4f, 0x0CFFFFFF);
             }
 
-            Gx.icon("hourglass", this.X(var22), this.Y(var23 - 22.0F), this.S(16.0F), -10534);
-            this.text("Warte auf Grün…", var22, var23 + 16.0F, 19.0F, 3, -1);
-            this.text("Klick erst, wenn das Feld grün wird", var22, var23 + 34.0F, 8.5F, 2, -1275068417);
-            break;
-         case GO:
-            float var25 = Ease.outBack(Math.min(1.0F, this.phaseT / 0.18F));
+        float cx = W / 2, cy = mh / 2 - 6;
+        String roundTxt = "Runde " + Math.min(ROUNDS, results.size() + (phase == Phase.RESULT ? 0 : 1)) + " / " + ROUNDS;
+        pill(roundTxt, cx, 16, 0x33000000, 0xDDFFFFFF);
 
-            for (int var30 = 0; var30 < 3; var30++) {
-               float var35 = (this.phaseT * 1.6F + var30 / 3.0F) % 1.0F;
-               Gx.ringAt(
-                  this.X(var22),
-                  this.Y(var23 - 20.0F),
-                  this.S(14.0F + var35 * 70.0F),
-                  Math.max(1, this.S(2.2F * (1.0F - var35))),
-                  Gx.withAlpha(-1, 0.5F * (1.0F - var35))
-               );
+        switch (phase) {
+            case WAIT -> {
+                float pulse = (float) (0.5 + 0.5 * Math.sin(time * 3.2));
+                Gx.glow(X(cx), Y(cy - 22), S(52 + pulse * 8), Gx.withAlpha(0xFFFF4D5E, 0.22f + pulse * 0.1f));
+                // spinning dots ring
+                for (int i = 0; i < 8; i++) {
+                    double a = time * 4 + i * Math.PI / 4;
+                    float a2 = 0.25f + 0.75f * (i / 7f);
+                    circle(cx + (float) Math.cos(a) * 17, cy - 22 + (float) Math.sin(a) * 17, 2.2f, Gx.withAlpha(0xFFFFB3BA, a2));
+                }
+                Gx.icon("hourglass", X(cx), Y(cy - 22), S(16), 0xFFFFD6DA);
+                text("Warte auf Grün…", cx, cy + 16, 19, Fonts.BOLD, 0xFFFFFFFF);
+                text("Klick erst, wenn das Feld grün wird", cx, cy + 34, 8.5f, Fonts.MEDIUM, 0xB3FFFFFF);
             }
-
-            Gx.glow(this.X(var22), this.Y(var23 - 20.0F), this.S(60.0F), 1442840575);
-            Gx.push();
-            Gx.scaleAt(this.X(var22), this.Y(var23), 0.6F + 0.4F * var25);
-            Gx.icon("bolt", this.X(var22), this.Y(var23 - 20.0F), this.S(24.0F), -1);
-            this.text("JETZT KLICKEN!", var22, var23 + 20.0F, 26.0F, 3, -1);
-            Gx.pop();
-            break;
-         case EARLY:
-            float var24 = (float)Math.sin(this.phaseT * 60.0F) * 5.0F * Math.max(0.0F, 1.0F - this.phaseT * 3.0F);
-            float var29 = Ease.outBack(Math.min(1.0F, this.phaseT / 0.25F));
-            Gx.push();
-            Gx.translate(this.S(var24), 0.0F);
-            Gx.scaleAt(this.X(var22), this.Y(var23), 0.7F + 0.3F * var29);
-            Gx.icon("warning", this.X(var22), this.Y(var23 - 22.0F), this.S(24.0F), -1);
-            this.text("Zu früh!", var22, var23 + 16.0F, 24.0F, 3, -1);
-            this.text("Warte auf Grün – die Runde wird wiederholt", var22, var23 + 36.0F, 8.5F, 2, -855638017);
-            Gx.pop();
-            float var34 = Math.min(1.0F, this.phaseT / 1.0F);
-            this.box(var22 - 40.0F, var23 + 50.0F, 80.0F, 3.0F, 1.5F, 1090519039);
-            this.box(var22 - 40.0F, var23 + 50.0F, 80.0F * (1.0F - var34), 3.0F, 1.5F, -1);
-            break;
-         case RESULT:
-            int[] var8 = rating(this.lastMs);
-            float var9 = Ease.outBack(Math.min(1.0F, this.phaseT / 0.3F));
-            float var10 = Ease.outCubic(Math.min(1.0F, this.phaseT / 0.35F));
-            Gx.glow(this.X(var22), this.Y(var23 - 8.0F), this.S(80.0F), Gx.withAlpha(var8[1], 0.22F));
-            Gx.push();
-            Gx.scaleAt(this.X(var22), this.Y(var23 - 8.0F), 0.55F + 0.45F * var9);
-            int var11 = Math.round(this.lastMs * var10);
-            float var12 = Gx.width(String.valueOf(var11), this.S(38.0F), 3) / this.u;
-            float var13 = Gx.width(" ms", this.S(16.0F), 3) / this.u;
-            float var14 = var22 - (var12 + var13) / 2.0F;
-            Gx.textMid(String.valueOf(var11), this.X(var14), this.Y(var23 - 12.0F), this.S(38.0F), 3, -1);
-            Gx.textMid(" ms", this.X(var14 + var12), this.Y(var23 - 5.0F), this.S(16.0F), 3, -1275068417);
-            Gx.pop();
-            float var15 = Ease.outCubic(Math.min(1.0F, Math.max(0.0F, this.phaseT - 0.15F) / 0.3F));
-            Gx.pushAlpha(var15);
-            String var16 = RATING[var8[0]];
-            float var17 = Gx.width(var16, this.S(10.0F), 3) / this.u + 22.0F;
-            this.box(var22 - var17 / 2.0F, var23 + 18.0F + (1.0F - var15) * 6.0F, var17, 18.0F, 9.0F, Gx.withAlpha(var8[1], 0.2F));
-            this.text(var16, var22, var23 + 27.0F + (1.0F - var15) * 6.0F, 10.0F, 3, var8[1]);
-            String var18 = this.results.size() >= 5 ? "Auswertung…" : "Klick für die nächste Runde";
-            this.text(var18, var22, var23 + 50.0F, 7.5F, 2, -1711276033);
-            Gx.popAlpha();
-      }
-
-      for (float[] var32 : this.parts) {
-         float var37 = 1.0F - var32[4] / var32[5];
-         this.box(var32[0] - var32[6] / 2.0F, var32[1] - var32[6] / 2.0F, var32[6], var32[6], var32[6] * 0.25F, Gx.withAlpha((int)var32[7], var37));
-      }
-
-      int var28 = Style.light ? -2236185 : -15658216;
-      this.box(0.0F, var1, 360.0F, 52.0F, 12.0F, var28);
-      this.box(0.0F, var1, 360.0F, 14.0F, 0.0F, var28);
-      this.box(0.0F, var1, 360.0F, 0.8F, 0.0F, Style.stroke);
-      float var33 = 46.0F;
-      float var38 = 32.0F;
-      float var39 = 6.0F;
-      float var41 = 12.0F;
-      float var42 = var1 + (52.0F - var38) / 2.0F;
-
-      for (int var43 = 0; var43 < 5; var43++) {
-         float var45 = var41 + var43 * (var33 + var39);
-         boolean var47 = var43 < this.results.size();
-         boolean var48 = var43 == this.results.size() && this.state == GameView.State.PLAYING;
-         if (var47) {
-            int var49 = this.results.get(var43);
-            int var19 = rating(var49)[1];
-            float var20 = var43 == this.results.size() - 1 && this.phase == Reaction.Phase.RESULT ? Ease.outBack(Math.min(1.0F, this.phaseT / 0.3F)) : 1.0F;
-            Gx.push();
-            Gx.scaleAt(this.X(var45 + var33 / 2.0F), this.Y(var42 + var38 / 2.0F), var20);
-            this.box(var45, var42, var33, var38, 8.0F, Gx.withAlpha(var19, 0.16F));
-            Gx.outline(this.X(var45), this.Y(var42), this.S(var33), this.S(var38), this.S(8.0F), Math.max(1, this.S(0.7F)), Gx.withAlpha(var19, 0.55F));
-            this.text(var49 + "", var45 + var33 / 2.0F, var42 + 13.0F, 10.0F, 3, Style.text);
-            this.text("ms", var45 + var33 / 2.0F, var42 + 24.0F, 6.0F, 2, var19);
-            Gx.pop();
-         } else {
-            this.box(var45, var42, var33, var38, 8.0F, Style.light ? -1117964 : -15065820);
-            if (var48) {
-               float var50 = (float)(0.5 + 0.5 * Math.sin(this.time * 5.0F));
-               Gx.outline(
-                  this.X(var45),
-                  this.Y(var42),
-                  this.S(var33),
-                  this.S(var38),
-                  this.S(8.0F),
-                  Math.max(1, this.S(0.9F)),
-                  Gx.withAlpha(Style.accent, 0.5F + 0.5F * var50)
-               );
+            case GO -> {
+                float e = Ease.outBack(Math.min(1, phaseT / 0.18f));
+                for (int i = 0; i < 3; i++) {
+                    float rt = ((phaseT * 1.6f) + i / 3f) % 1f;
+                    Gx.ringAt(X(cx), Y(cy - 20), S(14 + rt * 70), Math.max(1, S(2.2f * (1 - rt))), Gx.withAlpha(0xFFFFFFFF, 0.5f * (1 - rt)));
+                }
+                Gx.glow(X(cx), Y(cy - 20), S(60), 0x55FFFFFF);
+                Gx.push();
+                Gx.scaleAt(X(cx), Y(cy), 0.6f + 0.4f * e);
+                Gx.icon("bolt", X(cx), Y(cy - 20), S(24), 0xFFFFFFFF);
+                text("JETZT KLICKEN!", cx, cy + 20, 26, Fonts.BOLD, 0xFFFFFFFF);
+                Gx.pop();
             }
+            case EARLY -> {
+                float sh = (float) Math.sin(phaseT * 60) * 5 * Math.max(0, 1 - phaseT * 3);
+                float e = Ease.outBack(Math.min(1, phaseT / 0.25f));
+                Gx.push();
+                Gx.translate(S(sh), 0);
+                Gx.scaleAt(X(cx), Y(cy), 0.7f + 0.3f * e);
+                Gx.icon("warning", X(cx), Y(cy - 22), S(24), 0xFFFFFFFF);
+                text("Zu früh!", cx, cy + 16, 24, Fonts.BOLD, 0xFFFFFFFF);
+                text("Warte auf Grün – die Runde wird wiederholt", cx, cy + 36, 8.5f, Fonts.MEDIUM, 0xCCFFFFFF);
+                Gx.pop();
+                // restart countdown bar
+                float f = Math.min(1, phaseT / 1.0f);
+                box(cx - 40, cy + 50, 80, 3, 1.5f, 0x40FFFFFF);
+                box(cx - 40, cy + 50, 80 * (1 - f), 3, 1.5f, 0xFFFFFFFF);
+            }
+            case RESULT -> {
+                int[] rt = rating(lastMs);
+                float e = Ease.outBack(Math.min(1, phaseT / 0.3f));
+                float count = Ease.outCubic(Math.min(1, phaseT / 0.35f));
+                Gx.glow(X(cx), Y(cy - 8), S(80), Gx.withAlpha(rt[1], 0.22f));
+                Gx.push();
+                Gx.scaleAt(X(cx), Y(cy - 8), 0.55f + 0.45f * e);
+                int shown = Math.round(lastMs * count);
+                float nw = Gx.width(String.valueOf(shown), S(38), Fonts.BOLD) / u;
+                float uw = Gx.width(" ms", S(16), Fonts.BOLD) / u;
+                float left = cx - (nw + uw) / 2;
+                Gx.textMid(String.valueOf(shown), X(left), Y(cy - 12), S(38), Fonts.BOLD, 0xFFFFFFFF);
+                Gx.textMid(" ms", X(left + nw), Y(cy - 5), S(16), Fonts.BOLD, 0xB3FFFFFF);
+                Gx.pop();
+                float e2 = Ease.outCubic(Math.min(1, Math.max(0, phaseT - 0.15f) / 0.3f));
+                Gx.pushAlpha(e2);
+                String r = RATING[rt[0]];
+                float rw = Gx.width(r, S(10), Fonts.BOLD) / u + 22;
+                box(cx - rw / 2, cy + 18 + (1 - e2) * 6, rw, 18, 9, Gx.withAlpha(rt[1], 0.2f));
+                text(r, cx, cy + 27 + (1 - e2) * 6, 10, Fonts.BOLD, rt[1]);
+                String hint = results.size() >= ROUNDS ? "Auswertung…" : "Klick für die nächste Runde";
+                text(hint, cx, cy + 50, 7.5f, Fonts.MEDIUM, 0x99FFFFFF);
+                Gx.popAlpha();
+            }
+        }
 
-            this.text(String.valueOf(var43 + 1), var45 + var33 / 2.0F, var42 + var38 / 2.0F, 9.0F, 3, var48 ? Style.accent : Style.muted);
-         }
-      }
+        // particles
+        for (float[] p : parts) {
+            float a = 1 - p[4] / p[5];
+            box(p[0] - p[6] / 2, p[1] - p[6] / 2, p[6], p[6], p[6] * 0.25f, Gx.withAlpha((int) p[7], a));
+        }
 
-      float var44 = var41 + 5.0F * (var33 + var39) + 2.0F;
-      float var46 = 348.0F - var44;
-      this.box(var44, var42, var46, var38, 8.0F, Gx.withAlpha(Style.accent, 0.14F));
-      this.text("SCHNITT", var44 + var46 / 2.0F, var42 + 9.0F, 5.8F, 3, Style.accent);
-      this.text(this.results.isEmpty() ? "-" : this.average() + " ms", var44 + var46 / 2.0F, var42 + 22.0F, 10.0F, 3, Style.text);
-   }
+        // bottom strip: round chips + running average
+        int stripBg = Style.light ? 0xFFDDE0E7 : 0xFF111318;
+        box(0, mh, W, STRIP, 12, stripBg);
+        box(0, mh, W, 14, 0, stripBg);
+        box(0, mh, W, 0.8f, 0, Style.stroke);
+        float chipW = 46, chipH = 32, gap = 6, x0 = 12, y0 = mh + (STRIP - chipH) / 2;
+        for (int i = 0; i < ROUNDS; i++) {
+            float x = x0 + i * (chipW + gap);
+            boolean done = i < results.size();
+            boolean cur = i == results.size() && state == State.PLAYING;
+            if (done) {
+                int ms = results.get(i);
+                int c = rating(ms)[1];
+                float pop = i == results.size() - 1 && phase == Phase.RESULT ? Ease.outBack(Math.min(1, phaseT / 0.3f)) : 1;
+                Gx.push();
+                Gx.scaleAt(X(x + chipW / 2), Y(y0 + chipH / 2), pop);
+                box(x, y0, chipW, chipH, 8, Gx.withAlpha(c, 0.16f));
+                Gx.outline(X(x), Y(y0), S(chipW), S(chipH), S(8), Math.max(1, S(0.7f)), Gx.withAlpha(c, 0.55f));
+                text(ms + "", x + chipW / 2, y0 + 13, 10, Fonts.BOLD, Style.text);
+                text("ms", x + chipW / 2, y0 + 24, 6, Fonts.MEDIUM, c);
+                Gx.pop();
+            } else {
+                box(x, y0, chipW, chipH, 8, Style.light ? 0xFFEEF0F4 : 0xFF1A1D24);
+                if (cur) {
+                    float pulse = (float) (0.5 + 0.5 * Math.sin(time * 5));
+                    Gx.outline(X(x), Y(y0), S(chipW), S(chipH), S(8), Math.max(1, S(0.9f)), Gx.withAlpha(Style.accent, 0.5f + 0.5f * pulse));
+                }
+                text(String.valueOf(i + 1), x + chipW / 2, y0 + chipH / 2, 9, Fonts.BOLD, cur ? Style.accent : Style.muted);
+            }
+        }
+        // average box
+        float ax = x0 + ROUNDS * (chipW + gap) + 2, aw = W - 12 - ax;
+        box(ax, y0, aw, chipH, 8, Gx.withAlpha(Style.accent, 0.14f));
+        text("SCHNITT", ax + aw / 2, y0 + 9, 5.8f, Fonts.BOLD, Style.accent);
+        text(results.isEmpty() ? "-" : average() + " ms", ax + aw / 2, y0 + 22, 10, Fonts.BOLD, Style.text);
+    }
 
-   private void pill(String var1, float var2, float var3, int var4, int var5) {
-      float var6 = Gx.width(var1, this.S(7.5F), 3) / this.u + 18.0F;
-      this.box(var2 - var6 / 2.0F, var3 - 8.0F, var6, 16.0F, 8.0F, var4);
-      this.text(var1, var2, var3, 7.5F, 3, var5);
-   }
-
-   private static enum Phase {
-      WAIT,
-      GO,
-      EARLY,
-      RESULT;
-   }
+    private void pill(String s, float cx, float cy, int bg, int fg) {
+        float w = Gx.width(s, S(7.5f), Fonts.BOLD) / u + 18;
+        box(cx - w / 2, cy - 8, w, 16, 8, bg);
+        text(s, cx, cy, 7.5f, Fonts.BOLD, fg);
+    }
 }

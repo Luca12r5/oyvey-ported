@@ -10,6 +10,7 @@ import { forbidden, HttpError, Router, serveStatic, unauthorized, type Ctx } fro
 import { RateLimiter, safeEqual, sha256, tooMany } from './security.ts';
 import { registerAuth } from './routes/auth.ts';
 import { registerMe } from './routes/me.ts';
+import { registerDuels } from './routes/duels.ts';
 import { registerSocial } from './routes/social.ts';
 import { registerCosmetics } from './routes/cosmetics.ts';
 import { registerProgression } from './routes/progression.ts';
@@ -163,6 +164,7 @@ export function createApp(config: Config, opts: { db?: Db; fetch?: typeof fetch 
   registerAuth(app);
   registerMe(app);
   registerSocial(app);
+  registerDuels(app);
   registerCosmetics(app);
   registerProgression(app);
   registerFeedback(app);

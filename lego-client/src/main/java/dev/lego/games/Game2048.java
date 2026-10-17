@@ -1,478 +1,302 @@
 package dev.lego.games;
 
-import dev.lego.ui.Ease;
-import dev.lego.ui.Gx;
-import dev.lego.ui.Sound;
-import dev.lego.ui.Style;
 import java.util.ArrayList;
 import java.util.List;
 
+import dev.lego.ui.Ease;
+import dev.lego.ui.Fonts;
+import dev.lego.ui.Gx;
+import dev.lego.ui.Sound;
+import dev.lego.ui.Style;
+
+/** 2048 with Lego tiles: slide, merge, reach 2048 (and beyond). */
 public final class Game2048 extends GameView {
-   private static final int N = 4;
-   private static final float GX = 12.0F;
-   private static final float GY = 12.0F;
-   private static final float GRID = 256.0F;
-   private static final float GAP = 8.0F;
-   private static final float CS = 54.0F;
-   private static final float MOVE_T = 0.12F;
-   private Game2048.Tile[][] grid = new Game2048.Tile[4][4];
-   private final List<Game2048.Tile> ghosts = new ArrayList<>();
-   private final List<float[]> floats = new ArrayList<>();
-   private int moves;
-   private int best;
-   private boolean won;
-   private float winT = -1.0F;
-   private float overDelay = -1.0F;
-   private float shake;
+    private static final int N = 4;
+    private static final float GX = 12, GY = 12, GRID = 256, GAP = 8;
+    private static final float CS = (GRID - GAP * (N + 1)) / N;
+    private static final float MOVE_T = 0.12f;
 
-   public Game2048() {
-      super("2048");
-   }
+    /** A tile: value, target cell, previous cell, animation timers. */
+    private static final class Tile {
+        int v, r, c;
+        float fr, fc;           // previous position (animation start)
+        float move = 1;         // 0..1 slide progress
+        float pop = 1;          // 0..1 pop-in progress
+        boolean merged, dying;
+        Tile(int v, int r, int c) { this.v = v; this.r = r; this.c = c; this.fr = r; this.fc = c; }
+    }
 
-   @Override
-   protected float boardW() {
-      return 364.0F;
-   }
+    private Tile[][] grid = new Tile[N][N];
+    private final List<Tile> ghosts = new ArrayList<>();      // tiles sliding into a merge (removed after the slide)
+    private final List<float[]> floats = new ArrayList<>();   // score popups: value, t
+    private int moves, best;
+    private boolean won;
+    private float winT = -1, overDelay = -1, shake;
 
-   @Override
-   protected float boardH() {
-      return 280.0F;
-   }
+    public Game2048() { super("2048"); }
 
-   @Override
-   protected String overTitle() {
-      return "Keine Züge mehr";
-   }
+    @Override protected float boardW() { return 364; }
+    @Override protected float boardH() { return 280; }
+    @Override protected String overTitle() { return "Keine Züge mehr"; }
 
-   @Override
-   protected void reset() {
-      this.grid = new Game2048.Tile[4][4];
-      this.ghosts.clear();
-      this.floats.clear();
-      this.moves = 0;
-      this.best = 0;
-      this.won = false;
-      this.winT = -1.0F;
-      this.overDelay = -1.0F;
-      this.shake = 0.0F;
-      this.spawn();
-      this.spawn();
-   }
+    @Override
+    protected void reset() {
+        grid = new Tile[N][N];
+        ghosts.clear();
+        floats.clear();
+        moves = 0;
+        best = 0;
+        won = false;
+        winT = -1;
+        overDelay = -1;
+        shake = 0;
+        spawn();
+        spawn();
+    }
 
-   private void spawn() {
-      ArrayList var1 = new ArrayList();
+    private void spawn() {
+        List<int[]> free = new ArrayList<>();
+        for (int r = 0; r < N; r++) for (int c = 0; c < N; c++) if (grid[r][c] == null) free.add(new int[]{r, c});
+        if (free.isEmpty()) return;
+        int[] p = free.get(rnd.nextInt(free.size()));
+        Tile t = new Tile(rnd.nextFloat() < 0.9f ? 2 : 4, p[0], p[1]);
+        t.pop = -0.6f;   // waits for the slide to finish before popping in
+        grid[p[0]][p[1]] = t;
+        best = Math.max(best, t.v);
+    }
 
-      for (int var2 = 0; var2 < 4; var2++) {
-         for (int var3 = 0; var3 < 4; var3++) {
-            if (this.grid[var2][var3] == null) {
-               var1.add(new int[]{var2, var3});
+    @Override
+    protected void onKey(int k) {
+        if (overDelay >= 0) return;
+        int dr = 0, dc = 0;
+        if (k == K_LEFT || k == K_A) dc = -1;
+        else if (k == K_RIGHT || k == K_D) dc = 1;
+        else if (k == K_UP || k == K_W) dr = -1;
+        else if (k == K_DOWN || k == K_S) dr = 1;
+        else return;
+        move(dr, dc);
+    }
+
+    private void finishAnims() {
+        ghosts.clear();
+        for (Tile[] row : grid) for (Tile t : row) if (t != null) { t.move = 1; t.pop = Math.max(t.pop, 1); }
+    }
+
+    private void move(int dr, int dc) {
+        finishAnims();
+        boolean moved = false;
+        int gained = 0;
+        for (Tile[] row : grid) for (Tile t : row) if (t != null) { t.fr = t.r; t.fc = t.c; t.merged = false; }
+        for (int line = 0; line < N; line++) {
+            int target = 0;
+            Tile last = null;
+            for (int i = 0; i < N; i++) {
+                // walk each line starting at the side we move towards
+                int idx = (dr > 0 || dc > 0) ? N - 1 - i : i;
+                int r = dr != 0 ? idx : line, c = dc != 0 ? idx : line;
+                Tile t = grid[r][c];
+                if (t == null) continue;
+                grid[r][c] = null;
+                if (last != null && last.v == t.v && !last.merged) {
+                    // merge t into last
+                    last.v *= 2;
+                    last.merged = true;
+                    last.pop = -0.2f;
+                    gained += last.v;
+                    best = Math.max(best, last.v);
+                    t.r = last.r;
+                    t.c = last.c;
+                    t.dying = true;
+                    t.move = 0;
+                    ghosts.add(t);
+                    moved = true;
+                    continue;
+                }
+                int tIdx = (dr > 0 || dc > 0) ? N - 1 - target : target;
+                int nr = dr != 0 ? tIdx : line, nc = dc != 0 ? tIdx : line;
+                if (nr != r || nc != c) moved = true;
+                t.r = nr;
+                t.c = nc;
+                t.move = 0;
+                grid[nr][nc] = t;
+                last = t;
+                target++;
             }
-         }
-      }
-
-      if (!var1.isEmpty()) {
-         int[] var4 = (int[])var1.get(this.rnd.nextInt(var1.size()));
-         Game2048.Tile var5 = new Game2048.Tile(this.rnd.nextFloat() < 0.9F ? 2 : 4, var4[0], var4[1]);
-         var5.pop = -0.6F;
-         this.grid[var4[0]][var4[1]] = var5;
-         this.best = Math.max(this.best, var5.v);
-      }
-   }
-
-   @Override
-   protected void onKey(int var1) {
-      if (!(this.overDelay >= 0.0F)) {
-         byte var2 = 0;
-         byte var3 = 0;
-         if (var1 == 263 || var1 == 65) {
-            var3 = -1;
-         } else if (var1 == 262 || var1 == 68) {
-            var3 = 1;
-         } else if (var1 != 265 && var1 != 87) {
-            if (var1 != 264 && var1 != 83) {
-               return;
-            }
-
-            var2 = 1;
-         } else {
-            var2 = -1;
-         }
-
-         this.move(var2, var3);
-      }
-   }
-
-   private void finishAnims() {
-      this.ghosts.clear();
-
-      for (Game2048.Tile[] var4 : this.grid) {
-         for (Game2048.Tile var8 : var4) {
-            if (var8 != null) {
-               var8.move = 1.0F;
-               var8.pop = Math.max(var8.pop, 1.0F);
-            }
-         }
-      }
-   }
-
-   private void move(int var1, int var2) {
-      this.finishAnims();
-      boolean var3 = false;
-      int var4 = 0;
-
-      for (Game2048.Tile[] var8 : this.grid) {
-         for (Game2048.Tile var12 : var8) {
-            if (var12 != null) {
-               var12.fr = var12.r;
-               var12.fc = var12.c;
-               var12.merged = false;
-            }
-         }
-      }
-
-      for (int var16 = 0; var16 < 4; var16++) {
-         int var18 = 0;
-         Game2048.Tile var20 = null;
-
-         for (int var22 = 0; var22 < 4; var22++) {
-            int var24 = var1 <= 0 && var2 <= 0 ? var22 : 3 - var22;
-            int var26 = var1 != 0 ? var24 : var16;
-            int var28 = var2 != 0 ? var24 : var16;
-            Game2048.Tile var30 = this.grid[var26][var28];
-            if (var30 != null) {
-               this.grid[var26][var28] = null;
-               if (var20 != null && var20.v == var30.v && !var20.merged) {
-                  var20.v *= 2;
-                  var20.merged = true;
-                  var20.pop = -0.2F;
-                  var4 += var20.v;
-                  this.best = Math.max(this.best, var20.v);
-                  var30.r = var20.r;
-                  var30.c = var20.c;
-                  var30.dying = true;
-                  var30.move = 0.0F;
-                  this.ghosts.add(var30);
-                  var3 = true;
-               } else {
-                  int var13 = var1 <= 0 && var2 <= 0 ? var18 : 3 - var18;
-                  int var14 = var1 != 0 ? var13 : var16;
-                  int var15 = var2 != 0 ? var13 : var16;
-                  if (var14 != var26 || var15 != var28) {
-                     var3 = true;
-                  }
-
-                  var30.r = var14;
-                  var30.c = var15;
-                  var30.move = 0.0F;
-                  this.grid[var14][var15] = var30;
-                  var20 = var30;
-                  var18++;
-               }
-            }
-         }
-      }
-
-      if (var3) {
-         this.moves++;
-         this.score += var4;
-         if (var4 > 0) {
-            this.floats.add(new float[]{var4, 0.0F});
-            Sound.play("minecraft:block.note_block.pling", 0.9F + Math.min(1.0F, (float)(Math.log(var4) / Math.log(2.0)) / 11.0F), 0.25F);
-         } else {
-            Sound.play("minecraft:block.wood.hit", 1.4F, 0.18F);
-         }
-
-         this.spawn();
-         if (!this.won && this.best >= 2048) {
-            this.won = true;
-            this.winT = 0.0F;
-            Sound.play("minecraft:ui.toast.challenge_complete", 1.1F, 0.35F);
-         }
-
-         if (!this.canMove()) {
-            this.overDelay = 0.0F;
-         }
-      } else {
-         this.shake = 1.0F;
-
-         for (Game2048.Tile[] var23 : this.grid) {
-            for (Game2048.Tile var31 : var23) {
-               if (var31 != null) {
-                  var31.move = 1.0F;
-               }
-            }
-         }
-      }
-   }
-
-   private boolean canMove() {
-      for (int var1 = 0; var1 < 4; var1++) {
-         for (int var2 = 0; var2 < 4; var2++) {
-            Game2048.Tile var3 = this.grid[var1][var2];
-            if (var3 == null) {
-               return true;
-            }
-
-            if (var2 + 1 < 4 && this.grid[var1][var2 + 1] != null && this.grid[var1][var2 + 1].v == var3.v) {
-               return true;
-            }
-
-            if (var1 + 1 < 4 && this.grid[var1 + 1][var2] != null && this.grid[var1 + 1][var2].v == var3.v) {
-               return true;
-            }
-         }
-      }
-
-      return false;
-   }
-
-   @Override
-   protected void update(float var1) {
-      if (this.winT >= 0.0F) {
-         this.winT += var1;
-      }
-
-      if (this.winT > 3.2F) {
-         this.winT = -1.0F;
-      }
-
-      for (float[] var3 : this.floats) {
-         var3[1] += var1;
-      }
-
-      this.floats.removeIf(var0 -> var0[1] > 0.9F);
-      if (this.overDelay >= 0.0F) {
-         this.overDelay += var1;
-         if (this.overDelay > 0.7F) {
-            this.gameOver();
-         }
-      }
-   }
-
-   private static int tileColor(int var0) {
-      switch (var0) {
-         case 2:
-            return -1778229;
-         case 4:
-            return -864969;
-         case 8:
-            return -95720;
-         case 16:
-            return -1550805;
-         case 32:
-            return -3597815;
-         case 64:
-            return -3125096;
-         case 128:
-            return -7194248;
-         case 256:
-            return -16755265;
-         case 512:
-            return -13193537;
-         case 1024:
-            return -11821238;
-         case 2048:
-            return -15043;
-         default:
-            return -13945792;
-      }
-   }
-
-   private float cellX(float var1) {
-      return 20.0F + var1 * 62.0F;
-   }
-
-   private float cellY(float var1) {
-      return 20.0F + var1 * 62.0F;
-   }
-
-   private void drawTile(Game2048.Tile var1) {
-      float var2 = Ease.outCubic(var1.move);
-      float var3 = var1.fr + (var1.r - var1.fr) * var2;
-      float var4 = var1.fc + (var1.c - var1.fc) * var2;
-      float var5 = this.cellX(var4);
-      float var6 = this.cellY(var3);
-      float var7 = 1.0F;
-      if (var1.pop < 1.0F) {
-         float var8 = Math.max(0.0F, var1.pop);
-         var7 = var1.merged ? 1.0F + 0.18F * (float)Math.sin(var8 * Math.PI) : Ease.outBack(var8);
-         if (!var1.merged && var1.pop <= 0.0F) {
+        }
+        if (!moved) {
+            shake = 1;
+            for (Tile[] row : grid) for (Tile t : row) if (t != null) t.move = 1;
             return;
-         }
-      }
+        }
+        moves++;
+        score += gained;
+        if (gained > 0) {
+            floats.add(new float[]{gained, 0});
+            Sound.play("minecraft:block.note_block.pling", 0.9f + Math.min(1f, (float) (Math.log(gained) / Math.log(2)) / 11f), 0.25f);
+        } else Sound.play("minecraft:block.wood.hit", 1.4f, 0.18f);
+        spawn();
+        if (!won && best >= 2048) { won = true; winT = 0; Sound.play("minecraft:ui.toast.challenge_complete", 1.1f, 0.35f); }
+        if (!canMove()) overDelay = 0;
+    }
 
-      int var16 = tileColor(var1.v);
-      boolean var9 = Style.brightness(var16) > 0.6;
-      int var10 = var9 ? -12963034 : -1;
-      Gx.push();
-      Gx.scaleAt(this.X(var5 + 27.0F), this.Y(var6 + 27.0F), var7);
-      if (var1.v >= 128) {
-         Gx.glow(
-            this.X(var5 + 27.0F), this.Y(var6 + 27.0F), this.S(54.0F * (var1.v >= 2048 ? 1.1F : 0.8F)), Gx.withAlpha(var16, var1.v >= 2048 ? 0.55F : 0.25F)
-         );
-      }
-
-      Gx.shadow(this.X(var5), this.Y(var6 + 1.5F), this.S(54.0F), this.S(54.0F), this.S(8.0F), this.S(3.0F), 0.35F);
-      this.boxV(var5, var6, 54.0F, 54.0F, 8.0F, Gx.mix(var16, -1, 0.16F), Gx.mix(var16, -16777216, 0.14F));
-      Gx.outline(
-         this.X(var5), this.Y(var6), this.S(54.0F), this.S(54.0F), this.S(8.0F), Math.max(1, this.S(0.9F)), Gx.withAlpha(Gx.mix(var16, -16777216, 0.5F), 0.6F)
-      );
-      float var11 = 4.2F;
-      float var12 = 10.5F;
-
-      for (int var13 = 0; var13 < 4; var13++) {
-         float var14 = var13 % 2 == 0 ? var5 + var12 : var5 + 54.0F - var12;
-         float var15 = var13 < 2 ? var6 + var12 : var6 + 54.0F - var12;
-         this.circle(var14, var15 + 0.8F, var11, Gx.mix(var16, -16777216, 0.2F));
-         this.circle(var14, var15, var11 * 0.88F, Gx.mix(var16, -1, 0.2F));
-      }
-
-      String var17 = String.valueOf(var1.v);
-      float var18 = var17.length() <= 2 ? 22.0F : (var17.length() == 3 ? 19.0F : (var17.length() == 4 ? 15.5F : 12.5F));
-      this.text(var17, var5 + 27.0F + 0.4F, var6 + 27.0F + 1.2F, var18, 3, Gx.withAlpha(-16777216, var9 ? 0.08F : 0.25F));
-      this.text(var17, var5 + 27.0F, var6 + 27.0F, var18, 3, var10);
-      Gx.pop();
-   }
-
-   @Override
-   protected void render() {
-      float var1 = Math.min(0.05F, Gx.dt);
-
-      for (Game2048.Tile var3 : this.ghosts) {
-         var3.move = Math.min(1.0F, var3.move + var1 / 0.12F);
-      }
-
-      this.ghosts.removeIf(var0 -> var0.move >= 1.0F);
-
-      for (Game2048.Tile[] var5 : this.grid) {
-         for (Game2048.Tile var9 : var5) {
-            if (var9 != null) {
-               var9.move = Math.min(1.0F, var9.move + var1 / 0.12F);
-               if (var9.pop < 1.0F) {
-                  var9.pop = Math.min(1.0F, var9.pop + var1 / 0.16F);
-               }
+    private boolean canMove() {
+        for (int r = 0; r < N; r++)
+            for (int c = 0; c < N; c++) {
+                Tile t = grid[r][c];
+                if (t == null) return true;
+                if (c + 1 < N && grid[r][c + 1] != null && grid[r][c + 1].v == t.v) return true;
+                if (r + 1 < N && grid[r + 1][c] != null && grid[r + 1][c].v == t.v) return true;
             }
-         }
-      }
+        return false;
+    }
 
-      this.shake = Math.max(0.0F, this.shake - var1 * 4.0F);
-      float var18 = this.shake > 0.0F ? (float)Math.sin(this.shake * 30.0F) * 2.5F * this.shake : 0.0F;
-      Gx.push();
-      Gx.translate(this.S(var18), 0.0F);
-      Gx.shadow(this.X(12.0F), this.Y(12.0F), this.S(256.0F), this.S(256.0F), this.S(12.0F), this.S(6.0F), 0.4F);
-      this.boxV(12.0F, 12.0F, 256.0F, 256.0F, 12.0F, Style.light ? -2894115 : -15065819, Style.light ? -3617580 : -15460836);
+    @Override
+    protected void update(float dt) {
+        if (winT >= 0) winT += dt;
+        if (winT > 3.2f) winT = -1;
+        for (float[] f : floats) f[1] += dt;
+        floats.removeIf(f -> f[1] > 0.9f);
+        if (overDelay >= 0) {
+            overDelay += dt;
+            if (overDelay > 0.7f) gameOver();
+        }
+    }
 
-      for (int var20 = 0; var20 < 4; var20++) {
-         for (int var25 = 0; var25 < 4; var25++) {
-            float var30 = this.cellX(var25);
-            float var35 = this.cellY(var20);
-            this.box(var30, var35, 54.0F, 54.0F, 8.0F, Style.light ? 369098752 : 218103807);
+    // ------------------------------------------------------------------ drawing
+    private static int tileColor(int v) {
+        switch (v) {
+            case 2: return 0xFFE4DDCB;
+            case 4: return 0xFFF2CD37;
+            case 8: return 0xFFFE8A18;
+            case 16: return 0xFFE8562B;
+            case 32: return 0xFFC91A09;
+            case 64: return 0xFFD05098;
+            case 128: return 0xFF923978;
+            case 256: return 0xFF0055BF;
+            case 512: return 0xFF36AEBF;
+            case 1024: return 0xFF4B9F4A;
+            case 2048: return 0xFFFFC53D;
+            default: return 0xFF2B3440;
+        }
+    }
 
-            for (int var40 = 0; var40 < 4; var40++) {
-               float var45 = var40 % 2 == 0 ? var30 + 10.5F : var30 + 54.0F - 10.5F;
-               float var49 = var40 < 2 ? var35 + 10.5F : var35 + 54.0F - 10.5F;
-               this.circle(var45, var49, 3.4F, Style.light ? 268435456 : 150994943);
+    private float cellX(float c) { return GX + GAP + c * (CS + GAP); }
+    private float cellY(float r) { return GY + GAP + r * (CS + GAP); }
+
+    private void drawTile(Tile t) {
+        float mt = Ease.outCubic(t.move);
+        float r = t.fr + (t.r - t.fr) * mt, c = t.fc + (t.c - t.fc) * mt;
+        float x = cellX(c), y = cellY(r);
+        float sc = 1;
+        if (t.pop < 1) {
+            float p = Math.max(0, t.pop);
+            sc = t.merged ? 1 + 0.18f * (float) Math.sin(p * Math.PI) : Ease.outBack(p);
+            if (!t.merged && t.pop <= 0) return;
+        }
+        int col = tileColor(t.v);
+        boolean dark = Style.brightness(col) > 0.6;
+        int txt = dark ? 0xFF3A3326 : 0xFFFFFFFF;
+        Gx.push();
+        Gx.scaleAt(X(x + CS / 2), Y(y + CS / 2), sc);
+        if (t.v >= 128) Gx.glow(X(x + CS / 2), Y(y + CS / 2), S(CS * (t.v >= 2048 ? 1.1f : 0.8f)), Gx.withAlpha(col, t.v >= 2048 ? 0.55f : 0.25f));
+        // brick body
+        Gx.shadow(X(x), Y(y + 1.5f), S(CS), S(CS), S(8), S(3), 0.35f);
+        boxV(x, y, CS, CS, 8, Gx.mix(col, 0xFFFFFFFF, 0.16f), Gx.mix(col, 0xFF000000, 0.14f));
+        Gx.outline(X(x), Y(y), S(CS), S(CS), S(8), Math.max(1, S(0.9f)), Gx.withAlpha(Gx.mix(col, 0xFF000000, 0.5f), 0.6f));
+        // four corner studs
+        float sr = 4.2f, so = 10.5f;
+        for (int i = 0; i < 4; i++) {
+            float sx = i % 2 == 0 ? x + so : x + CS - so, sy = i < 2 ? y + so : y + CS - so;
+            circle(sx, sy + 0.8f, sr, Gx.mix(col, 0xFF000000, 0.2f));
+            circle(sx, sy, sr * 0.88f, Gx.mix(col, 0xFFFFFFFF, 0.2f));
+        }
+        String s = String.valueOf(t.v);
+        float size = s.length() <= 2 ? 22 : s.length() == 3 ? 19 : s.length() == 4 ? 15.5f : 12.5f;
+        text(s, x + CS / 2 + 0.4f, y + CS / 2 + 1.2f, size, Fonts.BOLD, Gx.withAlpha(0xFF000000, dark ? 0.08f : 0.25f));
+        text(s, x + CS / 2, y + CS / 2, size, Fonts.BOLD, txt);
+        Gx.pop();
+    }
+
+    @Override
+    protected void render() {
+        float dt = Math.min(0.05f, Gx.dt);
+        // advance animations in real time (so they also finish in the overlays)
+        for (Tile g : ghosts) g.move = Math.min(1, g.move + dt / MOVE_T);
+        ghosts.removeIf(g -> g.move >= 1);
+        for (Tile[] row : grid)
+            for (Tile t : row)
+                if (t != null) {
+                    t.move = Math.min(1, t.move + dt / MOVE_T);
+                    if (t.pop < 1) t.pop = Math.min(1, t.pop + dt / 0.16f);
+                }
+        shake = Math.max(0, shake - dt * 4);
+
+        float sx = shake > 0 ? (float) Math.sin(shake * 30) * 2.5f * shake : 0;
+        Gx.push();
+        Gx.translate(S(sx), 0);
+        // grid background
+        Gx.shadow(X(GX), Y(GY), S(GRID), S(GRID), S(12), S(6), 0.4f);
+        boxV(GX, GY, GRID, GRID, 12, Style.light ? 0xFFD3D6DD : 0xFF1A1D25, Style.light ? 0xFFC8CCD4 : 0xFF14161C);
+        for (int r = 0; r < N; r++)
+            for (int c = 0; c < N; c++) {
+                float x = cellX(c), y = cellY(r);
+                box(x, y, CS, CS, 8, Style.light ? 0x16000000 : 0x0CFFFFFF);
+                for (int i = 0; i < 4; i++) {
+                    float px = i % 2 == 0 ? x + 10.5f : x + CS - 10.5f, py = i < 2 ? y + 10.5f : y + CS - 10.5f;
+                    circle(px, py, 3.4f, Style.light ? 0x10000000 : 0x08FFFFFF);
+                }
             }
-         }
-      }
+        for (Tile g : ghosts) drawTile(g);
+        for (Tile[] row : grid) for (Tile t : row) if (t != null && !t.merged) drawTile(t);
+        for (Tile[] row : grid) for (Tile t : row) if (t != null && t.merged) drawTile(t);
+        Gx.pop();
 
-      for (Game2048.Tile var26 : this.ghosts) {
-         this.drawTile(var26);
-      }
+        // side panel
+        float px = GX + GRID + 12, pw = boardW() - px - 12;
+        panel(px, GY, pw, 58, "HÖCHSTER STEIN", String.valueOf(best), tileColor(best));
+        panel(px, GY + 66, pw, 58, "ZÜGE", String.valueOf(moves), Style.accent);
+        // score popups
+        for (float[] f : floats) {
+            float a = 1 - Ease.outCubic(f[1] / 0.9f);
+            text("+" + (int) f[0], px + pw / 2, GY + 150 - f[1] * 26, 12, Fonts.BOLD, Gx.withAlpha(Style.accent, a));
+        }
+        // goal hint
+        float gy = GY + GRID - 76;
+        box(px, gy, pw, 76, 10, Style.light ? 0x0C000000 : 0x0AFFFFFF);
+        text("ZIEL", px + pw / 2, gy + 14, 6.5f, Fonts.BOLD, Style.muted);
+        float bs = 34;
+        float bxp = px + (pw - bs) / 2, byp = gy + 24;
+        boxV(bxp, byp, bs, bs, 6, Gx.mix(0xFFFFC53D, 0xFFFFFFFF, 0.16f), Gx.mix(0xFFFFC53D, 0xFF000000, 0.14f));
+        text("2048", bxp + bs / 2, byp + bs / 2, 8.5f, Fonts.BOLD, 0xFF3A3326);
+        if (won) text("geschafft!", px + pw / 2, gy + 67, 6.5f, Fonts.BOLD, 0xFFFFC53D);
 
-      for (Game2048.Tile[] var36 : this.grid) {
-         for (Game2048.Tile var10 : var36) {
-            if (var10 != null && !var10.merged) {
-               this.drawTile(var10);
+        // 2048 celebration
+        if (winT >= 0) {
+            float a = winT < 2.6f ? 1 : 1 - (winT - 2.6f) / 0.6f;
+            float s = Ease.outBack(Math.min(1, winT / 0.45f));
+            float cx = GX + GRID / 2, cy = GY + GRID / 2;
+            Gx.pushAlpha(a);
+            box(GX, GY, GRID, GRID, 12, Gx.rgba(0x000000, 0.6f));
+            Gx.glow(X(cx), Y(cy), S(110), 0x66FFC53D);
+            Gx.push();
+            Gx.scaleAt(X(cx), Y(cy), s);
+            text("2048!", cx + 1, cy - 4, 40, Fonts.BOLD, 0x66000000);
+            text("2048!", cx, cy - 6, 40, Fonts.BOLD, 0xFFFFC53D);
+            text("Weiter geht's!", cx, cy + 26, 10, Fonts.MEDIUM, 0xFFFFFFFF);
+            Gx.pop();
+            for (int i = 0; i < 18; i++) {
+                double ang = i / 18.0 * Math.PI * 2 + winT;
+                float d = 40 + winT * 60;
+                circle(cx + (float) Math.cos(ang) * d, cy + (float) Math.sin(ang) * d, 2.5f, Gx.withAlpha(tileColor(2 << (i % 10)), 1 - winT / 3.2f));
             }
-         }
-      }
+            Gx.popAlpha();
+        }
+    }
 
-      for (Game2048.Tile[] var37 : this.grid) {
-         for (Game2048.Tile var53 : var37) {
-            if (var53 != null && var53.merged) {
-               this.drawTile(var53);
-            }
-         }
-      }
-
-      Gx.pop();
-      float var24 = 280.0F;
-      float var29 = this.boardW() - var24 - 12.0F;
-      this.panel(var24, 12.0F, var29, 58.0F, "HÖCHSTER STEIN", String.valueOf(this.best), tileColor(this.best));
-      this.panel(var24, 78.0F, var29, 58.0F, "ZÜGE", String.valueOf(this.moves), Style.accent);
-
-      for (float[] var38 : this.floats) {
-         float var43 = 1.0F - Ease.outCubic(var38[1] / 0.9F);
-         this.text("+" + (int)var38[0], var24 + var29 / 2.0F, 162.0F - var38[1] * 26.0F, 12.0F, 3, Gx.withAlpha(Style.accent, var43));
-      }
-
-      float var34 = 192.0F;
-      this.box(var24, var34, var29, 76.0F, 10.0F, Style.light ? 201326592 : 184549375);
-      this.text("ZIEL", var24 + var29 / 2.0F, var34 + 14.0F, 6.5F, 3, Style.muted);
-      float var39 = 34.0F;
-      float var44 = var24 + (var29 - var39) / 2.0F;
-      float var48 = var34 + 24.0F;
-      this.boxV(var44, var48, var39, var39, 6.0F, Gx.mix(-15043, -1, 0.16F), Gx.mix(-15043, -16777216, 0.14F));
-      this.text("2048", var44 + var39 / 2.0F, var48 + var39 / 2.0F, 8.5F, 3, -12963034);
-      if (this.won) {
-         this.text("geschafft!", var24 + var29 / 2.0F, var34 + 67.0F, 6.5F, 3, -15043);
-      }
-
-      if (this.winT >= 0.0F) {
-         float var52 = this.winT < 2.6F ? 1.0F : 1.0F - (this.winT - 2.6F) / 0.6F;
-         float var54 = Ease.outBack(Math.min(1.0F, this.winT / 0.45F));
-         float var11 = 140.0F;
-         float var12 = 140.0F;
-         Gx.pushAlpha(var52);
-         this.box(12.0F, 12.0F, 256.0F, 256.0F, 12.0F, Gx.rgba(0, 0.6F));
-         Gx.glow(this.X(var11), this.Y(var12), this.S(110.0F), 1728038205);
-         Gx.push();
-         Gx.scaleAt(this.X(var11), this.Y(var12), var54);
-         this.text("2048!", var11 + 1.0F, var12 - 4.0F, 40.0F, 3, 1711276032);
-         this.text("2048!", var11, var12 - 6.0F, 40.0F, 3, -15043);
-         this.text("Weiter geht's!", var11, var12 + 26.0F, 10.0F, 2, -1);
-         Gx.pop();
-
-         for (int var13 = 0; var13 < 18; var13++) {
-            double var14 = var13 / 18.0 * Math.PI * 2.0 + this.winT;
-            float var16 = 40.0F + this.winT * 60.0F;
-            this.circle(
-               var11 + (float)Math.cos(var14) * var16,
-               var12 + (float)Math.sin(var14) * var16,
-               2.5F,
-               Gx.withAlpha(tileColor(2 << var13 % 10), 1.0F - this.winT / 3.2F)
-            );
-         }
-
-         Gx.popAlpha();
-      }
-   }
-
-   private void panel(float var1, float var2, float var3, float var4, String var5, String var6, int var7) {
-      this.box(var1, var2, var3, var4, 10.0F, Style.light ? 201326592 : 184549375);
-      this.box(var1, var2 + 12.0F, 3.0F, var4 - 24.0F, 1.5F, var7);
-      this.text(var5, var1 + var3 / 2.0F, var2 + 16.0F, 6.5F, 3, Style.muted);
-      this.text(var6, var1 + var3 / 2.0F, var2 + 38.0F, 16.0F, 3, Style.text);
-   }
-
-   private static final class Tile {
-      int v;
-      int r;
-      int c;
-      float fr;
-      float fc;
-      float move = 1.0F;
-      float pop = 1.0F;
-      boolean merged;
-      boolean dying;
-
-      Tile(int var1, int var2, int var3) {
-         this.v = var1;
-         this.r = var2;
-         this.c = var3;
-         this.fr = var2;
-         this.fc = var3;
-      }
-   }
+    private void panel(float x, float y, float w, float h, String label, String value, int col) {
+        box(x, y, w, h, 10, Style.light ? 0x0C000000 : 0x0AFFFFFF);
+        box(x, y + 12, 3, h - 24, 1.5f, col);
+        text(label, x + w / 2, y + 16, 6.5f, Fonts.BOLD, Style.muted);
+        text(value, x + w / 2, y + 38, 16, Fonts.BOLD, Style.text);
+    }
 }

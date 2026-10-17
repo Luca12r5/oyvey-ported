@@ -1,798 +1,469 @@
 package dev.lego.games;
 
-import dev.lego.ui.Ease;
-import dev.lego.ui.Gx;
-import dev.lego.ui.Sound;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.RadialGradientPaint;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.GeneralPath;
-import java.awt.geom.RoundRectangle2D.Float;
+import java.awt.geom.Point2D;
+import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import dev.lego.ui.Ease;
+import dev.lego.ui.Fonts;
+import dev.lego.ui.Gx;
+import dev.lego.ui.Sound;
+
+/** Alien-Abwehr: defend the base against waves of (original) alien critters. Shields, power-ups, mothership. */
 public final class AlienDefense extends GameView {
-   private static final float W = 380.0F;
-   private static final float H = 300.0F;
-   private static final float PY = 272.0F;
-   private static final float COLS = 9.0F;
-   private static final float ROWS = 5.0F;
-   private static final float SX = 30.0F;
-   private static final float SY = 22.0F;
-   private static final float AW = 22.0F;
-   private static final float AH = 16.0F;
-   private static final int[] TYPE_COL = new int[]{-41816, -10685697, -10685697, -4653233, -4653233};
-   private static final int[] TYPE_PTS = new int[]{30, 20, 20, 10, 10};
-   private static final int P_TRIPLE = 0;
-   private static final int P_RAPID = 1;
-   private static final int P_SHIELD = 2;
-   private static final int P_LIFE = 3;
-   private static final String[] P_ICON = new String[]{"sparkle", "bolt", "shield", "heart-fill"};
-   private static final int[] P_COL = new int[]{-20434, -3462, -10685697, -45715};
-   private static final String[][][] ART = new String[][][]{
-      {
-            {"...XXXXX...", ".XXXXXXXXX.", "XXWOXXXWOXX", "XXXXXXXXXXX", "XXXXXXXXXXX", ".X.X.X.X.X.", "X.X.X.X.X.X", "..........."},
-            {"...XXXXX...", ".XXXXXXXXX.", "XXWOXXXWOXX", "XXXXXXXXXXX", "XXXXXXXXXXX", "X.X.X.X.X.X", ".X.X.X.X.X.", "..........."}
-      },
-      {
-            {"....XXX....", "..XXXXXXX..", ".XXWWWWWXX.", ".XWWWOOWWX.", ".XXWWWWWXX.", "..XXXXXXX..", ".X..X.X..X.", "X..X...X..X"},
-            {"....XXX....", "..XXXXXXX..", ".XXWWWWWXX.", ".XWWOOWWWX.", ".XXWWWWWXX.", "..XXXXXXX..", "..X.X.X.X..", ".X.X...X.X."}
-      },
-      {
-            {".....X.....", "....XXX....", "...XXXXX...", "..XWOXWOX..", ".XXXXXXXXX.", "XX.XXXXX.XX", "X...X.X...X", "...X...X..."},
-            {".....X.....", "....XXX....", "...XXXXX...", "..XOWXOWX..", ".XXXXXXXXX.", "XX.XXXXX.XX", ".X..X.X..X.", "X...X.X...X"}
-      }
-   };
-   private final List<AlienDefense.Alien> aliens = new ArrayList<>();
-   private final List<AlienDefense.Shot> shots = new ArrayList<>();
-   private final List<AlienDefense.Power> powers = new ArrayList<>();
-   private final GameFx fx = new GameFx();
-   private final boolean[][][] shields = new boolean[4][8][12];
-   private static final float CELL = 3.2F;
-   private static final float SHY = 226.0F;
-   private float fX;
-   private float fY;
-   private float fDir;
-   private float stepT;
-   private float px;
-   private float fireT;
-   private float deadT;
-   private float invul;
-   private float ufoX = -999.0F;
-   private float ufoT;
-   private float ufoDir;
-   private float bannerT = -1.0F;
-   private float anim;
-   private float tripleT;
-   private float rapidT;
-   private float hintT;
-   private boolean left;
-   private boolean right;
-   private boolean firing;
-   private boolean dead;
-   private boolean bubble;
-   private int lives;
-   private int wave;
-   private int frame;
-   private int ufoPts;
+    private static final float W = 380, H = 300, PY = 272, COLS = 9, ROWS = 5, SX = 30, SY = 22, AW = 22, AH = 16;
+    private static final int[] TYPE_COL = {0xFFFF5CA8, 0xFF5CF2FF, 0xFF5CF2FF, 0xFFB8FF4F, 0xFFB8FF4F};
+    private static final int[] TYPE_PTS = {30, 20, 20, 10, 10};
+    private static final int P_TRIPLE = 0, P_RAPID = 1, P_SHIELD = 2, P_LIFE = 3;
+    private static final String[] P_ICON = {"sparkle", "bolt", "shield", "heart-fill"};
+    private static final int[] P_COL = {0xFFFFB02E, 0xFFFFF27A, 0xFF5CF2FF, 0xFFFF4D6D};
+    private static final String[][][] ART = {
+            {{"...XXXXX...", ".XXXXXXXXX.", "XXWOXXXWOXX", "XXXXXXXXXXX", "XXXXXXXXXXX", ".X.X.X.X.X.", "X.X.X.X.X.X", "..........."},
+             {"...XXXXX...", ".XXXXXXXXX.", "XXWOXXXWOXX", "XXXXXXXXXXX", "XXXXXXXXXXX", "X.X.X.X.X.X", ".X.X.X.X.X.", "..........."}},
+            {{"....XXX....", "..XXXXXXX..", ".XXWWWWWXX.", ".XWWWOOWWX.", ".XXWWWWWXX.", "..XXXXXXX..", ".X..X.X..X.", "X..X...X..X"},
+             {"....XXX....", "..XXXXXXX..", ".XXWWWWWXX.", ".XWWOOWWWX.", ".XXWWWWWXX.", "..XXXXXXX..", "..X.X.X.X..", ".X.X...X.X."}},
+            {{".....X.....", "....XXX....", "...XXXXX...", "..XWOXWOX..", ".XXXXXXXXX.", "XX.XXXXX.XX", "X...X.X...X", "...X...X..."},
+             {".....X.....", "....XXX....", "...XXXXX...", "..XOWXOWX..", ".XXXXXXXXX.", "XX.XXXXX.XX", ".X..X.X..X.", "X...X.X...X"}}};
 
-   public AlienDefense() {
-      super("invaders");
-   }
+    private static final class Alien {
+        int row, col, type;
+        boolean alive = true;
+        float hitT;
+    }
 
-   @Override
-   protected float boardW() {
-      return 380.0F;
-   }
+    private static final class Shot {
+        float x, y, vx, vy;
+        boolean enemy;
+    }
 
-   @Override
-   protected float boardH() {
-      return 300.0F;
-   }
+    private static final class Power {
+        float x, y, t;
+        int kind;
+    }
 
-   @Override
-   protected void reset() {
-      this.shots.clear();
-      this.powers.clear();
-      this.fx.clear();
-      this.lives = 3;
-      this.wave = 0;
-      this.px = 190.0F;
-      this.dead = false;
-      this.invul = 0.0F;
-      this.bubble = false;
-      this.tripleT = this.rapidT = 0.0F;
-      this.hintT = 0.0F;
-      this.left = this.right = this.firing = false;
-      this.buildShields();
-      this.nextWave();
-   }
+    private final List<Alien> aliens = new ArrayList<>();
+    private final List<Shot> shots = new ArrayList<>();
+    private final List<Power> powers = new ArrayList<>();
+    private final GameFx fx = new GameFx();
+    private final boolean[][][] shields = new boolean[4][8][12];
+    private static final float CELL = 3.2f, SHY = 226;
+    private float fX, fY, fDir, stepT, px, fireT, deadT, invul, ufoX = -999, ufoT, ufoDir, bannerT = -1, anim, tripleT, rapidT, hintT;
+    private boolean left, right, firing, dead, bubble;
+    private int lives, wave, frame, ufoPts;
 
-   private void buildShields() {
-      for (int var1 = 0; var1 < 4; var1++) {
-         for (int var2 = 0; var2 < 8; var2++) {
-            for (int var3 = 0; var3 < 12; var3++) {
-               boolean var4 = true;
-               if (var2 == 0 && (var3 < 2 || var3 > 9)) {
-                  var4 = false;
-               }
+    public AlienDefense() { super("invaders"); }
 
-               if (var2 == 1 && (var3 < 1 || var3 > 10)) {
-                  var4 = false;
-               }
+    @Override protected float boardW() { return W; }
+    @Override protected float boardH() { return H; }
 
-               if (var2 >= 5 && var3 >= 3 && var3 <= 8) {
-                  var4 = false;
-               }
+    @Override
+    protected void reset() {
+        shots.clear();
+        powers.clear();
+        fx.clear();
+        lives = 3; wave = 0;
+        px = W / 2; dead = false; invul = 0; bubble = false; tripleT = rapidT = 0; hintT = 0;
+        left = right = firing = false;
+        buildShields();
+        nextWave();
+    }
 
-               this.shields[var1][var2][var3] = var4;
+    private void buildShields() {
+        for (int s = 0; s < 4; s++)
+            for (int r = 0; r < 8; r++)
+                for (int c = 0; c < 12; c++) {
+                    boolean on = true;
+                    if (r == 0 && (c < 2 || c > 9)) on = false;
+                    if (r == 1 && (c < 1 || c > 10)) on = false;
+                    if (r >= 5 && c >= 3 && c <= 8) on = false;
+                    shields[s][r][c] = on;
+                }
+    }
+
+    private float shieldX(int s) { return 46 + s * 88 - 6 * CELL; }
+
+    private void nextWave() {
+        wave++;
+        aliens.clear();
+        for (int r = 0; r < ROWS; r++)
+            for (int c = 0; c < COLS; c++) {
+                Alien a = new Alien();
+                a.row = r; a.col = c; a.type = r == 0 ? 0 : r < 3 ? 1 : 2;
+                aliens.add(a);
             }
-         }
-      }
-   }
+        fX = 30; fY = 44 + Math.min(40, (wave - 1) * 8); fDir = 1;
+        ufoT = 14 + rnd.nextFloat() * 8;
+        bannerT = 0;
+        if (wave > 1) Sound.play("minecraft:entity.player.levelup", 0.9f, 0.4f);
+    }
 
-   private float shieldX(int var1) {
-      return 46 + var1 * 88 - 19.2F;
-   }
+    private int alive() { int n = 0; for (Alien a : aliens) if (a.alive) n++; return n; }
 
-   private void nextWave() {
-      this.wave++;
-      this.aliens.clear();
+    // ------------------------------------------------------------------ input
+    @Override
+    protected void onKey(int k) {
+        if (k == K_LEFT || k == K_A) left = true;
+        if (k == K_RIGHT || k == K_D) right = true;
+        if (k == K_SPACE || k == K_UP || k == K_W) firing = true;
+    }
 
-      for (int var1 = 0; var1 < 5.0F; var1++) {
-         for (int var2 = 0; var2 < 9.0F; var2++) {
-            AlienDefense.Alien var3 = new AlienDefense.Alien();
-            var3.row = var1;
-            var3.col = var2;
-            var3.type = var1 == 0 ? 0 : (var1 < 3 ? 1 : 2);
-            this.aliens.add(var3);
-         }
-      }
+    @Override
+    protected void onKeyUp(int k) {
+        if (k == K_LEFT || k == K_A) left = false;
+        if (k == K_RIGHT || k == K_D) right = false;
+        if (k == K_SPACE || k == K_UP || k == K_W) firing = false;
+    }
 
-      this.fX = 30.0F;
-      this.fY = 44 + Math.min(40, (this.wave - 1) * 8);
-      this.fDir = 1.0F;
-      this.ufoT = 14.0F + this.rnd.nextFloat() * 8.0F;
-      this.bannerT = 0.0F;
-      if (this.wave > 1) {
-         Sound.play("minecraft:entity.player.levelup", 0.9F, 0.4F);
-      }
-   }
+    // ------------------------------------------------------------------ logic
+    @Override
+    protected void update(float dt) {
+        fx.update(dt);
+        hintT += dt;
+        if (bannerT >= 0) { bannerT += dt; if (bannerT > 1.8f) bannerT = -1; }
+        fireT = Math.max(0, fireT - dt);
+        invul = Math.max(0, invul - dt);
+        tripleT = Math.max(0, tripleT - dt);
+        rapidT = Math.max(0, rapidT - dt);
 
-   private int alive() {
-      int var1 = 0;
+        // player
+        if (dead) {
+            deadT += dt;
+            if (deadT > 1.4f) { if (lives <= 0) { gameOver(); return; } dead = false; invul = 1.6f; px = W / 2; }
+        } else {
+            px += ((right ? 1 : 0) - (left ? 1 : 0)) * 175 * dt;
+            px = Math.max(14, Math.min(W - 14, px));
+            if (firing && fireT <= 0) fire();
+        }
 
-      for (AlienDefense.Alien var3 : this.aliens) {
-         if (var3.alive) {
-            var1++;
-         }
-      }
+        // formation
+        int n = alive();
+        float speed = 14 + (ROWS * COLS - n) * 1.25f + wave * 3.5f + (n <= 3 ? 40 : 0);
+        fX += fDir * speed * dt;
+        float minX = 999, maxX = -999, maxY = -999;
+        for (Alien a : aliens) if (a.alive) { minX = Math.min(minX, fX + a.col * SX); maxX = Math.max(maxX, fX + a.col * SX + AW); maxY = Math.max(maxY, fY + a.row * SY + AH); }
+        if ((fDir > 0 && maxX > W - 6) || (fDir < 0 && minX < 6)) { fDir = -fDir; fY += 8; }
+        stepT += dt * (0.8f + speed / 30f);
+        if (stepT > 1) { stepT = 0; frame ^= 1; Sound.play("minecraft:block.note_block.bass", frame == 0 ? 0.6f : 0.55f, 0.18f); }
+        for (Alien a : aliens) a.hitT = Math.max(0, a.hitT - dt);
+        // aliens chew through shields
+        if (maxY > SHY) for (Alien a : aliens) if (a.alive) eraseShield(fX + a.col * SX + AW / 2, fY + a.row * SY + AH / 2, AW / 2 + 1);
+        if (maxY >= PY - 8 && !dead) { lives = 0; crash(); }
 
-      return var1;
-   }
-
-   @Override
-   protected void onKey(int var1) {
-      if (var1 == 263 || var1 == 65) {
-         this.left = true;
-      }
-
-      if (var1 == 262 || var1 == 68) {
-         this.right = true;
-      }
-
-      if (var1 == 32 || var1 == 265 || var1 == 87) {
-         this.firing = true;
-      }
-   }
-
-   @Override
-   protected void onKeyUp(int var1) {
-      if (var1 == 263 || var1 == 65) {
-         this.left = false;
-      }
-
-      if (var1 == 262 || var1 == 68) {
-         this.right = false;
-      }
-
-      if (var1 == 32 || var1 == 265 || var1 == 87) {
-         this.firing = false;
-      }
-   }
-
-   @Override
-   protected void update(float var1) {
-      this.fx.update(var1);
-      this.hintT += var1;
-      if (this.bannerT >= 0.0F) {
-         this.bannerT += var1;
-         if (this.bannerT > 1.8F) {
-            this.bannerT = -1.0F;
-         }
-      }
-
-      this.fireT = Math.max(0.0F, this.fireT - var1);
-      this.invul = Math.max(0.0F, this.invul - var1);
-      this.tripleT = Math.max(0.0F, this.tripleT - var1);
-      this.rapidT = Math.max(0.0F, this.rapidT - var1);
-      if (this.dead) {
-         this.deadT += var1;
-         if (this.deadT > 1.4F) {
-            if (this.lives <= 0) {
-               this.gameOver();
-               return;
+        // alien fire
+        float rate = 0.6f + wave * 0.2f + (ROWS * COLS - n) * 0.02f;
+        if (n > 0 && rnd.nextFloat() < rate * dt) {
+            List<Alien> bottom = new ArrayList<>();
+            for (int c = 0; c < COLS; c++) {
+                Alien low = null;
+                for (Alien a : aliens) if (a.alive && a.col == c && (low == null || a.row > low.row)) low = a;
+                if (low != null) bottom.add(low);
             }
+            // prefer aliens above the player
+            Alien sh = bottom.get(rnd.nextInt(bottom.size()));
+            if (rnd.nextFloat() < 0.5f) for (Alien a : bottom) if (Math.abs(fX + a.col * SX + AW / 2 - px) < 22) sh = a;
+            Shot s = new Shot();
+            s.enemy = true; s.x = fX + sh.col * SX + AW / 2; s.y = fY + sh.row * SY + AH; s.vy = 120 + wave * 8;
+            shots.add(s);
+        }
 
-            this.dead = false;
-            this.invul = 1.6F;
-            this.px = 190.0F;
-         }
-      } else {
-         this.px = this.px + ((this.right ? 1 : 0) - (this.left ? 1 : 0)) * 175 * var1;
-         this.px = Math.max(14.0F, Math.min(366.0F, this.px));
-         if (this.firing && this.fireT <= 0.0F) {
-            this.fire();
-         }
-      }
+        // mothership
+        ufoT -= dt;
+        if (ufoX < -900 && ufoT <= 0) { ufoDir = rnd.nextBoolean() ? 1 : -1; ufoX = ufoDir > 0 ? -30 : W + 30; ufoPts = 50 * (2 + rnd.nextInt(5)); Sound.play("minecraft:block.beacon.ambient", 2f, 0.5f); }
+        if (ufoX > -900) { ufoX += ufoDir * 70 * dt; if (ufoX < -40 || ufoX > W + 40) { ufoX = -999; ufoT = 16 + rnd.nextFloat() * 10; } }
 
-      int var2 = this.alive();
-      float var3 = 14.0F + (45.0F - var2) * 1.25F + this.wave * 3.5F + (var2 <= 3 ? 40 : 0);
-      this.fX = this.fX + this.fDir * var3 * var1;
-      float var4 = 999.0F;
-      float var5 = -999.0F;
-      float var6 = -999.0F;
-
-      for (AlienDefense.Alien var8 : this.aliens) {
-         if (var8.alive) {
-            var4 = Math.min(var4, this.fX + var8.col * 30.0F);
-            var5 = Math.max(var5, this.fX + var8.col * 30.0F + 22.0F);
-            var6 = Math.max(var6, this.fY + var8.row * 22.0F + 16.0F);
-         }
-      }
-
-      if (this.fDir > 0.0F && var5 > 374.0F || this.fDir < 0.0F && var4 < 6.0F) {
-         this.fDir = -this.fDir;
-         this.fY += 8.0F;
-      }
-
-      this.stepT += var1 * (0.8F + var3 / 30.0F);
-      if (this.stepT > 1.0F) {
-         this.stepT = 0.0F;
-         this.frame ^= 1;
-         Sound.play("minecraft:block.note_block.bass", this.frame == 0 ? 0.6F : 0.55F, 0.18F);
-      }
-
-      for (AlienDefense.Alien var18 : this.aliens) {
-         var18.hitT = Math.max(0.0F, var18.hitT - var1);
-      }
-
-      if (var6 > 226.0F) {
-         for (AlienDefense.Alien var19 : this.aliens) {
-            if (var19.alive) {
-               this.eraseShield(this.fX + var19.col * 30.0F + 11.0F, this.fY + var19.row * 22.0F + 8.0F, 12.0F);
+        // shots
+        for (int i = shots.size() - 1; i >= 0; i--) {
+            Shot s = shots.get(i);
+            s.x += s.vx * dt; s.y += s.vy * dt;
+            if (s.y < 16 || s.y > H + 4 || s.x < -4 || s.x > W + 4) { shots.remove(i); continue; }
+            if (hitShield(s.x, s.y)) { shots.remove(i); fx.burst(s.x, s.y, 5, s.enemy ? 0xFFFF7BD5 : 0xFF7CF7FF, 50, 1.6f, 0.3f, 0, GameFx.SQUARE); continue; }
+            if (s.enemy) {
+                if (!dead && invul <= 0 && Math.abs(s.x - px) < 12 && s.y > PY - 8 && s.y < PY + 8) {
+                    shots.remove(i);
+                    if (bubble) { bubble = false; invul = 0.8f; fx.ring(px, PY, 30, 0xFF5CF2FF, 0.4f); fx.popup("Schild!", px, PY - 20, 0xFF5CF2FF, 9); Sound.play("minecraft:item.shield.block", 1.2f, 0.5f); }
+                    else crash();
+                }
+                continue;
             }
-         }
-      }
-
-      if (var6 >= 264.0F && !this.dead) {
-         this.lives = 0;
-         this.crash();
-      }
-
-      float var17 = 0.6F + this.wave * 0.2F + (45.0F - var2) * 0.02F;
-      if (var2 > 0 && this.rnd.nextFloat() < var17 * var1) {
-         ArrayList var20 = new ArrayList();
-
-         for (int var9 = 0; var9 < 9.0F; var9++) {
-            AlienDefense.Alien var10 = null;
-
-            for (AlienDefense.Alien var12 : this.aliens) {
-               if (var12.alive && var12.col == var9 && (var10 == null || var12.row > var10.row)) {
-                  var10 = var12;
-               }
+            boolean used = false;
+            for (Alien a : aliens) {
+                if (!a.alive) continue;
+                float ax = fX + a.col * SX, ay = fY + a.row * SY;
+                if (s.x > ax && s.x < ax + AW && s.y > ay && s.y < ay + AH) { kill(a, ax + AW / 2, ay + AH / 2); used = true; break; }
             }
-
-            if (var10 != null) {
-               var20.add(var10);
+            if (!used && ufoX > -900 && Math.abs(s.x - ufoX) < 16 && Math.abs(s.y - 28) < 7) {
+                score += ufoPts;
+                fx.burst(ufoX, 28, 30, 0xFFFF5CA8, 160, 2.6f, 0.7f, 0, GameFx.SQUARE);
+                fx.ring(ufoX, 28, 40, 0xFFFF5CA8, 0.5f);
+                fx.popup("Mutterschiff! +" + ufoPts, ufoX, 40, 0xFFFF5CA8, 12);
+                fx.shake(0.4f);
+                Sound.play("minecraft:entity.generic.explode", 1.3f, 0.4f);
+                ufoX = -999; ufoT = 16 + rnd.nextFloat() * 10;
+                used = true;
             }
-         }
+            if (used) shots.remove(i);
+        }
+        // shot vs shot
+        for (Shot a : shots) if (!a.enemy) for (Shot b : shots) if (b.enemy && Math.abs(a.x - b.x) < 3 && Math.abs(a.y - b.y) < 6) { a.y = -99; b.y = H + 99; fx.burst(a.x, (a.y + b.y) / 2, 4, 0xFFFFFFFF, 40, 1.5f, 0.2f, 0, GameFx.SPARK); }
+        // power-ups
+        for (int i = powers.size() - 1; i >= 0; i--) {
+            Power p = powers.get(i);
+            p.t += dt; p.y += 60 * dt;
+            if (!dead && Math.abs(p.x - px) < 16 && Math.abs(p.y - PY) < 10) { powers.remove(i); collect(p); continue; }
+            if (p.y > H + 10) powers.remove(i);
+        }
+        if (n == 0) nextWave();
+    }
 
-         AlienDefense.Alien var24 = (AlienDefense.Alien)var20.get(this.rnd.nextInt(var20.size()));
-         if (this.rnd.nextFloat() < 0.5F) {
-            for (AlienDefense.Alien var32 : (Iterable<AlienDefense.Alien>) (Iterable<?>) (var20)) {
-               if (Math.abs(this.fX + var32.col * 30.0F + 11.0F - this.px) < 22.0F) {
-                  var24 = var32;
-               }
+    private void fire() {
+        int mine = 0;
+        for (Shot s : shots) if (!s.enemy) mine++;
+        boolean rapid = rapidT > 0, triple = tripleT > 0;
+        if (mine >= (rapid ? 6 : triple ? 3 : 2)) return;
+        fireT = rapid ? 0.14f : 0.38f;
+        for (int k = triple ? -1 : 0; k <= (triple ? 1 : 0); k++) {
+            Shot s = new Shot();
+            s.x = px + k * 4; s.y = PY - 10; s.vy = -340; s.vx = k * 60;
+            shots.add(s);
+        }
+        fx.add(px, PY - 11, 0, 0, 0.1f, 4, 0xFF7CF7FF, GameFx.SPARK, 0, 0);
+        Sound.play("minecraft:block.note_block.bit", 1.8f, 0.2f);
+    }
+
+    private void kill(Alien a, float cx, float cy) {
+        a.alive = false;
+        int pts = TYPE_PTS[a.row];
+        score += pts;
+        int col = TYPE_COL[a.row];
+        fx.burst(cx, cy, 16, col, 120, 2.4f, 0.55f, 60, GameFx.SQUARE);
+        fx.ring(cx, cy, 16, col, 0.3f);
+        fx.popup("+" + pts, cx, cy - 6, col, 8);
+        fx.shake(0.07f);
+        Sound.play("minecraft:entity.generic.explode", 2f, 0.12f);
+        if (rnd.nextFloat() < 0.07f) {
+            Power p = new Power();
+            p.x = cx; p.y = cy;
+            float r = rnd.nextFloat();
+            p.kind = r < 0.35f ? P_TRIPLE : r < 0.7f ? P_RAPID : r < 0.9f ? P_SHIELD : P_LIFE;
+            powers.add(p);
+        }
+    }
+
+    private void collect(Power p) {
+        String name;
+        switch (p.kind) {
+            case P_TRIPLE: tripleT = 9; name = "Dreifachschuss!"; break;
+            case P_RAPID: rapidT = 9; name = "Schnellfeuer!"; break;
+            case P_SHIELD: bubble = true; name = "Schutzschild!"; break;
+            default: lives = Math.min(5, lives + 1); name = "+1 Leben!";
+        }
+        fx.popup(name, px, PY - 24, P_COL[p.kind], 11);
+        fx.burst(px, PY - 6, 18, P_COL[p.kind], 120, 2.4f, 0.6f, 0, GameFx.SPARK);
+        Sound.play("minecraft:block.amethyst_block.chime", 1.3f, 0.8f);
+    }
+
+    private void crash() {
+        if (dead) return;
+        dead = true; deadT = 0;
+        lives = Math.max(0, lives - 1);
+        fx.burst(px, PY, 36, 0xFF7CF7FF, 170, 3, 0.9f, 80, GameFx.SQUARE);
+        fx.burst(px, PY, 20, 0xFFFFB347, 110, 2.6f, 0.7f, 0, GameFx.SPARK);
+        fx.ring(px, PY, 44, 0xFF7CF7FF, 0.5f);
+        fx.shake(0.85f);
+        fx.flash(0xFFFF3B4E, 0.6f);
+        tripleT = rapidT = 0;
+        Sound.play("minecraft:entity.generic.explode", 0.8f, 0.5f);
+    }
+
+    private boolean hitShield(float x, float y) {
+        for (int s = 0; s < 4; s++) {
+            float sx = shieldX(s);
+            int c = (int) Math.floor((x - sx) / CELL), r = (int) Math.floor((y - SHY) / CELL);
+            if (c < 0 || c >= 12 || r < 0 || r >= 8 || !shields[s][r][c]) continue;
+            shields[s][r][c] = false;
+            for (int k = 0; k < 4; k++) {
+                int rr = r + rnd.nextInt(3) - 1, cc = c + rnd.nextInt(3) - 1;
+                if (rr >= 0 && rr < 8 && cc >= 0 && cc < 12) shields[s][rr][cc] = false;
             }
-         }
-
-         AlienDefense.Shot var29 = new AlienDefense.Shot();
-         var29.enemy = true;
-         var29.x = this.fX + var24.col * 30.0F + 11.0F;
-         var29.y = this.fY + var24.row * 22.0F + 16.0F;
-         var29.vy = 120 + this.wave * 8;
-         this.shots.add(var29);
-      }
-
-      this.ufoT -= var1;
-      if (this.ufoX < -900.0F && this.ufoT <= 0.0F) {
-         this.ufoDir = this.rnd.nextBoolean() ? 1.0F : -1.0F;
-         this.ufoX = this.ufoDir > 0.0F ? -30.0F : 410.0F;
-         this.ufoPts = 50 * (2 + this.rnd.nextInt(5));
-         Sound.play("minecraft:block.beacon.ambient", 2.0F, 0.5F);
-      }
-
-      if (this.ufoX > -900.0F) {
-         this.ufoX = this.ufoX + this.ufoDir * 70.0F * var1;
-         if (this.ufoX < -40.0F || this.ufoX > 420.0F) {
-            this.ufoX = -999.0F;
-            this.ufoT = 16.0F + this.rnd.nextFloat() * 10.0F;
-         }
-      }
-
-      for (int var21 = this.shots.size() - 1; var21 >= 0; var21--) {
-         AlienDefense.Shot var25 = this.shots.get(var21);
-         var25.x = var25.x + var25.vx * var1;
-         var25.y = var25.y + var25.vy * var1;
-         if (var25.y < 16.0F || var25.y > 304.0F || var25.x < -4.0F || var25.x > 384.0F) {
-            this.shots.remove(var21);
-         } else if (this.hitShield(var25.x, var25.y)) {
-            this.shots.remove(var21);
-            this.fx.burst(var25.x, var25.y, 5, var25.enemy ? -33835 : -8587265, 50.0F, 1.6F, 0.3F, 0.0F, 1);
-         } else if (!var25.enemy) {
-            boolean var30 = false;
-
-            for (AlienDefense.Alien var35 : this.aliens) {
-               if (var35.alive) {
-                  float var13 = this.fX + var35.col * 30.0F;
-                  float var14 = this.fY + var35.row * 22.0F;
-                  if (var25.x > var13 && var25.x < var13 + 22.0F && var25.y > var14 && var25.y < var14 + 16.0F) {
-                     this.kill(var35, var13 + 11.0F, var14 + 8.0F);
-                     var30 = true;
-                     break;
-                  }
-               }
-            }
-
-            if (!var30 && this.ufoX > -900.0F && Math.abs(var25.x - this.ufoX) < 16.0F && Math.abs(var25.y - 28.0F) < 7.0F) {
-               this.score = this.score + this.ufoPts;
-               this.fx.burst(this.ufoX, 28.0F, 30, -41816, 160.0F, 2.6F, 0.7F, 0.0F, 1);
-               this.fx.ring(this.ufoX, 28.0F, 40.0F, -41816, 0.5F);
-               this.fx.popup("Mutterschiff! +" + this.ufoPts, this.ufoX, 40.0F, -41816, 12.0F);
-               this.fx.shake(0.4F);
-               Sound.play("minecraft:entity.generic.explode", 1.3F, 0.4F);
-               this.ufoX = -999.0F;
-               this.ufoT = 16.0F + this.rnd.nextFloat() * 10.0F;
-               var30 = true;
-            }
-
-            if (var30) {
-               this.shots.remove(var21);
-            }
-         } else if (!this.dead && this.invul <= 0.0F && Math.abs(var25.x - this.px) < 12.0F && var25.y > 264.0F && var25.y < 280.0F) {
-            this.shots.remove(var21);
-            if (this.bubble) {
-               this.bubble = false;
-               this.invul = 0.8F;
-               this.fx.ring(this.px, 272.0F, 30.0F, -10685697, 0.4F);
-               this.fx.popup("Schild!", this.px, 252.0F, -10685697, 9.0F);
-               Sound.play("minecraft:item.shield.block", 1.2F, 0.5F);
-            } else {
-               this.crash();
-            }
-         }
-      }
-
-      for (AlienDefense.Shot var26 : this.shots) {
-         if (!var26.enemy) {
-            for (AlienDefense.Shot var34 : this.shots) {
-               if (var34.enemy && Math.abs(var26.x - var34.x) < 3.0F && Math.abs(var26.y - var34.y) < 6.0F) {
-                  var26.y = -99.0F;
-                  var34.y = 399.0F;
-                  this.fx.burst(var26.x, (var26.y + var34.y) / 2.0F, 4, -1, 40.0F, 1.5F, 0.2F, 0.0F, 2);
-               }
-            }
-         }
-      }
-
-      for (int var23 = this.powers.size() - 1; var23 >= 0; var23--) {
-         AlienDefense.Power var27 = this.powers.get(var23);
-         var27.t += var1;
-         var27.y += 60.0F * var1;
-         if (!this.dead && Math.abs(var27.x - this.px) < 16.0F && Math.abs(var27.y - 272.0F) < 10.0F) {
-            this.powers.remove(var23);
-            this.collect(var27);
-         } else if (var27.y > 310.0F) {
-            this.powers.remove(var23);
-         }
-      }
-
-      if (var2 == 0) {
-         this.nextWave();
-      }
-   }
-
-   private void fire() {
-      int var1 = 0;
-
-      for (AlienDefense.Shot var3 : this.shots) {
-         if (!var3.enemy) {
-            var1++;
-         }
-      }
-
-      boolean var6 = this.rapidT > 0.0F;
-      boolean var7 = this.tripleT > 0.0F;
-      if (var1 < (var6 ? 6 : (var7 ? 3 : 2))) {
-         this.fireT = var6 ? 0.14F : 0.38F;
-
-         for (int var4 = var7 ? -1 : 0; var4 <= (var7 ? 1 : 0); var4++) {
-            AlienDefense.Shot var5 = new AlienDefense.Shot();
-            var5.x = this.px + var4 * 4;
-            var5.y = 262.0F;
-            var5.vy = -340.0F;
-            var5.vx = var4 * 60;
-            this.shots.add(var5);
-         }
-
-         this.fx.add(this.px, 261.0F, 0.0F, 0.0F, 0.1F, 4.0F, -8587265, 2, 0.0F, 0.0F);
-         Sound.play("minecraft:block.note_block.bit", 1.8F, 0.2F);
-      }
-   }
-
-   private void kill(AlienDefense.Alien var1, float var2, float var3) {
-      var1.alive = false;
-      int var4 = TYPE_PTS[var1.row];
-      this.score += var4;
-      int var5 = TYPE_COL[var1.row];
-      this.fx.burst(var2, var3, 16, var5, 120.0F, 2.4F, 0.55F, 60.0F, 1);
-      this.fx.ring(var2, var3, 16.0F, var5, 0.3F);
-      this.fx.popup("+" + var4, var2, var3 - 6.0F, var5, 8.0F);
-      this.fx.shake(0.07F);
-      Sound.play("minecraft:entity.generic.explode", 2.0F, 0.12F);
-      if (this.rnd.nextFloat() < 0.07F) {
-         AlienDefense.Power var6 = new AlienDefense.Power();
-         var6.x = var2;
-         var6.y = var3;
-         float var7 = this.rnd.nextFloat();
-         var6.kind = var7 < 0.35F ? 0 : (var7 < 0.7F ? 1 : (var7 < 0.9F ? 2 : 3));
-         this.powers.add(var6);
-      }
-   }
-
-   private void collect(AlienDefense.Power var1) {
-      this.fx.popup(switch (var1.kind) {
-         case 0 -> {
-            this.tripleT = 9.0F;
-            yield "Dreifachschuss!";
-         }
-         case 1 -> {
-            this.rapidT = 9.0F;
-            yield "Schnellfeuer!";
-         }
-         case 2 -> {
-            this.bubble = true;
-            yield "Schutzschild!";
-         }
-         default -> {
-            this.lives = Math.min(5, this.lives + 1);
-            yield "+1 Leben!";
-         }
-      }, this.px, 248.0F, P_COL[var1.kind], 11.0F);
-      this.fx.burst(this.px, 266.0F, 18, P_COL[var1.kind], 120.0F, 2.4F, 0.6F, 0.0F, 2);
-      Sound.play("minecraft:block.amethyst_block.chime", 1.3F, 0.8F);
-   }
-
-   private void crash() {
-      if (!this.dead) {
-         this.dead = true;
-         this.deadT = 0.0F;
-         this.lives = Math.max(0, this.lives - 1);
-         this.fx.burst(this.px, 272.0F, 36, -8587265, 170.0F, 3.0F, 0.9F, 80.0F, 1);
-         this.fx.burst(this.px, 272.0F, 20, -19641, 110.0F, 2.6F, 0.7F, 0.0F, 2);
-         this.fx.ring(this.px, 272.0F, 44.0F, -8587265, 0.5F);
-         this.fx.shake(0.85F);
-         this.fx.flash(-50354, 0.6F);
-         this.tripleT = this.rapidT = 0.0F;
-         Sound.play("minecraft:entity.generic.explode", 0.8F, 0.5F);
-      }
-   }
-
-   private boolean hitShield(float var1, float var2) {
-      for (int var3 = 0; var3 < 4; var3++) {
-         float var4 = this.shieldX(var3);
-         int var5 = (int)Math.floor((var1 - var4) / 3.2F);
-         int var6 = (int)Math.floor((var2 - 226.0F) / 3.2F);
-         if (var5 >= 0 && var5 < 12 && var6 >= 0 && var6 < 8 && this.shields[var3][var6][var5]) {
-            this.shields[var3][var6][var5] = false;
-
-            for (int var7 = 0; var7 < 4; var7++) {
-               int var8 = var6 + this.rnd.nextInt(3) - 1;
-               int var9 = var5 + this.rnd.nextInt(3) - 1;
-               if (var8 >= 0 && var8 < 8 && var9 >= 0 && var9 < 12) {
-                  this.shields[var3][var8][var9] = false;
-               }
-            }
-
             return true;
-         }
-      }
+        }
+        return false;
+    }
 
-      return false;
-   }
+    private void eraseShield(float x, float y, float rad) {
+        for (int s = 0; s < 4; s++) {
+            float sx = shieldX(s);
+            for (int r = 0; r < 8; r++)
+                for (int c = 0; c < 12; c++)
+                    if (shields[s][r][c] && Math.abs(sx + c * CELL + CELL / 2 - x) < rad && Math.abs(SHY + r * CELL + CELL / 2 - y) < rad) shields[s][r][c] = false;
+        }
+    }
 
-   private void eraseShield(float var1, float var2, float var3) {
-      for (int var4 = 0; var4 < 4; var4++) {
-         float var5 = this.shieldX(var4);
-
-         for (int var6 = 0; var6 < 8; var6++) {
-            for (int var7 = 0; var7 < 12; var7++) {
-               if (this.shields[var4][var6][var7] && Math.abs(var5 + var7 * 3.2F + 1.6F - var1) < var3 && Math.abs(226.0F + var6 * 3.2F + 1.6F - var2) < var3) {
-                  this.shields[var4][var6][var7] = false;
-               }
+    // ------------------------------------------------------------------ drawing
+    @Override
+    protected void render() {
+        float dt = Math.min(0.05f, Gx.dt);
+        anim += dt;
+        GameFx.sprite(this, "ad_bg", 0, 0, W, H, 380, 300, AlienDefense::paintBg, 0xFFFFFFFF);
+        Gx.push();
+        Gx.translate(S(fx.sx), S(fx.sy));
+        // mothership
+        if (ufoX > -900) {
+            Gx.glow(X(ufoX), Y(28), S(26), 0x44FF5CA8);
+            GameFx.sprite(this, "ad_mother" + ((int) (anim * 6) % 2), ufoX - 17, 20, 34, 16, 34, 16, gr -> paintMother(gr, (int) (anim * 6) % 2), 0xFFFFFFFF);
+        }
+        // aliens
+        for (Alien a : aliens) {
+            if (!a.alive) continue;
+            float ax = fX + a.col * SX, ay = fY + a.row * SY;
+            final int t = a.type, fr = frame, row = a.row;
+            float bob = (float) Math.sin(anim * 3 + a.col * 0.6f) * 0.8f;
+            Gx.glow(X(ax + AW / 2), Y(ay + AH / 2), S(14), Gx.withAlpha(TYPE_COL[row], 0.14f));
+            GameFx.sprite(this, "ad_alien" + t + fr + row, ax, ay + bob, AW, AH, 22, 16, gr -> paintAlien(gr, t, fr, TYPE_COL[row]), 0xFFFFFFFF);
+        }
+        // shields
+        for (int s = 0; s < 4; s++) {
+            float sx = shieldX(s);
+            for (int r = 0; r < 8; r++)
+                for (int c = 0; c < 12; c++)
+                    if (shields[s][r][c]) box(sx + c * CELL, SHY + r * CELL, CELL + 0.2f, CELL + 0.2f, 0, r == 0 || !shields[s][r - 1][c] ? 0xFFF4F8FF : Gx.mix(0xFFBFE3FF, 0xFF7FA8D8, r / 8f));
+        }
+        // shots
+        for (Shot s : shots) {
+            if (s.enemy) {
+                float zig = ((int) (s.y / 5) % 2 == 0) ? -1 : 1;
+                Gx.glow(X(s.x), Y(s.y), S(6), 0x66FF5CA8);
+                box(s.x - 1 + zig * 0.6f, s.y - 5, 2, 3, 0.5f, 0xFFFF9ACD);
+                box(s.x - 1 - zig * 0.6f, s.y - 2, 2, 3, 0.5f, 0xFFFF9ACD);
+            } else {
+                Gx.glow(X(s.x), Y(s.y), S(6), 0x667CF7FF);
+                box(s.x - 1, s.y - 5, 2, 8, 1, 0xFFE8FDFF);
             }
-         }
-      }
-   }
+        }
+        // power-ups
+        for (Power p : powers) {
+            float s = 1 + 0.1f * (float) Math.sin(p.t * 8);
+            Gx.glow(X(p.x), Y(p.y), S(14), Gx.withAlpha(P_COL[p.kind], 0.4f));
+            circle(p.x, p.y, 7 * s, 0xFF10142A);
+            Gx.ringAt(X(p.x), Y(p.y), S(7 * s), Math.max(1, S(1.2f)), P_COL[p.kind]);
+            Gx.icon(P_ICON[p.kind], X(p.x), Y(p.y), 8 * u, P_COL[p.kind]);
+        }
+        // player
+        if (!dead && (invul <= 0 || ((int) (anim * 12)) % 2 == 0)) {
+            if (bubble) { Gx.glow(X(px), Y(PY), S(22), 0x335CF2FF); Gx.ringAt(X(px), Y(PY - 1), S(15), Math.max(1, S(1)), 0x885CF2FF); }
+            if (tripleT > 0 || rapidT > 0) Gx.glow(X(px), Y(PY), S(18), Gx.withAlpha(tripleT > 0 ? 0xFFFFB02E : 0xFFFFF27A, 0.3f));
+            GameFx.sprite(this, "ad_player", px - 13, PY - 11, 26, 18, 26, 18, AlienDefense::paintPlayer, 0xFFFFFFFF);
+        }
+        fx.draw(this, 0, 0);
+        Gx.pop();
 
-   @Override
-   protected void render() {
-      float var1 = Math.min(0.05F, Gx.dt);
-      this.anim += var1;
-      GameFx.sprite(this, "ad_bg", 0.0F, 0.0F, 380.0F, 300.0F, 380.0F, 300.0F, AlienDefense::paintBg, -1);
-      Gx.push();
-      Gx.translate(this.S(this.fx.sx), this.S(this.fx.sy));
-      if (this.ufoX > -900.0F) {
-         Gx.glow(this.X(this.ufoX), this.Y(28.0F), this.S(26.0F), 1157586088);
-         GameFx.sprite(
-            this,
-            "ad_mother" + (int)(this.anim * 6.0F) % 2,
-            this.ufoX - 17.0F,
-            20.0F,
-            34.0F,
-            16.0F,
-            34.0F,
-            16.0F,
-            var1x -> paintMother(var1x, (int)(this.anim * 6.0F) % 2),
-            -1
-         );
-      }
+        // HUD
+        for (int i = 0; i < lives; i++) GameFx.sprite(this, "ad_player", 8 + i * 17, 6, 15, 10.4f, 26, 18, AlienDefense::paintPlayer, 0xDDFFFFFF);
+        GameFx.outlined(this, "Welle " + wave, W - 32, 12, 7.5f, 0xFFB8FF4F, 0xAA000000);
+        float py = 24;
+        if (tripleT > 0) { bar(W - 8, py, P_ICON[P_TRIPLE], P_COL[P_TRIPLE], tripleT / 9); py += 12; }
+        if (rapidT > 0) bar(W - 8, py, P_ICON[P_RAPID], P_COL[P_RAPID], rapidT / 9);
+        if (bannerT >= 0) {
+            float t = bannerT / 1.8f, s = Ease.outBack(Math.min(1, bannerT / 0.35f)), a = t < 0.7f ? 1 : 1 - (t - 0.7f) / 0.3f;
+            Gx.pushAlpha(a);
+            Gx.push();
+            Gx.scaleAt(X(W / 2), Y(H * 0.55f), s);
+            GameFx.outlined(this, "WELLE " + wave, W / 2, H * 0.55f, 20, 0xFFB8FF4F, 0xCC0A1A00);
+            Gx.pop();
+            Gx.popAlpha();
+        }
+        if (state == State.PLAYING && hintT < 3.5f) {
+            float a = Math.min(1, 3.5f - hintT) * (0.6f + 0.4f * (float) Math.sin(anim * 5));
+            text("← → bewegen  •  Leertaste schießen", W / 2, H * 0.66f, 7.6f, Fonts.BOLD, Gx.withAlpha(0xFFFFFFFF, a));
+        }
+        fx.drawPopups(this, 0, 0);
+        fx.drawFlash(this, W, H);
+    }
 
-      for (AlienDefense.Alien var3 : this.aliens) {
-         if (var3.alive) {
-            float var4 = this.fX + var3.col * 30.0F;
-            float var5 = this.fY + var3.row * 22.0F;
-            int var6 = var3.type;
-            int var7 = this.frame;
-            int var8 = var3.row;
-            float var9 = (float)Math.sin(this.anim * 3.0F + var3.col * 0.6F) * 0.8F;
-            Gx.glow(this.X(var4 + 11.0F), this.Y(var5 + 8.0F), this.S(14.0F), Gx.withAlpha(TYPE_COL[var8], 0.14F));
-            GameFx.sprite(
-               this, "ad_alien" + var6 + var7 + var8, var4, var5 + var9, 22.0F, 16.0F, 22.0F, 16.0F, var3x -> paintAlien(var3x, var6, var7, TYPE_COL[var8]), -1
-            );
-         }
-      }
+    private void bar(float right, float y, String icon, int col, float frac) {
+        float w = 48;
+        box(right - w, y - 5, w, 10, 5, 0x66000000);
+        Gx.icon(icon, X(right - w + 6), Y(y), 6.5f * u, col);
+        box(right - w + 12, y - 1.2f, w - 17, 2.4f, 1.2f, 0x33FFFFFF);
+        box(right - w + 12, y - 1.2f, (w - 17) * frac, 2.4f, 1.2f, col);
+    }
 
-      for (int var10 = 0; var10 < 4; var10++) {
-         float var15 = this.shieldX(var10);
-
-         for (int var20 = 0; var20 < 8; var20++) {
-            for (int var24 = 0; var24 < 12; var24++) {
-               if (this.shields[var10][var20][var24]) {
-                  this.box(
-                     var15 + var24 * 3.2F,
-                     226.0F + var20 * 3.2F,
-                     3.4F,
-                     3.4F,
-                     0.0F,
-                     var20 != 0 && this.shields[var10][var20 - 1][var24] ? Gx.mix(-4201473, -8410920, var20 / 8.0F) : -722689
-                  );
-               }
+    // ------------------------------------------------------------------ painters
+    private static void paintAlien(Graphics2D g, int type, int frame, int argb) {
+        String[] rows = ART[type][frame];
+        Color top = new Color(Gx.mix(argb, 0xFFFFFFFF, 0.35f)), bot = new Color(Gx.mix(argb, 0xFF000000, 0.25f));
+        float p = 2;
+        for (int r = 0; r < rows.length; r++)
+            for (int c = 0; c < rows[r].length(); c++) {
+                char ch = rows[r].charAt(c);
+                if (ch == '.') continue;
+                float x = c * p, y = r * p;
+                if (ch == 'X') g.setPaint(new GradientPaint(0, 0, top, 0, 16, bot));
+                else if (ch == 'W') g.setColor(Color.WHITE);
+                else g.setColor(new Color(0x12101E));
+                g.fill(new RoundRectangle2D.Float(x, y, p + 0.15f, p + 0.15f, 0.8f, 0.8f));
             }
-         }
-      }
+    }
 
-      for (AlienDefense.Shot var16 : this.shots) {
-         if (var16.enemy) {
-            float var21 = (int)(var16.y / 5.0F) % 2 == 0 ? -1.0F : 1.0F;
-            Gx.glow(this.X(var16.x), this.Y(var16.y), this.S(6.0F), 1728011432);
-            this.box(var16.x - 1.0F + var21 * 0.6F, var16.y - 5.0F, 2.0F, 3.0F, 0.5F, -25907);
-            this.box(var16.x - 1.0F - var21 * 0.6F, var16.y - 2.0F, 2.0F, 3.0F, 0.5F, -25907);
-         } else {
-            Gx.glow(this.X(var16.x), this.Y(var16.y), this.S(6.0F), 1719465983);
-            this.box(var16.x - 1.0F, var16.y - 5.0F, 2.0F, 8.0F, 1.0F, -1507841);
-         }
-      }
+    private static void paintPlayer(Graphics2D g) {
+        // Lego-style defense cannon
+        g.setPaint(new GradientPaint(0, 8, new Color(0x9FF7FF), 0, 18, new Color(0x1E8FB0)));
+        GeneralPath base = new GeneralPath();
+        base.moveTo(1, 17); base.lineTo(3, 9); base.lineTo(23, 9); base.lineTo(25, 17); base.closePath();
+        g.fill(base);
+        g.setColor(new Color(0x0E4E66));
+        g.setStroke(new BasicStroke(0.7f));
+        g.draw(base);
+        g.setPaint(new GradientPaint(0, 3, new Color(0xFFFFFF), 0, 10, new Color(0x7CF7FF)));
+        g.fill(new RoundRectangle2D.Float(10, 2, 6, 9, 2, 2));
+        g.setColor(new Color(0xFFFFFF));
+        g.fill(new RoundRectangle2D.Float(11.5f, 0, 3, 3, 1, 1));
+        // studs
+        g.setColor(new Color(0xBFFBFF));
+        for (int i = 0; i < 3; i++) g.fill(new RoundRectangle2D.Float(4.5f + i * 6.8f + (i == 1 ? 20 : 0) * 0, 7.2f, 3.4f, 2, 1, 1));
+        g.setColor(new Color(255, 80, 120));
+        g.fill(new Ellipse2D.Float(5, 12, 2.4f, 2.4f));
+        g.fill(new Ellipse2D.Float(18.6f, 12, 2.4f, 2.4f));
+    }
 
-      for (AlienDefense.Power var17 : this.powers) {
-         float var22 = 1.0F + 0.1F * (float)Math.sin(var17.t * 8.0F);
-         Gx.glow(this.X(var17.x), this.Y(var17.y), this.S(14.0F), Gx.withAlpha(P_COL[var17.kind], 0.4F));
-         this.circle(var17.x, var17.y, 7.0F * var22, -15723478);
-         Gx.ringAt(this.X(var17.x), this.Y(var17.y), this.S(7.0F * var22), Math.max(1, this.S(1.2F)), P_COL[var17.kind]);
-         Gx.icon(P_ICON[var17.kind], this.X(var17.x), this.Y(var17.y), 8.0F * this.u, P_COL[var17.kind]);
-      }
+    private static void paintMother(Graphics2D g, int frame) {
+        GeneralPath body = new GeneralPath();
+        body.moveTo(1, 10); body.curveTo(4, 5, 30, 5, 33, 10); body.curveTo(30, 14, 4, 14, 1, 10); body.closePath();
+        g.setPaint(new GradientPaint(0, 5, new Color(0xFF9ACD), 0, 14, new Color(0xA0205A)));
+        g.fill(body);
+        g.setPaint(new GradientPaint(0, 0, new Color(0xE8FDFF), 0, 7, new Color(0x7CF7FF)));
+        g.fill(new Ellipse2D.Float(11, 1, 12, 9));
+        for (int i = 0; i < 5; i++) {
+            g.setColor((i + frame) % 2 == 0 ? new Color(0xFFF27A) : new Color(0x5CF2FF));
+            g.fill(new Ellipse2D.Float(5 + i * 5.5f, 9.3f, 2.2f, 2.2f));
+        }
+    }
 
-      if (!this.dead && (this.invul <= 0.0F || (int)(this.anim * 12.0F) % 2 == 0)) {
-         if (this.bubble) {
-            Gx.glow(this.X(this.px), this.Y(272.0F), this.S(22.0F), 861729535);
-            Gx.ringAt(this.X(this.px), this.Y(271.0F), this.S(15.0F), Math.max(1, this.S(1.0F)), -2007174401);
-         }
-
-         if (this.tripleT > 0.0F || this.rapidT > 0.0F) {
-            Gx.glow(this.X(this.px), this.Y(272.0F), this.S(18.0F), Gx.withAlpha(this.tripleT > 0.0F ? -20434 : -3462, 0.3F));
-         }
-
-         GameFx.sprite(this, "ad_player", this.px - 13.0F, 261.0F, 26.0F, 18.0F, 26.0F, 18.0F, AlienDefense::paintPlayer, -1);
-      }
-
-      this.fx.draw(this, 0.0F, 0.0F);
-      Gx.pop();
-
-      for (int var13 = 0; var13 < this.lives; var13++) {
-         GameFx.sprite(this, "ad_player", 8 + var13 * 17, 6.0F, 15.0F, 10.4F, 26.0F, 18.0F, AlienDefense::paintPlayer, -570425345);
-      }
-
-      GameFx.outlined(this, "Welle " + this.wave, 348.0F, 12.0F, 7.5F, -4653233, -1442840576);
-      float var14 = 24.0F;
-      if (this.tripleT > 0.0F) {
-         this.bar(372.0F, var14, P_ICON[0], P_COL[0], this.tripleT / 9.0F);
-         var14 += 12.0F;
-      }
-
-      if (this.rapidT > 0.0F) {
-         this.bar(372.0F, var14, P_ICON[1], P_COL[1], this.rapidT / 9.0F);
-      }
-
-      if (this.bannerT >= 0.0F) {
-         float var18 = this.bannerT / 1.8F;
-         float var23 = Ease.outBack(Math.min(1.0F, this.bannerT / 0.35F));
-         float var25 = var18 < 0.7F ? 1.0F : 1.0F - (var18 - 0.7F) / 0.3F;
-         Gx.pushAlpha(var25);
-         Gx.push();
-         Gx.scaleAt(this.X(190.0F), this.Y(165.0F), var23);
-         GameFx.outlined(this, "WELLE " + this.wave, 190.0F, 165.0F, 20.0F, -4653233, -871753216);
-         Gx.pop();
-         Gx.popAlpha();
-      }
-
-      if (this.state == GameView.State.PLAYING && this.hintT < 3.5F) {
-         float var19 = Math.min(1.0F, 3.5F - this.hintT) * (0.6F + 0.4F * (float)Math.sin(this.anim * 5.0F));
-         this.text("← → bewegen  •  Leertaste schießen", 190.0F, 198.00002F, 7.6F, 3, Gx.withAlpha(-1, var19));
-      }
-
-      this.fx.drawPopups(this, 0.0F, 0.0F);
-      this.fx.drawFlash(this, 380.0F, 300.0F);
-   }
-
-   private void bar(float var1, float var2, String var3, int var4, float var5) {
-      float var6 = 48.0F;
-      this.box(var1 - var6, var2 - 5.0F, var6, 10.0F, 5.0F, 1711276032);
-      Gx.icon(var3, this.X(var1 - var6 + 6.0F), this.Y(var2), 6.5F * this.u, var4);
-      this.box(var1 - var6 + 12.0F, var2 - 1.2F, var6 - 17.0F, 2.4F, 1.2F, 872415231);
-      this.box(var1 - var6 + 12.0F, var2 - 1.2F, (var6 - 17.0F) * var5, 2.4F, 1.2F, var4);
-   }
-
-   private static void paintAlien(Graphics2D var0, int var1, int var2, int var3) {
-      String[] var4 = ART[var1][var2];
-      Color var5 = new Color(Gx.mix(var3, -1, 0.35F));
-      Color var6 = new Color(Gx.mix(var3, -16777216, 0.25F));
-      float var7 = 2.0F;
-
-      for (int var8 = 0; var8 < var4.length; var8++) {
-         for (int var9 = 0; var9 < var4[var8].length(); var9++) {
-            char var10 = var4[var8].charAt(var9);
-            if (var10 != '.') {
-               float var11 = var9 * var7;
-               float var12 = var8 * var7;
-               if (var10 == 'X') {
-                  var0.setPaint(new GradientPaint(0.0F, 0.0F, var5, 0.0F, 16.0F, var6));
-               } else if (var10 == 'W') {
-                  var0.setColor(Color.WHITE);
-               } else {
-                  var0.setColor(new Color(1183774));
-               }
-
-               var0.fill(new Float(var11, var12, var7 + 0.15F, var7 + 0.15F, 0.8F, 0.8F));
-            }
-         }
-      }
-   }
-
-   private static void paintPlayer(Graphics2D var0) {
-      var0.setPaint(new GradientPaint(0.0F, 8.0F, new Color(10483711), 0.0F, 18.0F, new Color(2002864)));
-      GeneralPath var1 = new GeneralPath();
-      var1.moveTo(1.0F, 17.0F);
-      var1.lineTo(3.0F, 9.0F);
-      var1.lineTo(23.0F, 9.0F);
-      var1.lineTo(25.0F, 17.0F);
-      var1.closePath();
-      var0.fill(var1);
-      var0.setColor(new Color(937574));
-      var0.setStroke(new BasicStroke(0.7F));
-      var0.draw(var1);
-      var0.setPaint(new GradientPaint(0.0F, 3.0F, new Color(16777215), 0.0F, 10.0F, new Color(8189951)));
-      var0.fill(new Float(10.0F, 2.0F, 6.0F, 9.0F, 2.0F, 2.0F));
-      var0.setColor(new Color(16777215));
-      var0.fill(new Float(11.5F, 0.0F, 3.0F, 3.0F, 1.0F, 1.0F));
-      var0.setColor(new Color(12581887));
-
-      for (int var2 = 0; var2 < 3; var2++) {
-         var0.fill(new Float(4.5F + var2 * 6.8F + (var2 == 1 ? 20 : 0) * 0, 7.2F, 3.4F, 2.0F, 1.0F, 1.0F));
-      }
-
-      var0.setColor(new Color(255, 80, 120));
-      var0.fill(new java.awt.geom.Ellipse2D.Float(5.0F, 12.0F, 2.4F, 2.4F));
-      var0.fill(new java.awt.geom.Ellipse2D.Float(18.6F, 12.0F, 2.4F, 2.4F));
-   }
-
-   private static void paintMother(Graphics2D var0, int var1) {
-      GeneralPath var2 = new GeneralPath();
-      var2.moveTo(1.0F, 10.0F);
-      var2.curveTo(4.0F, 5.0F, 30.0F, 5.0F, 33.0F, 10.0F);
-      var2.curveTo(30.0F, 14.0F, 4.0F, 14.0F, 1.0F, 10.0F);
-      var2.closePath();
-      var0.setPaint(new GradientPaint(0.0F, 5.0F, new Color(16751309), 0.0F, 14.0F, new Color(10494042)));
-      var0.fill(var2);
-      var0.setPaint(new GradientPaint(0.0F, 0.0F, new Color(15269375), 0.0F, 7.0F, new Color(8189951)));
-      var0.fill(new java.awt.geom.Ellipse2D.Float(11.0F, 1.0F, 12.0F, 9.0F));
-
-      for (int var3 = 0; var3 < 5; var3++) {
-         var0.setColor((var3 + var1) % 2 == 0 ? new Color(16773754) : new Color(6091519));
-         var0.fill(new java.awt.geom.Ellipse2D.Float(5.0F + var3 * 5.5F, 9.3F, 2.2F, 2.2F));
-      }
-   }
-
-   private static void paintBg(Graphics2D var0) {
-      var0.setPaint(new GradientPaint(0.0F, 0.0F, new Color(328718), 0.0F, 300.0F, new Color(1380402)));
-      var0.fillRect(0, 0, 380, 300);
-      Random var1 = new Random(8L);
-
-      for (int var2 = 0; var2 < 180; var2++) {
-         float var3 = 0.4F + var1.nextFloat() * 1.1F;
-         var0.setColor(new Color(255, 255, 255, 30 + var1.nextInt(140)));
-         var0.fill(new java.awt.geom.Ellipse2D.Float(var1.nextFloat() * 380.0F, var1.nextFloat() * 280.0F, var3, var3));
-      }
-
-      var0.setPaint(
-         new RadialGradientPaint(
-            new java.awt.geom.Point2D.Float(300.0F, 90.0F),
-            120.0F,
-            new float[]{0.0F, 1.0F},
-            new Color[]{new Color(180, 60, 140, 50), new Color(180, 60, 140, 0)}
-         )
-      );
-      var0.fillRect(0, 0, 380, 300);
-      var0.setPaint(new GradientPaint(0.0F, 284.0F, new Color(2767470), 0.0F, 300.0F, new Color(1186362)));
-      var0.fill(new java.awt.geom.Ellipse2D.Float(-200.0F, 284.0F, 780.0F, 200.0F));
-      var0.setColor(new Color(200, 225, 255, 160));
-      var0.setStroke(new BasicStroke(1.2F));
-      var0.draw(new java.awt.geom.Ellipse2D.Float(-200.0F, 284.0F, 780.0F, 200.0F));
-   }
-
-   private static final class Alien {
-      int row;
-      int col;
-      int type;
-      boolean alive = true;
-      float hitT;
-   }
-
-   private static final class Power {
-      float x;
-      float y;
-      float t;
-      int kind;
-   }
-
-   private static final class Shot {
-      float x;
-      float y;
-      float vx;
-      float vy;
-      boolean enemy;
-   }
+    private static void paintBg(Graphics2D g) {
+        g.setPaint(new GradientPaint(0, 0, new Color(0x05040E), 0, 300, new Color(0x151032)));
+        g.fillRect(0, 0, 380, 300);
+        Random r = new Random(8);
+        for (int i = 0; i < 180; i++) {
+            float s = 0.4f + r.nextFloat() * 1.1f;
+            g.setColor(new Color(255, 255, 255, 30 + r.nextInt(140)));
+            g.fill(new Ellipse2D.Float(r.nextFloat() * 380, r.nextFloat() * 280, s, s));
+        }
+        g.setPaint(new RadialGradientPaint(new Point2D.Float(300, 90), 120, new float[]{0f, 1f}, new Color[]{new Color(180, 60, 140, 50), new Color(180, 60, 140, 0)}));
+        g.fillRect(0, 0, 380, 300);
+        // planet horizon with snow
+        g.setPaint(new GradientPaint(0, 284, new Color(0x2A3A6E), 0, 300, new Color(0x121A3A)));
+        g.fill(new Ellipse2D.Float(-200, 284, 780, 200));
+        g.setColor(new Color(200, 225, 255, 160));
+        g.setStroke(new BasicStroke(1.2f));
+        g.draw(new Ellipse2D.Float(-200, 284, 780, 200));
+    }
 }

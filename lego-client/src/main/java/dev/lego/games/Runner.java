@@ -1,567 +1,451 @@
 package dev.lego.games;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import dev.lego.ui.Fonts;
 import dev.lego.ui.Gx;
 import dev.lego.ui.Sound;
 import dev.lego.ui.Style;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
 
+/** Endless Lego parkour runner: jump over brick cacti, duck under birds. */
 public final class Runner extends GameView {
-   private static final float W = 400.0F;
-   private static final float H = 240.0F;
-   private static final float GY = 196.0F;
-   private static final float PX = 56.0F;
-   private static final float GRAVITY = 1650.0F;
-   private static final float JUMP_V = -470.0F;
-   private static final float CUT_V = -170.0F;
-   private float py;
-   private float vy;
-   private float runPhase;
-   private float duckAnim;
-   private float squash;
-   private boolean onGround;
-   private boolean jumpHeld;
-   private boolean duck;
-   private boolean fastFall;
-   private float jumpBuffer;
-   private float coyote;
-   private float speed;
-   private float dist;
-   private float nextSpawn;
-   private float shake;
-   private float flash;
-   private float deadT;
-   private float milestoneT;
-   private boolean dead;
-   private long lastMilestone;
-   private final List<Runner.Obstacle> obstacles = new ArrayList<>();
-   private final List<float[]> parts = new ArrayList<>();
-   private final float[] cloudX = new float[5];
-   private final float[] cloudY = new float[5];
-   private final float[] cloudS = new float[5];
+    private static final float W = 400, H = 240, GY = 196, PX = 56;
+    private static final float GRAVITY = 1650, JUMP_V = -470, CUT_V = -170;
 
-   public Runner() {
-      super("runner");
-   }
+    // player
+    private float py, vy, runPhase, duckAnim, squash;
+    private boolean onGround, jumpHeld, duck, fastFall;
+    private float jumpBuffer, coyote;
+    // world
+    private float speed, dist, nextSpawn, shake, flash, deadT, milestoneT;
+    private boolean dead;
+    private long lastMilestone;
+    private final List<Obstacle> obstacles = new ArrayList<>();
+    private final List<float[]> parts = new ArrayList<>();   // x, y, vx, vy, life, max, size, color
+    private final float[] cloudX = new float[5], cloudY = new float[5], cloudS = new float[5];
 
-   @Override
-   protected float boardW() {
-      return 400.0F;
-   }
+    private static final class Obstacle {
+        float x, y, w, h;      // hitbox (board units), x = left edge
+        boolean bird;
+        int[] cols;            // cactus: brick count per column
+        float colW;
+        float phase;
+    }
 
-   @Override
-   protected float boardH() {
-      return 240.0F;
-   }
+    public Runner() { super("runner"); }
 
-   @Override
-   protected String scoreLabel() {
-      return "Distanz";
-   }
+    @Override protected float boardW() { return W; }
+    @Override protected float boardH() { return H; }
+    @Override protected String scoreLabel() { return "Distanz"; }
 
-   @Override
-   protected void reset() {
-      this.py = 196.0F;
-      this.vy = 0.0F;
-      this.onGround = true;
-      this.jumpHeld = this.duck = this.fastFall = this.dead = false;
-      this.jumpBuffer = this.coyote = 0.0F;
-      this.runPhase = this.duckAnim = this.squash = 0.0F;
-      this.speed = 165.0F;
-      this.dist = 0.0F;
-      this.nextSpawn = 260.0F;
-      this.shake = this.flash = this.deadT = this.milestoneT = 0.0F;
-      this.lastMilestone = 0L;
-      this.obstacles.clear();
-      this.parts.clear();
+    @Override
+    protected void reset() {
+        py = GY;
+        vy = 0;
+        onGround = true;
+        jumpHeld = duck = fastFall = dead = false;
+        jumpBuffer = coyote = 0;
+        runPhase = duckAnim = squash = 0;
+        speed = 165;
+        dist = 0;
+        nextSpawn = 260;
+        shake = flash = deadT = milestoneT = 0;
+        lastMilestone = 0;
+        obstacles.clear();
+        parts.clear();
+        for (int i = 0; i < cloudX.length; i++) {
+            cloudX[i] = i * (W / cloudX.length) + rnd.nextFloat() * 40;
+            cloudY[i] = 22 + rnd.nextFloat() * 60;
+            cloudS[i] = 0.7f + rnd.nextFloat() * 0.6f;
+        }
+    }
 
-      for (int var1 = 0; var1 < this.cloudX.length; var1++) {
-         this.cloudX[var1] = var1 * (400.0F / this.cloudX.length) + this.rnd.nextFloat() * 40.0F;
-         this.cloudY[var1] = 22.0F + this.rnd.nextFloat() * 60.0F;
-         this.cloudS[var1] = 0.7F + this.rnd.nextFloat() * 0.6F;
-      }
-   }
+    // ------------------------------------------------------------------ input
+    private void pressJump() {
+        jumpHeld = true;
+        jumpBuffer = 0.12f;
+    }
 
-   private void pressJump() {
-      this.jumpHeld = true;
-      this.jumpBuffer = 0.12F;
-   }
+    private void releaseJump() {
+        jumpHeld = false;
+        if (!onGround && vy < CUT_V) vy = CUT_V;
+    }
 
-   private void releaseJump() {
-      this.jumpHeld = false;
-      if (!this.onGround && this.vy < -170.0F) {
-         this.vy = -170.0F;
-      }
-   }
+    @Override
+    protected void onKey(int k) {
+        if (k == K_SPACE || k == K_UP || k == K_W) pressJump();
+        if (k == K_DOWN || k == K_S) duck = true;
+    }
 
-   @Override
-   protected void onKey(int var1) {
-      if (var1 == 32 || var1 == 265 || var1 == 87) {
-         this.pressJump();
-      }
+    @Override
+    protected void onKeyUp(int k) {
+        if (k == K_SPACE || k == K_UP || k == K_W) releaseJump();
+        if (k == K_DOWN || k == K_S) duck = false;
+    }
 
-      if (var1 == 264 || var1 == 83) {
-         this.duck = true;
-      }
-   }
+    @Override protected void onClick(float x, float y, int button) { if (button == 0) pressJump(); }
+    @Override protected void onRelease(float x, float y, int button) { if (button == 0) releaseJump(); }
 
-   @Override
-   protected void onKeyUp(int var1) {
-      if (var1 == 32 || var1 == 265 || var1 == 87) {
-         this.releaseJump();
-      }
+    // ------------------------------------------------------------------ update
+    @Override
+    protected void update(float dt) {
+        shake = Math.max(0, shake - dt * 2.2f);
+        flash = Math.max(0, flash - dt * 2.5f);
+        milestoneT = Math.max(0, milestoneT - dt);
+        squash = Math.max(0, squash - dt * 5);
+        updateParticles(dt);
+        if (dead) {
+            deadT += dt;
+            if (deadT > 0.75f) gameOver();
+            return;
+        }
 
-      if (var1 == 264 || var1 == 83) {
-         this.duck = false;
-      }
-   }
+        speed = Math.min(430, speed + dt * 4.2f);
+        float move = speed * dt;
+        dist += move;
+        score = (long) (dist / 10);
+        if (score / 100 > lastMilestone) {
+            lastMilestone = score / 100;
+            milestoneT = 1.2f;
+            Sound.play("minecraft:block.note_block.pling", 1.5f, 0.3f);
+        }
+        runPhase += dt * (8 + speed / 28);
 
-   @Override
-   protected void onClick(float var1, float var2, int var3) {
-      if (var3 == 0) {
-         this.pressJump();
-      }
-   }
+        // clouds
+        for (int i = 0; i < cloudX.length; i++) {
+            cloudX[i] -= move * 0.12f * cloudS[i];
+            if (cloudX[i] < -70) { cloudX[i] = W + 20 + rnd.nextFloat() * 80; cloudY[i] = 22 + rnd.nextFloat() * 60; cloudS[i] = 0.7f + rnd.nextFloat() * 0.6f; }
+        }
 
-   @Override
-   protected void onRelease(float var1, float var2, int var3) {
-      if (var3 == 0) {
-         this.releaseJump();
-      }
-   }
-
-   @Override
-   protected void update(float var1) {
-      this.shake = Math.max(0.0F, this.shake - var1 * 2.2F);
-      this.flash = Math.max(0.0F, this.flash - var1 * 2.5F);
-      this.milestoneT = Math.max(0.0F, this.milestoneT - var1);
-      this.squash = Math.max(0.0F, this.squash - var1 * 5.0F);
-      this.updateParticles(var1);
-      if (this.dead) {
-         this.deadT += var1;
-         if (this.deadT > 0.75F) {
-            this.gameOver();
-         }
-      } else {
-         this.speed = Math.min(430.0F, this.speed + var1 * 4.2F);
-         float var2 = this.speed * var1;
-         this.dist += var2;
-         this.score = (long)(this.dist / 10.0F);
-         if (this.score / 100L > this.lastMilestone) {
-            this.lastMilestone = this.score / 100L;
-            this.milestoneT = 1.2F;
-            Sound.play("minecraft:block.note_block.pling", 1.5F, 0.3F);
-         }
-
-         this.runPhase = this.runPhase + var1 * (8.0F + this.speed / 28.0F);
-
-         for (int var3 = 0; var3 < this.cloudX.length; var3++) {
-            this.cloudX[var3] = this.cloudX[var3] - var2 * 0.12F * this.cloudS[var3];
-            if (this.cloudX[var3] < -70.0F) {
-               this.cloudX[var3] = 420.0F + this.rnd.nextFloat() * 80.0F;
-               this.cloudY[var3] = 22.0F + this.rnd.nextFloat() * 60.0F;
-               this.cloudS[var3] = 0.7F + this.rnd.nextFloat() * 0.6F;
+        // jumping
+        jumpBuffer = Math.max(0, jumpBuffer - dt);
+        coyote = onGround ? 0.08f : Math.max(0, coyote - dt);
+        if (jumpBuffer > 0 && (onGround || coyote > 0)) {
+            vy = JUMP_V;
+            onGround = false;
+            coyote = 0;
+            jumpBuffer = 0;
+            squash = 0.6f;
+            dust(PX + 8, GY, 5);
+            Sound.play("minecraft:entity.chicken.egg", 1.6f + rnd.nextFloat() * 0.2f, 0.18f);
+            if (!jumpHeld) vy = CUT_V * 1.6f;
+        }
+        if (!onGround) {
+            fastFall = duck;
+            vy += GRAVITY * (fastFall ? 2.6f : 1f) * dt;
+            py += vy * dt;
+            if (py >= GY) {
+                py = GY;
+                vy = 0;
+                onGround = true;
+                squash = 1;
+                dust(PX + 8, GY, 7);
             }
-         }
+        }
+        duckAnim += ((duck && onGround ? 1 : 0) - duckAnim) * Math.min(1, dt * 22);
+        if (onGround && rnd.nextFloat() < 0.18f) dust(PX + 3, GY, 1);
 
-         this.jumpBuffer = Math.max(0.0F, this.jumpBuffer - var1);
-         this.coyote = this.onGround ? 0.08F : Math.max(0.0F, this.coyote - var1);
-         if (this.jumpBuffer > 0.0F && (this.onGround || this.coyote > 0.0F)) {
-            this.vy = -470.0F;
-            this.onGround = false;
-            this.coyote = 0.0F;
-            this.jumpBuffer = 0.0F;
-            this.squash = 0.6F;
-            this.dust(64.0F, 196.0F, 5);
-            Sound.play("minecraft:entity.chicken.egg", 1.6F + this.rnd.nextFloat() * 0.2F, 0.18F);
-            if (!this.jumpHeld) {
-               this.vy = -272.0F;
+        // obstacles
+        for (Obstacle o : obstacles) {
+            o.x -= move * (o.bird ? 1.12f : 1f);
+            o.phase += dt * 9;
+        }
+        obstacles.removeIf(o -> o.x + o.w < -30);
+        nextSpawn -= move;
+        if (nextSpawn <= 0) spawn();
+
+        // collision (slightly forgiving hitbox)
+        float[] hb = playerBox();
+        for (Obstacle o : obstacles) {
+            float ix = o.bird ? 4 : 2.5f, iy = o.bird ? 3 : 2.5f;
+            if (hb[0] < o.x + o.w - ix && hb[0] + hb[2] > o.x + ix && hb[1] < o.y + o.h - iy && hb[1] + hb[3] > o.y + iy) {
+                die();
+                return;
             }
-         }
+        }
+    }
 
-         if (!this.onGround) {
-            this.fastFall = this.duck;
-            this.vy = this.vy + 1650.0F * (this.fastFall ? 2.6F : 1.0F) * var1;
-            this.py = this.py + this.vy * var1;
-            if (this.py >= 196.0F) {
-               this.py = 196.0F;
-               this.vy = 0.0F;
-               this.onGround = true;
-               this.squash = 1.0F;
-               this.dust(64.0F, 196.0F, 7);
+    private void die() {
+        dead = true;
+        deadT = 0;
+        shake = 1;
+        flash = 1;
+        Sound.play("minecraft:entity.player.hurt", 1f, 0.35f);
+        Sound.play("minecraft:block.stone.break", 0.9f, 0.3f);
+        float cx = PX + 8, cy = py - 15;
+        int[] cs = {Style.accent, 0xFFFFCD03, 0xFF2B6CD9, 0xFFFFFFFF};
+        for (int i = 0; i < 22; i++) {
+            float a = (float) (rnd.nextFloat() * Math.PI * 2), s = 60 + rnd.nextFloat() * 160;
+            parts.add(new float[]{cx, cy, (float) Math.cos(a) * s, (float) Math.sin(a) * s - 80, 0, 0.7f + rnd.nextFloat() * 0.5f, 2 + rnd.nextFloat() * 3, cs[rnd.nextInt(cs.length)]});
+        }
+    }
+
+    private void dust(float x, float y, int n) {
+        int c = Style.light ? 0xFF9A8F80 : 0xFFB9B2A6;
+        for (int i = 0; i < n; i++)
+            parts.add(new float[]{x + rnd.nextFloat() * 8 - 4, y - 1, -speed * 0.3f - rnd.nextFloat() * 40, -20 - rnd.nextFloat() * 40, 0, 0.35f + rnd.nextFloat() * 0.25f, 1.2f + rnd.nextFloat() * 1.6f, c});
+    }
+
+    private void updateParticles(float dt) {
+        for (float[] p : parts) {
+            p[0] += p[2] * dt;
+            p[1] += p[3] * dt;
+            p[3] += 500 * dt;
+            p[4] += dt;
+            if (p[1] > GY + 3 && p[3] > 0) { p[1] = GY + 3; p[3] *= -0.35f; p[2] *= 0.7f; }
+        }
+        parts.removeIf(p -> p[4] >= p[5]);
+    }
+
+    private void spawn() {
+        Obstacle o = new Obstacle();
+        boolean birds = score > 220;
+        if (birds && rnd.nextFloat() < 0.3f) {
+            o.bird = true;
+            o.w = 22;
+            o.h = 13;
+            boolean high = rnd.nextBoolean();
+            o.y = high ? GY - 37 : GY - 21;     // high: duck under it, low: jump over it
+            o.x = W + 10;
+            o.phase = rnd.nextFloat() * 6;
+        } else {
+            int columns = 1 + rnd.nextInt(score > 120 ? 3 : 2);
+            o.colW = 11 + rnd.nextInt(2) * 3;
+            o.cols = new int[columns];
+            int maxH = 1;
+            for (int i = 0; i < columns; i++) {
+                o.cols[i] = 1 + rnd.nextInt(score > 60 ? 4 : 3);
+                maxH = Math.max(maxH, o.cols[i]);
             }
-         }
+            o.w = columns * o.colW;
+            o.h = maxH * 10;
+            o.y = GY - o.h;
+            o.x = W + 10;
+        }
+        obstacles.add(o);
+        float min = 150 + speed * 0.55f;
+        nextSpawn = min + rnd.nextFloat() * (140 + speed * 0.3f);
+        if (rnd.nextFloat() < 0.12f && !o.bird) nextSpawn = Math.max(34, o.w + 22);   // occasional close pair
+    }
 
-         this.duckAnim = this.duckAnim + ((this.duck && this.onGround ? 1 : 0) - this.duckAnim) * Math.min(1.0F, var1 * 22.0F);
-         if (this.onGround && this.rnd.nextFloat() < 0.18F) {
-            this.dust(59.0F, 196.0F, 1);
-         }
+    /** x, y, w, h of the player's hitbox. */
+    private float[] playerBox() {
+        if (duckAnim > 0.5f) return new float[]{PX - 3, py - 17, 24, 16};
+        return new float[]{PX + 2, py - 30, 13, 29};
+    }
 
-         for (Runner.Obstacle var4 : this.obstacles) {
-            var4.x = var4.x - var2 * (var4.bird ? 1.12F : 1.0F);
-            var4.phase += var1 * 9.0F;
-         }
+    // ------------------------------------------------------------------ render
+    @Override
+    protected void render() {
+        float t = time;
+        float sx = 0, sy = 0;
+        if (shake > 0) {
+            float s = shake * shake * 5;
+            sx = (float) Math.sin(t * 91) * s;
+            sy = (float) Math.cos(t * 77) * s;
+        }
+        Gx.push();
+        Gx.translate(S(sx), S(sy));
 
-         this.obstacles.removeIf(var0 -> var0.x + var0.w < -30.0F);
-         this.nextSpawn -= var2;
-         if (this.nextSpawn <= 0.0F) {
-            this.spawn();
-         }
+        // sky
+        int skyTop = Style.light ? 0xFFBFD9F2 : 0xFF121A2B;
+        int skyBot = Style.light ? 0xFFF4E8D8 : 0xFF232033;
+        int g1 = Style.light ? 0xFFC9B79A : 0xFF2A2621, g2 = Style.light ? 0xFFB09C7E : 0xFF1A1714;
+        boxV(0, GY - 14, W, H - GY + 14, 12, g1, g2);
+        boxV(0, 0, W, GY, 12, skyTop, skyBot);
+        box(0, GY - 14, W, 15, 0, skyBot);
+        // sun / moon glow
+        Gx.glow(X(W - 70), Y(52), S(70), Gx.withAlpha(Style.light ? 0xFFFFE6A0 : Style.accent, Style.light ? 0.7f : 0.22f));
+        circle(W - 70, 52, 13, Style.light ? 0xFFFFE08A : Gx.mix(Style.accent, 0xFFF4F1E6, 0.85f));
+        if (!Style.light) { circle(W - 74, 49, 2.5f, 0x18000000); circle(W - 65, 57, 1.8f, 0x18000000); }
 
-         float[] var9 = this.playerBox();
+        // clouds
+        for (int i = 0; i < cloudX.length; i++) cloud(cloudX[i], cloudY[i], cloudS[i]);
 
-         for (Runner.Obstacle var5 : this.obstacles) {
-            float var6 = var5.bird ? 4.0F : 2.5F;
-            float var7 = var5.bird ? 3.0F : 2.5F;
-            if (var9[0] < var5.x + var5.w - var6 && var9[0] + var9[2] > var5.x + var6 && var9[1] < var5.y + var5.h - var7 && var9[1] + var9[3] > var5.y + var7) {
-               this.die();
-               return;
+        // mountains (stepped brick pyramids, two parallax layers)
+        mountains(dist * 0.08f, 150, 0.6f, Style.light ? 0xFFB5C6DD : 0xFF1F2638);
+        mountains(dist * 0.2f + 97, 110, 0.85f, Style.light ? 0xFF94ABCA : 0xFF2B3452);
+
+        // ground
+        box(0, GY - 1.2f, W, 2.4f, 0, Style.light ? 0xFF7F6E55 : 0xFF6D6254);
+        float off = dist % 26;
+        for (float x = -off; x < W + 26; x += 26) box(x, GY + 7, 12, 2, 1, Style.light ? 0x40000000 : 0x30FFFFFF);
+        float off2 = (dist * 1.0f) % 61;
+        for (float x = -off2; x < W + 61; x += 61) {
+            box(x + 20, GY + 17, 5, 2, 1, Style.light ? 0x30000000 : 0x22FFFFFF);
+            box(x + 44, GY + 29, 8, 2, 1, Style.light ? 0x26000000 : 0x1AFFFFFF);
+        }
+
+        // obstacles
+        for (Obstacle o : obstacles) {
+            if (o.bird) bird(o);
+            else cactus(o);
+        }
+
+        // player
+        if (!dead || deadT < 0.08f) player();
+        else {
+            float a = Math.max(0, 1 - deadT * 3);
+            if (a > 0) { Gx.pushAlpha(a); player(); Gx.popAlpha(); }
+        }
+
+        // particles
+        for (float[] p : parts) {
+            float a = 1 - p[4] / p[5];
+            box(p[0] - p[6] / 2, p[1] - p[6] / 2, p[6], p[6], p[6] * 0.25f, Gx.withAlpha((int) p[7], a));
+        }
+        Gx.pop();
+
+        // HUD: distance counter (top right) + speed
+        String sc = String.format("%05d", score);
+        boolean ms = milestoneT > 0 && ((int) (milestoneT * 8)) % 2 == 0;
+        int hud = ms ? Style.accent : (Style.light ? 0xFF3A3F4A : 0xFFE6E8EE);
+        box(W - 86, 8, 78, 22, 11, Style.light ? 0x66FFFFFF : 0x55000000);
+        Gx.icon("sprint", X(W - 73), Y(19), S(10), Gx.withAlpha(Style.accent, 0.9f));
+        Gx.textMid(sc, X(W - 62), Y(19), S(10), Fonts.BOLD, hud);
+        if (GameInfo.hasBest(info.id)) {
+            String hi = "HI " + String.format("%05d", GameInfo.best(info.id));
+            Gx.textRight(hi, X(W - 92), Y(19), S(7), Fonts.MEDIUM, Style.light ? 0x99000000 : 0x99FFFFFF);
+        }
+        float mult = speed / 165f;
+        box(8, 8, 50, 22, 11, Style.light ? 0x66FFFFFF : 0x55000000);
+        Gx.icon("speed", X(20), Y(19), S(10), Gx.withAlpha(Style.accent, 0.9f));
+        Gx.textMid(String.format(java.util.Locale.ROOT, "x%.1f", mult), X(28), Y(19), S(8), Fonts.BOLD, Style.light ? 0xFF3A3F4A : 0xFFE6E8EE);
+        if (milestoneT > 0) {
+            float k = Math.min(1, (1.2f - milestoneT) / 0.25f), a = Math.min(1, milestoneT / 0.3f);
+            text(lastMilestone * 100 + "!", W / 2, 40 - 6 * k, 14, Fonts.BOLD, Gx.withAlpha(Style.accent, a));
+        }
+
+        if (flash > 0) box(-10, -10, W + 20, H + 20, 0, Gx.withAlpha(0xFFFFFFFF, flash * flash * 0.75f));
+        if (dead) box(-10, -10, W + 20, H + 20, 0, Gx.withAlpha(0xFFFF2030, Math.min(0.18f, deadT * 0.4f)));
+    }
+
+    private void cloud(float x, float y, float s) {
+        int c = Style.light ? 0xCCFFFFFF : 0x22FFFFFF;
+        box(x, y, 46 * s, 12 * s, 6 * s, c);
+        box(x + 9 * s, y - 7 * s, 22 * s, 12 * s, 6 * s, c);
+        box(x + 22 * s, y - 4 * s, 16 * s, 10 * s, 5 * s, c);
+    }
+
+    private void mountains(float scroll, float period, float scale, int col) {
+        float off = scroll % (period * 2);
+        for (float x = -off - period; x < W + period * 2; x += period) {
+            int seed = (int) Math.floor((x + scroll) / period + 0.5f);
+            float hgt = (40 + ((seed * 37) & 31)) * scale;
+            int steps = 5;
+            float stepH = hgt / steps;
+            for (int i = 0; i < steps; i++) {
+                float w = (period * 0.9f) * (1 - i / (float) steps);
+                float bx0 = x + (period * 0.9f - w) / 2;
+                float yy = GY - (i + 1) * stepH;
+                box(bx0, yy, w, stepH + 1, 1.5f, Gx.mix(col, Style.light ? 0xFFFFFFFF : 0xFF000000, i * 0.03f));
+                box(bx0, yy, w, 1.2f, 0.6f, Gx.withAlpha(0xFFFFFFFF, Style.light ? 0.35f : 0.06f));   // top highlight
+                if (i == steps - 1) {
+                    float sw0 = Math.min(8, w * 0.4f);
+                    box(bx0 + w / 2 - sw0 / 2, yy - 2.4f, sw0, 3, 1.2f, Gx.mix(col, 0xFFFFFFFF, 0.08f));   // stud
+                }
             }
-         }
-      }
-   }
+        }
+    }
 
-   private void die() {
-      this.dead = true;
-      this.deadT = 0.0F;
-      this.shake = 1.0F;
-      this.flash = 1.0F;
-      Sound.play("minecraft:entity.player.hurt", 1.0F, 0.35F);
-      Sound.play("minecraft:block.stone.break", 0.9F, 0.3F);
-      float var1 = 64.0F;
-      float var2 = this.py - 15.0F;
-      int[] var3 = new int[]{Style.accent, -13053, -13931303, -1};
-
-      for (int var4 = 0; var4 < 22; var4++) {
-         float var5 = (float)(this.rnd.nextFloat() * Math.PI * 2.0);
-         float var6 = 60.0F + this.rnd.nextFloat() * 160.0F;
-         this.parts
-            .add(
-               new float[]{
-                  var1,
-                  var2,
-                  (float)Math.cos(var5) * var6,
-                  (float)Math.sin(var5) * var6 - 80.0F,
-                  0.0F,
-                  0.7F + this.rnd.nextFloat() * 0.5F,
-                  2.0F + this.rnd.nextFloat() * 3.0F,
-                  var3[this.rnd.nextInt(var3.length)]
-               }
-            );
-      }
-   }
-
-   private void dust(float var1, float var2, int var3) {
-      int var4 = Style.light ? -6647936 : -4607322;
-
-      for (int var5 = 0; var5 < var3; var5++) {
-         this.parts
-            .add(
-               new float[]{
-                  var1 + this.rnd.nextFloat() * 8.0F - 4.0F,
-                  var2 - 1.0F,
-                  -this.speed * 0.3F - this.rnd.nextFloat() * 40.0F,
-                  -20.0F - this.rnd.nextFloat() * 40.0F,
-                  0.0F,
-                  0.35F + this.rnd.nextFloat() * 0.25F,
-                  1.2F + this.rnd.nextFloat() * 1.6F,
-                  var4
-               }
-            );
-      }
-   }
-
-   private void updateParticles(float var1) {
-      for (float[] var3 : this.parts) {
-         var3[0] += var3[2] * var1;
-         var3[1] += var3[3] * var1;
-         var3[3] += 500.0F * var1;
-         var3[4] += var1;
-         if (var3[1] > 199.0F && var3[3] > 0.0F) {
-            var3[1] = 199.0F;
-            var3[3] *= -0.35F;
-            var3[2] *= 0.7F;
-         }
-      }
-
-      this.parts.removeIf(var0 -> var0[4] >= var0[5]);
-   }
-
-   private void spawn() {
-      Runner.Obstacle var1 = new Runner.Obstacle();
-      boolean var2 = this.score > 220L;
-      if (var2 && this.rnd.nextFloat() < 0.3F) {
-         var1.bird = true;
-         var1.w = 22.0F;
-         var1.h = 13.0F;
-         boolean var6 = this.rnd.nextBoolean();
-         var1.y = var6 ? 159.0F : 175.0F;
-         var1.x = 410.0F;
-         var1.phase = this.rnd.nextFloat() * 6.0F;
-      } else {
-         int var3 = 1 + this.rnd.nextInt(this.score > 120L ? 3 : 2);
-         var1.colW = 11 + this.rnd.nextInt(2) * 3;
-         var1.cols = new int[var3];
-         int var4 = 1;
-
-         for (int var5 = 0; var5 < var3; var5++) {
-            var1.cols[var5] = 1 + this.rnd.nextInt(this.score > 60L ? 4 : 3);
-            var4 = Math.max(var4, var1.cols[var5]);
-         }
-
-         var1.w = var3 * var1.colW;
-         var1.h = var4 * 10;
-         var1.y = 196.0F - var1.h;
-         var1.x = 410.0F;
-      }
-
-      this.obstacles.add(var1);
-      float var7 = 150.0F + this.speed * 0.55F;
-      this.nextSpawn = var7 + this.rnd.nextFloat() * (140.0F + this.speed * 0.3F);
-      if (this.rnd.nextFloat() < 0.12F && !var1.bird) {
-         this.nextSpawn = Math.max(34.0F, var1.w + 22.0F);
-      }
-   }
-
-   private float[] playerBox() {
-      return this.duckAnim > 0.5F ? new float[]{53.0F, this.py - 17.0F, 24.0F, 16.0F} : new float[]{58.0F, this.py - 30.0F, 13.0F, 29.0F};
-   }
-
-   @Override
-   protected void render() {
-      float var1 = this.time;
-      float var2 = 0.0F;
-      float var3 = 0.0F;
-      if (this.shake > 0.0F) {
-         float var4 = this.shake * this.shake * 5.0F;
-         var2 = (float)Math.sin(var1 * 91.0F) * var4;
-         var3 = (float)Math.cos(var1 * 77.0F) * var4;
-      }
-
-      Gx.push();
-      Gx.translate(this.S(var2), this.S(var3));
-      int var16 = Style.light ? -4204046 : -15590869;
-      int var5 = Style.light ? -726824 : -14475213;
-      int var6 = Style.light ? -3557478 : -14014943;
-      int var7 = Style.light ? -5202818 : -15067372;
-      this.boxV(0.0F, 182.0F, 400.0F, 58.0F, 12.0F, var6, var7);
-      this.boxV(0.0F, 0.0F, 400.0F, 196.0F, 12.0F, var16, var5);
-      this.box(0.0F, 182.0F, 400.0F, 15.0F, 0.0F, var5);
-      Gx.glow(this.X(330.0F), this.Y(52.0F), this.S(70.0F), Gx.withAlpha(Style.light ? -6496 : Style.accent, Style.light ? 0.7F : 0.22F));
-      this.circle(330.0F, 52.0F, 13.0F, Style.light ? -8054 : Gx.mix(Style.accent, -724506, 0.85F));
-      if (!Style.light) {
-         this.circle(326.0F, 49.0F, 2.5F, 402653184);
-         this.circle(335.0F, 57.0F, 1.8F, 402653184);
-      }
-
-      for (int var8 = 0; var8 < this.cloudX.length; var8++) {
-         this.cloud(this.cloudX[var8], this.cloudY[var8], this.cloudS[var8]);
-      }
-
-      this.mountains(this.dist * 0.08F, 150.0F, 0.6F, Style.light ? -4864291 : -14735816);
-      this.mountains(this.dist * 0.2F + 97.0F, 110.0F, 0.85F, Style.light ? -7033910 : -13945774);
-      this.box(0.0F, 194.8F, 400.0F, 2.4F, 0.0F, Style.light ? -8425899 : -9608620);
-      float var17 = this.dist % 26.0F;
-
-      for (float var9 = -var17; var9 < 426.0F; var9 += 26.0F) {
-         this.box(var9, 203.0F, 12.0F, 2.0F, 1.0F, Style.light ? 1073741824 : 822083583);
-      }
-
-      float var18 = this.dist * 1.0F % 61.0F;
-
-      for (float var10 = -var18; var10 < 461.0F; var10 += 61.0F) {
-         this.box(var10 + 20.0F, 213.0F, 5.0F, 2.0F, 1.0F, Style.light ? 805306368 : 587202559);
-         this.box(var10 + 44.0F, 225.0F, 8.0F, 2.0F, 1.0F, Style.light ? 637534208 : 452984831);
-      }
-
-      for (Runner.Obstacle var11 : this.obstacles) {
-         if (var11.bird) {
-            this.bird(var11);
-         } else {
-            this.cactus(var11);
-         }
-      }
-
-      if (this.dead && !(this.deadT < 0.08F)) {
-         float var20 = Math.max(0.0F, 1.0F - this.deadT * 3.0F);
-         if (var20 > 0.0F) {
-            Gx.pushAlpha(var20);
-            this.player();
-            Gx.popAlpha();
-         }
-      } else {
-         this.player();
-      }
-
-      for (float[] var23 : this.parts) {
-         float var12 = 1.0F - var23[4] / var23[5];
-         this.box(var23[0] - var23[6] / 2.0F, var23[1] - var23[6] / 2.0F, var23[6], var23[6], var23[6] * 0.25F, Gx.withAlpha((int)var23[7], var12));
-      }
-
-      Gx.pop();
-      String var22 = String.format("%05d", this.score);
-      boolean var24 = this.milestoneT > 0.0F && (int)(this.milestoneT * 8.0F) % 2 == 0;
-      int var25 = var24 ? Style.accent : (Style.light ? -12959926 : -1644306);
-      this.box(314.0F, 8.0F, 78.0F, 22.0F, 11.0F, Style.light ? 1728053247 : 1426063360);
-      Gx.icon("sprint", this.X(327.0F), this.Y(19.0F), this.S(10.0F), Gx.withAlpha(Style.accent, 0.9F));
-      Gx.textMid(var22, this.X(338.0F), this.Y(19.0F), this.S(10.0F), 3, var25);
-      if (GameInfo.hasBest(this.info.id)) {
-         String var13 = "HI " + String.format("%05d", GameInfo.best(this.info.id));
-         Gx.textRight(var13, this.X(308.0F), this.Y(19.0F), this.S(7.0F), 2, Style.light ? -1728053248 : -1711276033);
-      }
-
-      float var26 = this.speed / 165.0F;
-      this.box(8.0F, 8.0F, 50.0F, 22.0F, 11.0F, Style.light ? 1728053247 : 1426063360);
-      Gx.icon("speed", this.X(20.0F), this.Y(19.0F), this.S(10.0F), Gx.withAlpha(Style.accent, 0.9F));
-      Gx.textMid(String.format(Locale.ROOT, "x%.1f", var26), this.X(28.0F), this.Y(19.0F), this.S(8.0F), 3, Style.light ? -12959926 : -1644306);
-      if (this.milestoneT > 0.0F) {
-         float var14 = Math.min(1.0F, (1.2F - this.milestoneT) / 0.25F);
-         float var15 = Math.min(1.0F, this.milestoneT / 0.3F);
-         this.text(this.lastMilestone * 100L + "!", 200.0F, 40.0F - 6.0F * var14, 14.0F, 3, Gx.withAlpha(Style.accent, var15));
-      }
-
-      if (this.flash > 0.0F) {
-         this.box(-10.0F, -10.0F, 420.0F, 260.0F, 0.0F, Gx.withAlpha(-1, this.flash * this.flash * 0.75F));
-      }
-
-      if (this.dead) {
-         this.box(-10.0F, -10.0F, 420.0F, 260.0F, 0.0F, Gx.withAlpha(-57296, Math.min(0.18F, this.deadT * 0.4F)));
-      }
-   }
-
-   private void cloud(float var1, float var2, float var3) {
-      int var4 = Style.light ? -855638017 : 587202559;
-      this.box(var1, var2, 46.0F * var3, 12.0F * var3, 6.0F * var3, var4);
-      this.box(var1 + 9.0F * var3, var2 - 7.0F * var3, 22.0F * var3, 12.0F * var3, 6.0F * var3, var4);
-      this.box(var1 + 22.0F * var3, var2 - 4.0F * var3, 16.0F * var3, 10.0F * var3, 5.0F * var3, var4);
-   }
-
-   private void mountains(float var1, float var2, float var3, int var4) {
-      float var5 = var1 % (var2 * 2.0F);
-
-      for (float var6 = -var5 - var2; var6 < 400.0F + var2 * 2.0F; var6 += var2) {
-         int var7 = (int)Math.floor((var6 + var1) / var2 + 0.5F);
-         float var8 = (40 + (var7 * 37 & 31)) * var3;
-         byte var9 = 5;
-         float var10 = var8 / var9;
-
-         for (int var11 = 0; var11 < var9; var11++) {
-            float var12 = var2 * 0.9F * (1.0F - (float)var11 / var9);
-            float var13 = var6 + (var2 * 0.9F - var12) / 2.0F;
-            float var14 = 196.0F - (var11 + 1) * var10;
-            this.box(var13, var14, var12, var10 + 1.0F, 1.5F, Gx.mix(var4, Style.light ? -1 : -16777216, var11 * 0.03F));
-            this.box(var13, var14, var12, 1.2F, 0.6F, Gx.withAlpha(-1, Style.light ? 0.35F : 0.06F));
-            if (var11 == var9 - 1) {
-               float var15 = Math.min(8.0F, var12 * 0.4F);
-               this.box(var13 + var12 / 2.0F - var15 / 2.0F, var14 - 2.4F, var15, 3.0F, 1.2F, Gx.mix(var4, -1, 0.08F));
+    private void cactus(Obstacle o) {
+        int base = 0xFF2DB84C;
+        for (int c = 0; c < o.cols.length; c++) {
+            float cx = o.x + c * o.colW;
+            for (int i = 0; i < o.cols[c]; i++) {
+                int col = Gx.mix(base, (i + c) % 2 == 0 ? 0xFF1E8F3A : 0xFF4ACF62, 0.35f);
+                brick(cx + 0.3f, GY - (i + 1) * 10, o.colW - 0.6f, 10, col);
             }
-         }
-      }
-   }
+        }
+        // soft shadow on the ground
+        box(o.x - 2, GY - 0.5f, o.w + 4, 3, 1.5f, 0x33000000);
+    }
 
-   private void cactus(Runner.Obstacle var1) {
-      int var2 = -13780916;
+    private void bird(Obstacle o) {
+        float x = o.x, y = o.y;
+        float flap = (float) Math.sin(o.phase);
+        int body = 0xFFE3000B, wing = 0xFFB0000A;
+        // shadow on the ground
+        box(x + 4, GY - 0.5f, 14, 2.5f, 1.2f, 0x22000000);
+        // back wing
+        float wy = flap * 6;
+        box(x + 8, y + 3 - Math.max(0, wy), 8, Math.abs(wy) + 3, 1.5f, Gx.mix(wing, 0xFF000000, 0.2f));
+        // body
+        boxV(x + 3, y + 3, 17, 8, 3, Gx.mix(body, 0xFFFFFFFF, 0.2f), body);
+        // head
+        boxV(x, y + 1, 8, 7, 2.5f, Gx.mix(body, 0xFFFFFFFF, 0.2f), body);
+        box(x + 1.5f, y - 0.8f, 4, 2, 0.8f, Gx.mix(body, 0xFFFFFFFF, 0.3f));   // stud
+        // beak
+        box(x - 4, y + 4, 5, 2.6f, 1, 0xFFFFCD03);
+        // eye
+        circle(x + 2.6f, y + 3.6f, 1.1f, 0xFFFFFFFF);
+        circle(x + 2.3f, y + 3.6f, 0.55f, 0xFF111111);
+        // tail
+        box(x + 19, y + 3, 4, 3, 1, wing);
+        // front wing
+        float fy = -flap * 7;
+        if (fy < 0) box(x + 7, y + 5 + fy, 9, -fy + 2, 1.5f, wing);
+        else box(x + 7, y + 6, 9, fy + 2, 1.5f, wing);
+    }
 
-      for (int var3 = 0; var3 < var1.cols.length; var3++) {
-         float var4 = var1.x + var3 * var1.colW;
+    private void player() {
+        float x = PX, foot = py;
+        int skin = 0xFFFFCD03, shirt = Style.accent, pants = 0xFF2B6CD9;
+        int shirtD = Gx.mix(shirt, 0xFF000000, 0.25f), pantsD = Gx.mix(pants, 0xFF000000, 0.3f);
+        float st = squash * (onGround ? 1 : -0.6f);   // >0: squashed (landing), <0: stretched
+        // ground shadow
+        float air = Math.max(0, GY - foot);
+        float sw = Math.max(6, 18 - air * 0.12f);
+        box(x + 8 - sw / 2, GY - 1, sw, 3, 1.5f, Gx.withAlpha(0xFF000000, 0.28f * Math.max(0.2f, 1 - air / 90)));
 
-         for (int var5 = 0; var5 < var1.cols[var3]; var5++) {
-            int var6 = Gx.mix(var2, (var5 + var3) % 2 == 0 ? -14774470 : -11874462, 0.35F);
-            this.brick(var4 + 0.3F, 196.0F - (var5 + 1) * 10, var1.colW - 0.6F, 10.0F, var6);
-         }
-      }
-
-      this.box(var1.x - 2.0F, 195.5F, var1.w + 4.0F, 3.0F, 1.5F, 855638016);
-   }
-
-   private void bird(Runner.Obstacle var1) {
-      float var2 = var1.x;
-      float var3 = var1.y;
-      float var4 = (float)Math.sin(var1.phase);
-      int var5 = -1900533;
-      int var6 = -5242870;
-      this.box(var2 + 4.0F, 195.5F, 14.0F, 2.5F, 1.2F, 570425344);
-      float var7 = var4 * 6.0F;
-      this.box(var2 + 8.0F, var3 + 3.0F - Math.max(0.0F, var7), 8.0F, Math.abs(var7) + 3.0F, 1.5F, Gx.mix(var6, -16777216, 0.2F));
-      this.boxV(var2 + 3.0F, var3 + 3.0F, 17.0F, 8.0F, 3.0F, Gx.mix(var5, -1, 0.2F), var5);
-      this.boxV(var2, var3 + 1.0F, 8.0F, 7.0F, 2.5F, Gx.mix(var5, -1, 0.2F), var5);
-      this.box(var2 + 1.5F, var3 - 0.8F, 4.0F, 2.0F, 0.8F, Gx.mix(var5, -1, 0.3F));
-      this.box(var2 - 4.0F, var3 + 4.0F, 5.0F, 2.6F, 1.0F, -13053);
-      this.circle(var2 + 2.6F, var3 + 3.6F, 1.1F, -1);
-      this.circle(var2 + 2.3F, var3 + 3.6F, 0.55F, -15658735);
-      this.box(var2 + 19.0F, var3 + 3.0F, 4.0F, 3.0F, 1.0F, var6);
-      float var8 = -var4 * 7.0F;
-      if (var8 < 0.0F) {
-         this.box(var2 + 7.0F, var3 + 5.0F + var8, 9.0F, -var8 + 2.0F, 1.5F, var6);
-      } else {
-         this.box(var2 + 7.0F, var3 + 6.0F, 9.0F, var8 + 2.0F, 1.5F, var6);
-      }
-   }
-
-   private void player() {
-      float var1 = 56.0F;
-      float var2 = this.py;
-      short var3 = -13053;
-      int var4 = Style.accent;
-      int var5 = -13931303;
-      int var6 = Gx.mix(var4, -16777216, 0.25F);
-      int var7 = Gx.mix(var5, -16777216, 0.3F);
-      float var8 = this.squash * (this.onGround ? 1.0F : -0.6F);
-      float var9 = Math.max(0.0F, 196.0F - var2);
-      float var10 = Math.max(6.0F, 18.0F - var9 * 0.12F);
-      this.box(var1 + 8.0F - var10 / 2.0F, 195.0F, var10, 3.0F, 1.5F, Gx.withAlpha(-16777216, 0.28F * Math.max(0.2F, 1.0F - var9 / 90.0F)));
-      Gx.push();
-      float var11 = 1.0F - var8 * 0.12F;
-      Gx.translate(0.0F, 0.0F);
-      if (this.duckAnim > 0.02F) {
-         float var12 = this.duckAnim;
-         float var13 = (float)Math.sin(this.runPhase);
-         this.box(var1 - 2.0F + var13 * 2.0F, var2 - 5.0F, 7.0F, 5.0F, 1.5F, var7);
-         this.box(var1 + 6.0F - var13 * 2.0F, var2 - 5.0F, 7.0F, 5.0F, 1.5F, var5);
-         float var14 = var2 - 5.0F - 9.0F * var12 - (1.0F - var12) * 14.0F;
-         this.boxV(var1 - 4.0F, var14, 20.0F, 9.0F, 2.5F, Gx.mix(var4, -1, 0.15F), var6);
-         this.box(var1 + 10.0F, var14 + 5.0F, 8.0F, 3.0F, 1.5F, var3);
-         this.boxV(var1 + 14.0F, var14 - 3.0F, 9.0F, 9.0F, 3.0F, Gx.mix(var3, -1, 0.2F), var3);
-         this.box(var1 + 16.0F, var14 - 5.0F, 5.0F, 2.5F, 1.0F, Gx.mix(var3, -1, 0.25F));
-         this.circle(var1 + 20.5F, var14 + 0.8F, 0.9F, -15066598);
-         this.box(var1 + 19.0F, var14 + 3.2F, 3.0F, 0.9F, 0.4F, -15066598);
-      } else {
-         float var21 = 30.0F * var11;
-         float var22 = var21 / 30.0F;
-         float var23 = this.onGround ? (float)Math.sin(this.runPhase) : 0.6F;
-         float var15 = this.onGround ? Math.max(0.0F, var23) * 3.0F : 2.0F;
-         float var16 = this.onGround ? Math.max(0.0F, -var23) * 3.0F : 0.0F;
-         float var17 = var2 - 10.0F * var22;
-         this.box(var1 + 2.0F + var23 * 3.0F, var17, 6.0F, 10.0F * var22 - var15, 1.5F, var7);
-         this.box(var1 + 8.0F - var23 * 3.0F, var17, 6.0F, 10.0F * var22 - var16, 1.5F, var5);
-         this.box(var1 + 1.5F, var17 - 1.0F, 13.0F, 3.0F, 1.0F, var5);
-         float var18 = this.onGround ? -var23 : -1.0F;
-         this.box(var1 + 5.0F + var18 * 3.0F, var17 - 11.0F * var22, 4.0F, 9.0F * var22, 2.0F, Gx.mix(var6, -16777216, 0.15F));
-         float var19 = var17 - 11.0F * var22;
-         this.boxV(var1 + 1.0F, var19, 15.0F, 11.0F * var22, 2.5F, Gx.mix(var4, -1, 0.18F), var6);
-         this.box(var1 + 3.0F, var19 + 2.0F, 3.0F, 3.0F, 1.0F, Gx.withAlpha(-1, 0.35F));
-         this.box(var1 + 8.0F - var18 * 3.0F, var19 + 1.0F, 4.0F, 8.0F * var22, 2.0F, var4);
-         this.circle(var1 + 10.0F - var18 * 3.0F, var19 + 1.0F + 8.0F * var22, 2.0F, var3);
-         float var20 = var19 - 9.0F * var22;
-         this.box(var1 + 6.0F, var20 + 7.0F * var22, 5.0F, 2.0F, 0.8F, var3);
-         this.boxV(var1 + 3.5F, var20, 10.0F, 8.0F * var22, 3.0F, Gx.mix(var3, -1, 0.22F), var3);
-         this.box(var1 + 5.5F, var20 - 2.2F, 6.0F, 2.6F, 1.0F, Gx.mix(var3, -1, 0.28F));
-         this.circle(var1 + 11.2F, var20 + 3.0F, 0.9F, -15066598);
-         this.box(var1 + 9.6F, var20 + 5.4F, 3.0F, 0.9F, 0.4F, -15066598);
-      }
-
-      Gx.pop();
-   }
-
-   private static final class Obstacle {
-      float x;
-      float y;
-      float w;
-      float h;
-      boolean bird;
-      int[] cols;
-      float colW;
-      float phase;
-   }
+        Gx.push();
+        float scY = 1 - st * 0.12f;
+        Gx.translate(0, 0);
+        if (duckAnim > 0.02f) {
+            // ducking pose: body horizontal, head forward
+            float d = duckAnim;
+            float lp = (float) Math.sin(runPhase);
+            box(x - 2 + lp * 2, foot - 5, 7, 5, 1.5f, pantsD);
+            box(x + 6 - lp * 2, foot - 5, 7, 5, 1.5f, pants);
+            float ty = foot - 5 - 9 * d - (1 - d) * 14;
+            boxV(x - 4, ty, 20, 9, 2.5f, Gx.mix(shirt, 0xFFFFFFFF, 0.15f), shirtD);
+            box(x + 10, ty + 5, 8, 3, 1.5f, skin);   // arm forward
+            // head
+            boxV(x + 14, ty - 3, 9, 9, 3, Gx.mix(skin, 0xFFFFFFFF, 0.2f), skin);
+            box(x + 16, ty - 5, 5, 2.5f, 1, Gx.mix(skin, 0xFFFFFFFF, 0.25f));
+            circle(x + 20.5f, ty + 0.8f, 0.9f, 0xFF1A1A1A);
+            box(x + 19, ty + 3.2f, 3, 0.9f, 0.4f, 0xFF1A1A1A);
+        } else {
+            float h = 30 * scY;
+            float k = h / 30f;
+            float lp = onGround ? (float) Math.sin(runPhase) : 0.6f;
+            float lift1 = onGround ? Math.max(0, lp) * 3 : 2, lift2 = onGround ? Math.max(0, -lp) * 3 : 0;
+            // legs
+            float legTop = foot - 10 * k;
+            box(x + 2 + lp * 3, legTop, 6, 10 * k - lift1, 1.5f, pantsD);
+            box(x + 8 - lp * 3, legTop, 6, 10 * k - lift2, 1.5f, pants);
+            // hips
+            box(x + 1.5f, legTop - 1, 13, 3, 1, pants);
+            // back arm
+            float ap = onGround ? -lp : -1;
+            box(x + 5 + ap * 3, legTop - 11 * k, 4, 9 * k, 2, Gx.mix(shirtD, 0xFF000000, 0.15f));
+            // torso (trapezoid-ish)
+            float tt = legTop - 11 * k;
+            boxV(x + 1, tt, 15, 11 * k, 2.5f, Gx.mix(shirt, 0xFFFFFFFF, 0.18f), shirtD);
+            box(x + 3, tt + 2, 3, 3, 1, Gx.withAlpha(0xFFFFFFFF, 0.35f));   // logo dot
+            // front arm + hand
+            box(x + 8 - ap * 3, tt + 1, 4, 8 * k, 2, shirt);
+            circle(x + 10 - ap * 3, tt + 1 + 8 * k, 2, skin);
+            // head
+            float ht = tt - 9 * k;
+            box(x + 6, ht + 7 * k, 5, 2, 0.8f, skin);   // neck
+            boxV(x + 3.5f, ht, 10, 8 * k, 3, Gx.mix(skin, 0xFFFFFFFF, 0.22f), skin);
+            box(x + 5.5f, ht - 2.2f, 6, 2.6f, 1, Gx.mix(skin, 0xFFFFFFFF, 0.28f));   // stud
+            // face
+            circle(x + 11.2f, ht + 3, 0.9f, 0xFF1A1A1A);
+            box(x + 9.6f, ht + 5.4f, 3, 0.9f, 0.4f, 0xFF1A1A1A);
+        }
+        Gx.pop();
+    }
 }

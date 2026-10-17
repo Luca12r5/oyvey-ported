@@ -81,7 +81,7 @@ export function registerPublic(app: App): void {
     const b = obj(ctx.body);
     const list = b.uuids;
     if (!Array.isArray(list) || list.length > 100) throw badRequest('invalid_field', 'uuids must be an array of at most 100');
-    const out: Record<string, { name: string; equipped: Record<string, string>; customTag: string | null }> = {};
+    const out: Record<string, { name: string; equipped: Record<string, string>; customTag: string | null; emote: { id: string; age: number } | null }> = {};
     for (const raw of list) {
       if (typeof raw !== 'string') continue;
       let uuid: string;
@@ -94,7 +94,8 @@ export function registerPublic(app: App): void {
       if (!u || (u.banned_until && u.banned_until > Date.now())) continue;
       const equipped = equippedOf(db, u.id);
       for (const [slot, id] of Object.entries(equipped)) if (!getItem(id)) delete equipped[slot];
-      out[uuid] = { name: u.mc_name, equipped, customTag: u.custom_tag_text };
+      const em = app.events.getEmote(u.id);
+      out[uuid] = { name: u.mc_name, equipped, customTag: u.custom_tag_text, emote: em ? { id: em.id, age: Date.now() - em.at } : null };
     }
     return { players: out };
   }, { auth: 'none', rate: ['lookup', 120] });

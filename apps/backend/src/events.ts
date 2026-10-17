@@ -64,6 +64,19 @@ export class EventHub {
     return ids.size;
   }
 
+  private emotes = new Map<string, { id: string; at: number }>();
+
+  /** Last emote a user started (shown to nearby LEGO players for a few seconds). */
+  setEmote(userId: string, id: string): void {
+    this.emotes.set(userId, { id, at: Date.now() });
+    if (this.emotes.size > 5000) for (const [k, v] of this.emotes) if (Date.now() - v.at > 15_000) this.emotes.delete(k);
+  }
+
+  getEmote(userId: string, now = Date.now()): { id: string; at: number } | null {
+    const e = this.emotes.get(userId);
+    return e && now - e.at < 12_000 ? e : null;
+  }
+
   connected(userId: string): boolean {
     return this.streams.has(userId);
   }

@@ -1,120 +1,80 @@
 package dev.lego.games;
 
-import dev.lego.core.Modules;
-import dev.lego.ui.View;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.function.Supplier;
 
+/** Registry of all mini games + highscores (persisted in config/legoclient.json under "games"). */
 public final class GameInfo {
-   public final String id;
-   public final String name;
-   public final String icon;
-   public final String tagline;
-   public final String howTo;
-   public final String controls;
-   public final int color;
-   public final boolean higherIsBetter;
-   public final Supplier<? extends View> factory;
-   public static final List<GameInfo> ALL = new ArrayList<>();
-   private static final Map<String, Long> BEST = new LinkedHashMap<>();
-   private static final Map<String, Long> PLAYS = new LinkedHashMap<>();
+    public final String id, name, icon, tagline, howTo, controls;
+    /** Accent color of the game card. */
+    public final int color;
+    /** true = higher score is better, false = lower is better (e.g. reaction time in ms). */
+    public final boolean higherIsBetter;
+    public final Supplier<? extends dev.lego.ui.View> factory;
 
-   public GameInfo(String var1, String var2, String var3, int var4, String var5, String var6, String var7, boolean var8, Supplier<? extends View> var9) {
-      this.id = var1;
-      this.name = var2;
-      this.icon = var3;
-      this.color = var4;
-      this.tagline = var5;
-      this.howTo = var6;
-      this.controls = var7;
-      this.higherIsBetter = var8;
-      this.factory = var9;
-   }
+    public GameInfo(String id, String name, String icon, int color, String tagline, String howTo, String controls, boolean higherIsBetter, Supplier<? extends dev.lego.ui.View> factory) {
+        this.id = id; this.name = name; this.icon = icon; this.color = color; this.tagline = tagline; this.howTo = howTo;
+        this.controls = controls; this.higherIsBetter = higherIsBetter; this.factory = factory;
+    }
 
-   public static void add(GameInfo var0) {
-      ALL.add(var0);
-   }
+    public static final List<GameInfo> ALL = new ArrayList<>();
+    private static final Map<String, Long> BEST = new LinkedHashMap<>();
+    private static final Map<String, Long> PLAYS = new LinkedHashMap<>();
+    /** AI difficulty per game (index into LEVELS), default "Mittel". */
+    public static final String[] LEVELS = {"Leicht", "Mittel", "Schwer", "Profi"};
+    private static final Map<String, Long> DIFF = new LinkedHashMap<>();
 
-   public static GameInfo get(String var0) {
-      for (GameInfo var2 : ALL) {
-         if (var2.id.equals(var0)) {
-            return var2;
-         }
-      }
+    public static int difficulty(String id) { Long d = DIFF.get(id); return d == null ? 1 : (int) Math.max(0, Math.min(LEVELS.length - 1, d)); }
 
-      return null;
-   }
+    public static void setDifficulty(String id, int level) {
+        DIFF.put(id, (long) Math.max(0, Math.min(LEVELS.length - 1, level)));
+        dev.lego.core.Modules.scheduleSave();
+    }
 
-   public static boolean hasBest(String var0) {
-      return BEST.containsKey(var0);
-   }
+    public static void add(GameInfo g) { ALL.add(g); }
 
-   public static long best(String var0) {
-      Long var1 = BEST.get(var0);
-      return var1 == null ? 0L : var1;
-   }
+    public static GameInfo get(String id) {
+        for (GameInfo g : ALL) if (g.id.equals(id)) return g;
+        return null;
+    }
 
-   public static long plays(String var0) {
-      Long var1 = PLAYS.get(var0);
-      return var1 == null ? 0L : var1;
-   }
+    public static boolean hasBest(String id) { return BEST.containsKey(id); }
+    public static long best(String id) { Long b = BEST.get(id); return b == null ? 0 : b; }
+    public static long plays(String id) { Long b = PLAYS.get(id); return b == null ? 0 : b; }
 
-   public static boolean submit(String var0, long var1) {
-      GameInfo var3 = get(var0);
-      PLAYS.put(var0, plays(var0) + 1L);
-      boolean var4 = var3 == null || var3.higherIsBetter;
-      if (var4 && var1 <= 0L) {
-         Modules.scheduleSave();
-         return false;
-      } else {
-         boolean var5 = !BEST.containsKey(var0) || (var4 ? var1 > best(var0) : var1 < best(var0));
-         if (var5) {
-            BEST.put(var0, var1);
-         }
+    /** Records a finished round; returns true if it is a new record. */
+    public static boolean submit(String id, long score) {
+        GameInfo g = get(id);
+        PLAYS.put(id, plays(id) + 1);
+        boolean high = g == null || g.higherIsBetter;
+        if (high && score <= 0) { dev.lego.core.Modules.scheduleSave(); return false; }
+        boolean better = !BEST.containsKey(id) || (high ? score > best(id) : score < best(id));
+        if (better) BEST.put(id, score);
+        dev.lego.core.Modules.scheduleSave();
+        return better;
+    }
 
-         Modules.scheduleSave();
-         return var5;
-      }
-   }
-
-   public static void registerPersist() {
-      Modules.persist("games", new Modules.Persist() {
-         @Override
-         public Object save() {
-            LinkedHashMap var1 = new LinkedHashMap();
-            LinkedHashMap var2 = new LinkedHashMap<>(GameInfo.BEST);
-            LinkedHashMap var3 = new LinkedHashMap<>(GameInfo.PLAYS);
-            var1.put("best", var2);
-            var1.put("plays", var3);
-            return var1;
-         }
-
-         @Override
-         public void load(Object var1) {
-            if (var1 instanceof Map) {
-               Object var2 = ((Map)var1).get("best");
-               Object var3 = ((Map)var1).get("plays");
-               if (var2 instanceof Map) {
-                  for (Entry var5 : (Iterable<Entry>) (Iterable<?>) (((Map)var2).entrySet())) {
-                     if (var5.getValue() instanceof Number) {
-                        GameInfo.BEST.put((String)var5.getKey(), ((Number)var5.getValue()).longValue());
-                     }
-                  }
-               }
-
-               if (var3 instanceof Map) {
-                  for (Entry var7 : (Iterable<Entry>) (Iterable<?>) (((Map)var3).entrySet())) {
-                     if (var7.getValue() instanceof Number) {
-                        GameInfo.PLAYS.put((String)var7.getKey(), ((Number)var7.getValue()).longValue());
-                     }
-                  }
-               }
+    public static void registerPersist() {
+        dev.lego.core.Modules.persist("games", new dev.lego.core.Modules.Persist() {
+            @Override public Object save() {
+                Map<String, Object> m = new LinkedHashMap<>();
+                Map<String, Object> b = new LinkedHashMap<>(BEST), p = new LinkedHashMap<>(PLAYS);
+                m.put("best", b);
+                m.put("plays", p);
+                m.put("diff", new LinkedHashMap<String, Object>(DIFF));
+                return m;
             }
-         }
-      });
-   }
+            @SuppressWarnings("unchecked")
+            @Override public void load(Object o) {
+                if (!(o instanceof Map)) return;
+                Object b = ((Map<String, Object>) o).get("best"), p = ((Map<String, Object>) o).get("plays"), d = ((Map<String, Object>) o).get("diff");
+                if (d instanceof Map) for (Map.Entry<String, Object> e : ((Map<String, Object>) d).entrySet()) if (e.getValue() instanceof Number) DIFF.put(e.getKey(), ((Number) e.getValue()).longValue());
+                if (b instanceof Map) for (Map.Entry<String, Object> e : ((Map<String, Object>) b).entrySet()) if (e.getValue() instanceof Number) BEST.put(e.getKey(), ((Number) e.getValue()).longValue());
+                if (p instanceof Map) for (Map.Entry<String, Object> e : ((Map<String, Object>) p).entrySet()) if (e.getValue() instanceof Number) PLAYS.put(e.getKey(), ((Number) e.getValue()).longValue());
+            }
+        });
+    }
 }

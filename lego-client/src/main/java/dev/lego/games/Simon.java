@@ -1,375 +1,248 @@
 package dev.lego.games;
 
-import dev.lego.ui.Ease;
-import dev.lego.ui.Gx;
-import dev.lego.ui.Sound;
-import dev.lego.ui.Style;
 import java.util.ArrayList;
 import java.util.List;
 
+import dev.lego.ui.Ease;
+import dev.lego.ui.Fonts;
+import dev.lego.ui.Gx;
+import dev.lego.ui.Sound;
+import dev.lego.ui.Style;
+
+/** Simon says with four Lego bricks: repeat the growing color sequence. */
 public final class Simon extends GameView {
-   private static final int[] COLORS = new int[]{-16732339, -1900533, -13053, -16098364};
-   private static final String[] NAMES = new String[]{"Grün", "Rot", "Gelb", "Blau"};
-   private static final float[] PITCH = new float[]{0.707F, 0.891F, 1.059F, 1.335F};
-   private static final float PAD = 132.0F;
-   private static final float GAP = 12.0F;
-   private static final float W = 380.0F;
-   private static final float PY = 12.0F;
-   private static final float PXL = 52.0F;
-   private final List<Integer> seq = new ArrayList<>();
-   private Simon.Phase phase = Simon.Phase.WAIT;
-   private float phaseT;
-   private float clock;
-   private float flash;
-   private int idx;
-   private int inIdx;
-   private int failPad = -1;
-   private boolean stepLit;
-   private final float[] litT = new float[4];
-   private final float[] glow = new float[4];
-   private final float[] hoverA = new float[4];
-   private final float[] press = new float[4];
+    private static final int[] COLORS = {0xFF00AF4D, 0xFFE3000B, 0xFFFFCD03, 0xFF0A5BC4};
+    private static final String[] NAMES = {"Grün", "Rot", "Gelb", "Blau"};
+    private static final float[] PITCH = {0.707f, 0.891f, 1.059f, 1.335f};
+    private static final float PAD = 132, GAP = 12, W = 380, PY = 12;
+    private static final float PXL = (W - PAD * 2 - GAP) / 2;
 
-   public Simon() {
-      super("simon");
-   }
+    private enum Phase { WAIT, SHOW, INPUT, SUCCESS, FAIL }
 
-   @Override
-   protected float boardW() {
-      return 380.0F;
-   }
+    private final List<Integer> seq = new ArrayList<>();
+    private Phase phase = Phase.WAIT;
+    private float phaseT, clock, flash;
+    private int idx, inIdx, failPad = -1;
+    private boolean stepLit;
+    private final float[] litT = new float[4], glow = new float[4], hoverA = new float[4], press = new float[4];
 
-   @Override
-   protected float boardH() {
-      return 328.0F;
-   }
+    public Simon() { super("simon"); }
 
-   @Override
-   protected void reset() {
-      this.seq.clear();
-      this.seq.add(this.rnd.nextInt(4));
-      this.phase = Simon.Phase.WAIT;
-      this.phaseT = 0.0F;
-      this.idx = this.inIdx = 0;
-      this.failPad = -1;
-      this.stepLit = false;
-      this.flash = 0.0F;
+    @Override protected float boardW() { return W; }
+    @Override protected float boardH() { return 328; }
 
-      for (int var1 = 0; var1 < 4; var1++) {
-         this.litT[var1] = 0.0F;
-      }
-   }
+    @Override
+    protected void reset() {
+        seq.clear();
+        seq.add(rnd.nextInt(4));
+        phase = Phase.WAIT;
+        phaseT = 0;
+        idx = inIdx = 0;
+        failPad = -1;
+        stepLit = false;
+        flash = 0;
+        for (int i = 0; i < 4; i++) litT[i] = 0;
+    }
 
-   @Override
-   protected String overTitle() {
-      return "Verloren";
-   }
+    @Override protected String overTitle() { return "Verloren"; }
+    @Override protected String scoreLabel() { return "Runden"; }
 
-   @Override
-   protected String scoreLabel() {
-      return "Runden";
-   }
+    // ------------------------------------------------------------------ logic
+    private float stepOn() { return Math.max(0.24f, 0.5f - seq.size() * 0.02f); }
+    private float stepGap() { return Math.max(0.08f, 0.18f - seq.size() * 0.006f); }
 
-   private float stepOn() {
-      return Math.max(0.24F, 0.5F - this.seq.size() * 0.02F);
-   }
+    private void light(int pad, float dur) {
+        litT[pad] = dur;
+        press[pad] = 1;
+        Sound.play("minecraft:block.note_block.harp", PITCH[pad], 0.5f);
+        Sound.play("minecraft:block.note_block.bell", PITCH[pad], 0.12f);
+    }
 
-   private float stepGap() {
-      return Math.max(0.08F, 0.18F - this.seq.size() * 0.006F);
-   }
+    @Override
+    protected void update(float dt) {
+        for (int i = 0; i < 4; i++) litT[i] = Math.max(0, litT[i] - dt);
+        phaseT += dt;
+        switch (phase) {
+            case WAIT:
+                if (phaseT > 0.8f) { phase = Phase.SHOW; phaseT = 0; idx = 0; stepLit = false; }
+                break;
+            case SHOW:
+                if (!stepLit) { light(seq.get(idx), stepOn()); stepLit = true; }
+                if (phaseT >= stepOn() + stepGap()) {
+                    idx++;
+                    phaseT = 0;
+                    stepLit = false;
+                    if (idx >= seq.size()) { phase = Phase.INPUT; inIdx = 0; }
+                }
+                break;
+            case SUCCESS:
+                if (phaseT > 0.9f) { seq.add(rnd.nextInt(4)); phase = Phase.WAIT; phaseT = 0; }
+                break;
+            case FAIL:
+                if (phaseT > 1.1f) gameOver();
+                break;
+            default:
+                break;
+        }
+    }
 
-   private void light(int var1, float var2) {
-      this.litT[var1] = var2;
-      this.press[var1] = 1.0F;
-      Sound.play("minecraft:block.note_block.harp", PITCH[var1], 0.5F);
-      Sound.play("minecraft:block.note_block.bell", PITCH[var1], 0.12F);
-   }
-
-   @Override
-   protected void update(float var1) {
-      for (int var2 = 0; var2 < 4; var2++) {
-         this.litT[var2] = Math.max(0.0F, this.litT[var2] - var1);
-      }
-
-      this.phaseT += var1;
-      switch (this.phase) {
-         case WAIT:
-            if (this.phaseT > 0.8F) {
-               this.phase = Simon.Phase.SHOW;
-               this.phaseT = 0.0F;
-               this.idx = 0;
-               this.stepLit = false;
+    private void pressPad(int pad) {
+        if (phase != Phase.INPUT) return;
+        light(pad, 0.25f);
+        if (seq.get(inIdx) == pad) {
+            inIdx++;
+            if (inIdx >= seq.size()) {
+                score = seq.size();
+                phase = Phase.SUCCESS;
+                phaseT = 0;
+                flash = 1;
+                Sound.play("minecraft:entity.experience_orb.pickup", 1.0f + Math.min(0.8f, seq.size() * 0.04f), 0.35f);
             }
-            break;
-         case SHOW:
-            if (!this.stepLit) {
-               this.light(this.seq.get(this.idx), this.stepOn());
-               this.stepLit = true;
+        } else {
+            failPad = pad;
+            phase = Phase.FAIL;
+            phaseT = 0;
+            Sound.play("minecraft:block.note_block.didgeridoo", 0.6f, 0.6f);
+        }
+    }
+
+    @Override
+    protected void onClick(float x, float y, int button) {
+        if (button != 0) return;
+        int p = padAt(x, y);
+        if (p >= 0) pressPad(p);
+    }
+
+    @Override
+    protected void onKey(int key) {
+        if (key >= 49 && key <= 52) pressPad(key - 49);
+        else if (key >= 321 && key <= 324) pressPad(key - 321);
+    }
+
+    private int padAt(float x, float y) {
+        for (int i = 0; i < 4; i++) {
+            float px = padX(i), py = padY(i);
+            if (x >= px && y >= py && x < px + PAD && y < py + PAD) {
+                float dx = x - W / 2, dy = y - (PY + PAD + GAP / 2);
+                if (dx * dx + dy * dy < 38 * 38) return -1;   // center hub
+                return i;
             }
+        }
+        return -1;
+    }
 
-            if (this.phaseT >= this.stepOn() + this.stepGap()) {
-               this.idx++;
-               this.phaseT = 0.0F;
-               this.stepLit = false;
-               if (this.idx >= this.seq.size()) {
-                  this.phase = Simon.Phase.INPUT;
-                  this.inIdx = 0;
-               }
+    private float padX(int i) { return PXL + (i % 2) * (PAD + GAP); }
+    private float padY(int i) { return PY + (i / 2) * (PAD + GAP); }
+
+    // ------------------------------------------------------------------ drawing
+    @Override
+    protected void render() {
+        float dt = Gx.dt;
+        clock += dt;
+        float k = 1f - (float) Math.exp(-dt * 16);
+        float hx = (mx - bx) / u, hy = (my - by) / u;
+        boolean canInput = state == State.PLAYING && phase == Phase.INPUT;
+        int hover = canInput ? padAt(hx, hy) : -1;
+        flash = Math.max(0, flash - dt * 1.6f);
+
+        for (int i = 0; i < 4; i++) {
+            glow[i] += ((litT[i] > 0 ? 1 : 0) - glow[i]) * (litT[i] > 0 ? 1f - (float) Math.exp(-dt * 30) : k * 0.7f);
+            hoverA[i] += ((i == hover ? 1 : 0) - hoverA[i]) * k;
+            press[i] = Math.max(0, press[i] - dt * 5);
+            pad(i);
+        }
+
+        // center hub
+        float hcx = W / 2, hcy = PY + PAD + GAP / 2;
+        int hub = Style.light ? 0xFFF3F4F7 : 0xFF0B0C10;
+        circle(hcx, hcy, 40, hub);
+        int ringCol = phase == Phase.FAIL ? Style.danger : phase == Phase.SUCCESS ? Style.ok : Style.accent;
+        if (flash > 0) Gx.glow(X(hcx), Y(hcy), S(70), Gx.withAlpha(Style.ok, 0.5f * flash));
+        circle(hcx, hcy, 33, Style.surface);
+        float prog = phase == Phase.INPUT ? inIdx / (float) seq.size() : phase == Phase.SHOW ? (idx + (stepLit ? 1 : 0)) / (float) seq.size() : phase == Phase.SUCCESS ? 1 : 0;
+        Gx.ringAt(X(hcx), Y(hcy), S(33), Math.max(1, S(2.2f)), Style.surface2);
+        arc(hcx, hcy, 31.9f, 2.2f, prog, ringCol);
+        text("RUNDE", hcx, hcy - 11, 5.6f, Fonts.BOLD, Style.muted);
+        float bump = 1 + 0.25f * flash;
+        Gx.push();
+        Gx.scaleAt(X(hcx), Y(hcy + 5), bump);
+        text(String.valueOf(seq.size()), hcx, hcy + 5, 17, Fonts.BOLD, Style.text);
+        Gx.pop();
+
+        // status
+        String st;
+        int sc = Style.text;
+        switch (phase) {
+            case WAIT: case SHOW: st = "Merken…"; sc = Style.sub; break;
+            case INPUT: st = "Du bist dran!"; sc = Style.accent; break;
+            case SUCCESS: st = "Richtig!"; sc = Style.ok; break;
+            default: st = "Falsch! Richtig war " + NAMES[seq.get(inIdx)]; sc = Style.danger; break;
+        }
+        float sy = PY + PAD * 2 + GAP + 17;
+        if (phase == Phase.INPUT) {
+            float p = 1 + 0.04f * (float) Math.sin(clock * 5);
+            Gx.push();
+            Gx.scaleAt(X(W / 2), Y(sy), p);
+            text(st, W / 2, sy, 10, Fonts.BOLD, sc);
+            Gx.pop();
+        } else text(st, W / 2, sy, 10, Fonts.BOLD, sc);
+        // progress dots
+        int n = seq.size();
+        if (n <= 24) {
+            float dw = 7, total = n * dw;
+            for (int i = 0; i < n; i++) {
+                float dx = W / 2 - total / 2 + dw * i + dw / 2;
+                boolean filled = phase == Phase.INPUT ? i < inIdx : phase == Phase.SHOW ? i < idx + (stepLit ? 1 : 0) : phase == Phase.SUCCESS;
+                circle(dx, sy + 14, 2, filled ? ringCol : Style.surface2);
             }
-         case INPUT:
-         default:
-            break;
-         case SUCCESS:
-            if (this.phaseT > 0.9F) {
-               this.seq.add(this.rnd.nextInt(4));
-               this.phase = Simon.Phase.WAIT;
-               this.phaseT = 0.0F;
-            }
-            break;
-         case FAIL:
-            if (this.phaseT > 1.1F) {
-               this.gameOver();
-            }
-      }
-   }
+        } else text((phase == Phase.INPUT ? inIdx : 0) + " / " + n, W / 2, sy + 14, 6.5f, Fonts.MEDIUM, Style.sub);
+    }
 
-   private void pressPad(int var1) {
-      if (this.phase == Simon.Phase.INPUT) {
-         this.light(var1, 0.25F);
-         if (this.seq.get(this.inIdx) == var1) {
-            this.inIdx++;
-            if (this.inIdx >= this.seq.size()) {
-               this.score = this.seq.size();
-               this.phase = Simon.Phase.SUCCESS;
-               this.phaseT = 0.0F;
-               this.flash = 1.0F;
-               Sound.play("minecraft:entity.experience_orb.pickup", 1.0F + Math.min(0.8F, this.seq.size() * 0.04F), 0.35F);
-            }
-         } else {
-            this.failPad = var1;
-            this.phase = Simon.Phase.FAIL;
-            this.phaseT = 0.0F;
-            Sound.play("minecraft:block.note_block.didgeridoo", 0.6F, 0.6F);
-         }
-      }
-   }
+    private void pad(int i) {
+        float x = padX(i), y = padY(i);
+        int base = COLORS[i];
+        float g = glow[i];
+        boolean failHint = phase == Phase.FAIL && i == seq.get(inIdx) && ((int) (phaseT * 6) % 2 == 0);
+        if (failHint) g = Math.max(g, 0.8f);
+        boolean wrong = phase == Phase.FAIL && i == failPad;
+        int dim = Gx.mix(base, Style.light ? 0xFFE9EBF0 : 0xFF0B0C10, 0.55f - 0.12f * hoverA[i]);
+        int col = Gx.mix(dim, Gx.mix(base, 0xFFFFFFFF, 0.18f), g);
+        float s = 1 - 0.035f * Ease.outCubic(press[i]) + 0.015f * hoverA[i];
+        float shake = wrong ? (float) Math.sin(phaseT * 60) * 3 * Math.max(0, 1 - phaseT * 2) : 0;
+        float cx = x + PAD / 2 + shake, cy = y + PAD / 2;
 
-   @Override
-   protected void onClick(float var1, float var2, int var3) {
-      if (var3 == 0) {
-         int var4 = this.padAt(var1, var2);
-         if (var4 >= 0) {
-            this.pressPad(var4);
-         }
-      }
-   }
+        if (g > 0.01f) Gx.glow(X(cx), Y(cy), S(PAD * 0.95f), Gx.withAlpha(base, 0.55f * g));
+        Gx.push();
+        Gx.scaleAt(X(cx), Y(cy), s);
+        float px = x + shake;
+        box(px, y + 3, PAD, PAD, 22, Gx.mix(col, 0xFF000000, 0.5f));
+        box(px, y, PAD, PAD, 22, Gx.mix(col, 0xFF000000, 0.14f));
+        box(px + 3, y + 2, PAD - 6, PAD - 7, 19, Gx.mix(col, 0xFFFFFFFF, 0.06f));
+        Gx.outline(X(px), Y(y), S(PAD), S(PAD), S(22), Math.max(1, S(1)), Gx.withAlpha(Gx.mix(col, 0xFF000000, 0.5f), 0.8f));
+        if (wrong) Gx.outline(X(px), Y(y), S(PAD), S(PAD), S(22), Math.max(1, S(2.5f)), Style.danger);
+        // 2x2 studs
+        for (int k = 0; k < 4; k++) {
+            float sx = px + PAD * (k % 2 == 0 ? 0.3f : 0.7f), sy = y + PAD * (k < 2 ? 0.3f : 0.7f);
+            circle(sx, sy + 2.2f, 15, Gx.mix(col, 0xFF000000, 0.3f));
+            circle(sx, sy, 15, Gx.mix(col, 0xFFFFFFFF, 0.14f));
+            circle(sx - 4.5f, sy - 4.5f, 3.6f, Gx.withAlpha(0xFFFFFFFF, 0.2f + 0.35f * g));
+        }
+        // key label in the outer corner
+        float lx = i % 2 == 0 ? px + 16 : px + PAD - 16, ly = i < 2 ? y + 16 : y + PAD - 16;
+        circle(lx, ly, 8, Gx.withAlpha(0xFF000000, 0.25f));
+        text(String.valueOf(i + 1), lx, ly, 7.5f, Fonts.BOLD, Gx.withAlpha(0xFFFFFFFF, 0.75f));
+        Gx.pop();
+    }
 
-   @Override
-   protected void onKey(int var1) {
-      if (var1 >= 49 && var1 <= 52) {
-         this.pressPad(var1 - 49);
-      } else if (var1 >= 321 && var1 <= 324) {
-         this.pressPad(var1 - 321);
-      }
-   }
-
-   private int padAt(float var1, float var2) {
-      for (int var3 = 0; var3 < 4; var3++) {
-         float var4 = this.padX(var3);
-         float var5 = this.padY(var3);
-         if (var1 >= var4 && var2 >= var5 && var1 < var4 + 132.0F && var2 < var5 + 132.0F) {
-            float var6 = var1 - 190.0F;
-            float var7 = var2 - 150.0F;
-            if (var6 * var6 + var7 * var7 < 1444.0F) {
-               return -1;
-            }
-
-            return var3;
-         }
-      }
-
-      return -1;
-   }
-
-   private float padX(int var1) {
-      return 52.0F + var1 % 2 * 144.0F;
-   }
-
-   private float padY(int var1) {
-      return 12.0F + var1 / 2 * 144.0F;
-   }
-
-   @Override
-   protected void render() {
-      float var1 = Gx.dt;
-      this.clock += var1;
-      float var2 = 1.0F - (float)Math.exp(-var1 * 16.0F);
-      float var3 = (this.mx - this.bx) / this.u;
-      float var4 = (this.my - this.by) / this.u;
-      boolean var5 = this.state == GameView.State.PLAYING && this.phase == Simon.Phase.INPUT;
-      int var6 = var5 ? this.padAt(var3, var4) : -1;
-      this.flash = Math.max(0.0F, this.flash - var1 * 1.6F);
-
-      for (int var7 = 0; var7 < 4; var7++) {
-         this.glow[var7] = this.glow[var7]
-            + ((this.litT[var7] > 0.0F ? 1 : 0) - this.glow[var7]) * (this.litT[var7] > 0.0F ? 1.0F - (float)Math.exp(-var1 * 30.0F) : var2 * 0.7F);
-         this.hoverA[var7] = this.hoverA[var7] + ((var7 == var6 ? 1 : 0) - this.hoverA[var7]) * var2;
-         this.press[var7] = Math.max(0.0F, this.press[var7] - var1 * 5.0F);
-         this.pad(var7);
-      }
-
-      float var22 = 190.0F;
-      float var8 = 150.0F;
-      int var9 = Style.light ? -789257 : -16053232;
-      this.circle(var22, var8, 40.0F, var9);
-      int var10 = this.phase == Simon.Phase.FAIL ? Style.danger : (this.phase == Simon.Phase.SUCCESS ? Style.ok : Style.accent);
-      if (this.flash > 0.0F) {
-         Gx.glow(this.X(var22), this.Y(var8), this.S(70.0F), Gx.withAlpha(Style.ok, 0.5F * this.flash));
-      }
-
-      this.circle(var22, var8, 33.0F, Style.surface);
-      float var11 = this.phase == Simon.Phase.INPUT
-         ? (float)this.inIdx / this.seq.size()
-         : (this.phase == Simon.Phase.SHOW ? (float)(this.idx + (this.stepLit ? 1 : 0)) / this.seq.size() : (this.phase == Simon.Phase.SUCCESS ? 1.0F : 0.0F));
-      Gx.ringAt(this.X(var22), this.Y(var8), this.S(33.0F), Math.max(1, this.S(2.2F)), Style.surface2);
-      this.arc(var22, var8, 31.9F, 2.2F, var11, var10);
-      this.text("RUNDE", var22, var8 - 11.0F, 5.6F, 3, Style.muted);
-      float var12 = 1.0F + 0.25F * this.flash;
-      Gx.push();
-      Gx.scaleAt(this.X(var22), this.Y(var8 + 5.0F), var12);
-      this.text(String.valueOf(this.seq.size()), var22, var8 + 5.0F, 17.0F, 3, Style.text);
-      Gx.pop();
-      int var14 = Style.text;
-      String var13;
-      switch (this.phase) {
-         case WAIT:
-         case SHOW:
-            var13 = "Merken…";
-            var14 = Style.sub;
-            break;
-         case INPUT:
-            var13 = "Du bist dran!";
-            var14 = Style.accent;
-            break;
-         case SUCCESS:
-            var13 = "Richtig!";
-            var14 = Style.ok;
-            break;
-         default:
-            var13 = "Falsch! Richtig war " + NAMES[this.seq.get(this.inIdx)];
-            var14 = Style.danger;
-      }
-
-      float var15 = 305.0F;
-      if (this.phase == Simon.Phase.INPUT) {
-         float var16 = 1.0F + 0.04F * (float)Math.sin(this.clock * 5.0F);
-         Gx.push();
-         Gx.scaleAt(this.X(190.0F), this.Y(var15), var16);
-         this.text(var13, 190.0F, var15, 10.0F, 3, var14);
-         Gx.pop();
-      } else {
-         this.text(var13, 190.0F, var15, 10.0F, 3, var14);
-      }
-
-      int var24 = this.seq.size();
-      if (var24 <= 24) {
-         float var17 = 7.0F;
-         float var18 = var24 * var17;
-
-         for (int var19 = 0; var19 < var24; var19++) {
-            float var20 = 190.0F - var18 / 2.0F + var17 * var19 + var17 / 2.0F;
-            boolean var21 = this.phase == Simon.Phase.INPUT
-               ? var19 < this.inIdx
-               : (this.phase == Simon.Phase.SHOW ? var19 < this.idx + (this.stepLit ? 1 : 0) : this.phase == Simon.Phase.SUCCESS);
-            this.circle(var20, var15 + 14.0F, 2.0F, var21 ? var10 : Style.surface2);
-         }
-      } else {
-         this.text((this.phase == Simon.Phase.INPUT ? this.inIdx : 0) + " / " + var24, 190.0F, var15 + 14.0F, 6.5F, 2, Style.sub);
-      }
-   }
-
-   private void pad(int var1) {
-      float var2 = this.padX(var1);
-      float var3 = this.padY(var1);
-      int var4 = COLORS[var1];
-      float var5 = this.glow[var1];
-      boolean var6 = this.phase == Simon.Phase.FAIL && var1 == this.seq.get(this.inIdx) && (int)(this.phaseT * 6.0F) % 2 == 0;
-      if (var6) {
-         var5 = Math.max(var5, 0.8F);
-      }
-
-      boolean var7 = this.phase == Simon.Phase.FAIL && var1 == this.failPad;
-      int var8 = Gx.mix(var4, Style.light ? -1446928 : -16053232, 0.55F - 0.12F * this.hoverA[var1]);
-      int var9 = Gx.mix(var8, Gx.mix(var4, -1, 0.18F), var5);
-      float var10 = 1.0F - 0.035F * Ease.outCubic(this.press[var1]) + 0.015F * this.hoverA[var1];
-      float var11 = var7 ? (float)Math.sin(this.phaseT * 60.0F) * 3.0F * Math.max(0.0F, 1.0F - this.phaseT * 2.0F) : 0.0F;
-      float var12 = var2 + 66.0F + var11;
-      float var13 = var3 + 66.0F;
-      if (var5 > 0.01F) {
-         Gx.glow(this.X(var12), this.Y(var13), this.S(125.4F), Gx.withAlpha(var4, 0.55F * var5));
-      }
-
-      Gx.push();
-      Gx.scaleAt(this.X(var12), this.Y(var13), var10);
-      float var14 = var2 + var11;
-      this.box(var14, var3 + 3.0F, 132.0F, 132.0F, 22.0F, Gx.mix(var9, -16777216, 0.5F));
-      this.box(var14, var3, 132.0F, 132.0F, 22.0F, Gx.mix(var9, -16777216, 0.14F));
-      this.box(var14 + 3.0F, var3 + 2.0F, 126.0F, 125.0F, 19.0F, Gx.mix(var9, -1, 0.06F));
-      Gx.outline(
-         this.X(var14),
-         this.Y(var3),
-         this.S(132.0F),
-         this.S(132.0F),
-         this.S(22.0F),
-         Math.max(1, this.S(1.0F)),
-         Gx.withAlpha(Gx.mix(var9, -16777216, 0.5F), 0.8F)
-      );
-      if (var7) {
-         Gx.outline(this.X(var14), this.Y(var3), this.S(132.0F), this.S(132.0F), this.S(22.0F), Math.max(1, this.S(2.5F)), Style.danger);
-      }
-
-      for (int var15 = 0; var15 < 4; var15++) {
-         float var16 = var14 + 132.0F * (var15 % 2 == 0 ? 0.3F : 0.7F);
-         float var17 = var3 + 132.0F * (var15 < 2 ? 0.3F : 0.7F);
-         this.circle(var16, var17 + 2.2F, 15.0F, Gx.mix(var9, -16777216, 0.3F));
-         this.circle(var16, var17, 15.0F, Gx.mix(var9, -1, 0.14F));
-         this.circle(var16 - 4.5F, var17 - 4.5F, 3.6F, Gx.withAlpha(-1, 0.2F + 0.35F * var5));
-      }
-
-      float var18 = var1 % 2 == 0 ? var14 + 16.0F : var14 + 132.0F - 16.0F;
-      float var19 = var1 < 2 ? var3 + 16.0F : var3 + 132.0F - 16.0F;
-      this.circle(var18, var19, 8.0F, Gx.withAlpha(-16777216, 0.25F));
-      this.text(String.valueOf(var1 + 1), var18, var19, 7.5F, 3, Gx.withAlpha(-1, 0.75F));
-      Gx.pop();
-   }
-
-   private void arc(float var1, float var2, float var3, float var4, float var5, int var6) {
-      if (!(var5 <= 0.0F)) {
-         if (var5 >= 1.0F) {
-            Gx.ringAt(this.X(var1), this.Y(var2), this.S(var3 + var4 / 2.0F), Math.max(1, this.S(var4)), var6);
-         } else {
-            int var7 = Math.max(1, Math.round(var4 * this.u / 2.0F));
-            float var8 = (float)((Math.PI * 2) * var5);
-            int var9 = Math.max(2, (int)Math.ceil(var8 * var3 * this.u / Math.max(1.0F, var7 * 0.4F)));
-
-            for (int var10 = 0; var10 <= var9; var10++) {
-               double var11 = (-Math.PI / 2) + var8 * var10 / var9;
-               Gx.circle(
-                  Math.round(this.bx + (var1 + (float)Math.cos(var11) * var3) * this.u),
-                  Math.round(this.by + (var2 + (float)Math.sin(var11) * var3) * this.u),
-                  var7,
-                  var6
-               );
-            }
-         }
-      }
-   }
-
-   private static enum Phase {
-      WAIT,
-      SHOW,
-      INPUT,
-      SUCCESS,
-      FAIL;
-   }
+    private void arc(float cx, float cy, float r, float th, float p, int col) {
+        if (p <= 0) return;
+        if (p >= 1) { Gx.ringAt(X(cx), Y(cy), S(r + th / 2), Math.max(1, S(th)), col); return; }
+        int rad = Math.max(1, Math.round(th * u / 2));
+        float a = (float) (Math.PI * 2 * p);
+        int n = Math.max(2, (int) Math.ceil(a * r * u / Math.max(1f, rad * 0.4f)));
+        for (int i = 0; i <= n; i++) {
+            double ang = -Math.PI / 2 + a * i / n;
+            Gx.circle(Math.round(bx + (cx + (float) Math.cos(ang) * r) * u), Math.round(by + (cy + (float) Math.sin(ang) * r) * u), rad, col);
+        }
+    }
 }

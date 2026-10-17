@@ -911,3 +911,26 @@ body.crypt .grid-floor .gf-ceil { bottom: auto; top: 0; transform-origin: 50% 0;
 .cd-item p { margin: 6px 0 10px; color: var(--muted); }
 .cd-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
 .cd-done { color: var(--success); display: inline-flex; align-items: center; gap: 6px; }
+
+/* VR: lens opening, visual-VR lens frame, crosshair */
+.vr-lens { position: absolute; inset: 0; pointer-events: none; z-index: 3; opacity: 0; background: #000; --open: 0; --fogged: 1; }
+.vr-lens.opening { -webkit-mask-image: radial-gradient(circle at 31% 50%, transparent calc(var(--open) * 75vmax), #000 calc(var(--open) * 75vmax + 2px)), radial-gradient(circle at 69% 50%, transparent calc(var(--open) * 75vmax), #000 calc(var(--open) * 75vmax + 2px)); -webkit-mask-composite: source-in; mask-composite: intersect; }
+.vr-fog { position: absolute; inset: 0; pointer-events: none; z-index: 3; opacity: 0; background: radial-gradient(ellipse at 50% 50%, rgba(225,228,236,.6), rgba(205,210,220,.3) 60%, transparent 88%); backdrop-filter: blur(8px); }
+.vr-root.visual::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2; background: radial-gradient(ellipse 58% 70% at 50% 50%, transparent 72%, rgba(0,0,0,.55) 88%, #000 100%); box-shadow: inset 0 0 0 1px rgba(255,255,255,.04); }
+.vr-cross { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: rgba(255,255,255,.75); box-shadow: 0 0 0 2px rgba(0,0,0,.35); pointer-events: none; z-index: 4; opacity: 0; transition: transform .12s, background .12s; }
+.vr-root.visual .vr-cross { opacity: 1; }
+.vr-cross.hot { transform: scale(1.6); background: #ffb050; }
+.vr-root .vr-help { border-radius: 0; font-size: .74rem; max-width: 72%; }
+
+/* VR page */
+.vr-page { display: flex; flex-direction: column; gap: 12px; max-width: 1200px; }
+.vr-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.vr-mode-b { padding: 14px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.vr-mode-b p { margin: 0; color: var(--muted); }
+.vr-mode .vr-status { margin-left: auto; font: 500 .75rem var(--font); text-transform: none; color: var(--muted); }
+.vr-mode .vr-status.ok { color: var(--success); }
+.keys { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+kbd { font: 500 .72rem var(--mono); padding: 2px 6px; border: 1px solid var(--line, var(--border)); border-bottom-width: 2px; background: color-mix(in srgb, var(--surface) 80%, #000); }
+.vr-mc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 14px; }
+.vr-mc-grid h3 { margin: 0 0 6px; }
+@media (max-width: 900px) { .vr-modes, .vr-mc-grid { grid-template-columns: 1fr; } }

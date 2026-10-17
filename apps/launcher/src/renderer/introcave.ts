@@ -120,7 +120,7 @@ function noiseCanvas(w: number, h: number, paint: (g: CanvasRenderingContext2D, 
 }
 
 /** Rough rock / gravel: layered value noise with pits (also used as bump map). */
-function rockTexture(): THREE.CanvasTexture {
+export function rockTexture(): THREE.CanvasTexture {
   const W = 256;
   const grid = (n: number) => Array.from({ length: n * n }, () => Math.random());
   const layers = [8, 16, 32, 64].map((n) => ({ n, g: grid(n) }));
@@ -146,7 +146,7 @@ function rockTexture(): THREE.CanvasTexture {
 }
 
 /** Weathered timber: long grain streaks, knots and cracks. */
-function woodTexture(): THREE.CanvasTexture {
+export function woodTexture(): THREE.CanvasTexture {
   const W = 128, H = 512;
   return noiseCanvas(W, H, (g, img) => {
     const knots = Array.from({ length: 3 }, () => ({ x: Math.random() * W, y: Math.random() * H, r: 6 + Math.random() * 10 }));

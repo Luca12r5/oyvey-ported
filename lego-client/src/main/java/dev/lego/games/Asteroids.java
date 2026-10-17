@@ -1,759 +1,457 @@
 package dev.lego.games;
 
-import dev.lego.ui.Ease;
-import dev.lego.ui.Gx;
-import dev.lego.ui.Sound;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RadialGradientPaint;
-import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.GeneralPath;
-import java.awt.geom.Ellipse2D.Float;
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import dev.lego.ui.Ease;
+import dev.lego.ui.Fonts;
+import dev.lego.ui.Gx;
+import dev.lego.ui.Sound;
+
+/** Asteroiden: neon vector space shooter - rotate, thrust, shoot splitting asteroids and saucers. */
 public final class Asteroids extends GameView {
-   private static final float W = 400.0F;
-   private static final float H = 290.0F;
-   private static final float[] RAD = new float[]{0.0F, 7.5F, 14.0F, 25.0F};
-   private static final int[] PTS = new int[]{0, 100, 50, 20};
-   private static final int ANGLES = 48;
-   private static final int ROCK_ANGLES = 24;
-   private static final int VARIANTS = 6;
-   private static final int NEON = -10685697;
-   private static final int ROCK = -3561729;
-   private static final int UFO_C = -41816;
-   private static final int SHOT = -3462;
-   private final List<Asteroids.Rock> rocks = new ArrayList<>();
-   private final List<Asteroids.Shot> shots = new ArrayList<>();
-   private final GameFx fx = new GameFx();
-   private Asteroids.Ufo ufo;
-   private float x;
-   private float y;
-   private float vx;
-   private float vy;
-   private float ang;
-   private float fireT;
-   private float invul;
-   private float deadT;
-   private float waveT;
-   private float ufoT;
-   private float anim;
-   private float thrustT;
-   private float bannerT = -1.0F;
-   private boolean left;
-   private boolean right;
-   private boolean thrust;
-   private boolean firing;
-   private boolean dead;
-   private int lives;
-   private int wave;
-   private long nextLife;
+    private static final float W = 400, H = 290;
+    private static final float[] RAD = {0, 7.5f, 14, 25};
+    private static final int[] PTS = {0, 100, 50, 20};
+    private static final int ANGLES = 48, ROCK_ANGLES = 24, VARIANTS = 6;
+    private static final int NEON = 0xFF5CF2FF, ROCK = 0xFFC9A6FF, UFO_C = 0xFFFF5CA8, SHOT = 0xFFFFF27A;
 
-   public Asteroids() {
-      super("asteroids");
-   }
+    private static final class Rock {
+        float x, y, vx, vy, ang, spin;
+        int size, variant;
+        float flash;
+    }
 
-   @Override
-   protected float boardW() {
-      return 400.0F;
-   }
+    private static final class Shot {
+        float x, y, vx, vy, life;
+        boolean enemy;
+    }
 
-   @Override
-   protected float boardH() {
-      return 290.0F;
-   }
+    private static final class Ufo {
+        float x, y, vx, t, fireT;
+        boolean small;
+        int hp;
+    }
 
-   @Override
-   protected void reset() {
-      this.rocks.clear();
-      this.shots.clear();
-      this.fx.clear();
-      this.ufo = null;
-      this.lives = 3;
-      this.wave = 0;
-      this.nextLife = 10000L;
-      this.left = this.right = this.thrust = this.firing = false;
-      this.spawnShip();
-      this.nextWave();
-   }
+    private final List<Rock> rocks = new ArrayList<>();
+    private final List<Shot> shots = new ArrayList<>();
+    private final GameFx fx = new GameFx();
+    private Ufo ufo;
+    private float x, y, vx, vy, ang, fireT, invul, deadT, waveT, ufoT, anim, thrustT, bannerT = -1;
+    private boolean left, right, thrust, firing, dead;
+    private int lives, wave;
+    private long nextLife;
 
-   private void spawnShip() {
-      this.x = 200.0F;
-      this.y = 145.0F;
-      this.vx = this.vy = 0.0F;
-      this.ang = (float) (-Math.PI / 2);
-      this.invul = 2.2F;
-      this.dead = false;
-      this.deadT = 0.0F;
-   }
+    public Asteroids() { super("asteroids"); }
 
-   private void nextWave() {
-      this.wave++;
-      int var1 = Math.min(10, 3 + this.wave);
+    @Override protected float boardW() { return W; }
+    @Override protected float boardH() { return H; }
 
-      for (int var2 = 0; var2 < var1; var2++) {
-         float var3;
-         float var4;
-         do {
-            var3 = this.rnd.nextFloat() * 400.0F;
-            var4 = this.rnd.nextFloat() * 290.0F;
-         } while (dist(var3, var4, this.x, this.y) < 90.0F);
+    @Override
+    protected void reset() {
+        rocks.clear();
+        shots.clear();
+        fx.clear();
+        ufo = null;
+        lives = 3; wave = 0; nextLife = 10000;
+        left = right = thrust = firing = false;
+        spawnShip();
+        nextWave();
+    }
 
-         this.addRock(var3, var4, 3, null);
-      }
+    private void spawnShip() {
+        x = W / 2; y = H / 2; vx = vy = 0; ang = (float) -Math.PI / 2;
+        invul = 2.2f; dead = false; deadT = 0;
+    }
 
-      this.ufoT = Math.max(8, 22 - this.wave * 2) + this.rnd.nextFloat() * 6.0F;
-      this.bannerT = 0.0F;
-   }
+    private void nextWave() {
+        wave++;
+        int n = Math.min(10, 3 + wave);
+        for (int i = 0; i < n; i++) {
+            float rx, ry;
+            do { rx = rnd.nextFloat() * W; ry = rnd.nextFloat() * H; } while (dist(rx, ry, x, y) < 90);
+            addRock(rx, ry, 3, null);
+        }
+        ufoT = Math.max(8, 22 - wave * 2) + rnd.nextFloat() * 6;
+        bannerT = 0;
+    }
 
-   private void addRock(float var1, float var2, int var3, Asteroids.Rock var4) {
-      Asteroids.Rock var5 = new Asteroids.Rock();
-      var5.x = var1;
-      var5.y = var2;
-      var5.size = var3;
-      var5.variant = this.rnd.nextInt(6);
-      double var6 = this.rnd.nextDouble() * Math.PI * 2.0;
-      float var8 = (var3 == 3 ? 22 : (var3 == 2 ? 42 : 66)) * (1.0F + this.wave * 0.06F) * (0.7F + this.rnd.nextFloat() * 0.6F);
-      var5.vx = (float)Math.cos(var6) * var8 + (var4 != null ? var4.vx * 0.4F : 0.0F);
-      var5.vy = (float)Math.sin(var6) * var8 + (var4 != null ? var4.vy * 0.4F : 0.0F);
-      var5.ang = this.rnd.nextFloat() * 6.28F;
-      var5.spin = (this.rnd.nextFloat() - 0.5F) * 2.4F;
-      this.rocks.add(var5);
-   }
+    private void addRock(float rx, float ry, int size, Rock parent) {
+        Rock r = new Rock();
+        r.x = rx; r.y = ry; r.size = size; r.variant = rnd.nextInt(VARIANTS);
+        double a = rnd.nextDouble() * Math.PI * 2;
+        float sp = (size == 3 ? 22 : size == 2 ? 42 : 66) * (1 + wave * 0.06f) * (0.7f + rnd.nextFloat() * 0.6f);
+        r.vx = (float) Math.cos(a) * sp + (parent != null ? parent.vx * 0.4f : 0);
+        r.vy = (float) Math.sin(a) * sp + (parent != null ? parent.vy * 0.4f : 0);
+        r.ang = rnd.nextFloat() * 6.28f;
+        r.spin = (rnd.nextFloat() - 0.5f) * 2.4f;
+        rocks.add(r);
+    }
 
-   private static float dist(float var0, float var1, float var2, float var3) {
-      float var4 = Math.abs(var0 - var2);
-      float var5 = Math.abs(var1 - var3);
-      var4 = Math.min(var4, 400.0F - var4);
-      var5 = Math.min(var5, 290.0F - var5);
-      return (float)Math.sqrt(var4 * var4 + var5 * var5);
-   }
+    private static float dist(float ax, float ay, float bx, float by) {
+        float dx = Math.abs(ax - bx), dy = Math.abs(ay - by);
+        dx = Math.min(dx, W - dx); dy = Math.min(dy, H - dy);
+        return (float) Math.sqrt(dx * dx + dy * dy);
+    }
 
-   @Override
-   protected void onKey(int var1) {
-      if (var1 == 263 || var1 == 65) {
-         this.left = true;
-      }
+    // ------------------------------------------------------------------ input
+    @Override
+    protected void onKey(int k) {
+        if (k == K_LEFT || k == K_A) left = true;
+        if (k == K_RIGHT || k == K_D) right = true;
+        if (k == K_UP || k == K_W) thrust = true;
+        if (k == K_SPACE) { if (!firing) fireT = 0; firing = true; }
+        if ((k == K_DOWN || k == K_S || k == 340) && !dead) hyperspace();
+    }
 
-      if (var1 == 262 || var1 == 68) {
-         this.right = true;
-      }
+    @Override
+    protected void onKeyUp(int k) {
+        if (k == K_LEFT || k == K_A) left = false;
+        if (k == K_RIGHT || k == K_D) right = false;
+        if (k == K_UP || k == K_W) thrust = false;
+        if (k == K_SPACE) firing = false;
+    }
 
-      if (var1 == 265 || var1 == 87) {
-         this.thrust = true;
-      }
+    private void hyperspace() {
+        fx.burst(x, y, 20, NEON, 120, 2, 0.5f, 0, GameFx.SPARK);
+        x = 20 + rnd.nextFloat() * (W - 40);
+        y = 20 + rnd.nextFloat() * (H - 40);
+        vx = vy = 0;
+        invul = Math.max(invul, 0.4f);
+        fx.ring(x, y, 30, NEON, 0.4f);
+        Sound.play("minecraft:entity.enderman.teleport", 1.4f, 0.35f);
+    }
 
-      if (var1 == 32) {
-         if (!this.firing) {
-            this.fireT = 0.0F;
-         }
+    // ------------------------------------------------------------------ logic
+    @Override
+    protected void update(float dt) {
+        fx.update(dt);
+        if (bannerT >= 0) { bannerT += dt; if (bannerT > 1.8f) bannerT = -1; }
+        invul = Math.max(0, invul - dt);
+        fireT = Math.max(0, fireT - dt);
 
-         this.firing = true;
-      }
-
-      if ((var1 == 264 || var1 == 83 || var1 == 340) && !this.dead) {
-         this.hyperspace();
-      }
-   }
-
-   @Override
-   protected void onKeyUp(int var1) {
-      if (var1 == 263 || var1 == 65) {
-         this.left = false;
-      }
-
-      if (var1 == 262 || var1 == 68) {
-         this.right = false;
-      }
-
-      if (var1 == 265 || var1 == 87) {
-         this.thrust = false;
-      }
-
-      if (var1 == 32) {
-         this.firing = false;
-      }
-   }
-
-   private void hyperspace() {
-      this.fx.burst(this.x, this.y, 20, -10685697, 120.0F, 2.0F, 0.5F, 0.0F, 2);
-      this.x = 20.0F + this.rnd.nextFloat() * 360.0F;
-      this.y = 20.0F + this.rnd.nextFloat() * 250.0F;
-      this.vx = this.vy = 0.0F;
-      this.invul = Math.max(this.invul, 0.4F);
-      this.fx.ring(this.x, this.y, 30.0F, -10685697, 0.4F);
-      Sound.play("minecraft:entity.enderman.teleport", 1.4F, 0.35F);
-   }
-
-   @Override
-   protected void update(float var1) {
-      this.fx.update(var1);
-      if (this.bannerT >= 0.0F) {
-         this.bannerT += var1;
-         if (this.bannerT > 1.8F) {
-            this.bannerT = -1.0F;
-         }
-      }
-
-      this.invul = Math.max(0.0F, this.invul - var1);
-      this.fireT = Math.max(0.0F, this.fireT - var1);
-      if (this.dead) {
-         this.deadT += var1;
-         if (this.deadT > 1.6F) {
-            if (this.lives <= 0) {
-               this.gameOver();
-               return;
+        if (dead) {
+            deadT += dt;
+            if (deadT > 1.6f) {
+                if (lives <= 0) { gameOver(); return; }
+                boolean clear = true;
+                for (Rock r : rocks) if (dist(r.x, r.y, W / 2, H / 2) < RAD[r.size] + 50) clear = false;
+                if (clear || deadT > 4) spawnShip();
             }
-
-            boolean var2 = true;
-
-            for (Asteroids.Rock var4 : this.rocks) {
-               if (dist(var4.x, var4.y, 200.0F, 145.0F) < RAD[var4.size] + 50.0F) {
-                  var2 = false;
-               }
+        } else {
+            if (left) ang -= 4.4f * dt;
+            if (right) ang += 4.4f * dt;
+            float cs = (float) Math.cos(ang), sn = (float) Math.sin(ang);
+            if (thrust) {
+                vx += cs * 250 * dt; vy += sn * 250 * dt;
+                thrustT += dt;
+                if (thrustT > 0.02f) {
+                    thrustT = 0;
+                    fx.add(x - cs * 9, y - sn * 9, -cs * 90 + vx * 0.5f + (rnd.nextFloat() - 0.5f) * 40, -sn * 90 + vy * 0.5f + (rnd.nextFloat() - 0.5f) * 40,
+                            0.35f, 1.8f + rnd.nextFloat(), rnd.nextBoolean() ? 0xFFFFB347 : 0xFFFF6A3D, GameFx.SPARK, 0, 1.5f);
+                }
             }
-
-            if (var2 || this.deadT > 4.0F) {
-               this.spawnShip();
+            float sp = (float) Math.sqrt(vx * vx + vy * vy);
+            if (sp > 240) { vx *= 240 / sp; vy *= 240 / sp; }
+            float d = (float) Math.exp(-0.45f * dt);
+            vx *= d; vy *= d;
+            x = wrapX(x + vx * dt); y = wrapY(y + vy * dt);
+            if (firing && fireT <= 0) fire();
+        }
+        // rocks
+        for (Rock r : rocks) {
+            r.x = wrapX(r.x + r.vx * dt); r.y = wrapY(r.y + r.vy * dt);
+            r.ang += r.spin * dt;
+            r.flash = Math.max(0, r.flash - dt * 6);
+        }
+        // shots
+        for (int i = shots.size() - 1; i >= 0; i--) {
+            Shot s = shots.get(i);
+            s.x = wrapX(s.x + s.vx * dt); s.y = wrapY(s.y + s.vy * dt);
+            s.life -= dt;
+            if (s.life <= 0) { shots.remove(i); continue; }
+            boolean used = false;
+            if (!s.enemy) {
+                for (int k = rocks.size() - 1; k >= 0; k--) {
+                    Rock r = rocks.get(k);
+                    if (dist(s.x, s.y, r.x, r.y) < RAD[r.size] * 0.92f) { breakRock(k, s.vx, s.vy); used = true; break; }
+                }
+                if (!used && ufo != null && dist(s.x, s.y, ufo.x, ufo.y) < (ufo.small ? 8 : 13)) { killUfo(); used = true; }
+            } else if (!dead && invul <= 0 && dist(s.x, s.y, x, y) < 7) { crash(); used = true; }
+            if (used) shots.remove(i);
+        }
+        // ship vs rocks
+        if (!dead && invul <= 0) {
+            for (int k = rocks.size() - 1; k >= 0; k--) {
+                Rock r = rocks.get(k);
+                if (dist(x, y, r.x, r.y) < RAD[r.size] * 0.85f + 6) { breakRock(k, vx, vy); crash(); break; }
             }
-         }
-      } else {
-         if (this.left) {
-            this.ang -= 4.4F * var1;
-         }
-
-         if (this.right) {
-            this.ang += 4.4F * var1;
-         }
-
-         float var7 = (float)Math.cos(this.ang);
-         float var13 = (float)Math.sin(this.ang);
-         if (this.thrust) {
-            this.vx += var7 * 250.0F * var1;
-            this.vy += var13 * 250.0F * var1;
-            this.thrustT += var1;
-            if (this.thrustT > 0.02F) {
-               this.thrustT = 0.0F;
-               this.fx
-                  .add(
-                     this.x - var7 * 9.0F,
-                     this.y - var13 * 9.0F,
-                     -var7 * 90.0F + this.vx * 0.5F + (this.rnd.nextFloat() - 0.5F) * 40.0F,
-                     -var13 * 90.0F + this.vy * 0.5F + (this.rnd.nextFloat() - 0.5F) * 40.0F,
-                     0.35F,
-                     1.8F + this.rnd.nextFloat(),
-                     this.rnd.nextBoolean() ? -19641 : -38339,
-                     2,
-                     0.0F,
-                     1.5F
-                  );
+            if (!dead && ufo != null && dist(x, y, ufo.x, ufo.y) < 16) { killUfo(); crash(); }
+        }
+        // ufo
+        ufoT -= dt;
+        if (ufo == null && ufoT <= 0 && wave >= 1) {
+            ufo = new Ufo();
+            ufo.small = wave >= 3 && rnd.nextFloat() < 0.45f;
+            boolean fromLeft = rnd.nextBoolean();
+            ufo.x = fromLeft ? -20 : W + 20;
+            ufo.vx = (fromLeft ? 1 : -1) * (ufo.small ? 75 : 55);
+            ufo.y = 30 + rnd.nextFloat() * (H - 60);
+            ufo.fireT = 1.2f;
+            ufoT = Math.max(9, 24 - wave * 2) + rnd.nextFloat() * 8;
+            Sound.play("minecraft:block.beacon.activate", 1.8f, 0.3f);
+        }
+        if (ufo != null) {
+            ufo.t += dt;
+            ufo.x += ufo.vx * dt;
+            ufo.y = wrapY(ufo.y + (float) Math.sin(ufo.t * 2.2f) * 40 * dt);
+            ufo.fireT -= dt;
+            if (ufo.fireT <= 0 && !dead) {
+                ufo.fireT = ufo.small ? 0.9f : 1.3f;
+                double a = ufo.small ? Math.atan2(y - ufo.y, x - ufo.x) + (rnd.nextFloat() - 0.5f) * 0.35f : rnd.nextDouble() * Math.PI * 2;
+                Shot s = new Shot();
+                s.enemy = true; s.x = ufo.x; s.y = ufo.y; s.vx = (float) Math.cos(a) * 170; s.vy = (float) Math.sin(a) * 170; s.life = 1.6f;
+                shots.add(s);
+                Sound.play("minecraft:block.note_block.bit", 0.7f, 0.25f);
             }
-         }
+            if (ufo.x < -40 || ufo.x > W + 40) ufo = null;
+        }
+        if (rocks.isEmpty() && !dead) { waveT += dt; if (waveT > 1.2f) { waveT = 0; nextWave(); } }
+        if (score >= nextLife) { nextLife += 10000; lives++; fx.popup("+1 Leben!", x, y - 16, 0xFF9FFFB5, 12); Sound.play("minecraft:entity.player.levelup", 1.5f, 0.4f); }
+    }
 
-         float var17 = (float)Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-         if (var17 > 240.0F) {
-            this.vx *= 240.0F / var17;
-            this.vy *= 240.0F / var17;
-         }
+    private void fire() {
+        int mine = 0;
+        for (Shot s : shots) if (!s.enemy) mine++;
+        if (mine >= 6) return;
+        fireT = 0.17f;
+        float cs = (float) Math.cos(ang), sn = (float) Math.sin(ang);
+        Shot s = new Shot();
+        s.x = x + cs * 10; s.y = y + sn * 10; s.vx = cs * 380 + vx; s.vy = sn * 380 + vy; s.life = 0.85f;
+        shots.add(s);
+        fx.add(s.x, s.y, 0, 0, 0.12f, 4, SHOT, GameFx.SPARK, 0, 0);
+        vx -= cs * 6; vy -= sn * 6;
+        Sound.play("minecraft:block.note_block.hat", 2.0f, 0.25f);
+    }
 
-         float var5 = (float)Math.exp(-0.45F * var1);
-         this.vx *= var5;
-         this.vy *= var5;
-         this.x = wrapX(this.x + this.vx * var1);
-         this.y = wrapY(this.y + this.vy * var1);
-         if (this.firing && this.fireT <= 0.0F) {
-            this.fire();
-         }
-      }
+    private void breakRock(int k, float hvx, float hvy) {
+        Rock r = rocks.remove(k);
+        int pts = PTS[r.size];
+        score += pts;
+        fx.popup("+" + pts, r.x, r.y - RAD[r.size] * 0.5f, 0xFFFFFFFF, 8 + r.size);
+        int n = 6 + r.size * 6;
+        for (int i = 0; i < n; i++) {
+            double a = rnd.nextDouble() * Math.PI * 2;
+            float sp = 40 + rnd.nextFloat() * (60 + r.size * 30);
+            fx.add(r.x, r.y, (float) Math.cos(a) * sp + hvx * 0.1f, (float) Math.sin(a) * sp + hvy * 0.1f, 0.5f + rnd.nextFloat() * 0.5f, 1.2f + rnd.nextFloat(), rnd.nextBoolean() ? ROCK : 0xFFFFFFFF, GameFx.STREAK, 0, 1.8f);
+        }
+        fx.ring(r.x, r.y, RAD[r.size] * 1.8f, ROCK, 0.4f);
+        fx.shake(0.08f * r.size);
+        Sound.play("minecraft:entity.generic.explode", 1.9f - r.size * 0.3f, 0.12f + r.size * 0.06f);
+        if (r.size > 1) { addRock(r.x, r.y, r.size - 1, r); addRock(r.x, r.y, r.size - 1, r); }
+    }
 
-      for (Asteroids.Rock var14 : this.rocks) {
-         var14.x = wrapX(var14.x + var14.vx * var1);
-         var14.y = wrapY(var14.y + var14.vy * var1);
-         var14.ang = var14.ang + var14.spin * var1;
-         var14.flash = Math.max(0.0F, var14.flash - var1 * 6.0F);
-      }
+    private void killUfo() {
+        int pts = ufo.small ? 1000 : 200;
+        score += pts;
+        fx.burst(ufo.x, ufo.y, 40, UFO_C, 190, 2.4f, 0.8f, 0, GameFx.STREAK);
+        fx.ring(ufo.x, ufo.y, 40, UFO_C, 0.5f);
+        fx.popup("UFO! +" + pts, ufo.x, ufo.y - 12, UFO_C, 12);
+        fx.shake(0.5f);
+        Sound.play("minecraft:entity.generic.explode", 1.2f, 0.4f);
+        ufo = null;
+    }
 
-      for (int var9 = this.shots.size() - 1; var9 >= 0; var9--) {
-         Asteroids.Shot var15 = this.shots.get(var9);
-         var15.x = wrapX(var15.x + var15.vx * var1);
-         var15.y = wrapY(var15.y + var15.vy * var1);
-         var15.life -= var1;
-         if (var15.life <= 0.0F) {
-            this.shots.remove(var9);
-         } else {
-            boolean var18 = false;
-            if (!var15.enemy) {
-               for (int var20 = this.rocks.size() - 1; var20 >= 0; var20--) {
-                  Asteroids.Rock var6 = this.rocks.get(var20);
-                  if (dist(var15.x, var15.y, var6.x, var6.y) < RAD[var6.size] * 0.92F) {
-                     this.breakRock(var20, var15.vx, var15.vy);
-                     var18 = true;
-                     break;
-                  }
-               }
+    private void crash() {
+        dead = true;
+        deadT = 0;
+        lives--;
+        fx.burst(x, y, 50, NEON, 200, 2.2f, 1.1f, 0, GameFx.STREAK);
+        fx.burst(x, y, 24, 0xFFFFB347, 120, 2.8f, 0.8f, 0, GameFx.SPARK);
+        fx.ring(x, y, 50, NEON, 0.6f);
+        fx.shake(0.9f);
+        fx.flash(0xFFFFFFFF, 0.5f);
+        Sound.play("minecraft:entity.generic.explode", 0.8f, 0.5f);
+    }
 
-               if (!var18 && this.ufo != null && dist(var15.x, var15.y, this.ufo.x, this.ufo.y) < (this.ufo.small ? 8 : 13)) {
-                  this.killUfo();
-                  var18 = true;
-               }
-            } else if (!this.dead && this.invul <= 0.0F && dist(var15.x, var15.y, this.x, this.y) < 7.0F) {
-               this.crash();
-               var18 = true;
+    private static float wrapX(float v) { return v < 0 ? v + W : v >= W ? v - W : v; }
+    private static float wrapY(float v) { return v < 0 ? v + H : v >= H ? v - H : v; }
+
+    // ------------------------------------------------------------------ drawing
+    @Override
+    protected void render() {
+        float dt = Math.min(0.05f, Gx.dt);
+        anim += dt;
+        GameFx.sprite(this, "as_bg", 0, 0, W, H, 400, 290, Asteroids::paintSpace, 0xFFFFFFFF);
+        // twinkling foreground stars
+        for (int i = 0; i < 24; i++) {
+            float sx = (i * 173.3f) % W, sy = (i * 91.7f + 13) % H;
+            float tw = 0.5f + 0.5f * (float) Math.sin(anim * (1.5f + i % 4) + i);
+            circle(sx, sy, 0.7f + (i % 3) * 0.3f, Gx.withAlpha(0xFFFFFFFF, 0.3f + 0.6f * tw));
+        }
+        Gx.push();
+        Gx.translate(S(fx.sx), S(fx.sy));
+        for (Rock r : rocks) rock(r);
+        if (ufo != null) {
+            final boolean sm = ufo.small;
+            float s = sm ? 20 : 30;
+            Gx.glow(X(ufo.x), Y(ufo.y), S(s), 0x33FF5CA8);
+            GameFx.sprite(this, "as_ufo" + (((int) (ufo.t * 8)) % 3), ufo.x - s / 2 - 2, ufo.y - s * 0.35f - 2, s + 4, s * 0.7f + 4, 34, 24, gr -> paintUfo(gr, ((int) (ufo.t * 8)) % 3), 0xFFFFFFFF);
+        }
+        for (Shot s : shots) {
+            int c = s.enemy ? UFO_C : SHOT;
+            Gx.glow(X(s.x), Y(s.y), S(6), Gx.withAlpha(c, 0.5f));
+            circle(s.x, s.y, 1.5f, 0xFFFFFFFF);
+            circle(s.x - s.vx * 0.012f, s.y - s.vy * 0.012f, 1.1f, Gx.withAlpha(c, 0.6f));
+        }
+        fx.draw(this, 0, 0);
+        if (!dead && (invul <= 0 || ((int) (anim * 10)) % 2 == 0 || state != State.PLAYING)) ship(x, y);
+        Gx.pop();
+
+        // HUD
+        for (int i = 0; i < Math.min(lives, 6); i++) {
+            int a = Math.round((float) ((-Math.PI / 2) / (Math.PI * 2) * ANGLES + ANGLES)) % ANGLES;
+            GameFx.sprite(this, "as_ship" + a, 8 + i * 13, 8, 14, 14, 30, 30, gr -> paintShip(gr, a), 0xCCFFFFFF);
+        }
+        GameFx.outlined(this, "Welle " + wave, W - 34, 15, 8, NEON, 0xAA000000);
+        if (bannerT >= 0) {
+            float t = bannerT / 1.8f, s = Ease.outBack(Math.min(1, bannerT / 0.35f)), a = t < 0.7f ? 1 : 1 - (t - 0.7f) / 0.3f;
+            Gx.pushAlpha(a);
+            Gx.push();
+            Gx.scaleAt(X(W / 2), Y(H * 0.3f), s);
+            Gx.glow(X(W / 2), Y(H * 0.3f), S(70), 0x445CF2FF);
+            GameFx.outlined(this, "WELLE " + wave, W / 2, H * 0.3f, 20, NEON, 0xCC001018);
+            Gx.pop();
+            Gx.popAlpha();
+        }
+        if (dead && lives > 0 && deadT > 0.8f) text("Mach dich bereit…", W / 2, H / 2 + 30, 8, Fonts.BOLD, Gx.withAlpha(0xFFFFFFFF, 0.6f + 0.4f * (float) Math.sin(anim * 6)));
+        fx.drawPopups(this, 0, 0);
+        fx.drawFlash(this, W, H);
+    }
+
+    private void rock(Rock r) {
+        float rad = RAD[r.size];
+        int a = Math.floorMod(Math.round(r.ang / 6.2831853f * ROCK_ANGLES), ROCK_ANGLES);
+        final int sz = r.size, var = r.variant;
+        String key = "as_rock" + sz + "_" + var + "_" + a;
+        float box = rad * 2 + 6;
+        for (int ox = -1; ox <= 1; ox++)
+            for (int oy = -1; oy <= 1; oy++) {
+                float cx = r.x + ox * W, cy = r.y + oy * H;
+                if (cx + box < 0 || cx - box > W || cy + box < 0 || cy - box > H) continue;
+                GameFx.sprite(this, key, cx - box / 2, cy - box / 2, box, box, 64, 64, gr -> paintRock(gr, sz, var, a), 0xFFFFFFFF);
             }
+    }
 
-            if (var18) {
-               this.shots.remove(var9);
+    private void ship(float sx, float sy) {
+        int a = Math.floorMod(Math.round(ang / 6.2831853f * ANGLES), ANGLES);
+        if (thrust && state == State.PLAYING) Gx.glow(X(sx - (float) Math.cos(ang) * 8), Y(sy - (float) Math.sin(ang) * 8), S(10 + rnd.nextFloat() * 3), 0x66FF8A3D);
+        Gx.glow(X(sx), Y(sy), S(18), 0x225CF2FF);
+        for (int ox = -1; ox <= 1; ox++)
+            for (int oy = -1; oy <= 1; oy++) {
+                float cx = sx + ox * W, cy = sy + oy * H;
+                if (cx + 14 < 0 || cx - 14 > W || cy + 14 < 0 || cy - 14 > H) continue;
+                GameFx.sprite(this, "as_ship" + a, cx - 13, cy - 13, 26, 26, 30, 30, gr -> paintShip(gr, a), 0xFFFFFFFF);
             }
-         }
-      }
+    }
 
-      if (!this.dead && this.invul <= 0.0F) {
-         for (int var10 = this.rocks.size() - 1; var10 >= 0; var10--) {
-            Asteroids.Rock var16 = this.rocks.get(var10);
-            if (dist(this.x, this.y, var16.x, var16.y) < RAD[var16.size] * 0.85F + 6.0F) {
-               this.breakRock(var10, this.vx, this.vy);
-               this.crash();
-               break;
-            }
-         }
+    // ------------------------------------------------------------------ painters (neon vector look)
+    private static void neon(Graphics2D g, java.awt.Shape s, int argb, float w) {
+        Color c = new Color(argb);
+        g.setStroke(new BasicStroke(w * 3.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), 40));
+        g.draw(s);
+        g.setStroke(new BasicStroke(w * 1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), 110));
+        g.draw(s);
+        g.setStroke(new BasicStroke(w, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.setColor(new Color(Gx.mix(argb, 0xFFFFFFFF, 0.45f)));
+        g.draw(s);
+    }
 
-         if (!this.dead && this.ufo != null && dist(this.x, this.y, this.ufo.x, this.ufo.y) < 16.0F) {
-            this.killUfo();
-            this.crash();
-         }
-      }
+    private static void paintShip(Graphics2D g, int a) {
+        g.translate(15, 15);
+        g.rotate(a * Math.PI * 2 / ANGLES);
+        GeneralPath p = new GeneralPath();
+        p.moveTo(11, 0); p.lineTo(-8, -7.5); p.lineTo(-5, 0); p.lineTo(-8, 7.5); p.closePath();
+        g.setColor(new Color(10, 40, 60, 200));
+        g.fill(p);
+        neon(g, p, NEON, 1.4f);
+        g.setColor(new Color(0xFFFFFF));
+        g.fill(new Ellipse2D.Float(1, -1.6f, 3.2f, 3.2f));
+    }
 
-      this.ufoT -= var1;
-      if (this.ufo == null && this.ufoT <= 0.0F && this.wave >= 1) {
-         this.ufo = new Asteroids.Ufo();
-         this.ufo.small = this.wave >= 3 && this.rnd.nextFloat() < 0.45F;
-         boolean var11 = this.rnd.nextBoolean();
-         this.ufo.x = var11 ? -20.0F : 420.0F;
-         this.ufo.vx = (var11 ? 1 : -1) * (this.ufo.small ? 75 : 55);
-         this.ufo.y = 30.0F + this.rnd.nextFloat() * 230.0F;
-         this.ufo.fireT = 1.2F;
-         this.ufoT = Math.max(9, 24 - this.wave * 2) + this.rnd.nextFloat() * 8.0F;
-         Sound.play("minecraft:block.beacon.activate", 1.8F, 0.3F);
-      }
+    private static void paintRock(Graphics2D g, int size, int variant, int a) {
+        g.translate(32, 32);
+        g.rotate(a * Math.PI * 2 / ROCK_ANGLES);
+        float scale = 32f / (RAD[size] + 3);
+        Random r = new Random(variant * 31 + size * 7);
+        int n = 9 + r.nextInt(3);
+        GeneralPath p = new GeneralPath();
+        for (int i = 0; i < n; i++) {
+            double an = i * Math.PI * 2 / n;
+            float rr = RAD[size] * (0.72f + r.nextFloat() * 0.34f) * scale;
+            float px = (float) Math.cos(an) * rr, py = (float) Math.sin(an) * rr;
+            if (i == 0) p.moveTo(px, py); else p.lineTo(px, py);
+        }
+        p.closePath();
+        g.setColor(new Color(40, 20, 70, 170));
+        g.fill(p);
+        // crater lines
+        g.setStroke(new BasicStroke(1f));
+        g.setColor(new Color(201, 166, 255, 70));
+        for (int i = 0; i < 2; i++) {
+            float cx = (r.nextFloat() - 0.5f) * RAD[size] * scale, cy = (r.nextFloat() - 0.5f) * RAD[size] * scale, cr = (2 + r.nextFloat() * 3) * scale * 0.6f;
+            g.draw(new Ellipse2D.Float(cx - cr, cy - cr, cr * 2, cr * 2));
+        }
+        neon(g, p, ROCK, 1.5f * scale * 0.55f + 0.4f);
+    }
 
-      if (this.ufo != null) {
-         this.ufo.t += var1;
-         this.ufo.x = this.ufo.x + this.ufo.vx * var1;
-         this.ufo.y = wrapY(this.ufo.y + (float)Math.sin(this.ufo.t * 2.2F) * 40.0F * var1);
-         this.ufo.fireT -= var1;
-         if (this.ufo.fireT <= 0.0F && !this.dead) {
-            this.ufo.fireT = this.ufo.small ? 0.9F : 1.3F;
-            double var12 = this.ufo.small
-               ? Math.atan2(this.y - this.ufo.y, this.x - this.ufo.x) + (this.rnd.nextFloat() - 0.5F) * 0.35F
-               : this.rnd.nextDouble() * Math.PI * 2.0;
-            Asteroids.Shot var19 = new Asteroids.Shot();
-            var19.enemy = true;
-            var19.x = this.ufo.x;
-            var19.y = this.ufo.y;
-            var19.vx = (float)Math.cos(var12) * 170.0F;
-            var19.vy = (float)Math.sin(var12) * 170.0F;
-            var19.life = 1.6F;
-            this.shots.add(var19);
-            Sound.play("minecraft:block.note_block.bit", 0.7F, 0.25F);
-         }
+    private static void paintUfo(Graphics2D g, int frame) {
+        g.translate(2, 2);
+        GeneralPath body = new GeneralPath();
+        body.moveTo(0, 12); body.lineTo(8, 7); body.lineTo(22, 7); body.lineTo(30, 12); body.lineTo(22, 17); body.lineTo(8, 17); body.closePath();
+        GeneralPath dome = new GeneralPath();
+        dome.moveTo(9, 7); dome.curveTo(10, 0, 20, 0, 21, 7);
+        g.setColor(new Color(60, 10, 40, 190));
+        g.fill(body);
+        neon(g, body, UFO_C, 1.2f);
+        neon(g, dome, UFO_C, 1.2f);
+        g.setStroke(new BasicStroke(0.9f));
+        g.setColor(new Color(0xFFD1E8));
+        g.drawLine(2, 12, 28, 12);
+        for (int i = 0; i < 3; i++) {
+            g.setColor(i == frame ? new Color(0xFFF27A) : new Color(255, 120, 190, 120));
+            g.fill(new Ellipse2D.Float(8.5f + i * 5.5f, 13, 2.6f, 2.6f));
+        }
+    }
 
-         if (this.ufo.x < -40.0F || this.ufo.x > 440.0F) {
-            this.ufo = null;
-         }
-      }
-
-      if (this.rocks.isEmpty() && !this.dead) {
-         this.waveT += var1;
-         if (this.waveT > 1.2F) {
-            this.waveT = 0.0F;
-            this.nextWave();
-         }
-      }
-
-      if (this.score >= this.nextLife) {
-         this.nextLife += 10000L;
-         this.lives++;
-         this.fx.popup("+1 Leben!", this.x, this.y - 16.0F, -6291531, 12.0F);
-         Sound.play("minecraft:entity.player.levelup", 1.5F, 0.4F);
-      }
-   }
-
-   private void fire() {
-      int var1 = 0;
-
-      for (Asteroids.Shot var3 : this.shots) {
-         if (!var3.enemy) {
-            var1++;
-         }
-      }
-
-      if (var1 < 6) {
-         this.fireT = 0.17F;
-         float var5 = (float)Math.cos(this.ang);
-         float var6 = (float)Math.sin(this.ang);
-         Asteroids.Shot var4 = new Asteroids.Shot();
-         var4.x = this.x + var5 * 10.0F;
-         var4.y = this.y + var6 * 10.0F;
-         var4.vx = var5 * 380.0F + this.vx;
-         var4.vy = var6 * 380.0F + this.vy;
-         var4.life = 0.85F;
-         this.shots.add(var4);
-         this.fx.add(var4.x, var4.y, 0.0F, 0.0F, 0.12F, 4.0F, -3462, 2, 0.0F, 0.0F);
-         this.vx -= var5 * 6.0F;
-         this.vy -= var6 * 6.0F;
-         Sound.play("minecraft:block.note_block.hat", 2.0F, 0.25F);
-      }
-   }
-
-   private void breakRock(int var1, float var2, float var3) {
-      Asteroids.Rock var4 = this.rocks.remove(var1);
-      int var5 = PTS[var4.size];
-      this.score += var5;
-      this.fx.popup("+" + var5, var4.x, var4.y - RAD[var4.size] * 0.5F, -1, 8 + var4.size);
-      int var6 = 6 + var4.size * 6;
-
-      for (int var7 = 0; var7 < var6; var7++) {
-         double var8 = this.rnd.nextDouble() * Math.PI * 2.0;
-         float var10 = 40.0F + this.rnd.nextFloat() * (60 + var4.size * 30);
-         this.fx
-            .add(
-               var4.x,
-               var4.y,
-               (float)Math.cos(var8) * var10 + var2 * 0.1F,
-               (float)Math.sin(var8) * var10 + var3 * 0.1F,
-               0.5F + this.rnd.nextFloat() * 0.5F,
-               1.2F + this.rnd.nextFloat(),
-               this.rnd.nextBoolean() ? -3561729 : -1,
-               5,
-               0.0F,
-               1.8F
-            );
-      }
-
-      this.fx.ring(var4.x, var4.y, RAD[var4.size] * 1.8F, -3561729, 0.4F);
-      this.fx.shake(0.08F * var4.size);
-      Sound.play("minecraft:entity.generic.explode", 1.9F - var4.size * 0.3F, 0.12F + var4.size * 0.06F);
-      if (var4.size > 1) {
-         this.addRock(var4.x, var4.y, var4.size - 1, var4);
-         this.addRock(var4.x, var4.y, var4.size - 1, var4);
-      }
-   }
-
-   private void killUfo() {
-      int var1 = this.ufo.small ? 1000 : 200;
-      this.score += var1;
-      this.fx.burst(this.ufo.x, this.ufo.y, 40, -41816, 190.0F, 2.4F, 0.8F, 0.0F, 5);
-      this.fx.ring(this.ufo.x, this.ufo.y, 40.0F, -41816, 0.5F);
-      this.fx.popup("UFO! +" + var1, this.ufo.x, this.ufo.y - 12.0F, -41816, 12.0F);
-      this.fx.shake(0.5F);
-      Sound.play("minecraft:entity.generic.explode", 1.2F, 0.4F);
-      this.ufo = null;
-   }
-
-   private void crash() {
-      this.dead = true;
-      this.deadT = 0.0F;
-      this.lives--;
-      this.fx.burst(this.x, this.y, 50, -10685697, 200.0F, 2.2F, 1.1F, 0.0F, 5);
-      this.fx.burst(this.x, this.y, 24, -19641, 120.0F, 2.8F, 0.8F, 0.0F, 2);
-      this.fx.ring(this.x, this.y, 50.0F, -10685697, 0.6F);
-      this.fx.shake(0.9F);
-      this.fx.flash(-1, 0.5F);
-      Sound.play("minecraft:entity.generic.explode", 0.8F, 0.5F);
-   }
-
-   private static float wrapX(float var0) {
-      return var0 < 0.0F ? var0 + 400.0F : (var0 >= 400.0F ? var0 - 400.0F : var0);
-   }
-
-   private static float wrapY(float var0) {
-      return var0 < 0.0F ? var0 + 290.0F : (var0 >= 290.0F ? var0 - 290.0F : var0);
-   }
-
-   @Override
-   protected void render() {
-      float var1 = Math.min(0.05F, Gx.dt);
-      this.anim += var1;
-      GameFx.sprite(this, "as_bg", 0.0F, 0.0F, 400.0F, 290.0F, 400.0F, 290.0F, Asteroids::paintSpace, -1);
-
-      for (int var2 = 0; var2 < 24; var2++) {
-         float var3 = var2 * 173.3F % 400.0F;
-         float var4 = (var2 * 91.7F + 13.0F) % 290.0F;
-         float var5 = 0.5F + 0.5F * (float)Math.sin(this.anim * (1.5F + var2 % 4) + var2);
-         this.circle(var3, var4, 0.7F + var2 % 3 * 0.3F, Gx.withAlpha(-1, 0.3F + 0.6F * var5));
-      }
-
-      Gx.push();
-      Gx.translate(this.S(this.fx.sx), this.S(this.fx.sy));
-
-      for (Asteroids.Rock var11 : this.rocks) {
-         this.rock(var11);
-      }
-
-      if (this.ufo != null) {
-         boolean var7 = this.ufo.small;
-         float var12 = var7 ? 20.0F : 30.0F;
-         Gx.glow(this.X(this.ufo.x), this.Y(this.ufo.y), this.S(var12), 872373416);
-         GameFx.sprite(
-            this,
-            "as_ufo" + (int)(this.ufo.t * 8.0F) % 3,
-            this.ufo.x - var12 / 2.0F - 2.0F,
-            this.ufo.y - var12 * 0.35F - 2.0F,
-            var12 + 4.0F,
-            var12 * 0.7F + 4.0F,
-            34.0F,
-            24.0F,
-            var1x -> paintUfo(var1x, (int)(this.ufo.t * 8.0F) % 3),
-            -1
-         );
-      }
-
-      for (Asteroids.Shot var13 : this.shots) {
-         int var16 = var13.enemy ? -41816 : -3462;
-         Gx.glow(this.X(var13.x), this.Y(var13.y), this.S(6.0F), Gx.withAlpha(var16, 0.5F));
-         this.circle(var13.x, var13.y, 1.5F, -1);
-         this.circle(var13.x - var13.vx * 0.012F, var13.y - var13.vy * 0.012F, 1.1F, Gx.withAlpha(var16, 0.6F));
-      }
-
-      this.fx.draw(this, 0.0F, 0.0F);
-      if (!this.dead && (this.invul <= 0.0F || (int)(this.anim * 10.0F) % 2 == 0 || this.state != GameView.State.PLAYING)) {
-         this.ship(this.x, this.y);
-      }
-
-      Gx.pop();
-
-      for (int var9 = 0; var9 < Math.min(this.lives, 6); var9++) {
-         int var14 = Math.round(36.0F) % 48;
-         GameFx.sprite(this, "as_ship" + var14, 8 + var9 * 13, 8.0F, 14.0F, 14.0F, 30.0F, 30.0F, var1x -> paintShip(var1x, var14), -855638017);
-      }
-
-      GameFx.outlined(this, "Welle " + this.wave, 366.0F, 15.0F, 8.0F, -10685697, -1442840576);
-      if (this.bannerT >= 0.0F) {
-         float var10 = this.bannerT / 1.8F;
-         float var15 = Ease.outBack(Math.min(1.0F, this.bannerT / 0.35F));
-         float var17 = var10 < 0.7F ? 1.0F : 1.0F - (var10 - 0.7F) / 0.3F;
-         Gx.pushAlpha(var17);
-         Gx.push();
-         Gx.scaleAt(this.X(200.0F), this.Y(87.0F), var15);
-         Gx.glow(this.X(200.0F), this.Y(87.0F), this.S(70.0F), 1146942207);
-         GameFx.outlined(this, "WELLE " + this.wave, 200.0F, 87.0F, 20.0F, -10685697, -872411112);
-         Gx.pop();
-         Gx.popAlpha();
-      }
-
-      if (this.dead && this.lives > 0 && this.deadT > 0.8F) {
-         this.text("Mach dich bereit…", 200.0F, 175.0F, 8.0F, 3, Gx.withAlpha(-1, 0.6F + 0.4F * (float)Math.sin(this.anim * 6.0F)));
-      }
-
-      this.fx.drawPopups(this, 0.0F, 0.0F);
-      this.fx.drawFlash(this, 400.0F, 290.0F);
-   }
-
-   private void rock(Asteroids.Rock var1) {
-      float var2 = RAD[var1.size];
-      int var3 = Math.floorMod(Math.round(var1.ang / (float) (Math.PI * 2) * 24.0F), 24);
-      int var4 = var1.size;
-      int var5 = var1.variant;
-      String var6 = "as_rock" + var4 + "_" + var5 + "_" + var3;
-      float var7 = var2 * 2.0F + 6.0F;
-
-      for (int var8 = -1; var8 <= 1; var8++) {
-         for (int var9 = -1; var9 <= 1; var9++) {
-            float var10 = var1.x + var8 * 400.0F;
-            float var11 = var1.y + var9 * 290.0F;
-            if (!(var10 + var7 < 0.0F) && !(var10 - var7 > 400.0F) && !(var11 + var7 < 0.0F) && !(var11 - var7 > 290.0F)) {
-               GameFx.sprite(this, var6, var10 - var7 / 2.0F, var11 - var7 / 2.0F, var7, var7, 64.0F, 64.0F, var3x -> paintRock(var3x, var4, var5, var3), -1);
-            }
-         }
-      }
-   }
-
-   private void ship(float var1, float var2) {
-      int var3 = Math.floorMod(Math.round(this.ang / (float) (Math.PI * 2) * 48.0F), 48);
-      if (this.thrust && this.state == GameView.State.PLAYING) {
-         Gx.glow(
-            this.X(var1 - (float)Math.cos(this.ang) * 8.0F),
-            this.Y(var2 - (float)Math.sin(this.ang) * 8.0F),
-            this.S(10.0F + this.rnd.nextFloat() * 3.0F),
-            1728023101
-         );
-      }
-
-      Gx.glow(this.X(var1), this.Y(var2), this.S(18.0F), 576516863);
-
-      for (int var4 = -1; var4 <= 1; var4++) {
-         for (int var5 = -1; var5 <= 1; var5++) {
-            float var6 = var1 + var4 * 400.0F;
-            float var7 = var2 + var5 * 290.0F;
-            if (!(var6 + 14.0F < 0.0F) && !(var6 - 14.0F > 400.0F) && !(var7 + 14.0F < 0.0F) && !(var7 - 14.0F > 290.0F)) {
-               GameFx.sprite(this, "as_ship" + var3, var6 - 13.0F, var7 - 13.0F, 26.0F, 26.0F, 30.0F, 30.0F, var1x -> paintShip(var1x, var3), -1);
-            }
-         }
-      }
-   }
-
-   private static void neon(Graphics2D var0, Shape var1, int var2, float var3) {
-      Color var4 = new Color(var2);
-      var0.setStroke(new BasicStroke(var3 * 3.2F, 1, 1));
-      var0.setColor(new Color(var4.getRed(), var4.getGreen(), var4.getBlue(), 40));
-      var0.draw(var1);
-      var0.setStroke(new BasicStroke(var3 * 1.8F, 1, 1));
-      var0.setColor(new Color(var4.getRed(), var4.getGreen(), var4.getBlue(), 110));
-      var0.draw(var1);
-      var0.setStroke(new BasicStroke(var3, 1, 1));
-      var0.setColor(new Color(Gx.mix(var2, -1, 0.45F)));
-      var0.draw(var1);
-   }
-
-   private static void paintShip(Graphics2D var0, int var1) {
-      var0.translate(15, 15);
-      var0.rotate(var1 * Math.PI * 2.0 / 48.0);
-      GeneralPath var2 = new GeneralPath();
-      var2.moveTo(11.0F, 0.0F);
-      var2.lineTo(-8.0, -7.5);
-      var2.lineTo(-5.0F, 0.0F);
-      var2.lineTo(-8.0, 7.5);
-      var2.closePath();
-      var0.setColor(new Color(10, 40, 60, 200));
-      var0.fill(var2);
-      neon(var0, var2, -10685697, 1.4F);
-      var0.setColor(new Color(16777215));
-      var0.fill(new Float(1.0F, -1.6F, 3.2F, 3.2F));
-   }
-
-   private static void paintRock(Graphics2D var0, int var1, int var2, int var3) {
-      var0.translate(32, 32);
-      var0.rotate(var3 * Math.PI * 2.0 / 24.0);
-      float var4 = 32.0F / (RAD[var1] + 3.0F);
-      Random var5 = new Random(var2 * 31 + var1 * 7);
-      int var6 = 9 + var5.nextInt(3);
-      GeneralPath var7 = new GeneralPath();
-
-      for (int var8 = 0; var8 < var6; var8++) {
-         double var9 = var8 * Math.PI * 2.0 / var6;
-         float var11 = RAD[var1] * (0.72F + var5.nextFloat() * 0.34F) * var4;
-         float var12 = (float)Math.cos(var9) * var11;
-         float var13 = (float)Math.sin(var9) * var11;
-         if (var8 == 0) {
-            var7.moveTo(var12, var13);
-         } else {
-            var7.lineTo(var12, var13);
-         }
-      }
-
-      var7.closePath();
-      var0.setColor(new Color(40, 20, 70, 170));
-      var0.fill(var7);
-      var0.setStroke(new BasicStroke(1.0F));
-      var0.setColor(new Color(201, 166, 255, 70));
-
-      for (int var14 = 0; var14 < 2; var14++) {
-         float var15 = (var5.nextFloat() - 0.5F) * RAD[var1] * var4;
-         float var10 = (var5.nextFloat() - 0.5F) * RAD[var1] * var4;
-         float var16 = (2.0F + var5.nextFloat() * 3.0F) * var4 * 0.6F;
-         var0.draw(new Float(var15 - var16, var10 - var16, var16 * 2.0F, var16 * 2.0F));
-      }
-
-      neon(var0, var7, -3561729, 1.5F * var4 * 0.55F + 0.4F);
-   }
-
-   private static void paintUfo(Graphics2D var0, int var1) {
-      var0.translate(2, 2);
-      GeneralPath var2 = new GeneralPath();
-      var2.moveTo(0.0F, 12.0F);
-      var2.lineTo(8.0F, 7.0F);
-      var2.lineTo(22.0F, 7.0F);
-      var2.lineTo(30.0F, 12.0F);
-      var2.lineTo(22.0F, 17.0F);
-      var2.lineTo(8.0F, 17.0F);
-      var2.closePath();
-      GeneralPath var3 = new GeneralPath();
-      var3.moveTo(9.0F, 7.0F);
-      var3.curveTo(10.0F, 0.0F, 20.0F, 0.0F, 21.0F, 7.0F);
-      var0.setColor(new Color(60, 10, 40, 190));
-      var0.fill(var2);
-      neon(var0, var2, -41816, 1.2F);
-      neon(var0, var3, -41816, 1.2F);
-      var0.setStroke(new BasicStroke(0.9F));
-      var0.setColor(new Color(16765416));
-      var0.drawLine(2, 12, 28, 12);
-
-      for (int var4 = 0; var4 < 3; var4++) {
-         var0.setColor(var4 == var1 ? new Color(16773754) : new Color(255, 120, 190, 120));
-         var0.fill(new Float(8.5F + var4 * 5.5F, 13.0F, 2.6F, 2.6F));
-      }
-   }
-
-   private static void paintSpace(Graphics2D var0) {
-      var0.setColor(new Color(329231));
-      var0.fillRect(0, 0, 400, 290);
-      var0.setPaint(
-         new RadialGradientPaint(
-            new java.awt.geom.Point2D.Float(90.0F, 70.0F), 150.0F, new float[]{0.0F, 1.0F}, new Color[]{new Color(90, 40, 150, 70), new Color(90, 40, 150, 0)}
-         )
-      );
-      var0.fillRect(0, 0, 400, 290);
-      var0.setPaint(
-         new RadialGradientPaint(
-            new java.awt.geom.Point2D.Float(330.0F, 230.0F),
-            160.0F,
-            new float[]{0.0F, 1.0F},
-            new Color[]{new Color(20, 110, 150, 60), new Color(20, 110, 150, 0)}
-         )
-      );
-      var0.fillRect(0, 0, 400, 290);
-      Random var1 = new Random(21L);
-
-      for (int var2 = 0; var2 < 260; var2++) {
-         float var3 = var1.nextFloat() * 400.0F;
-         float var4 = var1.nextFloat() * 290.0F;
-         float var5 = var1.nextFloat() < 0.9F ? 0.5F + var1.nextFloat() * 0.6F : 1.2F + var1.nextFloat();
-         var0.setColor(new Color(255, 255, 255, 40 + var1.nextInt(150)));
-         var0.fill(new Float(var3, var4, var5, var5));
-      }
-
-      var0.setPaint(
-         new RadialGradientPaint(
-            new java.awt.geom.Point2D.Float(342.0F, 52.0F), 26.0F, new float[]{0.0F, 1.0F}, new Color[]{new Color(6966210), new Color(1774144)}
-         )
-      );
-      var0.fill(new Float(322.0F, 34.0F, 40.0F, 40.0F));
-      var0.setColor(new Color(180, 150, 255, 90));
-      var0.setStroke(new BasicStroke(1.4F));
-      var0.draw(new Float(310.0F, 49.0F, 64.0F, 10.0F));
-   }
-
-   private static final class Rock {
-      float x;
-      float y;
-      float vx;
-      float vy;
-      float ang;
-      float spin;
-      int size;
-      int variant;
-      float flash;
-   }
-
-   private static final class Shot {
-      float x;
-      float y;
-      float vx;
-      float vy;
-      float life;
-      boolean enemy;
-   }
-
-   private static final class Ufo {
-      float x;
-      float y;
-      float vx;
-      float t;
-      float fireT;
-      boolean small;
-      int hp;
-   }
+    private static void paintSpace(Graphics2D g) {
+        g.setColor(new Color(0x05060F));
+        g.fillRect(0, 0, 400, 290);
+        g.setPaint(new RadialGradientPaint(new Point2D.Float(90, 70), 150, new float[]{0f, 1f}, new Color[]{new Color(90, 40, 150, 70), new Color(90, 40, 150, 0)}));
+        g.fillRect(0, 0, 400, 290);
+        g.setPaint(new RadialGradientPaint(new Point2D.Float(330, 230), 160, new float[]{0f, 1f}, new Color[]{new Color(20, 110, 150, 60), new Color(20, 110, 150, 0)}));
+        g.fillRect(0, 0, 400, 290);
+        Random r = new Random(21);
+        for (int i = 0; i < 260; i++) {
+            float sx = r.nextFloat() * 400, sy = r.nextFloat() * 290, s = r.nextFloat() < 0.9f ? 0.5f + r.nextFloat() * 0.6f : 1.2f + r.nextFloat();
+            g.setColor(new Color(255, 255, 255, 40 + r.nextInt(150)));
+            g.fill(new Ellipse2D.Float(sx, sy, s, s));
+        }
+        // distant planet
+        g.setPaint(new RadialGradientPaint(new Point2D.Float(342, 52), 26, new float[]{0f, 1f}, new Color[]{new Color(0x6A4BC2), new Color(0x1B1240)}));
+        g.fill(new Ellipse2D.Float(322, 34, 40, 40));
+        g.setColor(new Color(180, 150, 255, 90));
+        g.setStroke(new BasicStroke(1.4f));
+        g.draw(new Ellipse2D.Float(310, 49, 64, 10));
+    }
 }

@@ -15,6 +15,7 @@ export interface UserRow {
   privacy_status: 'everyone' | 'friends' | 'nobody';
   privacy_activity: 'everyone' | 'friends' | 'nobody';
   privacy_messages: 'everyone' | 'friends' | 'nobody';
+  privacy_duels: 'everyone' | 'friends' | 'nobody';
   allow_friend_requests: number;
   custom_tag_text: string | null;
 }

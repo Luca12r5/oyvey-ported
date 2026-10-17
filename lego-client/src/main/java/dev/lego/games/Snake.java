@@ -1,199 +1,124 @@
 package dev.lego.games;
 
-import dev.lego.ui.Gx;
-import dev.lego.ui.Sound;
-import dev.lego.ui.Style;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 
+import dev.lego.ui.Fonts;
+import dev.lego.ui.Gx;
+import dev.lego.ui.Style;
+
+/** Snake with Lego bricks: eat the studs, grow, don't bite yourself. */
 public final class Snake extends GameView {
-   private static final int C = 22;
-   private static final int R = 16;
-   private static final float CELL = 16.0F;
-   private final ArrayDeque<int[]> body = new ArrayDeque<>();
-   private final ArrayDeque<int[]> queue = new ArrayDeque<>();
-   private int dx = 1;
-   private int dy = 0;
-   private int[] food;
-   private float step = 0.0F;
-   private float speed = 0.12F;
-   private final List<float[]> pops = new ArrayList<>();
+    private static final int C = 22, R = 16;       // columns, rows
+    private static final float CELL = 16;
+    private final ArrayDeque<int[]> body = new ArrayDeque<>();
+    private final ArrayDeque<int[]> queue = new ArrayDeque<>();
+    private int dx = 1, dy = 0;
+    private int[] food;
+    private float step = 0, speed = 0.12f;
+    private final List<float[]> pops = new ArrayList<>();   // x, y, t
 
-   public Snake() {
-      super("snake");
-   }
+    public Snake() { super("snake"); }
 
-   @Override
-   protected float boardW() {
-      return 352.0F;
-   }
+    @Override protected float boardW() { return C * CELL; }
+    @Override protected float boardH() { return R * CELL; }
 
-   @Override
-   protected float boardH() {
-      return 256.0F;
-   }
+    @Override
+    protected void reset() {
+        body.clear();
+        queue.clear();
+        for (int i = 0; i < 4; i++) body.addFirst(new int[]{4 + i, R / 2});
+        dx = 1;
+        dy = 0;
+        speed = 0.12f;
+        step = 0;
+        pops.clear();
+        placeFood();
+    }
 
-   @Override
-   protected void reset() {
-      this.body.clear();
-      this.queue.clear();
+    private void placeFood() {
+        while (true) {
+            int[] f = {rnd.nextInt(C), rnd.nextInt(R)};
+            boolean hit = false;
+            for (int[] b : body) if (b[0] == f[0] && b[1] == f[1]) { hit = true; break; }
+            if (!hit) { food = f; return; }
+        }
+    }
 
-      for (int var1 = 0; var1 < 4; var1++) {
-         this.body.addFirst(new int[]{4 + var1, 8});
-      }
+    @Override
+    protected void onKey(int k) {
+        int[] d = null;
+        if (k == K_LEFT || k == K_A) d = new int[]{-1, 0};
+        if (k == K_RIGHT || k == K_D) d = new int[]{1, 0};
+        if (k == K_UP || k == K_W) d = new int[]{0, -1};
+        if (k == K_DOWN || k == K_S) d = new int[]{0, 1};
+        if (d == null || queue.size() > 2) return;
+        int[] last = queue.isEmpty() ? new int[]{dx, dy} : queue.peekLast();
+        if (d[0] == -last[0] && d[1] == -last[1]) return;
+        if (d[0] == last[0] && d[1] == last[1]) return;
+        queue.add(d);
+    }
 
-      this.dx = 1;
-      this.dy = 0;
-      this.speed = 0.12F;
-      this.step = 0.0F;
-      this.pops.clear();
-      this.placeFood();
-   }
+    @Override
+    protected void update(float dt) {
+        for (float[] p : pops) p[2] += dt;
+        pops.removeIf(p -> p[2] > 0.5f);
+        step += dt;
+        if (step < speed) return;
+        step -= speed;
+        if (!queue.isEmpty()) { int[] d = queue.poll(); dx = d[0]; dy = d[1]; }
+        int[] head = body.peekFirst();
+        int nx = head[0] + dx, ny = head[1] + dy;
+        if (nx < 0 || ny < 0 || nx >= C || ny >= R) { gameOver(); return; }
+        boolean grow = nx == food[0] && ny == food[1];
+        int i = 0, n = body.size();
+        for (int[] b : body) {
+            if (!grow && i == n - 1) break;
+            if (b[0] == nx && b[1] == ny) { gameOver(); return; }
+            i++;
+        }
+        body.addFirst(new int[]{nx, ny});
+        if (grow) {
+            score += 10;
+            pops.add(new float[]{food[0], food[1], 0});
+            speed = Math.max(0.055f, speed * 0.965f);
+            dev.lego.ui.Sound.play("minecraft:entity.experience_orb.pickup", 1.2f + rnd.nextFloat() * 0.3f, 0.25f);
+            placeFood();
+        } else body.removeLast();
+    }
 
-   private void placeFood() {
-      int[] var1;
-      boolean var2;
-      do {
-         var1 = new int[]{this.rnd.nextInt(22), this.rnd.nextInt(16)};
-         var2 = false;
-
-         for (int[] var4 : this.body) {
-            if (var4[0] == var1[0] && var4[1] == var1[1]) {
-               var2 = true;
-               break;
+    @Override
+    protected void render() {
+        // checker floor
+        for (int y = 0; y < R; y++)
+            for (int x = 0; x < C; x++)
+                if ((x + y) % 2 == 0) box(x * CELL, y * CELL, CELL, CELL, 0, Style.light ? 0x0A000000 : 0x08FFFFFF);
+        // food: pulsing yellow stud brick
+        float pulse = 1 + 0.08f * (float) Math.sin(time * 8);
+        float fs = CELL * 0.8f * pulse;
+        brick(food[0] * CELL + (CELL - fs) / 2, food[1] * CELL + (CELL - fs) / 2, fs, fs, 0xFFFFCD03);
+        // snake
+        int n = body.size(), i = 0;
+        float frac = state == State.PLAYING ? Math.min(1, step / speed) : 1;
+        for (int[] b : body) {
+            float t = i / (float) Math.max(1, n - 1);
+            int col = Gx.mix(Style.accent, Gx.mix(Style.accent, 0xFF000000, 0.35f), t);
+            float pad = i == 0 ? 0.5f : 1.2f + t * 1.2f;
+            brick(b[0] * CELL + pad, b[1] * CELL + pad, CELL - pad * 2, CELL - pad * 2, col);
+            if (i == 0) {
+                float ex = b[0] * CELL + CELL / 2 + dx * 3, ey = b[1] * CELL + CELL / 2 + dy * 3;
+                float ox = dy != 0 ? 3.2f : 0, oy = dx != 0 ? 3.2f : 0;
+                circle(ex + ox, ey + oy, 1.8f, 0xFFFFFFFF);
+                circle(ex - ox, ey - oy, 1.8f, 0xFFFFFFFF);
+                circle(ex + ox + dx * 0.6f, ey + oy + dy * 0.6f, 0.9f, 0xFF111111);
+                circle(ex - ox + dx * 0.6f, ey - oy + dy * 0.6f, 0.9f, 0xFF111111);
             }
-         }
-      } while (var2);
-
-      this.food = var1;
-   }
-
-   @Override
-   protected void onKey(int var1) {
-      int[] var2 = null;
-      if (var1 == 263 || var1 == 65) {
-         var2 = new int[]{-1, 0};
-      }
-
-      if (var1 == 262 || var1 == 68) {
-         var2 = new int[]{1, 0};
-      }
-
-      if (var1 == 265 || var1 == 87) {
-         var2 = new int[]{0, -1};
-      }
-
-      if (var1 == 264 || var1 == 83) {
-         var2 = new int[]{0, 1};
-      }
-
-      if (var2 != null && this.queue.size() <= 2) {
-         int[] var3 = this.queue.isEmpty() ? new int[]{this.dx, this.dy} : this.queue.peekLast();
-         if (var2[0] != -var3[0] || var2[1] != -var3[1]) {
-            if (var2[0] != var3[0] || var2[1] != var3[1]) {
-               this.queue.add(var2);
-            }
-         }
-      }
-   }
-
-   @Override
-   protected void update(float var1) {
-      for (float[] var3 : this.pops) {
-         var3[2] += var1;
-      }
-
-      this.pops.removeIf(var0 -> var0[2] > 0.5F);
-      this.step += var1;
-      if (!(this.step < this.speed)) {
-         this.step = this.step - this.speed;
-         if (!this.queue.isEmpty()) {
-            int[] var10 = this.queue.poll();
-            this.dx = var10[0];
-            this.dy = var10[1];
-         }
-
-         int[] var11 = this.body.peekFirst();
-         int var12 = var11[0] + this.dx;
-         int var4 = var11[1] + this.dy;
-         if (var12 >= 0 && var4 >= 0 && var12 < 22 && var4 < 16) {
-            boolean var5 = var12 == this.food[0] && var4 == this.food[1];
-            int var6 = 0;
-            int var7 = this.body.size();
-
-            for (int[] var9 : this.body) {
-               if (!var5 && var6 == var7 - 1) {
-                  break;
-               }
-
-               if (var9[0] == var12 && var9[1] == var4) {
-                  this.gameOver();
-                  return;
-               }
-
-               var6++;
-            }
-
-            this.body.addFirst(new int[]{var12, var4});
-            if (var5) {
-               this.score += 10L;
-               this.pops.add(new float[]{this.food[0], this.food[1], 0.0F});
-               this.speed = Math.max(0.055F, this.speed * 0.965F);
-               Sound.play("minecraft:entity.experience_orb.pickup", 1.2F + this.rnd.nextFloat() * 0.3F, 0.25F);
-               this.placeFood();
-            } else {
-               this.body.removeLast();
-            }
-         } else {
-            this.gameOver();
-         }
-      }
-   }
-
-   @Override
-   protected void render() {
-      for (int var1 = 0; var1 < 16; var1++) {
-         for (int var2 = 0; var2 < 22; var2++) {
-            if ((var2 + var1) % 2 == 0) {
-               this.box(var2 * 16.0F, var1 * 16.0F, 16.0F, 16.0F, 0.0F, Style.light ? 167772160 : 150994943);
-            }
-         }
-      }
-
-      float var15 = 1.0F + 0.08F * (float)Math.sin(this.time * 8.0F);
-      float var16 = 12.8F * var15;
-      this.brick(this.food[0] * 16.0F + (16.0F - var16) / 2.0F, this.food[1] * 16.0F + (16.0F - var16) / 2.0F, var16, var16, -13053);
-      int var3 = this.body.size();
-      int var4 = 0;
-      if (this.state == GameView.State.PLAYING) {
-         Math.min(1.0F, this.step / this.speed);
-      } else {
-         float var10000 = 1.0F;
-      }
-
-      for (int[] var7 : this.body) {
-         float var8 = (float)var4 / Math.max(1, var3 - 1);
-         int var9 = Gx.mix(Style.accent, Gx.mix(Style.accent, -16777216, 0.35F), var8);
-         float var10 = var4 == 0 ? 0.5F : 1.2F + var8 * 1.2F;
-         this.brick(var7[0] * 16.0F + var10, var7[1] * 16.0F + var10, 16.0F - var10 * 2.0F, 16.0F - var10 * 2.0F, var9);
-         if (var4 == 0) {
-            float var11 = var7[0] * 16.0F + 8.0F + this.dx * 3;
-            float var12 = var7[1] * 16.0F + 8.0F + this.dy * 3;
-            float var13 = this.dy != 0 ? 3.2F : 0.0F;
-            float var14 = this.dx != 0 ? 3.2F : 0.0F;
-            this.circle(var11 + var13, var12 + var14, 1.8F, -1);
-            this.circle(var11 - var13, var12 - var14, 1.8F, -1);
-            this.circle(var11 + var13 + this.dx * 0.6F, var12 + var14 + this.dy * 0.6F, 0.9F, -15658735);
-            this.circle(var11 - var13 + this.dx * 0.6F, var12 - var14 + this.dy * 0.6F, 0.9F, -15658735);
-         }
-
-         var4++;
-      }
-
-      for (float[] var18 : this.pops) {
-         float var19 = 1.0F - var18[2] / 0.5F;
-         this.text("+10", var18[0] * 16.0F + 8.0F, var18[1] * 16.0F - var18[2] * 30.0F, 8.0F, 3, Gx.withAlpha(-13053, var19));
-      }
-   }
+            i++;
+        }
+        for (float[] p : pops) {
+            float a = 1 - p[2] / 0.5f;
+            text("+10", p[0] * CELL + CELL / 2, p[1] * CELL - p[2] * 30, 8, Fonts.BOLD, Gx.withAlpha(0xFFFFCD03, a));
+        }
+    }
 }

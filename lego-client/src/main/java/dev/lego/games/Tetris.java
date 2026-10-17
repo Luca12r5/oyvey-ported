@@ -1,651 +1,432 @@
 package dev.lego.games;
 
-import dev.lego.ui.Ease;
-import dev.lego.ui.Gx;
-import dev.lego.ui.Sound;
-import dev.lego.ui.Style;
 import java.util.ArrayList;
 import java.util.List;
 
+import dev.lego.ui.Ease;
+import dev.lego.ui.Fonts;
+import dev.lego.ui.Gx;
+import dev.lego.ui.Sound;
+import dev.lego.ui.Style;
+
+/** Tetris with Lego bricks: 10x20 grid, hold, next preview, ghost piece, levels. */
 public final class Tetris extends GameView {
-   private static final int COLS = 10;
-   private static final int ROWS = 20;
-   private static final int K_C = 67;
-   private static final float CELL = 12.0F;
-   private static final float GX = 130.0F;
-   private static final float GY = 14.0F;
-   private static final float LX = 12.0F;
-   private static final float RX = 262.0F;
-   private static final float PW = 106.0F;
-   private static final String[][] SHAPES = new String[][]{
-      {"....", "####", "....", "...."},
-      {"##", "##"},
-      {".#.", "###", "..."},
-      {".##", "##.", "..."},
-      {"##.", ".##", "..."},
-      {"#..", "###", "..."},
-      {"..#", "###", "..."}
-   };
-   private static final int[] COLORS = new int[]{-13193537, -864969, -7194248, -11821238, -3597815, -16755265, -95720};
-   private static final int[][] KICKS = new int[][]{{0, 0}, {-1, 0}, {1, 0}, {0, -1}, {-2, 0}, {2, 0}, {-1, -1}, {1, -1}};
-   private int[][] grid = new int[20][10];
-   private int type;
-   private int rot;
-   private int px;
-   private int py;
-   private boolean active;
-   private int hold = -1;
-   private boolean canHold;
-   private final List<Integer> bag = new ArrayList<>();
-   private final List<Integer> queue = new ArrayList<>();
-   private int lines;
-   private int level;
-   private float fall;
-   private float lockT;
-   private int lockResets;
-   private final List<Integer> clearing = new ArrayList<>();
-   private float clearT = -1.0F;
-   private float visX;
-   private float visY;
-   private float shake;
-   private float levelT = -1.0F;
-   private float holdPop;
-   private String banner;
-   private float bannerT = -1.0F;
-   private final List<float[]> parts = new ArrayList<>();
+    private static final int COLS = 10, ROWS = 20, K_C = 67;
+    private static final float CELL = 12, GX = 130, GY = 14;
+    private static final float LX = 12, RX = 262, PW = 106;
+    private static final String[][] SHAPES = {
+            {"....", "####", "....", "...."},   // I
+            {"##", "##"},                       // O
+            {".#.", "###", "..."},              // T
+            {".##", "##.", "..."},              // S
+            {"##.", ".##", "..."},              // Z
+            {"#..", "###", "..."},              // J
+            {"..#", "###", "..."},              // L
+    };
+    private static final int[] COLORS = {0xFF36AEBF, 0xFFF2CD37, 0xFF923978, 0xFF4B9F4A, 0xFFC91A09, 0xFF0055BF, 0xFFFE8A18};
+    private static final int[][] KICKS = {{0, 0}, {-1, 0}, {1, 0}, {0, -1}, {-2, 0}, {2, 0}, {-1, -1}, {1, -1}};
 
-   public Tetris() {
-      super("tetris");
-   }
+    private int[][] grid = new int[ROWS][COLS];   // 0 = empty, else type + 1
+    private int type, rot, px, py;
+    private boolean active;
+    private int hold = -1;
+    private boolean canHold;
+    private final List<Integer> bag = new ArrayList<>(), queue = new ArrayList<>();
+    private int lines, level;
+    private float fall, lockT;
+    private int lockResets;
+    private final List<Integer> clearing = new ArrayList<>();
+    private float clearT = -1;
+    private float visX, visY, shake, levelT = -1, holdPop;
+    private String banner;
+    private float bannerT = -1;
+    private final List<float[]> parts = new ArrayList<>();   // x, y, vx, vy, t, color
 
-   @Override
-   protected float boardW() {
-      return 380.0F;
-   }
+    public Tetris() { super("tetris"); }
 
-   @Override
-   protected float boardH() {
-      return 268.0F;
-   }
+    @Override protected float boardW() { return 380; }
+    @Override protected float boardH() { return 268; }
 
-   @Override
-   protected void reset() {
-      this.grid = new int[20][10];
-      this.bag.clear();
-      this.queue.clear();
-      this.parts.clear();
-      this.clearing.clear();
-      this.clearT = -1.0F;
-      this.hold = -1;
-      this.lines = 0;
-      this.level = 1;
-      this.fall = 0.0F;
-      this.shake = 0.0F;
-      this.levelT = -1.0F;
-      this.bannerT = -1.0F;
+    @Override
+    protected void reset() {
+        grid = new int[ROWS][COLS];
+        bag.clear();
+        queue.clear();
+        parts.clear();
+        clearing.clear();
+        clearT = -1;
+        hold = -1;
+        lines = 0;
+        level = 1;
+        fall = 0;
+        shake = 0;
+        levelT = -1;
+        bannerT = -1;
+        while (queue.size() < 4) queue.add(nextFromBag());
+        spawn(queue.remove(0));
+    }
 
-      while (this.queue.size() < 4) {
-         this.queue.add(this.nextFromBag());
-      }
+    private int nextFromBag() {
+        if (bag.isEmpty()) for (int i = 0; i < 7; i++) bag.add(rnd.nextInt(bag.size() + 1), i);
+        return bag.remove(0);
+    }
 
-      this.spawn(this.queue.remove(0));
-   }
+    private void spawn(int t) {
+        type = t;
+        rot = 0;
+        int n = SHAPES[t].length;
+        px = (COLS - n) / 2;
+        py = t == 0 ? -1 : 0;
+        active = true;
+        canHold = true;
+        fall = 0;
+        lockT = 0;
+        lockResets = 0;
+        visX = px;
+        visY = py - 1.5f;
+        if (!fits(type, rot, px, py)) {
+            active = false;
+            gameOver();
+        }
+    }
 
-   private int nextFromBag() {
-      if (this.bag.isEmpty()) {
-         for (int var1 = 0; var1 < 7; var1++) {
-            this.bag.add(this.rnd.nextInt(this.bag.size() + 1), var1);
-         }
-      }
+    /** Cells {x, y} of a piece relative to its box. */
+    private static int[][] cells(int t, int r) {
+        String[] s = SHAPES[t];
+        int n = s.length;
+        int[][] out = new int[4][];
+        int k = 0;
+        for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
+                if (s[y].charAt(x) == '#') {
+                    int cx = x, cy = y;
+                    for (int i = 0; i < (r & 3); i++) { int tx = n - 1 - cy; cy = cx; cx = tx; }
+                    out[k++] = new int[]{cx, cy};
+                }
+        return out;
+    }
 
-      return this.bag.remove(0);
-   }
+    private boolean fits(int t, int r, int x, int y) {
+        for (int[] c : cells(t, r)) {
+            int gx = x + c[0], gy = y + c[1];
+            if (gx < 0 || gx >= COLS || gy >= ROWS) return false;
+            if (gy >= 0 && grid[gy][gx] != 0) return false;
+        }
+        return true;
+    }
 
-   private void spawn(int var1) {
-      this.type = var1;
-      this.rot = 0;
-      int var2 = SHAPES[var1].length;
-      this.px = (10 - var2) / 2;
-      this.py = var1 == 0 ? -1 : 0;
-      this.active = true;
-      this.canHold = true;
-      this.fall = 0.0F;
-      this.lockT = 0.0F;
-      this.lockResets = 0;
-      this.visX = this.px;
-      this.visY = this.py - 1.5F;
-      if (!this.fits(this.type, this.rot, this.px, this.py)) {
-         this.active = false;
-         this.gameOver();
-      }
-   }
+    private int ghostY() {
+        int y = py;
+        while (fits(type, rot, px, y + 1)) y++;
+        return y;
+    }
 
-   private static int[][] cells(int var0, int var1) {
-      String[] var2 = SHAPES[var0];
-      int var3 = var2.length;
-      int[][] var4 = new int[4][];
-      int var5 = 0;
+    private void touched() {
+        if (!fits(type, rot, px, py + 1) && lockResets < 15) { lockT = 0; lockResets++; }
+    }
 
-      for (int var6 = 0; var6 < var3; var6++) {
-         for (int var7 = 0; var7 < var3; var7++) {
-            if (var2[var6].charAt(var7) == '#') {
-               int var8 = var7;
-               int var9 = var6;
+    // ------------------------------------------------------------------ input
+    @Override
+    protected void onKey(int k) {
+        if (!active || clearT >= 0) return;
+        if (k == K_LEFT || k == K_A) {
+            if (fits(type, rot, px - 1, py)) { px--; touched(); Sound.play("minecraft:block.wood.hit", 1.8f, 0.08f); }
+        } else if (k == K_RIGHT || k == K_D) {
+            if (fits(type, rot, px + 1, py)) { px++; touched(); Sound.play("minecraft:block.wood.hit", 1.8f, 0.08f); }
+        } else if (k == K_UP || k == K_W || k == 88) {
+            rotate(1);
+        } else if (k == 90) {
+            rotate(3);
+        } else if (k == K_DOWN || k == K_S) {
+            if (fits(type, rot, px, py + 1)) { py++; score += 1; fall = 0; }
+        } else if (k == K_SPACE) {
+            if (time < 0.15f) return;   // the SPACE that started the round
+            int g = ghostY();
+            score += 2L * (g - py);
+            py = g;
+            visY = py;
+            shake = 0.6f;
+            lock();
+        } else if (k == K_C) {
+            if (!canHold) return;
+            int cur = type;
+            if (hold < 0) { hold = cur; spawn(queue.remove(0)); queue.add(nextFromBag()); }
+            else { int h = hold; hold = cur; spawn(h); }
+            canHold = false;
+            holdPop = 1;
+            Sound.play("minecraft:item.armor.equip_leather", 1.3f, 0.3f);
+        }
+    }
 
-               for (int var10 = 0; var10 < (var1 & 3); var10++) {
-                  int var11 = var3 - 1 - var9;
-                  var9 = var8;
-                  var8 = var11;
-               }
-
-               var4[var5++] = new int[]{var8, var9};
+    private void rotate(int dir) {
+        if (type == 1) return;
+        int nr = (rot + dir) & 3;
+        for (int[] kk : KICKS) {
+            int kx = kk[0], ky = kk[1];
+            if (fits(type, nr, px + kx, py + ky)) {
+                rot = nr;
+                px += kx;
+                py += ky;
+                touched();
+                Sound.play("minecraft:block.wood.place", 1.6f, 0.12f);
+                return;
             }
-         }
-      }
+        }
+    }
 
-      return var4;
-   }
+    // ------------------------------------------------------------------ logic
+    private float gravity() { return Math.max(0.045f, 0.8f * (float) Math.pow(0.82, level - 1)); }
 
-   private boolean fits(int var1, int var2, int var3, int var4) {
-      for (int[] var8 : cells(var1, var2)) {
-         int var9 = var3 + var8[0];
-         int var10 = var4 + var8[1];
-         if (var9 < 0 || var9 >= 10 || var10 >= 20) {
-            return false;
-         }
+    @Override
+    protected void update(float dt) {
+        for (float[] p : parts) { p[0] += p[2] * dt; p[1] += p[3] * dt; p[3] += 260 * dt; p[4] += dt; }
+        parts.removeIf(p -> p[4] > 0.9f);
+        if (levelT >= 0) { levelT += dt; if (levelT > 1.6f) levelT = -1; }
+        if (bannerT >= 0) { bannerT += dt; if (bannerT > 1.3f) bannerT = -1; }
+        if (clearT >= 0) {
+            clearT += dt;
+            if (clearT >= 0.34f) finishClear();
+            return;
+        }
+        if (!active) return;
+        if (fits(type, rot, px, py + 1)) {
+            fall += dt;
+            lockT = 0;
+            if (fall >= gravity()) { fall -= gravity(); py++; }
+        } else {
+            lockT += dt;
+            if (lockT >= 0.5f) lock();
+        }
+    }
 
-         if (var10 >= 0 && this.grid[var10][var9] != 0) {
-            return false;
-         }
-      }
+    private void lock() {
+        boolean above = false;
+        for (int[] c : cells(type, rot)) {
+            int gx = px + c[0], gy = py + c[1];
+            if (gy < 0) { above = true; continue; }
+            grid[gy][gx] = type + 1;
+        }
+        active = false;
+        Sound.play("minecraft:block.stone.place", 1.2f, 0.25f);
+        if (above) { gameOver(); return; }
+        clearing.clear();
+        for (int y = 0; y < ROWS; y++) {
+            boolean full = true;
+            for (int x = 0; x < COLS; x++) if (grid[y][x] == 0) { full = false; break; }
+            if (full) clearing.add(y);
+        }
+        if (!clearing.isEmpty()) {
+            clearT = 0;
+            int n = clearing.size();
+            Sound.play(n >= 4 ? "minecraft:ui.toast.challenge_complete" : "minecraft:entity.experience_orb.pickup", n >= 4 ? 1.3f : 0.9f + n * 0.15f, 0.3f);
+            for (int y : clearing)
+                for (int x = 0; x < COLS; x++)
+                    for (int i = 0; i < 2; i++)
+                        parts.add(new float[]{GX + x * CELL + CELL / 2, GY + y * CELL + CELL / 2, (rnd.nextFloat() - 0.5f) * 140, -40 - rnd.nextFloat() * 110, 0, COLORS[grid[y][x] - 1]});
+            return;
+        }
+        next();
+    }
 
-      return true;
-   }
+    private void finishClear() {
+        int n = clearing.size();
+        for (int y : clearing) {
+            for (int yy = y; yy > 0; yy--) grid[yy] = grid[yy - 1];
+            grid[0] = new int[COLS];
+        }
+        clearing.clear();
+        clearT = -1;
+        score += (long) new int[]{0, 100, 300, 500, 800}[Math.min(4, n)] * level;
+        banner = n == 1 ? null : n == 2 ? "Doppel!" : n == 3 ? "Dreifach!" : "TETRIS!";
+        if (banner != null) bannerT = 0;
+        int oldLevel = level;
+        lines += n;
+        level = 1 + lines / 10;
+        if (level > oldLevel) { levelT = 0; Sound.play("minecraft:entity.player.levelup", 1.2f, 0.3f); }
+        next();
+    }
 
-   private int ghostY() {
-      int var1 = this.py;
+    private void next() {
+        spawn(queue.remove(0));
+        queue.add(nextFromBag());
+    }
 
-      while (this.fits(this.type, this.rot, this.px, var1 + 1)) {
-         var1++;
-      }
+    // ------------------------------------------------------------------ drawing
+    private void cell(float x, float y, float s, int col) {
+        brick(x + 0.3f, y + 0.3f, s - 0.6f, s - 0.6f, col);
+    }
 
-      return var1;
-   }
+    @Override
+    protected void render() {
+        float dt = Math.min(0.05f, Gx.dt);
+        float k = 1 - (float) Math.exp(-dt * 28);
+        visX += (px - visX) * k;
+        visY += (py - visY) * k;
+        if (Math.abs(px - visX) > 3) visX = px;
+        shake = Math.max(0, shake - dt * 3);
+        holdPop = Math.max(0, holdPop - dt * 4);
 
-   private void touched() {
-      if (!this.fits(this.type, this.rot, this.px, this.py + 1) && this.lockResets < 15) {
-         this.lockT = 0.0F;
-         this.lockResets++;
-      }
-   }
+        float sy = shake > 0 ? Ease.outCubic(shake) * 2.2f : 0;
+        // grid panel
+        Gx.shadow(X(GX - 4), Y(GY - 4), S(COLS * CELL + 8), S(ROWS * CELL + 8), S(8), S(6), 0.4f);
+        boxV(GX - 4, GY - 4, COLS * CELL + 8, ROWS * CELL + 8, 8, Style.light ? 0xFFD7DAE0 : 0xFF181B22, Style.light ? 0xFFCDD1D8 : 0xFF121419);
+        Gx.push();
+        Gx.translate(0, S(sy));
+        for (int y = 0; y < ROWS; y++)
+            for (int x = 0; x < COLS; x++)
+                circle(GX + x * CELL + CELL / 2, GY + y * CELL + CELL / 2, 2.6f, Style.light ? 0x12000000 : 0x0AFFFFFF);
 
-   @Override
-   protected void onKey(int var1) {
-      if (this.active && !(this.clearT >= 0.0F)) {
-         if (var1 == 263 || var1 == 65) {
-            if (this.fits(this.type, this.rot, this.px - 1, this.py)) {
-               this.px--;
-               this.touched();
-               Sound.play("minecraft:block.wood.hit", 1.8F, 0.08F);
+        // locked bricks
+        for (int y = 0; y < ROWS; y++) {
+            boolean clr = clearT >= 0 && clearing.contains(y);
+            for (int x = 0; x < COLS; x++) {
+                int v = grid[y][x];
+                if (v == 0) continue;
+                if (clr) {
+                    float t = clearT / 0.34f;
+                    float sc = 1 - Ease.inOutCubic(Math.max(0, (t - 0.35f) / 0.65f));
+                    int col = Gx.mix(COLORS[v - 1], 0xFFFFFFFF, (float) Math.min(1, t * 3));
+                    float cs = CELL * sc;
+                    if (cs > 0.5f) cell(GX + x * CELL + (CELL - cs) / 2, GY + y * CELL + (CELL - cs) / 2, cs, col);
+                } else cell(GX + x * CELL, GY + y * CELL, CELL, COLORS[v - 1]);
             }
-         } else if (var1 == 262 || var1 == 68) {
-            if (this.fits(this.type, this.rot, this.px + 1, this.py)) {
-               this.px++;
-               this.touched();
-               Sound.play("minecraft:block.wood.hit", 1.8F, 0.08F);
+            if (clr) {
+                float a = 1 - clearT / 0.34f;
+                Gx.glow(X(GX + COLS * CELL / 2), Y(GY + y * CELL + CELL / 2), S(70), Gx.withAlpha(0xFFFFFFFF, a * 0.35f));
             }
-         } else if (var1 == 265 || var1 == 87 || var1 == 88) {
-            this.rotate(1);
-         } else if (var1 == 90) {
-            this.rotate(3);
-         } else if (var1 != 264 && var1 != 83) {
-            if (var1 == 32) {
-               if (this.time < 0.15F) {
-                  return;
-               }
+        }
 
-               int var2 = this.ghostY();
-               this.score = this.score + 2L * (var2 - this.py);
-               this.py = var2;
-               this.visY = this.py;
-               this.shake = 0.6F;
-               this.lock();
-            } else if (var1 == 67) {
-               if (!this.canHold) {
-                  return;
-               }
-
-               int var4 = this.type;
-               if (this.hold < 0) {
-                  this.hold = var4;
-                  this.spawn(this.queue.remove(0));
-                  this.queue.add(this.nextFromBag());
-               } else {
-                  int var3 = this.hold;
-                  this.hold = var4;
-                  this.spawn(var3);
-               }
-
-               this.canHold = false;
-               this.holdPop = 1.0F;
-               Sound.play("minecraft:item.armor.equip_leather", 1.3F, 0.3F);
+        if (active && state != State.OVER) {
+            // ghost
+            int g = ghostY();
+            for (int[] c : cells(type, rot)) {
+                float x = GX + (px + c[0]) * CELL, y = GY + (g + c[1]) * CELL;
+                if (g + c[1] < 0) continue;
+                box(x + 0.8f, y + 0.8f, CELL - 1.6f, CELL - 1.6f, 2.5f, Gx.withAlpha(COLORS[type], 0.13f));
+                Gx.outline(X(x + 0.8f), Y(y + 0.8f), S(CELL - 1.6f), S(CELL - 1.6f), S(2.5f), Math.max(1, S(0.7f)), Gx.withAlpha(COLORS[type], 0.55f));
             }
-         } else if (this.fits(this.type, this.rot, this.px, this.py + 1)) {
-            this.py++;
-            this.score++;
-            this.fall = 0.0F;
-         }
-      }
-   }
-
-   private void rotate(int var1) {
-      if (this.type != 1) {
-         int var2 = this.rot + var1 & 3;
-
-         for (int[] var6 : KICKS) {
-            int var7 = var6[0];
-            int var8 = var6[1];
-            if (this.fits(this.type, var2, this.px + var7, this.py + var8)) {
-               this.rot = var2;
-               this.px += var7;
-               this.py += var8;
-               this.touched();
-               Sound.play("minecraft:block.wood.place", 1.6F, 0.12F);
-               return;
+            // active piece (eased position)
+            Gx.clip(X(GX - 4), Y(GY), S(COLS * CELL + 8), S(ROWS * CELL + 4));
+            for (int[] c : cells(type, rot)) {
+                float x = GX + (visX + c[0]) * CELL, y = GY + (visY + c[1]) * CELL;
+                Gx.glow(X(x + CELL / 2), Y(y + CELL / 2), S(CELL * 1.1f), Gx.withAlpha(COLORS[type], 0.16f));
             }
-         }
-      }
-   }
+            for (int[] c : cells(type, rot)) cell(GX + (visX + c[0]) * CELL, GY + (visY + c[1]) * CELL, CELL, COLORS[type]);
+            Gx.unclip();
+        }
+        Gx.pop();
 
-   private float gravity() {
-      return Math.max(0.045F, 0.8F * (float)Math.pow(0.82, this.level - 1));
-   }
+        // particles
+        for (float[] p : parts) {
+            float a = 1 - p[4] / 0.9f;
+            float s = 2.6f * (1 - p[4] / 0.9f * 0.5f);
+            box(p[0] - s / 2, p[1] - s / 2, s, s, 0.8f, Gx.withAlpha((int) p[5], a));
+        }
 
-   @Override
-   protected void update(float var1) {
-      for (float[] var3 : this.parts) {
-         var3[0] += var3[2] * var1;
-         var3[1] += var3[3] * var1;
-         var3[3] += 260.0F * var1;
-         var3[4] += var1;
-      }
+        // left panel: hold, level, lines
+        panelBox(LX, GY - 4, PW, 66, "HALTEN");
+        if (hold >= 0) {
+            float sc = 1 + 0.15f * holdPop;
+            Gx.push();
+            Gx.scaleAt(X(LX + PW / 2), Y(GY + 36), sc);
+            Gx.pushAlpha(canHold ? 1 : 0.4f);
+            mini(hold, LX + PW / 2, GY + 36, 10);
+            Gx.popAlpha();
+            Gx.pop();
+        } else text("C drücken", LX + PW / 2, GY + 36, 6.5f, Fonts.MEDIUM, Style.muted);
+        stat(LX, GY + 70, "LEVEL", String.valueOf(level), Style.accent);
+        stat(LX, GY + 120, "REIHEN", String.valueOf(lines), 0xFF36AEBF);
+        // progress to next level
+        float prog = (lines % 10) / 10f;
+        box(LX + 10, GY + 160, PW - 20, 3, 1.5f, Style.light ? 0x18000000 : 0x14FFFFFF);
+        if (prog > 0) box(LX + 10, GY + 160, (PW - 20) * prog, 3, 1.5f, Style.accent);
+        // controls help
+        float hy = GY + 184;
+        String[][] help = {{"chevron-left", "chevron-right", "bewegen"}, {"chevron-up", null, "drehen"}, {"chevron-down", null, "schneller"}, {"#Leer", null, "fallen lassen"}, {"#C", null, "halten"}};
+        for (String[] h : help) {
+            float kx = LX + 4;
+            kx += keycap(kx, hy, h[0]) + 2;
+            if (h[1] != null) kx += keycap(kx, hy, h[1]) + 2;
+            Gx.textMid(h[2], X(LX + 42), Y(hy), 6.4f * u, Fonts.REGULAR, Style.sub);
+            hy += 13;
+        }
 
-      this.parts.removeIf(var0 -> var0[4] > 0.9F);
-      if (this.levelT >= 0.0F) {
-         this.levelT += var1;
-         if (this.levelT > 1.6F) {
-            this.levelT = -1.0F;
-         }
-      }
+        // right panel: next pieces
+        panelBox(RX, GY - 4, PW, 170, "NÄCHSTE");
+        mini(queue.get(0), RX + PW / 2, GY + 38, 11);
+        box(RX + 14, GY + 64, PW - 28, 0.8f, 0, Style.light ? 0x14000000 : 0x10FFFFFF);
+        for (int i = 1; i < 3; i++) {
+            Gx.pushAlpha(0.75f - (i - 1) * 0.2f);
+            mini(queue.get(i), RX + PW / 2, GY + 42 + i * 40, 8);
+            Gx.popAlpha();
+        }
+        // speed indicator
+        panelBox(RX, GY + 174, PW, 62, "TEMPO");
+        int bars = Math.min(10, level);
+        for (int i = 0; i < 10; i++) {
+            float bh = 4 + i * 1.8f;
+            box(RX + 14 + i * 8f, GY + 226 - bh, 5f, bh, 1.5f, i < bars ? Gx.mix(0xFF4B9F4A, 0xFFC91A09, i / 9f) : (Style.light ? 0x16000000 : 0x12FFFFFF));
+        }
 
-      if (this.bannerT >= 0.0F) {
-         this.bannerT += var1;
-         if (this.bannerT > 1.3F) {
-            this.bannerT = -1.0F;
-         }
-      }
+        // banners
+        if (bannerT >= 0 && banner != null) {
+            float t = bannerT / 1.3f;
+            float s = Ease.outBack(Math.min(1, bannerT / 0.3f));
+            float a = t < 0.75f ? 1 : 1 - (t - 0.75f) / 0.25f;
+            float cy = GY + ROWS * CELL * 0.4f - bannerT * 8;
+            Gx.pushAlpha(a);
+            Gx.push();
+            Gx.scaleAt(X(GX + COLS * CELL / 2), Y(cy), s);
+            Gx.glow(X(GX + COLS * CELL / 2), Y(cy), S(60), Gx.withAlpha(Style.accent, 0.35f));
+            text(banner, GX + COLS * CELL / 2 + 0.6f, cy + 1, 16, Fonts.BOLD, 0x88000000);
+            text(banner, GX + COLS * CELL / 2, cy, 16, Fonts.BOLD, 0xFFFFFFFF);
+            Gx.pop();
+            Gx.popAlpha();
+        }
+        if (levelT >= 0) {
+            float t = levelT / 1.6f;
+            float s = Ease.outBack(Math.min(1, levelT / 0.35f));
+            float a = t < 0.7f ? 1 : 1 - (t - 0.7f) / 0.3f;
+            float cy = GY + ROWS * CELL * 0.55f;
+            Gx.pushAlpha(a);
+            Gx.push();
+            Gx.scaleAt(X(GX + COLS * CELL / 2), Y(cy), s);
+            box(GX + 12, cy - 15, COLS * CELL - 24, 30, 10, Gx.withAlpha(Style.accent, 0.92f));
+            text("Level " + level, GX + COLS * CELL / 2, cy, 13, Fonts.BOLD, Style.accentText);
+            Gx.pop();
+            Gx.popAlpha();
+        }
+    }
 
-      if (this.clearT >= 0.0F) {
-         this.clearT += var1;
-         if (this.clearT >= 0.34F) {
-            this.finishClear();
-         }
-      } else if (this.active) {
-         if (this.fits(this.type, this.rot, this.px, this.py + 1)) {
-            this.fall += var1;
-            this.lockT = 0.0F;
-            if (this.fall >= this.gravity()) {
-               this.fall = this.fall - this.gravity();
-               this.py++;
-            }
-         } else {
-            this.lockT += var1;
-            if (this.lockT >= 0.5F) {
-               this.lock();
-            }
-         }
-      }
-   }
+    /** Small key cap: icon name, or text when prefixed with '#'. Returns its width. */
+    private float keycap(float x, float cy, String what) {
+        boolean txt = what.startsWith("#");
+        float w = txt ? Math.max(11, Gx.width(what.substring(1), 5.6f * u, Fonts.BOLD) / u + 7) : 11, h = 10.5f;
+        box(x, cy - h / 2, w, h, 3, Style.light ? 0x18000000 : 0x18FFFFFF);
+        box(x, cy + h / 2 - 1.2f, w, 1.2f, 0.6f, Style.light ? 0x14000000 : 0x10FFFFFF);
+        if (txt) text(what.substring(1), x + w / 2, cy - 0.3f, 5.6f, Fonts.BOLD, Style.text);
+        else Gx.icon(what, X(x + w / 2), Y(cy - 0.3f), 7 * u, Style.text);
+        return w;
+    }
 
-   private void lock() {
-      boolean var1 = false;
+    private void panelBox(float x, float y, float w, float h, String title) {
+        box(x, y, w, h, 10, Style.light ? 0x0C000000 : 0x0AFFFFFF);
+        text(title, x + w / 2, y + 11, 6.2f, Fonts.BOLD, Style.muted);
+    }
 
-      for (int[] var5 : cells(this.type, this.rot)) {
-         int var6 = this.px + var5[0];
-         int var7 = this.py + var5[1];
-         if (var7 < 0) {
-            var1 = true;
-         } else {
-            this.grid[var7][var6] = this.type + 1;
-         }
-      }
+    private void stat(float x, float y, String label, String value, int col) {
+        box(x, y, PW, 44, 10, Style.light ? 0x0C000000 : 0x0AFFFFFF);
+        box(x, y + 10, 3, 24, 1.5f, col);
+        text(label, x + PW / 2, y + 12, 6.2f, Fonts.BOLD, Style.muted);
+        text(value, x + PW / 2, y + 29, 14, Fonts.BOLD, Style.text);
+    }
 
-      this.active = false;
-      Sound.play("minecraft:block.stone.place", 1.2F, 0.25F);
-      if (var1) {
-         this.gameOver();
-      } else {
-         this.clearing.clear();
-
-         for (int var8 = 0; var8 < 20; var8++) {
-            boolean var10 = true;
-
-            for (int var12 = 0; var12 < 10; var12++) {
-               if (this.grid[var8][var12] == 0) {
-                  var10 = false;
-                  break;
-               }
-            }
-
-            if (var10) {
-               this.clearing.add(var8);
-            }
-         }
-
-         if (this.clearing.isEmpty()) {
-            this.next();
-         } else {
-            this.clearT = 0.0F;
-            int var9 = this.clearing.size();
-            Sound.play(
-               var9 >= 4 ? "minecraft:ui.toast.challenge_complete" : "minecraft:entity.experience_orb.pickup", var9 >= 4 ? 1.3F : 0.9F + var9 * 0.15F, 0.3F
-            );
-
-            for (int var13 : this.clearing) {
-               for (int var14 = 0; var14 < 10; var14++) {
-                  for (int var15 = 0; var15 < 2; var15++) {
-                     this.parts
-                        .add(
-                           new float[]{
-                              130.0F + var14 * 12.0F + 6.0F,
-                              14.0F + var13 * 12.0F + 6.0F,
-                              (this.rnd.nextFloat() - 0.5F) * 140.0F,
-                              -40.0F - this.rnd.nextFloat() * 110.0F,
-                              0.0F,
-                              COLORS[this.grid[var13][var14] - 1]
-                           }
-                        );
-                  }
-               }
-            }
-         }
-      }
-   }
-
-   private void finishClear() {
-      int var1 = this.clearing.size();
-
-      for (int var3 : this.clearing) {
-         for (int var4 = var3; var4 > 0; var4--) {
-            this.grid[var4] = this.grid[var4 - 1];
-         }
-
-         this.grid[0] = new int[10];
-      }
-
-      this.clearing.clear();
-      this.clearT = -1.0F;
-      this.score = this.score + (long)new int[]{0, 100, 300, 500, 800}[Math.min(4, var1)] * this.level;
-      this.banner = var1 == 1 ? null : (var1 == 2 ? "Doppel!" : (var1 == 3 ? "Dreifach!" : "TETRIS!"));
-      if (this.banner != null) {
-         this.bannerT = 0.0F;
-      }
-
-      int var5 = this.level;
-      this.lines += var1;
-      this.level = 1 + this.lines / 10;
-      if (this.level > var5) {
-         this.levelT = 0.0F;
-         Sound.play("minecraft:entity.player.levelup", 1.2F, 0.3F);
-      }
-
-      this.next();
-   }
-
-   private void next() {
-      this.spawn(this.queue.remove(0));
-      this.queue.add(this.nextFromBag());
-   }
-
-   private void cell(float var1, float var2, float var3, int var4) {
-      this.brick(var1 + 0.3F, var2 + 0.3F, var3 - 0.6F, var3 - 0.6F, var4);
-   }
-
-   @Override
-   protected void render() {
-      float var1 = Math.min(0.05F, Gx.dt);
-      float var2 = 1.0F - (float)Math.exp(-var1 * 28.0F);
-      this.visX = this.visX + (this.px - this.visX) * var2;
-      this.visY = this.visY + (this.py - this.visY) * var2;
-      if (Math.abs(this.px - this.visX) > 3.0F) {
-         this.visX = this.px;
-      }
-
-      this.shake = Math.max(0.0F, this.shake - var1 * 3.0F);
-      this.holdPop = Math.max(0.0F, this.holdPop - var1 * 4.0F);
-      float var3 = this.shake > 0.0F ? Ease.outCubic(this.shake) * 2.2F : 0.0F;
-      Gx.shadow(this.X(126.0F), this.Y(10.0F), this.S(128.0F), this.S(248.0F), this.S(8.0F), this.S(6.0F), 0.4F);
-      this.boxV(126.0F, 10.0F, 128.0F, 248.0F, 8.0F, Style.light ? -2630944 : -15197406, Style.light ? -3288616 : -15592423);
-      Gx.push();
-      Gx.translate(0.0F, this.S(var3));
-
-      for (int var4 = 0; var4 < 20; var4++) {
-         for (int var5 = 0; var5 < 10; var5++) {
-            this.circle(130.0F + var5 * 12.0F + 6.0F, 14.0F + var4 * 12.0F + 6.0F, 2.6F, Style.light ? 301989888 : 184549375);
-         }
-      }
-
-      for (int var12 = 0; var12 < 20; var12++) {
-         boolean var17 = this.clearT >= 0.0F && this.clearing.contains(var12);
-
-         for (int var6 = 0; var6 < 10; var6++) {
-            int var7 = this.grid[var12][var6];
-            if (var7 != 0) {
-               if (var17) {
-                  float var8 = this.clearT / 0.34F;
-                  float var9 = 1.0F - Ease.inOutCubic(Math.max(0.0F, (var8 - 0.35F) / 0.65F));
-                  int var10 = Gx.mix(COLORS[var7 - 1], -1, Math.min(1.0F, var8 * 3.0F));
-                  float var11 = 12.0F * var9;
-                  if (var11 > 0.5F) {
-                     this.cell(130.0F + var6 * 12.0F + (12.0F - var11) / 2.0F, 14.0F + var12 * 12.0F + (12.0F - var11) / 2.0F, var11, var10);
-                  }
-               } else {
-                  this.cell(130.0F + var6 * 12.0F, 14.0F + var12 * 12.0F, 12.0F, COLORS[var7 - 1]);
-               }
-            }
-         }
-
-         if (var17) {
-            float var23 = 1.0F - this.clearT / 0.34F;
-            Gx.glow(this.X(190.0F), this.Y(14.0F + var12 * 12.0F + 6.0F), this.S(70.0F), Gx.withAlpha(-1, var23 * 0.35F));
-         }
-      }
-
-      if (this.active && this.state != GameView.State.OVER) {
-         int var13 = this.ghostY();
-
-         for (int[] var36 : cells(this.type, this.rot)) {
-            float var43 = 130.0F + (this.px + var36[0]) * 12.0F;
-            float var49 = 14.0F + (var13 + var36[1]) * 12.0F;
-            if (var13 + var36[1] >= 0) {
-               this.box(var43 + 0.8F, var49 + 0.8F, 10.4F, 10.4F, 2.5F, Gx.withAlpha(COLORS[this.type], 0.13F));
-               Gx.outline(
-                  this.X(var43 + 0.8F),
-                  this.Y(var49 + 0.8F),
-                  this.S(10.4F),
-                  this.S(10.4F),
-                  this.S(2.5F),
-                  Math.max(1, this.S(0.7F)),
-                  Gx.withAlpha(COLORS[this.type], 0.55F)
-               );
-            }
-         }
-
-         Gx.clip(this.X(126.0F), this.Y(14.0F), this.S(128.0F), this.S(244.0F));
-
-         for (int[] var37 : cells(this.type, this.rot)) {
-            float var44 = 130.0F + (this.visX + var37[0]) * 12.0F;
-            float var50 = 14.0F + (this.visY + var37[1]) * 12.0F;
-            Gx.glow(this.X(var44 + 6.0F), this.Y(var50 + 6.0F), this.S(13.200001F), Gx.withAlpha(COLORS[this.type], 0.16F));
-         }
-
-         for (int[] var38 : cells(this.type, this.rot)) {
-            this.cell(130.0F + (this.visX + var38[0]) * 12.0F, 14.0F + (this.visY + var38[1]) * 12.0F, 12.0F, COLORS[this.type]);
-         }
-
-         Gx.unclip();
-      }
-
-      Gx.pop();
-
-      for (float[] var21 : this.parts) {
-         float var27 = 1.0F - var21[4] / 0.9F;
-         float var32 = 2.6F * (1.0F - var21[4] / 0.9F * 0.5F);
-         this.box(var21[0] - var32 / 2.0F, var21[1] - var32 / 2.0F, var32, var32, 0.8F, Gx.withAlpha((int)var21[5], var27));
-      }
-
-      this.panelBox(12.0F, 10.0F, 106.0F, 66.0F, "HALTEN");
-      if (this.hold >= 0) {
-         float var15 = 1.0F + 0.15F * this.holdPop;
-         Gx.push();
-         Gx.scaleAt(this.X(65.0F), this.Y(50.0F), var15);
-         Gx.pushAlpha(this.canHold ? 1.0F : 0.4F);
-         this.mini(this.hold, 65.0F, 50.0F, 10.0F);
-         Gx.popAlpha();
-         Gx.pop();
-      } else {
-         this.text("C drücken", 65.0F, 50.0F, 6.5F, 2, Style.muted);
-      }
-
-      this.stat(12.0F, 84.0F, "LEVEL", String.valueOf(this.level), Style.accent);
-      this.stat(12.0F, 134.0F, "REIHEN", String.valueOf(this.lines), -13193537);
-      float var16 = this.lines % 10 / 10.0F;
-      this.box(22.0F, 174.0F, 86.0F, 3.0F, 1.5F, Style.light ? 402653184 : 352321535);
-      if (var16 > 0.0F) {
-         this.box(22.0F, 174.0F, 86.0F * var16, 3.0F, 1.5F, Style.accent);
-      }
-
-      float var22 = 198.0F;
-      String[][] var28 = new String[][]{
-         {"chevron-left", "chevron-right", "bewegen"},
-         {"chevron-up", null, "drehen"},
-         {"chevron-down", null, "schneller"},
-         {"#Leer", null, "fallen lassen"},
-         {"#C", null, "halten"}
-      };
-
-      for (String[] var51 : var28) {
-         float var54 = 16.0F;
-         var54 += this.keycap(var54, var22, var51[0]) + 2.0F;
-         if (var51[1] != null) {
-            var54 += this.keycap(var54, var22, var51[1]) + 2.0F;
-         }
-
-         Gx.textMid(var51[2], this.X(54.0F), this.Y(var22), 6.4F * this.u, 1, Style.sub);
-         var22 += 13.0F;
-      }
-
-      this.panelBox(262.0F, 10.0F, 106.0F, 170.0F, "NÄCHSTE");
-      this.mini(this.queue.get(0), 315.0F, 52.0F, 11.0F);
-      this.box(276.0F, 78.0F, 78.0F, 0.8F, 0.0F, Style.light ? 335544320 : 285212671);
-
-      for (int var34 = 1; var34 < 3; var34++) {
-         Gx.pushAlpha(0.75F - (var34 - 1) * 0.2F);
-         this.mini(this.queue.get(var34), 315.0F, 56.0F + var34 * 40, 8.0F);
-         Gx.popAlpha();
-      }
-
-      this.panelBox(262.0F, 188.0F, 106.0F, 62.0F, "TEMPO");
-      int var35 = Math.min(10, this.level);
-
-      for (int var40 = 0; var40 < 10; var40++) {
-         float var46 = 4.0F + var40 * 1.8F;
-         this.box(
-            276.0F + var40 * 8.0F,
-            240.0F - var46,
-            5.0F,
-            var46,
-            1.5F,
-            var40 < var35 ? Gx.mix(-11821238, -3597815, var40 / 9.0F) : (Style.light ? 369098752 : 318767103)
-         );
-      }
-
-      if (this.bannerT >= 0.0F && this.banner != null) {
-         float var41 = this.bannerT / 1.3F;
-         float var47 = Ease.outBack(Math.min(1.0F, this.bannerT / 0.3F));
-         float var52 = var41 < 0.75F ? 1.0F : 1.0F - (var41 - 0.75F) / 0.25F;
-         float var57 = 110.0F - this.bannerT * 8.0F;
-         Gx.pushAlpha(var52);
-         Gx.push();
-         Gx.scaleAt(this.X(190.0F), this.Y(var57), var47);
-         Gx.glow(this.X(190.0F), this.Y(var57), this.S(60.0F), Gx.withAlpha(Style.accent, 0.35F));
-         this.text(this.banner, 190.6F, var57 + 1.0F, 16.0F, 3, -2013265920);
-         this.text(this.banner, 190.0F, var57, 16.0F, 3, -1);
-         Gx.pop();
-         Gx.popAlpha();
-      }
-
-      if (this.levelT >= 0.0F) {
-         float var42 = this.levelT / 1.6F;
-         float var48 = Ease.outBack(Math.min(1.0F, this.levelT / 0.35F));
-         float var53 = var42 < 0.7F ? 1.0F : 1.0F - (var42 - 0.7F) / 0.3F;
-         float var58 = 146.0F;
-         Gx.pushAlpha(var53);
-         Gx.push();
-         Gx.scaleAt(this.X(190.0F), this.Y(var58), var48);
-         this.box(142.0F, var58 - 15.0F, 96.0F, 30.0F, 10.0F, Gx.withAlpha(Style.accent, 0.92F));
-         this.text("Level " + this.level, 190.0F, var58, 13.0F, 3, Style.accentText);
-         Gx.pop();
-         Gx.popAlpha();
-      }
-   }
-
-   private float keycap(float var1, float var2, String var3) {
-      boolean var4 = var3.startsWith("#");
-      float var5 = var4 ? Math.max(11.0F, Gx.width(var3.substring(1), 5.6F * this.u, 3) / this.u + 7.0F) : 11.0F;
-      float var6 = 10.5F;
-      this.box(var1, var2 - var6 / 2.0F, var5, var6, 3.0F, Style.light ? 402653184 : 419430399);
-      this.box(var1, var2 + var6 / 2.0F - 1.2F, var5, 1.2F, 0.6F, Style.light ? 335544320 : 285212671);
-      if (var4) {
-         this.text(var3.substring(1), var1 + var5 / 2.0F, var2 - 0.3F, 5.6F, 3, Style.text);
-      } else {
-         Gx.icon(var3, this.X(var1 + var5 / 2.0F), this.Y(var2 - 0.3F), 7.0F * this.u, Style.text);
-      }
-
-      return var5;
-   }
-
-   private void panelBox(float var1, float var2, float var3, float var4, String var5) {
-      this.box(var1, var2, var3, var4, 10.0F, Style.light ? 201326592 : 184549375);
-      this.text(var5, var1 + var3 / 2.0F, var2 + 11.0F, 6.2F, 3, Style.muted);
-   }
-
-   private void stat(float var1, float var2, String var3, String var4, int var5) {
-      this.box(var1, var2, 106.0F, 44.0F, 10.0F, Style.light ? 201326592 : 184549375);
-      this.box(var1, var2 + 10.0F, 3.0F, 24.0F, 1.5F, var5);
-      this.text(var3, var1 + 53.0F, var2 + 12.0F, 6.2F, 3, Style.muted);
-      this.text(var4, var1 + 53.0F, var2 + 29.0F, 14.0F, 3, Style.text);
-   }
-
-   private void mini(int var1, float var2, float var3, float var4) {
-      int[][] var5 = cells(var1, 0);
-      int var6 = 9;
-      int var7 = -9;
-      int var8 = 9;
-      int var9 = -9;
-
-      for (int[] var13 : var5) {
-         var6 = Math.min(var6, var13[0]);
-         var7 = Math.max(var7, var13[0]);
-         var8 = Math.min(var8, var13[1]);
-         var9 = Math.max(var9, var13[1]);
-      }
-
-      float var16 = (var7 - var6 + 1) * var4;
-      float var17 = (var9 - var8 + 1) * var4;
-
-      for (int[] var15 : var5) {
-         this.cell(var2 - var16 / 2.0F + (var15[0] - var6) * var4, var3 - var17 / 2.0F + (var15[1] - var8) * var4, var4, COLORS[var1]);
-      }
-   }
+    /** Piece preview centered at (cx, cy). */
+    private void mini(int t, float cx, float cy, float s) {
+        int[][] cs = cells(t, 0);
+        int minX = 9, maxX = -9, minY = 9, maxY = -9;
+        for (int[] c : cs) { minX = Math.min(minX, c[0]); maxX = Math.max(maxX, c[0]); minY = Math.min(minY, c[1]); maxY = Math.max(maxY, c[1]); }
+        float w = (maxX - minX + 1) * s, h = (maxY - minY + 1) * s;
+        for (int[] c : cs) cell(cx - w / 2 + (c[0] - minX) * s, cy - h / 2 + (c[1] - minY) * s, s, COLORS[t]);
+    }
 }

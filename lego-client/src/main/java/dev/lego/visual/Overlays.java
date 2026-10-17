@@ -24,6 +24,7 @@ public final class Overlays {
    public static Overlays.CinemaBars bars;
    public static Overlays.Vignette vignette;
    public static Overlays.Hitmarker hitmarker;
+   public static Overlays.VrLook vrLook;
 
    private Overlays() {
    }
@@ -32,6 +33,7 @@ public final class Overlays {
       bars = Modules.register(new Overlays.CinemaBars());
       vignette = Modules.register(new Overlays.Vignette());
       hitmarker = Modules.register(new Overlays.Hitmarker());
+      vrLook = Modules.register(new Overlays.VrLook());
    }
 
    public static void render(int var0, int var1) {
@@ -46,6 +48,10 @@ public final class Overlays {
 
          if (hitmarker != null && hitmarker.enabled) {
             hitmarker.draw(var0, var1);
+         }
+
+         if (vrLook != null && vrLook.enabled) {
+            vrLook.draw(var0, var1);
          }
       }
    }
@@ -472,6 +478,56 @@ public final class Overlays {
                float var7 = 0.6F + 0.4F * (float)Math.sin(System.currentTimeMillis() / 1000.0 * 5.5);
                Gx.image(var3, 0, 0, var1, var2, Gx.withAlpha(-57810, Math.min(1.0F, this.red * var7)));
             }
+         }
+      }
+   }
+
+   /** "VR look": the picture seen through two headset lenses (black frame with a nose bridge, soft lens edge, faint glass glare). Keyboard + mouse as usual. */
+   public static final class VrLook extends Module {
+      final Setting.Num edge = this.add(new Setting.Num("Linsen-Rand", 0.0, 100.0, 5.0, 60.0, "%"));
+      final Setting.Bool glare = this.add(new Setting.Bool("Glas-Reflex", true));
+      final Setting.Bool breathe = this.add(new Setting.Bool("Atmen", true));
+
+      VrLook() {
+         super("vrlook", "VR-Look", "Sieht aus wie durch eine VR-Brille - Linsen, Nasenbrücke, Glas-Reflex", Category.VISUALS);
+         this.icon("vignette");
+         this.fresh();
+      }
+
+      void draw(int w, int h) {
+         Gx.Img lens = Gx.painted("vrlook-lens", 1024, 512, g -> {
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, 1024, 512);
+            g.setComposite(java.awt.AlphaComposite.Clear);
+            // Two overlapping round lenses, a little narrower at the nose.
+            g.fill(new java.awt.geom.Ellipse2D.Float(40.0F, 20.0F, 500.0F, 472.0F));
+            g.fill(new java.awt.geom.Ellipse2D.Float(484.0F, 20.0F, 500.0F, 472.0F));
+            g.setComposite(java.awt.AlphaComposite.SrcOver);
+            // Nose bridge.
+            Double nose = new Double();
+            nose.moveTo(462.0, 512.0);
+            nose.curveTo(470.0, 400.0, 554.0, 400.0, 562.0, 512.0);
+            nose.closePath();
+            g.fill(nose);
+            // Soft inner edge of each lens.
+            for (float cx : new float[]{290.0F, 734.0F}) {
+               g.setPaint(new RadialGradientPaint(new Float(cx, 256.0F), 250.0F, new float[]{0.0F, 0.82F, 1.0F}, new Color[]{new Color(0, 0, 0, 0), new Color(0, 0, 0, 0), new Color(0, 0, 0, 200)}, CycleMethod.NO_CYCLE));
+               g.fill(new java.awt.geom.Ellipse2D.Float(cx - 250.0F, 20.0F, 500.0F, 472.0F));
+            }
+         });
+         Gx.Img shine = Gx.painted("vrlook-glare", 256, 256, g -> {
+            g.setPaint(new GradientPaint(0.0F, 0.0F, new Color(255, 255, 255, 40), 160.0F, 160.0F, new Color(255, 255, 255, 0)));
+            g.fillRect(0, 0, 256, 256);
+         });
+         float a = this.edge.getF() / 100.0F;
+         float br = this.breathe.get() ? (float)Math.sin(System.currentTimeMillis() / 1000.0 * 1.3) * 0.006F : 0.0F;
+         int ow = Math.round(w * (1.06F + br)), oh = Math.round(h * (1.06F + br));
+         if (lens != null && a > 0.0F) {
+            Gx.image(lens, (w - ow) / 2, (h - oh) / 2, ow, oh, Gx.withAlpha(-1, a));
+         }
+         if (shine != null && this.glare.get()) {
+            Gx.image(shine, Math.round(w * 0.12F), Math.round(h * 0.08F), Math.round(w * 0.25F), Math.round(h * 0.35F), -1);
+            Gx.image(shine, Math.round(w * 0.56F), Math.round(h * 0.08F), Math.round(w * 0.25F), Math.round(h * 0.35F), -1);
          }
       }
    }

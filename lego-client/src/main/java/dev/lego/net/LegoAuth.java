@@ -49,6 +49,27 @@ public final class LegoAuth {
       return res.body().isEmpty() ? null : Json.parse(res.body());
    }
 
+   /**
+    * Authenticated call to the LEGO server (blocking: only from a worker thread).
+    * Returns the parsed JSON body; throws on HTTP errors.
+    */
+   public static Object api(String method, String path, Object body) throws Exception {
+      String base = LegoNet.INSTANCE == null ? "" : LegoNet.INSTANCE.baseUrl();
+      if (base.isEmpty()) throw new IllegalStateException("Kein LEGO-Server konfiguriert");
+      String t = session().get(20, java.util.concurrent.TimeUnit.SECONDS);
+      HttpRequest.Builder b = req(base, path).header("Authorization", "Bearer " + t);
+      if ("GET".equals(method)) b.GET();
+      else b.method(method, HttpRequest.BodyPublishers.ofString(Json.write(body == null ? Map.of() : body)));
+      HttpResponse<String> res = HTTP.send(b.build(), HttpResponse.BodyHandlers.ofString());
+      if (res.statusCode() == 401) token = null;
+      if (res.statusCode() / 100 != 2) {
+         Object err = res.body().isEmpty() ? null : Json.parse(res.body());
+         String msg = err == null ? "" : Json.str(err, "message", "");
+         throw new IllegalStateException(msg.isEmpty() ? "HTTP " + res.statusCode() : msg);
+      }
+      return res.body().isEmpty() ? null : Json.parse(res.body());
+   }
+
    /** A valid LEGO session token, signing in when needed. Never blocks the render thread. */
    public static synchronized CompletableFuture<String> session() {
       if (token != null && System.currentTimeMillis() < expiresAt - 60_000L) return CompletableFuture.completedFuture(token);

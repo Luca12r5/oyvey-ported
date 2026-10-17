@@ -34,7 +34,7 @@ export interface AppInfo {
   e2e?: boolean;
 }
 
-export interface VrbState { url: string; title: string; canBack: boolean; canForward: boolean; loading: boolean }
+export interface VrbState { url: string; title: string; canBack: boolean; canForward: boolean; loading: boolean; zoom?: number; tabs?: { title: string; url: string }[]; active?: number }
 
 export interface SkinData { skin: string | null; variant: 'classic' | 'slim'; cape: string | null }
 
@@ -51,8 +51,9 @@ export interface LauncherApi {
   /** VR lobby browser: frames arrive on 'vrb-frame' (JPEG bytes), state on 'vrb-state'. */
   vrBrowserOpen(): Promise<{ w: number; h: number; state: VrbState }>;
   vrBrowserInput(e: unknown): void;
-  vrBrowserNav(action: 'back' | 'forward' | 'reload' | 'home' | 'go', text?: string): Promise<VrbState>;
+  vrBrowserNav(action: 'back' | 'forward' | 'reload' | 'home' | 'go' | 'newTab' | 'closeTab' | 'tab' | 'zoomIn' | 'zoomOut' | 'zoomReset', text?: string): Promise<VrbState>;
   vrBrowserClose(): void;
+  vrBrowserSuggest(q: string): Promise<{ title: string; url: string }[]>;
   /** LEGO client modules of a profile (config/legoclient.json). */
   clientModules(profileId: string): Promise<{ available: boolean; modules: { id: string; on: boolean }[] }>;
   setClientModule(profileId: string, id: string, on: boolean): Promise<{ id: string; on: boolean }[]>;
@@ -72,6 +73,8 @@ export interface LauncherApi {
   skin(uuid?: string): Promise<SkinData>;
   uploadSkin(dataUrl: string, variant: 'classic' | 'slim'): Promise<SkinData>;
   resetSkin(): Promise<SkinData>;
+  vivecraft(gameVersion?: string): Promise<{ available: boolean; gameVersion: string; loader: string | null; suggestion?: string | null }>;
+  vivecraftProfile(gameVersion: string, loader: string): Promise<{ profileId: string }>;
   crashLast(): Promise<{ profileId: string; diagnoses: Diagnosis[] } | null>;
   crashAnalyze(profileId: string): Promise<{ profileId: string; diagnoses: Diagnosis[] }>;
   crashFix(profileId: string, fix: Fix | { kind: 'enable-mod'; filename: string }): Promise<{ undo: Fix | { kind: 'enable-mod'; filename: string } | null; message: string }>;

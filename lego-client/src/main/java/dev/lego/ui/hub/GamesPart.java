@@ -23,6 +23,12 @@ public final class GamesPart implements HubView.Part {
    public void draw(HubView var1, int var2, int var3, int var4, int var5) {
       int var6 = var1.p(22.0);
       int var7 = var1.header(var2 + var6, var3 + var1.p(20.0), "Minispiele", GameInfo.ALL.size() + " Spiele für Zwischendurch – mit Rekorden");
+      // Duels against other LEGO players (invites show a badge).
+      int dw = var1.p(110.0), dh = var1.p(28.0), dx = var2 + var4 - var6 - dw, dy = var3 + var1.p(22.0);
+      int inv = dev.lego.games.Duels.invites().size();
+      boolean dhov = var1.mx >= dx && var1.mx <= dx + dw && var1.my >= dy && var1.my <= dy + dh;
+      Kit.button("duels", inv > 0 ? "Duelle (" + inv + ")" : "Duelle", "gamepad", dx, dy, dw, dh, var1.P, inv > 0, dhov);
+      Kit.hit(dx, dy, dw, dh).click(() -> { if (var1.host != null) var1.host.open(new dev.lego.games.DuelView()); });
       int var8 = var7 + var1.p(4.0);
       int var9 = var3 + var5 - var1.p(16.0) - var8;
       byte var10 = 3;

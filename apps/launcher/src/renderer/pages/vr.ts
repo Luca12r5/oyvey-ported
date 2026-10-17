@@ -1,37 +1,85 @@
-// VR mode page: checks for a headset, explains requirements and starts the
-// immersive lobby (or the desktop preview when no headset is available).
+// VR page: visual VR (keyboard + mouse, any PC), real VR (headset via
+// WebXR/OpenXR) and VR inside Minecraft (VR look module of the LEGO client,
+// real VR through the Vivecraft mod when it exists for the version).
 
-import { state } from '../app.ts';
-import { html, mount } from '../ui.ts';
+import { go, state } from '../app.ts';
+import { api, errorToast, html, mount, toast } from '../ui.ts';
 import { icon } from '../icons.ts';
 import { enterVr, vrRequirements, xrSupported } from '../vr/lobby.ts';
 
 export async function vrPage(el: HTMLElement): Promise<void> {
+  const prof = state.settings.profiles.find((p) => p.id === state.settings.selectedProfile) ?? state.settings.profiles[0];
   mount(el, html`<div class="vr-page">
-    <div class="vr-hero card">
-      <div class="vr-art" aria-hidden="true"><div class="vr-glasses">${icon('vr')}</div></div>
-      <div class="vr-copy">
-        <h1>VR-Modus</h1>
-        <p>Setz die Brille auf und steh mitten in der Halloween-Lobby: Kürbisse, Nebel, ein summendes Portal – und vor dir schweben die Click GUI, ein echter Browser mit Google-Suche und eine Tastatur. Alles lässt sich greifen, verschieben und vergrößern.</p>
-        <div class="vr-status" id="vrStatus"><span class="spinner"></span> Suche VR-Brille …</div>
-        <div class="row gap"><button class="btn primary" id="vrStart" disabled>${icon('vr', 'sm')} VR starten</button><button class="btn" id="vrPreview">${icon('play', 'sm')} Desktop-Vorschau</button></div>
+    <div class="vr-modes">
+      <section class="panel vr-mode">
+        <div class="panel-h">${icon('vr', 'sm')}<span>Visueller VR-Modus</span></div>
+        <div class="vr-mode-b">
+          <p>Sieht aus wie in einer VR-Brille – Linsen, eigene Arme, Lagerfeuer-Lobby mit Browser und Click GUI. Gesteuert mit Tastatur und Maus, läuft auf jedem PC.</p>
+          <ul class="keys small"><li><kbd>W A S D</kbd> laufen · <kbd>Shift</kbd> rennen · <kbd>Leertaste</kbd> springen</li><li><kbd>Linksklick</kbd> bedienen · <kbd>Rechtsklick halten</kbd> greifen · <kbd>Mausrad</kbd> näher/weiter</li><li><kbd>E</kbd> Menü · <kbd>Esc</kbd> verlassen</li></ul>
+          <button class="btn primary" id="vrPreview">${icon('play', 'sm')} Visuell starten</button>
+        </div>
+      </section>
+      <section class="panel vr-mode">
+        <div class="panel-h">${icon('vr', 'sm')}<span>Echtes VR</span><span class="vr-status small" id="vrStatus">Suche Brille …</span></div>
+        <div class="vr-mode-b">
+          <p>Mit Headset: Controller oder Hand-Tracking, Laufen mit dem Stick, Drehen in Schritten, Teleport mit A. Alles lässt sich greifen, mit zwei Händen vergrößern und werfen.</p>
+          <ul class="small muted">${vrRequirements().slice(1).map((r) => html`<li>${r}</li>`)}</ul>
+          <button class="btn" id="vrStart" disabled>${icon('vr', 'sm')} VR starten</button>
+        </div>
+      </section>
+    </div>
+    <section class="panel vr-mc">
+      <div class="panel-h">${icon('cube', 'sm')}<span>VR in Minecraft</span></div>
+      <div class="vr-mc-grid">
+        <div>
+          <h3>VR-Look (LEGO Client)</h3>
+          <p class="small muted">Im Spiel als Modul „VR-Look“ (Click GUI → Visuals): Bild wie durch zwei Brillenlinsen mit Nasenbrücke, Glas-Reflex und leichtem Atmen. Normale Steuerung mit Tastatur und Maus.</p>
+        </div>
+        <div>
+          <h3>Echtes VR (Vivecraft)</h3>
+          <p class="small muted" id="viveInfo">Prüfe, ob Vivecraft für ${prof?.gameVersion ?? '1.21.11'} verfügbar ist …</p>
+          <button class="btn sm" id="viveBtn" hidden>${icon('plus', 'sm')} VR-Profil erstellen</button>
+        </div>
       </div>
-    </div>
-    <div class="grid g3 gap">
-      <div class="card"><h3>${icon('sliders', 'sm')} Click GUI im Raum</h3><p class="small muted">Schalte die Module deines LEGO-Client-Profils, Launcher-Effekte und die Lobby direkt in VR. Änderungen an Modulen gelten ab dem nächsten Spielstart.</p></div>
-      <div class="card"><h3>${icon('globe', 'sm')} Browser</h3><p class="small muted">Echter Chromium-Browser mit Google-Suche, Zurück/Vor, Scrollen und Tippen. SafeSearch ist immer an, Downloads sind gesperrt, nur sichere https-Seiten.</p></div>
-      <div class="card"><h3>${icon('shield', 'sm')} Komfort</h3><p class="small muted">Keine erzwungenen Kamerafahrten nach dem Einstieg, Ansicht jederzeit zurücksetzen, „VR verlassen“ immer erreichbar (oder Esc / Brille absetzen).</p></div>
-    </div>
-    <div class="card gap"><h3>Voraussetzungen</h3><ul class="small">${vrRequirements().map((r) => html`<li>${r}</li>`)}</ul></div>
+    </section>
   </div>`);
   const status = el.querySelector<HTMLElement>('#vrStatus')!;
   const start = el.querySelector<HTMLButtonElement>('#vrStart')!;
-  const ok = await xrSupported();
-  if (!el.isConnected) return;
-  mount(status, ok ? html`${icon('check', 'sm')} VR-Brille bereit` : html`${icon('info', 'sm')} Keine VR-Brille gefunden – die Desktop-Vorschau zeigt dieselbe Welt.`);
-  status.classList.toggle('ok', ok);
-  start.disabled = !ok;
   const run = (xr: boolean) => void enterVr({ xr, sound: state.settings.introSound, quality: state.settings.backgroundQuality });
   start.addEventListener('click', () => run(true));
   el.querySelector('#vrPreview')!.addEventListener('click', () => run(false));
+  void xrSupported().then((ok) => {
+    if (!el.isConnected) return;
+    status.textContent = ok ? 'Brille bereit' : 'keine Brille gefunden';
+    status.classList.toggle('ok', ok);
+    start.disabled = !ok;
+    if (ok) start.classList.add('primary');
+  });
+
+  // Vivecraft (real VR in Minecraft) for the selected profile's version.
+  const info = el.querySelector<HTMLElement>('#viveInfo')!;
+  const btn = el.querySelector<HTMLButtonElement>('#viveBtn')!;
+  try {
+    const gv = prof?.gameVersion ?? '1.21.11';
+    const r = await api.vivecraft(gv);
+    if (!el.isConnected) return;
+    if (r.available) {
+      info.textContent = `Vivecraft gibt es für Minecraft ${r.gameVersion} (${r.loader}). Der Launcher legt ein eigenes VR-Profil an. Zum Spielen brauchst du SteamVR oder Meta Quest Link.`;
+      btn.hidden = false;
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        try {
+          const p = await api.vivecraftProfile(r.gameVersion, r.loader!);
+          state.settings = await api.getSettings();
+          toast('VR-Profil erstellt', 'ok');
+          state.settings = await api.setSettings({ selectedProfile: p.profileId });
+          void go('play');
+        } catch (e) { errorToast(e); btn.disabled = false; }
+      });
+    } else {
+      info.textContent = `Vivecraft gibt es (noch) nicht für Minecraft ${r.gameVersion}.${r.suggestion ? ` Neueste unterstützte Version: ${r.suggestion} – leg dafür ein Profil an, dann kann der Launcher es einrichten.` : ''} Bis dahin: VR-Look im LEGO Client.`;
+    }
+  } catch {
+    info.textContent = 'Konnte Modrinth nicht erreichen (offline?).';
+  }
 }

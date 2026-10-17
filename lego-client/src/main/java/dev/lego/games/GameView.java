@@ -1,6 +1,8 @@
 package dev.lego.games;
 
-import dev.lego.LegoClient;
+import java.util.List;
+import java.util.Random;
+
 import dev.lego.ui.Ease;
 import dev.lego.ui.Fonts;
 import dev.lego.ui.Gx;
@@ -9,428 +11,340 @@ import dev.lego.ui.Sound;
 import dev.lego.ui.Style;
 import dev.lego.ui.View;
 import dev.lego.ui.hub.HubView;
-import java.util.List;
-import java.util.Locale;
-import java.util.Random;
 
+/**
+ * Base class of all mini games: frame, top bar, start / pause / game-over overlays, fixed 60 Hz update loop.
+ * Subclasses work in "board units" (design units, scaled by u = pixels per unit).
+ */
 public abstract class GameView extends View {
-   public static final int K_LEFT = 263;
-   public static final int K_RIGHT = 262;
-   public static final int K_UP = 265;
-   public static final int K_DOWN = 264;
-   public static final int K_SPACE = 32;
-   public static final int K_ENTER = 257;
-   public static final int K_W = 87;
-   public static final int K_A = 65;
-   public static final int K_S = 83;
-   public static final int K_D = 68;
-   public static final int K_R = 82;
-   public static final int K_P = 80;
-   public static final int K_ESC = 256;
-   protected final GameInfo info;
-   protected final Random rnd = new Random();
-   protected GameView.State state = GameView.State.READY;
-   protected long score = 0L;
-   protected float time = 0.0F;
-   private float acc = 0.0F;
-   private boolean record = false;
-   private long stateAt = System.currentTimeMillis();
-   protected int bx;
-   protected int by;
-   protected float u = 2.0F;
-   private boolean initialized = false;
-   private boolean dragStarted = false;
+    @Override public boolean blur() { return false; }   // blur costs a full-screen pass every frame -> games feel laggy
+    public static final int K_LEFT = 263, K_RIGHT = 262, K_UP = 265, K_DOWN = 264, K_SPACE = 32, K_ENTER = 257,
+            K_W = 87, K_A = 65, K_S = 83, K_D = 68, K_R = 82, K_P = 80, K_ESC = 256;
 
-   @Override
-   public boolean blur() {
-      return false;
-   }
+    protected enum State { READY, PLAYING, PAUSED, OVER }
 
-   protected GameView(String var1) {
-      this.info = GameInfo.get(var1);
-   }
+    protected final GameInfo info;
+    protected final Random rnd = new Random();
+    protected State state = State.READY;
+    protected long score = 0;
+    /** Seconds since the round started (only advances while playing). */
+    protected float time = 0;
+    private float acc = 0;
+    private boolean record = false;
+    private long stateAt = System.currentTimeMillis();
+    /** Board origin in pixels + pixels per board unit (valid during render / input). */
+    protected int bx, by;
+    protected float u = 2;
 
-   protected abstract float boardW();
+    private boolean initialized = false;
 
-   protected abstract float boardH();
+    protected GameView(String id) {
+        this.info = GameInfo.get(id);
+    }
 
-   protected abstract void reset();
+    // ------------------------------------------------------------------ to implement
+    protected abstract float boardW();
+    protected abstract float boardH();
+    /** New round. */
+    protected abstract void reset();
+    /** Fixed step update (1/60 s) while playing. */
+    protected abstract void update(float dt);
+    /** Draw the board: origin (bx, by) in pixels, u pixels per board unit. */
+    protected abstract void render();
 
-   protected abstract void update(float var1);
+    protected void onKey(int key) { }
+    protected void onKeyUp(int key) { }
+    /** Mouse press in board units. */
+    protected void onClick(float x, float y, int button) { }
+    protected void onRelease(float x, float y, int button) { }
+    protected void onDrag(float x, float y) { }
+    /** Text shown in the score box. */
+    protected String scoreText() { return String.valueOf(score); }
+    protected String scoreLabel() { return "Punkte"; }
+    protected String bestText(long best) { return String.valueOf(best); }
+    /** Title of the game-over overlay (e.g. "Gewonnen!", "Unentschieden"). */
+    protected String overTitle() { return "Game Over"; }
+    /** true: the game starts with a click / space on the READY screen. */
+    protected boolean clickToStart() { return true; }
+    /** true: the game has a computer opponent -> difficulty chips on the start / game-over screen. */
+    protected boolean hasAi() { return false; }
+    /** Chosen AI difficulty: 0 Leicht, 1 Mittel, 2 Schwer, 3 Profi. */
+    protected int aiLevel() { return GameInfo.difficulty(info.id); }
 
-   protected abstract void render();
+    // ------------------------------------------------------------------ helpers for subclasses
+    protected void start() {
+        reset();
+        score = 0;
+        time = 0;
+        record = false;
+        state = State.PLAYING;
+        stateAt = System.currentTimeMillis();
+    }
 
-   protected void onKey(int var1) {
-   }
+    protected void gameOver() { gameOver(true); }
 
-   protected void onKeyUp(int var1) {
-   }
+    /** Ends the round; submit = false does not count the score (e.g. aborted / false start). */
+    protected void gameOver(boolean submit) {
+        if (state == State.OVER) return;
+        state = State.OVER;
+        stateAt = System.currentTimeMillis();
+        record = submit && GameInfo.submit(info.id, score);
+        // Counted results go to the LEGO server, which awards LEGO Coins (daily cap).
+        if (submit) dev.lego.net.LegoAuth.reportGame(info.id, score, record);
+        Sound.play(record ? "minecraft:ui.toast.challenge_complete" : "minecraft:block.note_block.bass", record ? 1.2f : 0.7f, 0.35f);
+    }
 
-   protected void onClick(float var1, float var2, int var3) {
-   }
+    protected int X(float bu) { return Math.round(bx + bu * u); }
+    protected int Y(float bu) { return Math.round(by + bu * u); }
+    protected int S(float bu) { return Math.round(bu * u); }
 
-   protected void onRelease(float var1, float var2, int var3) {
-   }
+    protected void box(float x, float y, float w, float h, float r, int argb) { Gx.rect(X(x), Y(y), S(w), S(h), S(r), argb); }
+    protected void boxV(float x, float y, float w, float h, float r, int top, int bottom) { Gx.rectV(X(x), Y(y), S(w), S(h), S(r), top, bottom); }
+    protected void circle(float cx, float cy, float r, int argb) { Gx.circle(X(cx), Y(cy), Math.max(1, S(r)), argb); }
+    protected void text(String s, float cx, float cy, float size, int weight, int argb) { Gx.textCenter(s, X(cx), Y(cy), size * u, weight, argb); }
 
-   protected void onDrag(float var1, float var2) {
-   }
+    /** A glossy Lego stud-brick in board units (w x h), color argb. */
+    protected void brick(float x, float y, float w, float h, int argb) {
+        float r = Math.min(w, h) * 0.18f;
+        boxV(x, y, w, h, r, Gx.mix(argb, 0xFFFFFFFF, 0.18f), Gx.mix(argb, 0xFF000000, 0.12f));
+        Gx.outline(X(x), Y(y), S(w), S(h), S(r), Math.max(1, S(Math.min(w, h) * 0.05f)), Gx.withAlpha(Gx.mix(argb, 0xFF000000, 0.45f), 0.7f));
+        float sr = Math.min(w, h) * 0.17f;
+        int studs = Math.max(1, Math.round(w / h));
+        for (int i = 0; i < Math.min(studs, 4); i++) {
+            float sx = x + w * (i + 0.5f) / Math.min(studs, 4);
+            circle(sx, y + h * 0.42f, sr, Gx.mix(argb, 0xFF000000, 0.2f));
+            circle(sx, y + h * 0.38f, sr * 0.9f, Gx.mix(argb, 0xFFFFFFFF, 0.22f));
+        }
+    }
 
-   protected String scoreText() {
-      return String.valueOf(this.score);
-   }
+    /** Thick line with round ends (board units). */
+    protected void line(float x1, float y1, float x2, float y2, float th, int argb) {
+        float px1 = bx + x1 * u, py1 = by + y1 * u, px2 = bx + x2 * u, py2 = by + y2 * u;
+        float len = (float) Math.hypot(px2 - px1, py2 - py1);
+        int r = Math.max(1, Math.round(th * u / 2));
+        int n = Math.max(1, (int) Math.ceil(len / Math.max(1f, r * 0.45f)));
+        for (int i = 0; i <= n; i++) {
+            float t = i / (float) n;
+            Gx.circle(Math.round(px1 + (px2 - px1) * t), Math.round(py1 + (py2 - py1) * t), r, argb);
+        }
+    }
 
-   protected String scoreLabel() {
-      return "Punkte";
-   }
+    /** Ring outline (board units). */
+    protected void ring(float cx, float cy, float r, float th, int argb) { Gx.ringAt(X(cx), Y(cy), Math.max(1, S(r)), Math.max(1, S(th)), argb); }
 
-   protected String bestText(long var1) {
-      return String.valueOf(var1);
-   }
+    /** Mouse position in board units. */
+    protected float bmx() { return (mx - bx) / u; }
+    protected float bmy() { return (my - by) / u; }
 
-   protected String overTitle() {
-      return "Game Over";
-   }
+    /** Left-aligned / centered text helpers in board units. */
+    protected void textL(String s, float x, float cy, float size, int weight, int argb) { Gx.textMid(s, X(x), Y(cy), size * u, weight, argb); }
 
-   protected boolean clickToStart() {
-      return true;
-   }
+    /** Small rounded button in board units; returns true when the mouse is over it. */
+    protected boolean button(String label, float x, float y, float w, float h, int base) {
+        float hx = bmx(), hy = bmy();
+        boolean hv = hx >= x && hy >= y && hx <= x + w && hy <= y + h;
+        box(x, y, w, h, Math.min(h / 2, 8), hv ? Gx.mix(base, 0xFFFFFFFF, 0.15f) : base);
+        text(label, x + w / 2, y + h / 2, Math.min(9, h * 0.42f), Fonts.BOLD, 0xFFFFFFFF);
+        return hv;
+    }
 
-   protected void start() {
-      this.reset();
-      this.score = 0L;
-      this.time = 0.0F;
-      this.record = false;
-      this.state = GameView.State.PLAYING;
-      this.stateAt = System.currentTimeMillis();
-   }
+    protected static boolean in(float x, float y, float rx, float ry, float rw, float rh) { return x >= rx && y >= ry && x <= rx + rw && y <= ry + rh; }
 
-   protected void gameOver() {
-      this.gameOver(true);
-   }
+    // ------------------------------------------------------------------ frame
+    /** The window is at least this wide so the title bar never gets cut off on narrow games. */
+    private static final float MIN_BOARD = 360;
+    @Override public float designW() { return Math.max(boardW(), MIN_BOARD) + 60; }
+    @Override public float designH() { return boardH() + 110; }
+    @Override public float openMs() { return 320; }
 
-   protected void gameOver(boolean var1) {
-      if (this.state != GameView.State.OVER) {
-         this.state = GameView.State.OVER;
-         this.stateAt = System.currentTimeMillis();
-         this.record = var1 && GameInfo.submit(this.info.id, this.score);
-         // Counted results go to the LEGO server, which awards LEGO Coins (daily cap).
-         if (var1) dev.lego.net.LegoAuth.reportGame(this.info.id, this.score, this.record);
-         Sound.play(this.record ? "minecraft:ui.toast.challenge_complete" : "minecraft:block.note_block.bass", this.record ? 1.2F : 0.7F, 0.35F);
-      }
-   }
-
-   protected int X(float var1) {
-      return Math.round(this.bx + var1 * this.u);
-   }
-
-   protected int Y(float var1) {
-      return Math.round(this.by + var1 * this.u);
-   }
-
-   protected int S(float var1) {
-      return Math.round(var1 * this.u);
-   }
-
-   protected void box(float var1, float var2, float var3, float var4, float var5, int var6) {
-      Gx.rect(this.X(var1), this.Y(var2), this.S(var3), this.S(var4), this.S(var5), var6);
-   }
-
-   protected void boxV(float var1, float var2, float var3, float var4, float var5, int var6, int var7) {
-      Gx.rectV(this.X(var1), this.Y(var2), this.S(var3), this.S(var4), this.S(var5), var6, var7);
-   }
-
-   protected void circle(float var1, float var2, float var3, int var4) {
-      Gx.circle(this.X(var1), this.Y(var2), Math.max(1, this.S(var3)), var4);
-   }
-
-   protected void text(String var1, float var2, float var3, float var4, int var5, int var6) {
-      Gx.textCenter(var1, this.X(var2), this.Y(var3), var4 * this.u, var5, var6);
-   }
-
-   protected void brick(float var1, float var2, float var3, float var4, int var5) {
-      float var6 = Math.min(var3, var4) * 0.18F;
-      this.boxV(var1, var2, var3, var4, var6, Gx.mix(var5, -1, 0.18F), Gx.mix(var5, -16777216, 0.12F));
-      Gx.outline(
-         this.X(var1),
-         this.Y(var2),
-         this.S(var3),
-         this.S(var4),
-         this.S(var6),
-         Math.max(1, this.S(Math.min(var3, var4) * 0.05F)),
-         Gx.withAlpha(Gx.mix(var5, -16777216, 0.45F), 0.7F)
-      );
-      float var7 = Math.min(var3, var4) * 0.17F;
-      int var8 = Math.max(1, Math.round(var3 / var4));
-
-      for (int var9 = 0; var9 < Math.min(var8, 4); var9++) {
-         float var10 = var1 + var3 * (var9 + 0.5F) / Math.min(var8, 4);
-         this.circle(var10, var2 + var4 * 0.42F, var7, Gx.mix(var5, -16777216, 0.2F));
-         this.circle(var10, var2 + var4 * 0.38F, var7 * 0.9F, Gx.mix(var5, -1, 0.22F));
-      }
-   }
-
-   @Override
-   public float designW() {
-      return this.boardW() + 60.0F;
-   }
-
-   @Override
-   public float designH() {
-      return this.boardH() + 110.0F;
-   }
-
-   @Override
-   public float openMs() {
-      return 320.0F;
-   }
-
-   @Override
-   public final void draw() {
-      if (!this.initialized) {
-         this.initialized = true;
-         this.reset();
-      }
-
-      if (this.state == GameView.State.PLAYING) {
-         for (this.acc = this.acc + Math.min(0.1F, Gx.dt); this.acc >= 0.016666668F && this.state == GameView.State.PLAYING; this.acc -= 0.016666668F) {
-            this.update(0.016666668F);
-            this.time += 0.016666668F;
-         }
-      } else {
-         this.acc = 0.0F;
-      }
-
-      float var1 = Ease.outQuint(this.open);
-      Gx.fill(0, 0, this.W, this.H, Gx.rgba(0, 0.35F * this.open));
-      int var2 = this.p(this.boardW());
-      int var3 = this.p(this.boardH());
-      int var4 = var2 + this.p(28.0);
-      int var5 = var3 + this.p(72.0);
-      int var6 = (this.W - var4) / 2;
-      int var7 = (this.H - var5) / 2;
-      Gx.pushAlpha(var1);
-      Gx.push();
-      Gx.scaleAt(this.W / 2.0F, this.H / 2.0F, 0.94F + 0.06F * var1);
-      Gx.shadow(var6, var7, var4, var5, this.p(18.0), this.p(14.0), 0.55F);
-      Gx.rect(var6, var7, var4, var5, this.p(18.0), Style.bg);
-      Gx.outline(var6, var7, var4, var5, this.p(18.0), Math.max(1, this.p(0.6)), Style.stroke);
-      int var8 = var7 + this.p(14.0);
-      int var9 = this.p(30.0);
-      boolean var10 = this.hover(var6 + this.p(14.0), var8, var9, var9);
-      Gx.rect(var6 + this.p(14.0), var8, var9, var9, this.p(9.0), var10 ? Style.surfaceHover : Style.surface);
-      Gx.icon("back", var6 + this.p(14.0) + var9 / 2.0F - this.pf(1.0), var8 + var9 / 2.0F, this.pf(14.0), Style.text);
-      Kit.hit(var6 + this.p(14.0), var8, var9, var9).click(this::back);
-      int var11 = this.p(30.0);
-      Gx.rect(var6 + this.p(52.0), var8, var11, var11, this.p(9.0), Gx.withAlpha(this.info.color, 0.2F));
-      Gx.icon(this.info.icon, var6 + this.p(52.0) + var11 / 2.0F, var8 + var11 / 2.0F, this.pf(16.0), this.info.color);
-      Gx.text(Fonts.ellipsize(this.info.name, 3, this.pf(12.5), var4 - this.p(290.0)), var6 + this.p(90.0), var8 + this.pf(1.0), this.pf(12.5), 3, Style.text);
-      int var12 = this.p(84.0);
-      int var13 = this.p(32.0);
-      int var14 = var6 + var4 - this.p(14.0) - var12;
-      Gx.text(
-         Fonts.ellipsize(this.info.tagline, 1, this.pf(7.2F), var14 - var12 - this.p(18.0) - (var6 + this.p(90.0))),
-         var6 + this.p(90.0),
-         var8 + this.pf(18.0),
-         this.pf(7.2F),
-         1,
-         Style.sub
-      );
-      this.scoreBox(var14, var8 - this.p(1.0), var12, var13, "REKORD", GameInfo.hasBest(this.info.id) ? this.bestText(GameInfo.best(this.info.id)) : "-", false);
-      this.scoreBox(var14 - var12 - this.p(8.0), var8 - this.p(1.0), var12, var13, this.scoreLabel().toUpperCase(Locale.ROOT), this.scoreText(), true);
-      this.bx = var6 + this.p(14.0);
-      this.by = var7 + this.p(58.0);
-      this.u = this.P;
-      Gx.rect(this.bx, this.by, var2, var3, this.p(12.0), Style.light ? -1446928 : -16053232);
-      Gx.clip(this.bx, this.by, var2, var3);
-
-      try {
-         this.render();
-      } catch (Throwable var16) {
-         LegoClient.LOG("Spiel-Fehler: " + var16);
-      }
-
-      Gx.unclip();
-      Gx.outline(this.bx, this.by, var2, var3, this.p(12.0), Math.max(1, this.p(0.6)), Style.stroke);
-      Kit.hit(this.bx, this.by, var2, var3).drag((var1x, var2x) -> {
-         float var3x = (var1x - this.bx) / this.u;
-         float var4x = (var2x - this.by) / this.u;
-         if (this.dragStarted) {
-            this.onDrag(var3x, var4x);
-         } else {
-            this.dragStarted = true;
-            this.boardPress(var3x, var4x, 0);
-         }
-      }).right(() -> this.boardPress((this.mx - this.bx) / this.u, (this.my - this.by) / this.u, 1));
-      this.overlay(this.bx, this.by, var2, var3);
-      Gx.pop();
-      Gx.popAlpha();
-   }
-
-   private void boardPress(float var1, float var2, int var3) {
-      if (this.state == GameView.State.READY && this.clickToStart()) {
-         this.start();
-         Sound.click();
-      } else {
-         if (this.state == GameView.State.PLAYING) {
-            this.onClick(var1, var2, var3);
-         }
-      }
-   }
-
-   @Override
-   public boolean mouseUp(float var1, float var2, int var3) {
-      if (this.dragStarted && this.state == GameView.State.PLAYING) {
-         this.onRelease((var1 - this.bx) / this.u, (var2 - this.by) / this.u, var3);
-      }
-
-      this.dragStarted = false;
-      return super.mouseUp(var1, var2, var3);
-   }
-
-   private void scoreBox(int var1, int var2, int var3, int var4, String var5, String var6, boolean var7) {
-      Gx.rect(var1, var2, var3, var4, this.p(8.0), var7 ? Gx.withAlpha(Style.accent, 0.14F) : Style.surface);
-      Gx.textCenter(var5, var1 + var3 / 2.0F, var2 + this.pf(9.0), this.pf(5.6F), 3, var7 ? Style.accent : Style.muted);
-      Gx.textCenter(var6, var1 + var3 / 2.0F, var2 + this.pf(21.5), this.pf(10.0), 3, Style.text);
-   }
-
-   private void overlay(int var1, int var2, int var3, int var4) {
-      float var5 = (float)(System.currentTimeMillis() - this.stateAt) / 1000.0F;
-      if (this.state != GameView.State.PLAYING) {
-         float var6 = Ease.outCubic(Math.min(1.0F, var5 / 0.25F));
-         Gx.pushAlpha(var6);
-         Gx.rect(var1, var2, var3, var4, this.p(12.0), Gx.rgba(Style.light ? 15987959 : 460811, 0.82F));
-         int var7 = var1 + var3 / 2;
-         if (this.state == GameView.State.READY) {
-            int var8 = var2 + var4 / 2 - this.p(56.0);
-            Gx.glow(var7, var8, this.p(60.0), Gx.withAlpha(this.info.color, 0.25F));
-            Gx.icon(this.info.icon, var7, var8, this.pf(34.0), this.info.color);
-            Gx.textCenter(this.info.name, var7, var8 + this.pf(38.0), this.pf(15.0), 3, Style.text);
-            List var9 = Fonts.wrap(this.info.howTo, 1, this.pf(8.2F), var3 - this.p(60.0), 4);
-            float var10 = var8 + this.pf(58.0);
-
-            for (String var12 : (Iterable<String>) (Iterable<?>) (var9)) {
-               Gx.textCenter(var12, var7, var10, this.pf(8.2F), 1, Style.sub);
-               var10 += this.pf(12.5);
+    @Override
+    public final void draw() {
+        if (!initialized) { initialized = true; reset(); }
+        // fixed-step update
+        if (state == State.PLAYING) {
+            acc += Math.min(0.1f, Gx.dt);
+            while (acc >= 1 / 60f && state == State.PLAYING) {
+                update(1 / 60f);
+                time += 1 / 60f;
+                acc -= 1 / 60f;
             }
+        } else acc = 0;
 
-            float var20 = this.pf(7.4F);
-            int var21 = Math.round(Gx.width(this.info.controls, var20, 2)) + this.p(34.0);
-            int var13 = this.p(22.0);
-            int var14 = var7 - var21 / 2;
-            int var15 = Math.round(var10 + this.pf(6.0));
-            Gx.rect(var14, var15, var21, var13, var13 / 2, Style.surface2);
-            Gx.icon("keys", var14 + this.p(14.0), var15 + var13 / 2.0F, this.pf(10.0), Style.sub);
-            Gx.textMid(this.info.controls, var14 + this.p(25.0), var15 + var13 / 2.0F, var20, 2, Style.sub);
-            float var16 = 0.55F + 0.45F * (float)Math.sin(System.currentTimeMillis() / 350.0);
-            Gx.textSpaced(
-               this.clickToStart() ? "KLICK ODER LEERTASTE ZUM STARTEN" : "LEERTASTE ZUM STARTEN",
-               var7,
-               var15 + var13 + this.pf(20.0),
-               this.pf(7.4F),
-               3,
-               Gx.withAlpha(Style.accent, var16),
-               this.pf(1.4F)
-            );
-         } else if (this.state == GameView.State.PAUSED) {
-            int var17 = var2 + var4 / 2 - this.p(30.0);
-            Gx.icon("pause", var7, var17, this.pf(30.0), Style.text);
-            Gx.textCenter("Pause", var7, var17 + this.pf(32.0), this.pf(15.0), 3, Style.text);
-            this.buttons(var7, var17 + this.p(54.0), "Weiter", "play", () -> {
-               this.state = GameView.State.PLAYING;
-               this.stateAt = System.currentTimeMillis();
-            }, "Neustart", "reset", this::start);
-         } else {
-            int var18 = var2 + var4 / 2 - this.p(52.0);
-            if (this.record) {
-               float var19 = 1.0F + 0.08F * (float)Math.sin(var5 * 6.0F);
-               Gx.push();
-               Gx.scaleAt(var7, var18, var19);
-               Gx.glow(var7, var18, this.p(60.0), 1442825533);
-               Gx.icon("trophy", var7, var18, this.pf(34.0), -15043);
-               Gx.pop();
-            } else {
-               Gx.icon("skull", var7, var18, this.pf(30.0), Style.sub);
-            }
+        float t = Ease.outQuint(open);
+        Gx.fill(0, 0, W, H, Gx.rgba(0x000000, 0.35f * open));
+        int bw = p(boardW()), bh = p(boardH());
+        int pw = Math.max(bw, p(MIN_BOARD)) + p(28), ph = bh + p(72);
+        int px = (W - pw) / 2, py = (H - ph) / 2;
+        Gx.pushAlpha(t);
+        Gx.push();
+        Gx.scaleAt(W / 2f, H / 2f, 0.94f + 0.06f * t);
+        Gx.shadow(px, py, pw, ph, p(18), p(14), 0.55f);
+        Gx.rect(px, py, pw, ph, p(18), Style.bg);
+        Gx.outline(px, py, pw, ph, p(18), Math.max(1, p(0.6)), Style.stroke);
 
-            Gx.textCenter(this.record ? "Neuer Rekord!" : this.overTitle(), var7, var18 + this.pf(36.0), this.pf(15.0), 3, this.record ? -15043 : Style.text);
-            Gx.textCenter(this.scoreLabel() + ": " + this.scoreText(), var7, var18 + this.pf(56.0), this.pf(10.0), 2, Style.sub);
+        // top bar
+        int tb = py + p(14);
+        int bs = p(30);
+        boolean hb = hover(px + p(14), tb, bs, bs);
+        Gx.rect(px + p(14), tb, bs, bs, p(9), hb ? Style.surfaceHover : Style.surface);
+        Gx.icon("back", px + p(14) + bs / 2f - pf(1), tb + bs / 2f, pf(14), Style.text);
+        Kit.hit(px + p(14), tb, bs, bs).click(this::back);
+        int is = p(30);
+        Gx.rect(px + p(52), tb, is, is, p(9), Gx.withAlpha(info.color, 0.2f));
+        Gx.icon(info.icon, px + p(52) + is / 2f, tb + is / 2f, pf(16), info.color);
+        Gx.text(Fonts.ellipsize(info.name, Fonts.BOLD, pf(12.5f), pw - p(290)), px + p(90), tb + pf(1), pf(12.5f), Fonts.BOLD, Style.text);
+        // score boxes
+        int sw = p(84), sh = p(32);
+        int sx = px + pw - p(14) - sw;
+        Gx.text(Fonts.ellipsize(info.tagline, Fonts.REGULAR, pf(7.2f), sx - sw - p(18) - (px + p(90))), px + p(90), tb + pf(18), pf(7.2f), Fonts.REGULAR, Style.sub);
+        scoreBox(sx, tb - p(1), sw, sh, "REKORD", GameInfo.hasBest(info.id) ? bestText(GameInfo.best(info.id)) : "-", false);
+        scoreBox(sx - sw - p(8), tb - p(1), sw, sh, scoreLabel().toUpperCase(java.util.Locale.ROOT), scoreText(), true);
+
+        // board
+        bx = px + (pw - bw) / 2;
+        by = py + p(58);
+        u = P;
+        Gx.rect(bx, by, bw, bh, p(12), Style.light ? 0xFFE9EBF0 : 0xFF0B0C10);
+        Gx.clip(bx, by, bw, bh);
+        try { render(); } catch (Throwable e) { dev.lego.LegoClient.LOG("Spiel-Fehler: " + e); }
+        Gx.unclip();
+        Gx.outline(bx, by, bw, bh, p(12), Math.max(1, p(0.6)), Style.stroke);
+        // board input
+        Kit.hit(bx, by, bw, bh).drag((mx, my) -> {
+            float gx = (mx - bx) / u, gy = (my - by) / u;
+            if (dragStarted) onDrag(gx, gy);
+            else { dragStarted = true; boardPress(gx, gy, 0); }
+        }).right(() -> boardPress((this.mx - bx) / u, (this.my - by) / u, 1));
+
+        // overlays
+        overlay(bx, by, bw, bh);
+        Gx.pop();
+        Gx.popAlpha();
+    }
+
+    private boolean dragStarted = false;
+
+    private void boardPress(float gx, float gy, int button) {
+        if (state == State.READY && clickToStart()) { start(); Sound.click(); return; }
+        if (state == State.PLAYING) onClick(gx, gy, button);
+    }
+
+    @Override
+    public boolean mouseUp(float x, float y, int button) {
+        if (dragStarted && state == State.PLAYING) onRelease((x - bx) / u, (y - by) / u, button);
+        dragStarted = false;
+        return super.mouseUp(x, y, button);
+    }
+
+    private void scoreBox(int x, int y, int w, int h, String label, String value, boolean main) {
+        Gx.rect(x, y, w, h, p(8), main ? Gx.withAlpha(Style.accent, 0.14f) : Style.surface);
+        Gx.textCenter(label, x + w / 2f, y + pf(9), pf(5.6f), Fonts.BOLD, main ? Style.accent : Style.muted);
+        Gx.textCenter(value, x + w / 2f, y + pf(21.5f), pf(10), Fonts.BOLD, Style.text);
+    }
+
+    private void overlay(int x, int y, int w, int h) {
+        float since = (System.currentTimeMillis() - stateAt) / 1000f;
+        if (state == State.PLAYING) return;
+        float a = Ease.outCubic(Math.min(1, since / 0.25f));
+        Gx.pushAlpha(a);
+        Gx.rect(x, y, w, h, p(12), Gx.rgba(Style.light ? 0xF3F4F7 : 0x07080B, 0.82f));
+        int cx = x + w / 2;
+        if (state == State.READY) {
+            int cy = y + h / 2 - p(56);
+            Gx.glow(cx, cy, p(60), Gx.withAlpha(info.color, 0.25f));
+            Gx.icon(info.icon, cx, cy, pf(34), info.color);
+            Gx.textCenter(info.name, cx, cy + pf(38), pf(15), Fonts.BOLD, Style.text);
+            List<String> lines = Fonts.wrap(info.howTo, Fonts.REGULAR, pf(8.2f), w - p(60), 4);
+            float ly = cy + pf(58);
+            for (String l : lines) { Gx.textCenter(l, cx, ly, pf(8.2f), Fonts.REGULAR, Style.sub); ly += pf(12.5f); }
+            // controls chip
+            float cfs = pf(7.4f);
+            int cw = Math.round(Gx.width(info.controls, cfs, Fonts.MEDIUM)) + p(34), ch = p(22);
+            int ccx = cx - cw / 2, ccy = Math.round(ly + pf(6));
+            Gx.rect(ccx, ccy, cw, ch, ch / 2, Style.surface2);
+            Gx.icon("keys", ccx + p(14), ccy + ch / 2f, pf(10), Style.sub);
+            Gx.textMid(info.controls, ccx + p(25), ccy + ch / 2f, cfs, Fonts.MEDIUM, Style.sub);
+            float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 350.0);
+            Gx.textSpaced(clickToStart() ? "KLICK ODER LEERTASTE ZUM STARTEN" : "LEERTASTE ZUM STARTEN", cx, ccy + ch + pf(20), pf(7.4f), Fonts.BOLD, Gx.withAlpha(Style.accent, pulse), pf(1.4f));
+            if (hasAi()) levels(cx, Math.round(ccy + ch + pf(36)));
+        } else if (state == State.PAUSED) {
+            int cy = y + h / 2 - p(30);
+            Gx.icon("pause", cx, cy, pf(30), Style.text);
+            Gx.textCenter("Pause", cx, cy + pf(32), pf(15), Fonts.BOLD, Style.text);
+            buttons(cx, cy + p(54), "Weiter", "play", () -> { state = State.PLAYING; stateAt = System.currentTimeMillis(); }, "Neustart", "reset", this::start);
+        } else {
+            int cy = y + h / 2 - p(52);
+            if (record) {
+                float s = 1 + 0.08f * (float) Math.sin(since * 6);
+                Gx.push();
+                Gx.scaleAt(cx, cy, s);
+                Gx.glow(cx, cy, p(60), 0x55FFC53D);
+                Gx.icon("trophy", cx, cy, pf(34), 0xFFFFC53D);
+                Gx.pop();
+            } else Gx.icon("skull", cx, cy, pf(30), Style.sub);
+            Gx.textCenter(record ? "Neuer Rekord!" : overTitle(), cx, cy + pf(36), pf(15), Fonts.BOLD, record ? 0xFFFFC53D : Style.text);
+            Gx.textCenter(scoreLabel() + ": " + scoreText(), cx, cy + pf(56), pf(10), Fonts.MEDIUM, Style.sub);
             int coins = dev.lego.net.LegoAuth.lastCoins;
-            if (coins > 0) Gx.textCenter("+" + coins + " LEGO Coins", var7, var18 + this.pf(71.0), this.pf(9.0), 2, -15043);
-            this.buttons(var7, var18 + this.p(88.0), "Nochmal", "reset", this::start, "Zurück", "back", this::back);
-         }
+            if (coins > 0) Gx.textCenter("+" + coins + " LEGO Coins", cx + pf(110), cy + pf(56), pf(8.5f), Fonts.BOLD, 0xFFFFC53D);
+            buttons(cx, cy + p(78), "Nochmal", "reset", this::start, "Zurück", "back", this::back);
+            if (hasAi()) levels(cx, cy + p(120));
+        }
+        Gx.popAlpha();
+    }
 
-         Gx.popAlpha();
-      }
-   }
+    /** KI-Stärke: four chips, centered at cx. */
+    private void levels(int cx, int y) {
+        String[] l = GameInfo.LEVELS;
+        float fs = pf(7.2f);
+        int h = p(22), gap = p(5), padX = p(10);
+        int[] ws = new int[l.length];
+        int total = Math.round(Gx.width("KI:", fs, Fonts.BOLD)) + p(8);
+        for (int i = 0; i < l.length; i++) { ws[i] = Math.round(Gx.width(l[i], fs, Fonts.BOLD)) + padX * 2; total += ws[i] + (i > 0 ? gap : 0); }
+        int x = cx - total / 2;
+        Gx.textMid("KI:", x, y + h / 2f, fs, Fonts.BOLD, Style.sub);
+        x += Math.round(Gx.width("KI:", fs, Fonts.BOLD)) + p(8);
+        int cur = aiLevel();
+        for (int i = 0; i < l.length; i++) {
+            boolean sel = i == cur, hv = hover(x, y, ws[i], h);
+            Gx.rect(x, y, ws[i], h, h / 2, sel ? Style.accent : hv ? Style.surfaceHover : Style.surface2);
+            Gx.textCenter(l[i], x + ws[i] / 2f, y + h / 2f, fs, Fonts.BOLD, sel ? Style.accentText : Style.text);
+            final int lv = i;
+            Kit.hit(x, y, ws[i], h).click(() -> { GameInfo.setDifficulty(info.id, lv); Sound.click(); });
+            x += ws[i] + gap;
+        }
+    }
 
-   private void buttons(int var1, int var2, String var3, String var4, Runnable var5, String var6, String var7, Runnable var8) {
-      int var9 = this.p(110.0);
-      int var10 = this.p(30.0);
-      int var11 = this.p(10.0);
-      int var12 = var1 - var9 - var11 / 2;
-      int var13 = var1 + var11 / 2;
-      boolean var14 = this.hover(var12, var2, var9, var10);
-      boolean var15 = this.hover(var13, var2, var9, var10);
-      Kit.button("g1" + var3, var3, var4, var12, var2, var9, var10, this.P, true, var14);
-      Kit.button("g2" + var6, var6, var7, var13, var2, var9, var10, this.P, false, var15);
-      Kit.hit(var12, var2, var9, var10).click(var5);
-      Kit.hit(var13, var2, var9, var10).click(var8);
-   }
+    private void buttons(int cx, int y, String l1, String i1, Runnable a1, String l2, String i2, Runnable a2) {
+        int bw = p(110), bh = p(30), gap = p(10);
+        int x1 = cx - bw - gap / 2, x2 = cx + gap / 2;
+        boolean h1 = hover(x1, y, bw, bh), h2 = hover(x2, y, bw, bh);
+        Kit.button("g1" + l1, l1, i1, x1, y, bw, bh, P, true, h1);
+        Kit.button("g2" + l2, l2, i2, x2, y, bw, bh, P, false, h2);
+        Kit.hit(x1, y, bw, bh).click(a1);
+        Kit.hit(x2, y, bw, bh).click(a2);
+    }
 
-   protected void back() {
-      if (this.host != null) {
-         this.host.open(new HubView(HubView.Section.GAMES));
-      }
-   }
+    protected void back() {
+        if (host != null) host.open(new HubView(HubView.Section.GAMES));
+    }
 
-   @Override
-   public boolean key(int var1, int var2) {
-      if (var1 < 0) {
-         if (this.state == GameView.State.PLAYING) {
-            this.onKeyUp(-1 - var1);
-         }
-
-         return true;
-      } else if (var1 == 256) {
-         if (this.state == GameView.State.PLAYING) {
-            this.state = GameView.State.PAUSED;
-            this.stateAt = System.currentTimeMillis();
-         } else {
-            this.back();
-         }
-
-         return true;
-      } else if (var1 != 80 || this.state != GameView.State.PLAYING && this.state != GameView.State.PAUSED) {
-         if (var1 != 82 || this.state != GameView.State.OVER && this.state != GameView.State.PAUSED) {
-            if ((var1 == 32 || var1 == 257) && (this.state == GameView.State.READY || this.state == GameView.State.OVER)) {
-               this.start();
-               if (var1 == 32 && this.state == GameView.State.PLAYING) {
-                  this.onKey(var1);
-               }
-
-               return true;
-            } else {
-               if (this.state == GameView.State.PLAYING) {
-                  this.onKey(var1);
-               }
-
-               return true;
-            }
-         } else {
-            this.start();
+    // ------------------------------------------------------------------ input
+    @Override
+    public boolean key(int key, int mods) {
+        if (key < 0) { if (state == State.PLAYING) onKeyUp(-1 - key); return true; }
+        if (key == K_ESC) {
+            if (state == State.PLAYING) { state = State.PAUSED; stateAt = System.currentTimeMillis(); }
+            else back();
             return true;
-         }
-      } else {
-         this.state = this.state == GameView.State.PLAYING ? GameView.State.PAUSED : GameView.State.PLAYING;
-         this.stateAt = System.currentTimeMillis();
-         return true;
-      }
-   }
-
-   protected static enum State {
-      READY,
-      PLAYING,
-      PAUSED,
-      OVER;
-   }
+        }
+        if (key == K_P && (state == State.PLAYING || state == State.PAUSED)) {
+            state = state == State.PLAYING ? State.PAUSED : State.PLAYING;
+            stateAt = System.currentTimeMillis();
+            return true;
+        }
+        if (key == K_R && (state == State.OVER || state == State.PAUSED)) { start(); return true; }
+        if ((key == K_SPACE || key == K_ENTER) && (state == State.READY || state == State.OVER)) { start(); if (key == K_SPACE && state == State.PLAYING) onKey(key); return true; }
+        if (state == State.PLAYING) onKey(key);
+        return true;
+    }
 }

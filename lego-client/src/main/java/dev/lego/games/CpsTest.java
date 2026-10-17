@@ -1,320 +1,234 @@
 package dev.lego.games;
 
-import dev.lego.ui.Ease;
-import dev.lego.ui.Gx;
-import dev.lego.ui.Sound;
-import dev.lego.ui.Style;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import dev.lego.ui.Ease;
+import dev.lego.ui.Fonts;
+import dev.lego.ui.Gx;
+import dev.lego.ui.Sound;
+import dev.lego.ui.Style;
+
+/** CPS test: click as fast as possible for 10 seconds. Score = CPS * 10. */
 public final class CpsTest extends GameView {
-   private static final float W = 360.0F;
-   private static final float H = 260.0F;
-   private static final float DURATION = 10.0F;
-   private static final int BUCKETS = 20;
-   private static final float GRAPH_Y = 196.0F;
-   private static final float GRAPH_H = 50.0F;
-   private boolean running;
-   private boolean finished;
-   private long startNs;
-   private int clicks;
-   private final int[] buckets = new int[20];
-   private final List<float[]> ripples = new ArrayList<>();
-   private final List<float[]> parts = new ArrayList<>();
-   private float counterPop;
-   private float finishT;
-   private float graphMax = 12.0F;
+    private static final float W = 360, H = 260, DURATION = 10;
+    private static final int BUCKETS = 20;   // 0.5 s each
+    private static final float GRAPH_Y = 196, GRAPH_H = 50;
 
-   public CpsTest() {
-      super("cps");
-   }
+    private boolean running, finished;
+    private long startNs;
+    private int clicks;
+    private final int[] buckets = new int[BUCKETS];
+    private final List<float[]> ripples = new ArrayList<>();   // x, y, age, button
+    private final List<float[]> parts = new ArrayList<>();     // x, y, vx, vy, age, life, size, color
+    private float counterPop, finishT;
+    private float graphMax = 12;
 
-   @Override
-   protected float boardW() {
-      return 360.0F;
-   }
+    public CpsTest() { super("cps"); }
 
-   @Override
-   protected float boardH() {
-      return 260.0F;
-   }
+    @Override protected float boardW() { return W; }
+    @Override protected float boardH() { return H; }
+    @Override protected String overTitle() { return "Fertig!"; }
+    @Override protected String scoreLabel() { return "CPS"; }
+    @Override protected String bestText(long best) { return String.format(Locale.ROOT, "%.1f", best / 10.0); }
 
-   @Override
-   protected String overTitle() {
-      return "Fertig!";
-   }
+    @Override
+    protected String scoreText() {
+        if (finished || state == State.OVER) return String.format(Locale.ROOT, "%.1f", score / 10.0);
+        return String.format(Locale.ROOT, "%.1f", liveCps());
+    }
 
-   @Override
-   protected String scoreLabel() {
-      return "CPS";
-   }
+    @Override
+    protected void reset() {
+        running = finished = false;
+        clicks = 0;
+        java.util.Arrays.fill(buckets, 0);
+        ripples.clear();
+        parts.clear();
+        counterPop = finishT = 0;
+        graphMax = 12;
+    }
 
-   @Override
-   protected String bestText(long var1) {
-      return String.format(Locale.ROOT, "%.1f", var1 / 10.0);
-   }
+    private float elapsed() {
+        if (!running) return 0;
+        return Math.min(DURATION, (System.nanoTime() - startNs) / 1e9f);
+    }
 
-   @Override
-   protected String scoreText() {
-      return !this.finished && this.state != GameView.State.OVER
-         ? String.format(Locale.ROOT, "%.1f", this.liveCps())
-         : String.format(Locale.ROOT, "%.1f", this.score / 10.0);
-   }
+    private float liveCps() {
+        if (!running || clicks == 0) return 0;
+        return clicks / Math.max(1f, elapsed());
+    }
 
-   @Override
-   protected void reset() {
-      this.running = this.finished = false;
-      this.clicks = 0;
-      Arrays.fill(this.buckets, 0);
-      this.ripples.clear();
-      this.parts.clear();
-      this.counterPop = this.finishT = 0.0F;
-      this.graphMax = 12.0F;
-   }
+    // ------------------------------------------------------------------ input
+    @Override
+    protected void onClick(float x, float y, int button) {
+        if (finished) return;
+        if (!running) {
+            running = true;
+            startNs = System.nanoTime();
+        }
+        float e = elapsed();
+        if (e >= DURATION) return;
+        clicks++;
+        buckets[Math.min(BUCKETS - 1, (int) (e / (DURATION / BUCKETS)))]++;
+        counterPop = 1;
+        ripples.add(new float[]{x, y, 0, button});
+        int col = button == 0 ? Style.accent : info.color;
+        for (int i = 0; i < 5; i++) {
+            float a = (float) (rnd.nextFloat() * Math.PI * 2), s = 30 + rnd.nextFloat() * 70;
+            parts.add(new float[]{x, y, (float) Math.cos(a) * s, (float) Math.sin(a) * s - 20, 0, 0.35f + rnd.nextFloat() * 0.25f, 1.6f + rnd.nextFloat() * 1.6f, i % 2 == 0 ? col : 0xFFFFFFFF});
+        }
+        Sound.play("minecraft:ui.button.click", 1.5f + rnd.nextFloat() * 0.4f, 0.12f);
+    }
 
-   private float elapsed() {
-      return !this.running ? 0.0F : Math.min(10.0F, (float)(System.nanoTime() - this.startNs) / 1.0E9F);
-   }
+    // ------------------------------------------------------------------ update
+    @Override
+    protected void update(float dt) {
+        counterPop = Math.max(0, counterPop - dt * 6);
+        for (float[] r : ripples) r[2] += dt;
+        ripples.removeIf(r -> r[2] > 0.55f);
+        for (float[] p : parts) {
+            p[0] += p[2] * dt;
+            p[1] += p[3] * dt;
+            p[3] += 300 * dt;
+            p[4] += dt;
+        }
+        parts.removeIf(p -> p[4] >= p[5]);
+        int mb = 0;
+        for (int b : buckets) mb = Math.max(mb, b * 2);
+        graphMax += (Math.max(12, mb + 3) - graphMax) * Math.min(1, dt * 6);
 
-   private float liveCps() {
-      return this.running && this.clicks != 0 ? this.clicks / Math.max(1.0F, this.elapsed()) : 0.0F;
-   }
+        if (running && !finished && elapsed() >= DURATION) {
+            finished = true;
+            score = Math.round(clicks / DURATION * 10);
+            Sound.play("minecraft:block.note_block.pling", 1.2f, 0.35f);
+        }
+        if (finished) {
+            finishT += dt;
+            if (finishT > 0.6f) gameOver(true);
+        }
+    }
 
-   @Override
-   protected void onClick(float var1, float var2, int var3) {
-      if (!this.finished) {
-         if (!this.running) {
-            this.running = true;
-            this.startNs = System.nanoTime();
-         }
+    // ------------------------------------------------------------------ render
+    @Override
+    protected void render() {
+        float e = elapsed();
+        float prog = e / DURATION;
+        // background panel with Lego studs
+        boxV(0, 0, W, H, 12, Style.light ? 0xFFEDEFF4 : 0xFF11141B, Style.light ? 0xFFE1E4EB : 0xFF0A0C11);
+        int studA = Style.light ? 0x10000000 : 0x0BFFFFFF;
+        for (float y = 12; y < GRAPH_Y - 16; y += 18)
+            for (float x = 12; x < W; x += 18) circle(x, y, 3, studA);
+        float heat = running ? Math.min(1, liveCps() / 14f) : 0;
+        Gx.glow(X(W / 2), Y(96), S(150), Gx.withAlpha(Style.accent, 0.06f + 0.12f * heat));
 
-         float var4 = this.elapsed();
-         if (!(var4 >= 10.0F)) {
-            this.clicks++;
-            this.buckets[Math.min(19, (int)(var4 / 0.5F))]++;
-            this.counterPop = 1.0F;
-            this.ripples.add(new float[]{var1, var2, 0.0F, var3});
-            int var5 = var3 == 0 ? Style.accent : this.info.color;
+        // ripples
+        for (float[] r : ripples) {
+            float k = r[2] / 0.55f, ek = Ease.outCubic(k);
+            int col = r[3] == 0 ? Style.accent : info.color;
+            Gx.ringAt(X(r[0]), Y(r[1]), S(4 + ek * 26), Math.max(1, S(2.4f * (1 - k) + 0.3f)), Gx.withAlpha(col, 0.85f * (1 - k)));
+            if (k < 0.4f) circle(r[0], r[1], 3 * (1 - k / 0.4f), Gx.withAlpha(0xFFFFFFFF, 0.8f * (1 - k / 0.4f)));
+        }
 
-            for (int var6 = 0; var6 < 5; var6++) {
-               float var7 = (float)(this.rnd.nextFloat() * Math.PI * 2.0);
-               float var8 = 30.0F + this.rnd.nextFloat() * 70.0F;
-               this.parts
-                  .add(
-                     new float[]{
-                        var1,
-                        var2,
-                        (float)Math.cos(var7) * var8,
-                        (float)Math.sin(var7) * var8 - 20.0F,
-                        0.0F,
-                        0.35F + this.rnd.nextFloat() * 0.25F,
-                        1.6F + this.rnd.nextFloat() * 1.6F,
-                        var6 % 2 == 0 ? var5 : -1.0F
-                     }
-                  );
-            }
+        if (!running) {
+            // start prompt
+            float pulse = (float) (0.5 + 0.5 * Math.sin(time * 4));
+            float cx = W / 2, cy = 92;
+            Gx.ringAt(X(cx), Y(cy - 10), S(30 + pulse * 6), Math.max(1, S(1.2f)), Gx.withAlpha(Style.accent, 0.25f + 0.25f * (1 - pulse)));
+            Gx.glow(X(cx), Y(cy - 10), S(46), Gx.withAlpha(Style.accent, 0.18f));
+            circle(cx, cy - 10, 24, Gx.withAlpha(Style.accent, 0.16f));
+            Gx.icon("mouse", X(cx), Y(cy - 10), S(22), Style.accent);
+            text("Klick um zu starten", cx, cy + 34, 17, Fonts.BOLD, Style.text);
+            text("10 Sekunden  •  Links- und Rechtsklick zählen", cx, cy + 52, 8, Fonts.MEDIUM, Style.sub);
+        } else {
+            // timer bar + remaining time
+            float left = Math.max(0, DURATION - e);
+            box(16, 14, W - 32, 5, 2.5f, Style.light ? 0x14000000 : 0x14FFFFFF);
+            int bc = left < 3 ? Style.danger : Style.accent;
+            box(16, 14, (W - 32) * (1 - prog), 5, 2.5f, bc);
+            Gx.glow(X(16 + (W - 32) * (1 - prog)), Y(16.5f), S(9), Gx.withAlpha(bc, 0.6f));
+            Gx.icon("clock", X(20), Y(31), S(9), Style.sub);
+            Gx.textMid(String.format(Locale.ROOT, "%.2f s", left), X(28), Y(31), S(9), Fonts.BOLD, left < 3 ? Style.danger : Style.text);
+            Gx.textRight("CPS " + String.format(Locale.ROOT, "%.1f", finished ? score / 10f : liveCps()), X(W - 16), Y(31), S(9), Fonts.BOLD, Style.accent);
 
-            Sound.play("minecraft:ui.button.click", 1.5F + this.rnd.nextFloat() * 0.4F, 0.12F);
-         }
-      }
-   }
-
-   @Override
-   protected void update(float var1) {
-      this.counterPop = Math.max(0.0F, this.counterPop - var1 * 6.0F);
-
-      for (float[] var3 : this.ripples) {
-         var3[2] += var1;
-      }
-
-      this.ripples.removeIf(var0 -> var0[2] > 0.55F);
-
-      for (float[] var9 : this.parts) {
-         var9[0] += var9[2] * var1;
-         var9[1] += var9[3] * var1;
-         var9[3] += 300.0F * var1;
-         var9[4] += var1;
-      }
-
-      this.parts.removeIf(var0 -> var0[4] >= var0[5]);
-      int var8 = 0;
-
-      for (int var6 : this.buckets) {
-         var8 = Math.max(var8, var6 * 2);
-      }
-
-      this.graphMax = this.graphMax + (Math.max(12, var8 + 3) - this.graphMax) * Math.min(1.0F, var1 * 6.0F);
-      if (this.running && !this.finished && this.elapsed() >= 10.0F) {
-         this.finished = true;
-         this.score = Math.round(this.clicks / 10.0F * 10.0F);
-         Sound.play("minecraft:block.note_block.pling", 1.2F, 0.35F);
-      }
-
-      if (this.finished) {
-         this.finishT += var1;
-         if (this.finishT > 0.6F) {
-            this.gameOver(true);
-         }
-      }
-   }
-
-   @Override
-   protected void render() {
-      float var1 = this.elapsed();
-      float var2 = var1 / 10.0F;
-      this.boxV(0.0F, 0.0F, 360.0F, 260.0F, 12.0F, Style.light ? -1183756 : -15657957, Style.light ? -1973013 : -16118767);
-      int var3 = Style.light ? 268435456 : 201326591;
-
-      for (float var4 = 12.0F; var4 < 180.0F; var4 += 18.0F) {
-         for (float var5 = 12.0F; var5 < 360.0F; var5 += 18.0F) {
-            this.circle(var5, var4, 3.0F, var3);
-         }
-      }
-
-      float var11 = this.running ? Math.min(1.0F, this.liveCps() / 14.0F) : 0.0F;
-      Gx.glow(this.X(180.0F), this.Y(96.0F), this.S(150.0F), Gx.withAlpha(Style.accent, 0.06F + 0.12F * var11));
-
-      for (float[] var6 : this.ripples) {
-         float var7 = var6[2] / 0.55F;
-         float var8 = Ease.outCubic(var7);
-         int var9 = var6[3] == 0.0F ? Style.accent : this.info.color;
-         Gx.ringAt(
-            this.X(var6[0]),
-            this.Y(var6[1]),
-            this.S(4.0F + var8 * 26.0F),
-            Math.max(1, this.S(2.4F * (1.0F - var7) + 0.3F)),
-            Gx.withAlpha(var9, 0.85F * (1.0F - var7))
-         );
-         if (var7 < 0.4F) {
-            this.circle(var6[0], var6[1], 3.0F * (1.0F - var7 / 0.4F), Gx.withAlpha(-1, 0.8F * (1.0F - var7 / 0.4F)));
-         }
-      }
-
-      if (!this.running) {
-         float var13 = (float)(0.5 + 0.5 * Math.sin(this.time * 4.0F));
-         float var16 = 180.0F;
-         float var19 = 92.0F;
-         Gx.ringAt(
-            this.X(var16),
-            this.Y(var19 - 10.0F),
-            this.S(30.0F + var13 * 6.0F),
-            Math.max(1, this.S(1.2F)),
-            Gx.withAlpha(Style.accent, 0.25F + 0.25F * (1.0F - var13))
-         );
-         Gx.glow(this.X(var16), this.Y(var19 - 10.0F), this.S(46.0F), Gx.withAlpha(Style.accent, 0.18F));
-         this.circle(var16, var19 - 10.0F, 24.0F, Gx.withAlpha(Style.accent, 0.16F));
-         Gx.icon("mouse", this.X(var16), this.Y(var19 - 10.0F), this.S(22.0F), Style.accent);
-         this.text("Klick um zu starten", var16, var19 + 34.0F, 17.0F, 3, Style.text);
-         this.text("10 Sekunden  •  Links- und Rechtsklick zählen", var16, var19 + 52.0F, 8.0F, 2, Style.sub);
-      } else {
-         float var14 = Math.max(0.0F, 10.0F - var1);
-         this.box(16.0F, 14.0F, 328.0F, 5.0F, 2.5F, Style.light ? 335544320 : 352321535);
-         int var17 = var14 < 3.0F ? Style.danger : Style.accent;
-         this.box(16.0F, 14.0F, 328.0F * (1.0F - var2), 5.0F, 2.5F, var17);
-         Gx.glow(this.X(16.0F + 328.0F * (1.0F - var2)), this.Y(16.5F), this.S(9.0F), Gx.withAlpha(var17, 0.6F));
-         Gx.icon("clock", this.X(20.0F), this.Y(31.0F), this.S(9.0F), Style.sub);
-         Gx.textMid(String.format(Locale.ROOT, "%.2f s", var14), this.X(28.0F), this.Y(31.0F), this.S(9.0F), 3, var14 < 3.0F ? Style.danger : Style.text);
-         Gx.textRight(
-            "CPS " + String.format(Locale.ROOT, "%.1f", this.finished ? (float)this.score / 10.0F : this.liveCps()),
-            this.X(344.0F),
-            this.Y(31.0F),
-            this.S(9.0F),
-            3,
-            Style.accent
-         );
-         float var20 = 1.0F + 0.14F * Ease.outCubic(this.counterPop);
-         Gx.push();
-         Gx.scaleAt(this.X(180.0F), this.Y(96.0F), var20);
-         Gx.glow(this.X(180.0F), this.Y(96.0F), this.S(60.0F), Gx.withAlpha(Style.accent, 0.1F + 0.15F * this.counterPop));
-         this.text(String.valueOf(this.clicks), 180.0F, 94.0F, 52.0F, 3, Style.text);
-         Gx.pop();
-         this.text(this.finished ? "Zeit um!" : "KLICKS", 180.0F, 132.0F, 7.5F, 3, this.finished ? Style.accent : Style.muted);
-         if (this.finished) {
-            float var22 = Ease.outBack(Math.min(1.0F, this.finishT / 0.3F));
+            // big counter
+            float pop = 1 + 0.14f * Ease.outCubic(counterPop);
             Gx.push();
-            Gx.scaleAt(this.X(180.0F), this.Y(156.0F), var22);
-            String var23 = String.format(Locale.ROOT, "%.1f CPS", (float)this.score / 10.0F);
-            float var10 = Gx.width(var23, this.S(11.0F), 3) / this.u + 24.0F;
-            this.box(180.0F - var10 / 2.0F, 146.0F, var10, 20.0F, 10.0F, Gx.withAlpha(Style.accent, 0.2F));
-            this.text(var23, 180.0F, 156.0F, 11.0F, 3, Style.accent);
+            Gx.scaleAt(X(W / 2), Y(96), pop);
+            Gx.glow(X(W / 2), Y(96), S(60), Gx.withAlpha(Style.accent, 0.1f + 0.15f * counterPop));
+            text(String.valueOf(clicks), W / 2, 94, 52, Fonts.BOLD, Style.text);
             Gx.pop();
-         }
-      }
+            text(finished ? "Zeit um!" : "KLICKS", W / 2, 132, 7.5f, Fonts.BOLD, finished ? Style.accent : Style.muted);
+            if (finished) {
+                float fe = Ease.outBack(Math.min(1, finishT / 0.3f));
+                Gx.push();
+                Gx.scaleAt(X(W / 2), Y(156), fe);
+                String s = String.format(Locale.ROOT, "%.1f CPS", score / 10f);
+                float w = Gx.width(s, S(11), Fonts.BOLD) / u + 24;
+                box(W / 2 - w / 2, 146, w, 20, 10, Gx.withAlpha(Style.accent, 0.2f));
+                text(s, W / 2, 156, 11, Fonts.BOLD, Style.accent);
+                Gx.pop();
+            }
+        }
 
-      this.graph(var1);
+        graph(e);
 
-      for (float[] var18 : this.parts) {
-         float var21 = 1.0F - var18[4] / var18[5];
-         this.box(var18[0] - var18[6] / 2.0F, var18[1] - var18[6] / 2.0F, var18[6], var18[6], var18[6] * 0.25F, Gx.withAlpha((int)var18[7], var21));
-      }
-   }
+        // particles
+        for (float[] p : parts) {
+            float a = 1 - p[4] / p[5];
+            box(p[0] - p[6] / 2, p[1] - p[6] / 2, p[6], p[6], p[6] * 0.25f, Gx.withAlpha((int) p[7], a));
+        }
+    }
 
-   private void graph(float var1) {
-      float var2 = 16.0F;
-      float var3 = 328.0F;
-      float var4 = 196.0F;
-      float var5 = 50.0F;
-      this.box(var2 - 6.0F, var4 - 12.0F, var3 + 12.0F, var5 + 20.0F, 9.0F, Style.light ? 201326592 : 855638016);
-      Gx.textMid("VERLAUF", this.X(var2), this.Y(var4 - 5.0F), this.S(5.4F), 3, Style.muted);
-      Gx.textRight("CPS / 0,5 s", this.X(var2 + var3), this.Y(var4 - 5.0F), this.S(5.4F), 3, Style.muted);
-      float var6 = var4 + var5 - 2.0F;
-      float var7 = var5 - 6.0F;
-
-      for (int var8 = 1; var8 <= 2; var8++) {
-         this.box(var2, var6 - var7 * var8 / 2.0F, var3, 0.5F, 0.0F, Style.light ? 268435456 : 285212671);
-      }
-
-      int var20 = this.running ? Math.min(19, (int)(var1 / 0.5F)) : -1;
-      float var9 = var3 / 20.0F;
-      float[] var10 = new float[20];
-      float[] var11 = new float[20];
-      int var12 = 0;
-
-      for (int var13 = 0; var13 < 20; var13++) {
-         float var14 = this.buckets[var13] * 2;
-         float var15 = var7 * Math.min(1.0F, var14 / this.graphMax);
-         float var16 = var2 + var13 * var9;
-         boolean var17 = this.running && (var13 <= var20 || this.finished);
-         if (var17 && var15 > 0.5F) {
-            int var18 = var13 == var20 && !this.finished ? Gx.mix(Style.accent, -1, 0.25F) : Style.accent;
-            this.boxV(var16 + 1.2F, var6 - var15, var9 - 2.4F, var15, 1.5F, Gx.withAlpha(var18, 0.45F), Gx.withAlpha(var18, 0.08F));
-         } else {
-            this.box(var16 + 1.2F, var6 - 1.0F, var9 - 2.4F, 1.0F, 0.5F, Style.light ? 335544320 : 352321535);
-         }
-
-         if (var17 && (this.finished || var13 < var20)) {
-            var10[var12] = var16 + var9 / 2.0F;
-            var11[var12] = var6 - var15;
-            var12++;
-         }
-      }
-
-      float var21 = Math.max(0.6F, 1.2F / this.u * 1.6F);
-
-      for (int var22 = 0; var22 + 1 < var12; var22++) {
-         float var25 = var10[var22 + 1] - var10[var22];
-         float var27 = var11[var22 + 1] - var11[var22];
-         float var28 = (float)Math.sqrt(var25 * var25 + var27 * var27);
-
-         for (float var29 = 0.0F; var29 < var28; var29 += var21) {
-            float var19 = var29 / var28;
-            this.circle(var10[var22] + var25 * var19, var11[var22] + var27 * var19, 0.9F, Style.accent);
-         }
-      }
-
-      for (int var23 = 0; var23 < var12; var23++) {
-         boolean var26 = var23 == var12 - 1 && !this.finished;
-         this.circle(var10[var23], var11[var23], var26 ? 2.2F : 1.5F, var26 ? -1 : Style.accent);
-         if (var26) {
-            Gx.glow(this.X(var10[var23]), this.Y(var11[var23]), this.S(8.0F), Gx.withAlpha(Style.accent, 0.6F));
-         }
-      }
-
-      if (this.running && !this.finished) {
-         float var24 = var2 + var3 * (var1 / 10.0F);
-         this.box(var24 - 0.4F, var4 - 1.0F, 0.8F, var5 - 1.0F, 0.0F, Gx.withAlpha(Style.accent, 0.35F));
-      }
-   }
+    /** Sparkline of clicks per 0.5 s (shown as CPS). */
+    private void graph(float e) {
+        float gx = 16, gw = W - 32, gy = GRAPH_Y, gh = GRAPH_H;
+        box(gx - 6, gy - 12, gw + 12, gh + 20, 9, Style.light ? 0x0C000000 : 0x33000000);
+        Gx.textMid("VERLAUF", X(gx), Y(gy - 5), S(5.4f), Fonts.BOLD, Style.muted);
+        Gx.textRight("CPS / 0,5 s", X(gx + gw), Y(gy - 5), S(5.4f), Fonts.BOLD, Style.muted);
+        float base = gy + gh - 2;
+        float plotH = gh - 6;
+        // guide lines
+        for (int i = 1; i <= 2; i++) box(gx, base - plotH * i / 2f, gw, 0.5f, 0, Style.light ? 0x10000000 : 0x10FFFFFF);
+        int cur = running ? Math.min(BUCKETS - 1, (int) (e / (DURATION / BUCKETS))) : -1;
+        float bw = gw / BUCKETS;
+        float[] px = new float[BUCKETS], py = new float[BUCKETS];
+        int n = 0;
+        for (int i = 0; i < BUCKETS; i++) {
+            float cps = buckets[i] * 2;
+            float h = plotH * Math.min(1, cps / graphMax);
+            float x = gx + i * bw;
+            boolean active = running && (i <= cur || finished);
+            if (active && h > 0.5f) {
+                int c = i == cur && !finished ? Gx.mix(Style.accent, 0xFFFFFFFF, 0.25f) : Style.accent;
+                boxV(x + 1.2f, base - h, bw - 2.4f, h, 1.5f, Gx.withAlpha(c, 0.45f), Gx.withAlpha(c, 0.08f));
+            } else box(x + 1.2f, base - 1, bw - 2.4f, 1, 0.5f, Style.light ? 0x14000000 : 0x14FFFFFF);
+            if (active && (finished || i < cur)) {   // the running bucket is still incomplete
+                px[n] = x + bw / 2;
+                py[n] = base - h;
+                n++;
+            }
+        }
+        // line through the bucket tops (dotted interpolation)
+        float step = Math.max(0.6f, 1.2f / u * 1.6f);
+        for (int i = 0; i + 1 < n; i++) {
+            float dx = px[i + 1] - px[i], dy = py[i + 1] - py[i];
+            float len = (float) Math.sqrt(dx * dx + dy * dy);
+            for (float s = 0; s < len; s += step) {
+                float t = s / len;
+                circle(px[i] + dx * t, py[i] + dy * t, 0.9f, Style.accent);
+            }
+        }
+        for (int i = 0; i < n; i++) {
+            boolean last = i == n - 1 && !finished;
+            circle(px[i], py[i], last ? 2.2f : 1.5f, last ? 0xFFFFFFFF : Style.accent);
+            if (last) Gx.glow(X(px[i]), Y(py[i]), S(8), Gx.withAlpha(Style.accent, 0.6f));
+        }
+        // "now" marker
+        if (running && !finished) {
+            float nx = gx + gw * (e / DURATION);
+            box(nx - 0.4f, gy - 1, 0.8f, gh - 1, 0, Gx.withAlpha(Style.accent, 0.35f));
+        }
+    }
 }

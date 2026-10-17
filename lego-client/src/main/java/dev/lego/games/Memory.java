@@ -1,298 +1,195 @@
 package dev.lego.games;
 
 import dev.lego.ui.Ease;
+import dev.lego.ui.Fonts;
 import dev.lego.ui.Gx;
 import dev.lego.ui.Sound;
 import dev.lego.ui.Style;
 
+/** Memory with 8 pairs of icon cards. */
 public final class Memory extends GameView {
-   private static final String[] ICONS = new String[]{"heart-fill", "star-fill", "bolt", "music", "crown", "gem", "flame", "snow"};
-   private static final int[] COLORS = new int[]{-45715, -13053, -12747777, -4883457, -36939, -13703779, -34278, -8397825};
-   private static final int PAIRS = 8;
-   private static final int N = 16;
-   private static final float CARD = 64.0F;
-   private static final float GAP = 8.0F;
-   private static final float GX = 14.0F;
-   private static final float GY = 14.0F;
-   private static final float PX = 314.0F;
-   private static final float PW = 80.0F;
-   private final int[] kind = new int[16];
-   private final boolean[] up = new boolean[16];
-   private final boolean[] done = new boolean[16];
-   private final float[] flip = new float[16];
-   private final float[] hoverA = new float[16];
-   private final float[] doneAt = new float[16];
-   private int first = -1;
-   private int second = -1;
-   private int moves;
-   private int pairs;
-   private float wrongT;
-   private float endT;
-   private float clock;
-   private float dealAt;
-   private float finishSecs;
+    private static final String[] ICONS = {"heart-fill", "star-fill", "bolt", "music", "crown", "gem", "flame", "snow"};
+    private static final int[] COLORS = {0xFFFF4D6D, 0xFFFFCD03, 0xFF3D7BFF, 0xFFB57BFF, 0xFFFF6FB5, 0xFF2EE59D, 0xFFFF7A1A, 0xFF7FDBFF};
+    private static final int PAIRS = 8, N = 16;
+    private static final float CARD = 64, GAP = 8, GX = 14, GY = 14;
+    private static final float PX = 314, PW = 80;
 
-   public Memory() {
-      super("memory");
-   }
+    private final int[] kind = new int[N];
+    private final boolean[] up = new boolean[N], done = new boolean[N];
+    private final float[] flip = new float[N], hoverA = new float[N], doneAt = new float[N];
+    private int first = -1, second = -1, moves, pairs;
+    private float wrongT, endT, clock, dealAt, finishSecs;
 
-   @Override
-   protected float boardW() {
-      return 408.0F;
-   }
+    public Memory() { super("memory"); }
 
-   @Override
-   protected float boardH() {
-      return 308.0F;
-   }
+    @Override protected float boardW() { return 408; }
+    @Override protected float boardH() { return GY * 2 + CARD * 4 + GAP * 3; }
 
-   @Override
-   protected void reset() {
-      for (int var1 = 0; var1 < 16; var1++) {
-         this.kind[var1] = var1 / 2;
-      }
+    @Override
+    protected void reset() {
+        for (int i = 0; i < N; i++) kind[i] = i / 2;
+        for (int i = N - 1; i > 0; i--) { int j = rnd.nextInt(i + 1); int t = kind[i]; kind[i] = kind[j]; kind[j] = t; }
+        for (int i = 0; i < N; i++) { up[i] = done[i] = false; flip[i] = 0; doneAt[i] = 0; }
+        first = second = -1;
+        moves = pairs = 0;
+        wrongT = endT = finishSecs = 0;
+        dealAt = clock;
+    }
 
-      for (int var4 = 15; var4 > 0; var4--) {
-         int var2 = this.rnd.nextInt(var4 + 1);
-         int var3 = this.kind[var4];
-         this.kind[var4] = this.kind[var2];
-         this.kind[var2] = var3;
-      }
+    @Override protected String overTitle() { return "Geschafft!"; }
 
-      for (int var5 = 0; var5 < 16; var5++) {
-         this.up[var5] = this.done[var5] = false;
-         this.flip[var5] = 0.0F;
-         this.doneAt[var5] = 0.0F;
-      }
+    // ------------------------------------------------------------------ logic
+    @Override
+    protected void update(float dt) {
+        if (second >= 0) {
+            wrongT -= dt;
+            if (wrongT <= 0) flipBack();
+        }
+        if (pairs == PAIRS) {
+            endT += dt;
+            if (endT > 1.1f) gameOver();
+        }
+    }
 
-      this.first = this.second = -1;
-      this.moves = this.pairs = 0;
-      this.wrongT = this.endT = this.finishSecs = 0.0F;
-      this.dealAt = this.clock;
-   }
+    private void flipBack() {
+        if (first >= 0) up[first] = false;
+        if (second >= 0) up[second] = false;
+        first = second = -1;
+        Sound.play("minecraft:item.book.page_turn", 0.9f, 0.4f);
+    }
 
-   @Override
-   protected String overTitle() {
-      return "Geschafft!";
-   }
+    private int cardAt(float x, float y) {
+        int c = (int) Math.floor((x - GX) / (CARD + GAP)), r = (int) Math.floor((y - GY) / (CARD + GAP));
+        if (c < 0 || r < 0 || c > 3 || r > 3) return -1;
+        if (x - GX - c * (CARD + GAP) > CARD || y - GY - r * (CARD + GAP) > CARD) return -1;
+        return r * 4 + c;
+    }
 
-   @Override
-   protected void update(float var1) {
-      if (this.second >= 0) {
-         this.wrongT -= var1;
-         if (this.wrongT <= 0.0F) {
-            this.flipBack();
-         }
-      }
-
-      if (this.pairs == 8) {
-         this.endT += var1;
-         if (this.endT > 1.1F) {
-            this.gameOver();
-         }
-      }
-   }
-
-   private void flipBack() {
-      if (this.first >= 0) {
-         this.up[this.first] = false;
-      }
-
-      if (this.second >= 0) {
-         this.up[this.second] = false;
-      }
-
-      this.first = this.second = -1;
-      Sound.play("minecraft:item.book.page_turn", 0.9F, 0.4F);
-   }
-
-   private int cardAt(float var1, float var2) {
-      int var3 = (int)Math.floor((var1 - 14.0F) / 72.0F);
-      int var4 = (int)Math.floor((var2 - 14.0F) / 72.0F);
-      if (var3 >= 0 && var4 >= 0 && var3 <= 3 && var4 <= 3) {
-         return !(var1 - 14.0F - var3 * 72.0F > 64.0F) && !(var2 - 14.0F - var4 * 72.0F > 64.0F) ? var4 * 4 + var3 : -1;
-      } else {
-         return -1;
-      }
-   }
-
-   @Override
-   protected void onClick(float var1, float var2, int var3) {
-      if (var3 == 0 && this.pairs != 8) {
-         int var4 = this.cardAt(var1, var2);
-         if (var4 >= 0 && !this.up[var4] && !this.done[var4]) {
-            if (this.second >= 0) {
-               this.flipBack();
+    @Override
+    protected void onClick(float x, float y, int button) {
+        if (button != 0 || pairs == PAIRS) return;
+        int i = cardAt(x, y);
+        if (i < 0 || up[i] || done[i]) return;
+        if (second >= 0) flipBack();                // resolve a pending mismatch immediately
+        up[i] = true;
+        Sound.play("minecraft:item.book.page_turn", 1.3f, 0.5f);
+        if (first < 0) { first = i; return; }
+        second = i;
+        moves++;
+        if (kind[first] == kind[second]) {
+            done[first] = done[second] = true;
+            doneAt[first] = doneAt[second] = clock + 0.18f;
+            pairs++;
+            first = second = -1;
+            Sound.play("minecraft:entity.experience_orb.pickup", 0.9f + pairs * 0.08f, 0.4f);
+            if (pairs == PAIRS) {
+                finishSecs = time;
+                score = Math.max(10, 500 - moves * 15L - (long) Math.floor(finishSecs));
+                Sound.play("minecraft:entity.player.levelup", 1.2f, 0.4f);
             }
+        } else {
+            wrongT = 0.7f;
+        }
+    }
 
-            this.up[var4] = true;
-            Sound.play("minecraft:item.book.page_turn", 1.3F, 0.5F);
-            if (this.first < 0) {
-               this.first = var4;
-            } else {
-               this.second = var4;
-               this.moves++;
-               if (this.kind[this.first] == this.kind[this.second]) {
-                  this.done[this.first] = this.done[this.second] = true;
-                  this.doneAt[this.first] = this.doneAt[this.second] = this.clock + 0.18F;
-                  this.pairs++;
-                  this.first = this.second = -1;
-                  Sound.play("minecraft:entity.experience_orb.pickup", 0.9F + this.pairs * 0.08F, 0.4F);
-                  if (this.pairs == 8) {
-                     this.finishSecs = this.time;
-                     this.score = Math.max(10L, 500L - this.moves * 15L - (long)Math.floor(this.finishSecs));
-                     Sound.play("minecraft:entity.player.levelup", 1.2F, 0.4F);
-                  }
-               } else {
-                  this.wrongT = 0.7F;
-               }
+    // ------------------------------------------------------------------ drawing
+    @Override
+    protected void render() {
+        clock += Gx.dt;
+        float k = 1f - (float) Math.exp(-Gx.dt * 14);
+        float fk = Gx.dt / 0.26f;
+        float hx = (mx - bx) / u, hy = (my - by) / u;
+        int hover = state == State.PLAYING && pairs < PAIRS ? cardAt(hx, hy) : -1;
+
+        for (int i = 0; i < N; i++) {
+            float target = up[i] || done[i] ? 1 : 0;
+            flip[i] = flip[i] < target ? Math.min(target, flip[i] + fk) : Math.max(target, flip[i] - fk);
+            hoverA[i] += ((i == hover && !up[i] && !done[i] ? 1 : 0) - hoverA[i]) * k;
+            float x = GX + (i % 4) * (CARD + GAP), y = GY + (i / 4) * (CARD + GAP);
+            float deal = Ease.outBack((clock - dealAt - i * 0.03f) / 0.35f);
+            if (deal <= 0) continue;
+            card(i, x, y, deal);
+        }
+        panel();
+    }
+
+    private void card(int i, float x, float y, float deal) {
+        float cx = x + CARD / 2, cy = y + CARD / 2;
+        float ang = (float) (Ease.inOutCubic(flip[i]) * Math.PI);
+        float sx = Math.max(0.02f, Math.abs((float) Math.cos(ang)));
+        float s = deal * (1 + 0.07f * (float) Math.sin(ang) + 0.04f * hoverA[i]);
+        boolean front = flip[i] > 0.5f;
+        float lift = 2 * hoverA[i] + 3 * (float) Math.sin(ang);
+        float pop = done[i] ? Ease.clamp((clock - doneAt[i]) / 0.4f) : 0;
+        if (pop > 0 && pop < 1) s *= 1 + 0.1f * (float) Math.sin(pop * Math.PI);
+
+        Gx.push();
+        Gx.translateExact(X(cx), Y(cy));
+        Gx.B.scale(sx * s, s);
+        Gx.translateExact(-X(cx), -Y(cy));
+        // shadow
+        box(x + 1, y + 2 + lift * 0.5f, CARD - 2, CARD - 1, 12, Style.light ? 0x1C000000 : 0x66000000);
+        float yy = y - lift;
+        if (front) {
+            int col = COLORS[kind[i]];
+            int face = Style.light ? 0xFFFFFFFF : 0xFF1C1F27;
+            if (done[i]) face = Gx.mix(face, col, 0.12f);
+            boxV(x, yy, CARD, CARD, 12, Gx.mix(face, 0xFFFFFFFF, Style.light ? 0 : 0.05f), face);
+            Gx.outline(X(x), Y(yy), S(CARD), S(CARD), S(12), Math.max(1, S(done[i] ? 1.3f : 0.8f)), Gx.withAlpha(col, done[i] ? 0.9f : 0.45f));
+            Gx.glow(X(cx), Y(yy + CARD / 2), S(done[i] ? 38 : 30), Gx.withAlpha(col, done[i] ? 0.4f : 0.25f));
+            Gx.icon(ICONS[kind[i]], X(cx), Y(yy + CARD / 2), S(30), col);
+            if (done[i] && pop > 0) {
+                float ca = Ease.outBack(pop);
+                circle(x + CARD - 9, yy + 9, 5.2f * ca, col);
+                Gx.icon("check", X(x + CARD - 9), Y(yy + 9), S(7) * ca, 0xFF111111);
             }
-         }
-      }
-   }
-
-   @Override
-   protected void render() {
-      this.clock = this.clock + Gx.dt;
-      float var1 = 1.0F - (float)Math.exp(-Gx.dt * 14.0F);
-      float var2 = Gx.dt / 0.26F;
-      float var3 = (this.mx - this.bx) / this.u;
-      float var4 = (this.my - this.by) / this.u;
-      int var5 = this.state == GameView.State.PLAYING && this.pairs < 8 ? this.cardAt(var3, var4) : -1;
-
-      for (int var6 = 0; var6 < 16; var6++) {
-         float var7 = !this.up[var6] && !this.done[var6] ? 0.0F : 1.0F;
-         this.flip[var6] = this.flip[var6] < var7 ? Math.min(var7, this.flip[var6] + var2) : Math.max(var7, this.flip[var6] - var2);
-         this.hoverA[var6] = this.hoverA[var6] + ((var6 == var5 && !this.up[var6] && !this.done[var6] ? 1 : 0) - this.hoverA[var6]) * var1;
-         float var8 = 14.0F + var6 % 4 * 72.0F;
-         float var9 = 14.0F + var6 / 4 * 72.0F;
-         float var10 = Ease.outBack((this.clock - this.dealAt - var6 * 0.03F) / 0.35F);
-         if (!(var10 <= 0.0F)) {
-            this.card(var6, var8, var9, var10);
-         }
-      }
-
-      this.panel();
-   }
-
-   private void card(int var1, float var2, float var3, float var4) {
-      float var5 = var2 + 32.0F;
-      float var6 = var3 + 32.0F;
-      float var7 = (float)(Ease.inOutCubic(this.flip[var1]) * Math.PI);
-      float var8 = Math.max(0.02F, Math.abs((float)Math.cos(var7)));
-      float var9 = var4 * (1.0F + 0.07F * (float)Math.sin(var7) + 0.04F * this.hoverA[var1]);
-      boolean var10 = this.flip[var1] > 0.5F;
-      float var11 = 2.0F * this.hoverA[var1] + 3.0F * (float)Math.sin(var7);
-      float var12 = this.done[var1] ? Ease.clamp((this.clock - this.doneAt[var1]) / 0.4F) : 0.0F;
-      if (var12 > 0.0F && var12 < 1.0F) {
-         var9 *= 1.0F + 0.1F * (float)Math.sin(var12 * Math.PI);
-      }
-
-      Gx.push();
-      Gx.translateExact(this.X(var5), this.Y(var6));
-      Gx.B.scale(var8 * var9, var9);
-      Gx.translateExact(-this.X(var5), -this.Y(var6));
-      this.box(var2 + 1.0F, var3 + 2.0F + var11 * 0.5F, 62.0F, 63.0F, 12.0F, Style.light ? 469762048 : 1711276032);
-      float var13 = var3 - var11;
-      if (var10) {
-         int var14 = COLORS[this.kind[var1]];
-         int var15 = Style.light ? -1 : -14934233;
-         if (this.done[var1]) {
-            var15 = Gx.mix(var15, var14, 0.12F);
-         }
-
-         this.boxV(var2, var13, 64.0F, 64.0F, 12.0F, Gx.mix(var15, -1, Style.light ? 0.0F : 0.05F), var15);
-         Gx.outline(
-            this.X(var2),
-            this.Y(var13),
-            this.S(64.0F),
-            this.S(64.0F),
-            this.S(12.0F),
-            Math.max(1, this.S(this.done[var1] ? 1.3F : 0.8F)),
-            Gx.withAlpha(var14, this.done[var1] ? 0.9F : 0.45F)
-         );
-         Gx.glow(this.X(var5), this.Y(var13 + 32.0F), this.S(this.done[var1] ? 38.0F : 30.0F), Gx.withAlpha(var14, this.done[var1] ? 0.4F : 0.25F));
-         Gx.icon(ICONS[this.kind[var1]], this.X(var5), this.Y(var13 + 32.0F), this.S(30.0F), var14);
-         if (this.done[var1] && var12 > 0.0F) {
-            float var16 = Ease.outBack(var12);
-            this.circle(var2 + 64.0F - 9.0F, var13 + 9.0F, 5.2F * var16, var14);
-            Gx.icon("check", this.X(var2 + 64.0F - 9.0F), this.Y(var13 + 9.0F), this.S(7.0F) * var16, -15658735);
-         }
-      } else {
-         int var18 = Gx.mix(Style.accent, -1, 0.14F * this.hoverA[var1]);
-         this.boxV(var2, var13, 64.0F, 64.0F, 12.0F, Gx.mix(var18, -1, 0.16F), Gx.mix(var18, -16777216, 0.18F));
-         Gx.outline(
-            this.X(var2),
-            this.Y(var13),
-            this.S(64.0F),
-            this.S(64.0F),
-            this.S(12.0F),
-            Math.max(1, this.S(1.0F)),
-            Gx.withAlpha(Gx.mix(var18, -16777216, 0.5F), 0.8F)
-         );
-         this.box(var2 + 4.0F, var13 + 2.0F, 56.0F, 1.2F, 1.0F, Gx.withAlpha(-1, 0.25F));
-
-         for (int var19 = 0; var19 < 4; var19++) {
-            float var20 = var2 + 64.0F * (var19 % 2 == 0 ? 0.3F : 0.7F);
-            float var17 = var13 + 64.0F * (var19 < 2 ? 0.3F : 0.7F);
-            this.circle(var20, var17 + 1.3F, 8.0F, Gx.mix(var18, -16777216, 0.3F));
-            this.circle(var20, var17, 8.0F, Gx.mix(var18, -1, 0.2F));
-            this.circle(var20 - 2.4F, var17 - 2.4F, 2.2F, Gx.withAlpha(-1, 0.45F));
-         }
-      }
-
-      Gx.pop();
-      if (this.done[var1] && var12 > 0.0F && var12 < 1.0F) {
-         Gx.ringAt(
-            this.X(var5),
-            this.Y(var6),
-            this.S(32.0F + 16.0F * Ease.outCubic(var12)),
-            Math.max(1, this.S(2.0F * (1.0F - var12))),
-            Gx.withAlpha(COLORS[this.kind[var1]], 0.8F * (1.0F - var12))
-         );
-      }
-   }
-
-   private void panel() {
-      float var1 = 14.0F;
-      this.stat(var1, "ZÜGE", String.valueOf(this.moves), -1.0F);
-      this.stat(var1 + 66.0F, "PAARE", this.pairs + " / 8", this.pairs / 8.0F);
-      int var2 = (int)(this.pairs == 8 ? this.finishSecs : this.time);
-      this.stat(var1 + 132.0F, "ZEIT", String.format("%d:%02d", var2 / 60, var2 % 60), -1.0F);
-      float var3 = var1 + 202.0F;
-      float var4 = 20.0F;
-
-      for (int var5 = 0; var5 < 8; var5++) {
-         boolean var6 = false;
-
-         for (int var7 = 0; var7 < 16; var7++) {
-            if (this.done[var7] && this.kind[var7] == var5) {
-               var6 = true;
-               break;
+        } else {
+            int acc = Gx.mix(Style.accent, 0xFFFFFFFF, 0.14f * hoverA[i]);
+            boxV(x, yy, CARD, CARD, 12, Gx.mix(acc, 0xFFFFFFFF, 0.16f), Gx.mix(acc, 0xFF000000, 0.18f));
+            Gx.outline(X(x), Y(yy), S(CARD), S(CARD), S(12), Math.max(1, S(1)), Gx.withAlpha(Gx.mix(acc, 0xFF000000, 0.5f), 0.8f));
+            box(x + 4, yy + 2, CARD - 8, 1.2f, 1, Gx.withAlpha(0xFFFFFFFF, 0.25f));
+            for (int s2 = 0; s2 < 4; s2++) {
+                float stx = x + CARD * (s2 % 2 == 0 ? 0.3f : 0.7f), sty = yy + CARD * (s2 < 2 ? 0.3f : 0.7f);
+                circle(stx, sty + 1.3f, 8, Gx.mix(acc, 0xFF000000, 0.3f));
+                circle(stx, sty, 8, Gx.mix(acc, 0xFFFFFFFF, 0.2f));
+                circle(stx - 2.4f, sty - 2.4f, 2.2f, Gx.withAlpha(0xFFFFFFFF, 0.45f));
             }
-         }
+        }
+        Gx.pop();
+        // burst ring when a pair is found
+        if (done[i] && pop > 0 && pop < 1) {
+            Gx.ringAt(X(cx), Y(cy), S(CARD * 0.5f + 16 * Ease.outCubic(pop)), Math.max(1, S(2 * (1 - pop))), Gx.withAlpha(COLORS[kind[i]], 0.8f * (1 - pop)));
+        }
+    }
 
-         float var10 = 314.0F + var4 * (var5 % 4) + var4 / 2.0F;
-         float var8 = var3 + var5 / 4 * 22 + 10.0F;
-         this.box(var10 - 9.0F, var8 - 9.0F, 18.0F, 18.0F, 6.0F, var6 ? Gx.withAlpha(COLORS[var5], 0.16F) : Style.surface);
-         Gx.icon(ICONS[var5], this.X(var10), this.Y(var8), this.S(10.0F), var6 ? COLORS[var5] : Gx.withAlpha(Style.muted, 0.5F));
-      }
+    private void panel() {
+        float y = GY;
+        stat(y, "ZÜGE", String.valueOf(moves), -1);
+        stat(y + 66, "PAARE", pairs + " / " + PAIRS, pairs / (float) PAIRS);
+        int s = (int) (pairs == PAIRS ? finishSecs : time);
+        stat(y + 132, "ZEIT", String.format("%d:%02d", s / 60, s % 60), -1);
+        // found icons
+        float gy = y + 202, cell = PW / 4;
+        for (int i = 0; i < PAIRS; i++) {
+            boolean found = false;
+            for (int j = 0; j < N; j++) if (done[j] && kind[j] == i) { found = true; break; }
+            float cx = PX + cell * (i % 4) + cell / 2, cy = gy + (i / 4) * 22 + 10;
+            box(cx - 9, cy - 9, 18, 18, 6, found ? Gx.withAlpha(COLORS[i], 0.16f) : Style.surface);
+            Gx.icon(ICONS[i], X(cx), Y(cy), S(10), found ? COLORS[i] : Gx.withAlpha(Style.muted, 0.5f));
+        }
+        String hint = pairs == PAIRS ? "Alle Paare gefunden!" : second >= 0 ? "Kein Paar" : first >= 0 ? "Noch eine Karte" : "Wähle eine Karte";
+        text(hint, PX + PW / 2, gy + 60, 6.6f, Fonts.MEDIUM, pairs == PAIRS ? Style.ok : second >= 0 ? Style.danger : Style.sub);
+    }
 
-      String var9 = this.pairs == 8 ? "Alle Paare gefunden!" : (this.second >= 0 ? "Kein Paar" : (this.first >= 0 ? "Noch eine Karte" : "Wähle eine Karte"));
-      this.text(var9, 354.0F, var3 + 60.0F, 6.6F, 2, this.pairs == 8 ? Style.ok : (this.second >= 0 ? Style.danger : Style.sub));
-   }
-
-   private void stat(float var1, String var2, String var3, float var4) {
-      float var5 = 58.0F;
-      this.box(314.0F, var1, 80.0F, var5, 12.0F, Style.surface);
-      this.text(var2, 354.0F, var1 + 15.0F, 5.8F, 3, Style.muted);
-      this.text(var3, 354.0F, var1 + 34.0F, 13.0F, 3, Style.text);
-      if (var4 >= 0.0F) {
-         float var6 = 60.0F;
-         this.box(324.0F, var1 + var5 - 10.0F, var6, 3.0F, 1.5F, Style.surface2);
-         if (var4 > 0.0F) {
-            this.box(324.0F, var1 + var5 - 10.0F, var6 * var4, 3.0F, 1.5F, Style.accent);
-         }
-      }
-   }
+    private void stat(float y, String label, String value, float progress) {
+        float h = 58;
+        box(PX, y, PW, h, 12, Style.surface);
+        text(label, PX + PW / 2, y + 15, 5.8f, Fonts.BOLD, Style.muted);
+        text(value, PX + PW / 2, y + 34, 13, Fonts.BOLD, Style.text);
+        if (progress >= 0) {
+            float bw = PW - 20;
+            box(PX + 10, y + h - 10, bw, 3, 1.5f, Style.surface2);
+            if (progress > 0) box(PX + 10, y + h - 10, bw * progress, 3, 1.5f, Style.accent);
+        }
+    }
 }

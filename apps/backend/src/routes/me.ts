@@ -25,7 +25,7 @@ export function registerMe(app: App): void {
       createdAt: row.created_at, customTag: row.custom_tag_text,
       privacy: {
         profile: row.privacy_profile, status: row.privacy_status, activity: row.privacy_activity,
-        messages: row.privacy_messages, friendRequests: row.allow_friend_requests === 1,
+        messages: row.privacy_messages, friendRequests: row.allow_friend_requests === 1, duels: row.privacy_duels,
       },
       subscription: sub ? { tier: sub.tier, expiresAt: sub.expires_at } : null,
     };
@@ -53,6 +53,7 @@ export function registerMe(app: App): void {
         m: oneOf(b, 'messages', PRIVACY), f: fr ? 1 : 0, u: u.id,
       },
     );
+    if (b.duels !== undefined) db.run('UPDATE users SET privacy_duels = :d WHERE id = :u', { d: oneOf(b, 'duels', PRIVACY), u: u.id });
     return { ok: true };
   }, { rate: ['profile', 20] });
 

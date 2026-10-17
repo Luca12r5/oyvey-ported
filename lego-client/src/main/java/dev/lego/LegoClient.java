@@ -369,6 +369,8 @@ public final class LegoClient implements ClientModInitializer {
             }
          }
 
+         dev.lego.games.Duels.tick();
+
          while (consoleKey.consumeClick()) {
             if (var0.screen == null || var0.screen instanceof TitleScreen) {
                LegoScreen.show(new ConsoleView());

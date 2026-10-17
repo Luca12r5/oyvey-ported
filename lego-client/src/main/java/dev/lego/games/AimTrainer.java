@@ -1,380 +1,282 @@
 package dev.lego.games;
 
-import dev.lego.ui.Ease;
-import dev.lego.ui.Gx;
-import dev.lego.ui.Sound;
-import dev.lego.ui.Style;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import dev.lego.ui.Ease;
+import dev.lego.ui.Fonts;
+import dev.lego.ui.Gx;
+import dev.lego.ui.Sound;
+import dev.lego.ui.Style;
+
+/** Aim trainer: click the shrinking targets within 30 seconds. Points depend on how close to the center you hit. */
 public final class AimTrainer extends GameView {
-   private static final float W = 380.0F;
-   private static final float H = 270.0F;
-   private static final float TOP = 34.0F;
-   private static final float DURATION = 30.0F;
-   private static final float MAX_R = 18.0F;
-   private final List<AimTrainer.Target> targets = new ArrayList<>();
-   private final List<float[]> parts = new ArrayList<>();
-   private final List<float[]> rings = new ArrayList<>();
-   private final List<float[]> pops = new ArrayList<>();
-   private final List<float[]> misses = new ArrayList<>();
-   private int hits;
-   private int shots;
-   private int expired;
-   private int combo;
-   private int bestCombo;
-   private float spawnT;
-   private float comboPop;
+    private static final float W = 380, H = 270, TOP = 34, DURATION = 30, MAX_R = 18;
 
-   public AimTrainer() {
-      super("aim");
-   }
+    private static final class Target {
+        float x, y, age, life;
+        Target(float x, float y, float life) { this.x = x; this.y = y; this.life = life; }
+        float radius() {
+            float grow = 0.14f;
+            if (age < grow) return MAX_R * Math.max(0, Ease.outBack(age / grow));
+            return MAX_R * Math.max(0, 1 - (age - grow) / (life - grow));
+        }
+    }
 
-   @Override
-   protected float boardW() {
-      return 380.0F;
-   }
+    private final List<Target> targets = new ArrayList<>();
+    private final List<float[]> parts = new ArrayList<>();    // x, y, vx, vy, age, life, size, color
+    private final List<float[]> rings = new ArrayList<>();    // x, y, age, r0, color (shockwave / expire)
+    private final List<float[]> pops = new ArrayList<>();     // x, y, age, points
+    private final List<float[]> misses = new ArrayList<>();   // x, y, age
+    private int hits, shots, expired, combo, bestCombo;
+    private float spawnT, comboPop;
 
-   @Override
-   protected float boardH() {
-      return 270.0F;
-   }
+    public AimTrainer() { super("aim"); }
 
-   @Override
-   protected String overTitle() {
-      return "Zeit um!";
-   }
+    @Override protected float boardW() { return W; }
+    @Override protected float boardH() { return H; }
+    @Override protected String overTitle() { return "Zeit um!"; }
 
-   @Override
-   protected void reset() {
-      this.targets.clear();
-      this.parts.clear();
-      this.rings.clear();
-      this.pops.clear();
-      this.misses.clear();
-      this.hits = this.shots = this.expired = this.combo = this.bestCombo = 0;
-      this.spawnT = 0.35F;
-      this.comboPop = 0.0F;
-   }
+    @Override
+    protected void reset() {
+        targets.clear();
+        parts.clear();
+        rings.clear();
+        pops.clear();
+        misses.clear();
+        hits = shots = expired = combo = bestCombo = 0;
+        spawnT = 0.35f;
+        comboPop = 0;
+    }
 
-   private int accuracy() {
-      return this.shots == 0 ? 100 : Math.round(this.hits * 100.0F / this.shots);
-   }
+    private int accuracy() { return shots == 0 ? 100 : Math.round(hits * 100f / shots); }
 
-   private void spawn() {
-      float var1 = 24.0F;
-
-      for (int var2 = 0; var2 < 30; var2++) {
-         float var3 = var1 + this.rnd.nextFloat() * (380.0F - var1 * 2.0F);
-         float var4 = 34.0F + var1 + this.rnd.nextFloat() * (236.0F - var1 * 2.0F);
-         boolean var5 = true;
-
-         for (AimTrainer.Target var7 : this.targets) {
-            float var8 = var7.x - var3;
-            float var9 = var7.y - var4;
-            if (var8 * var8 + var9 * var9 < 2190.24F) {
-               var5 = false;
-               break;
+    // ------------------------------------------------------------------ spawning
+    private void spawn() {
+        float pad = MAX_R + 6;
+        for (int tries = 0; tries < 30; tries++) {
+            float x = pad + rnd.nextFloat() * (W - pad * 2);
+            float y = TOP + pad + rnd.nextFloat() * (H - TOP - pad * 2);
+            boolean ok = true;
+            for (Target t : targets) {
+                float dx = t.x - x, dy = t.y - y;
+                if (dx * dx + dy * dy < (MAX_R * 2.6f) * (MAX_R * 2.6f)) { ok = false; break; }
             }
-         }
+            if (ok || tries == 29) {
+                float life = 1.45f - 0.3f * Math.min(1, time / DURATION);
+                targets.add(new Target(x, y, life));
+                return;
+            }
+        }
+    }
 
-         if (var5 || var2 == 29) {
-            float var10 = 1.45F - 0.3F * Math.min(1.0F, this.time / 30.0F);
-            this.targets.add(new AimTrainer.Target(var3, var4, var10));
+    // ------------------------------------------------------------------ input
+    @Override
+    protected void onClick(float x, float y, int button) {
+        if (button != 0) return;
+        if (y < TOP - 4) return;   // HUD bar
+        shots++;
+        Target hit = null;
+        float best = Float.MAX_VALUE;
+        for (Target t : targets) {
+            float r = t.radius();
+            float dx = x - t.x, dy = y - t.y, d = (float) Math.sqrt(dx * dx + dy * dy);
+            if (d <= r + 1.2f && d / Math.max(1, r) < best) { best = d / Math.max(1, r); hit = t; }
+        }
+        if (hit == null) {
+            combo = 0;
+            misses.add(new float[]{x, y, 0});
+            Sound.play("minecraft:block.note_block.hat", 0.6f, 0.25f);
             return;
-         }
-      }
-   }
+        }
+        targets.remove(hit);
+        int pts = best <= 0.34f ? 100 : best <= 0.67f ? 70 : 40;
+        score += pts;
+        hits++;
+        combo++;
+        bestCombo = Math.max(bestCombo, combo);
+        comboPop = 1;
+        int col = pts == 100 ? 0xFFFFC53D : pts == 70 ? Style.accent : 0xFFFFFFFF;
+        pops.add(new float[]{hit.x, hit.y, 0, pts});
+        rings.add(new float[]{hit.x, hit.y, 0, hit.radius(), col});
+        for (int i = 0; i < 16; i++) {
+            float a = (float) (rnd.nextFloat() * Math.PI * 2), s = 50 + rnd.nextFloat() * 120;
+            int c = i % 3 == 0 ? 0xFFFFFFFF : (i % 3 == 1 ? info.color : col);
+            parts.add(new float[]{hit.x, hit.y, (float) Math.cos(a) * s, (float) Math.sin(a) * s - 30, 0, 0.45f + rnd.nextFloat() * 0.35f, 2 + rnd.nextFloat() * 2.5f, c});
+        }
+        Sound.play("minecraft:entity.arrow.hit_player", pts == 100 ? 1.25f : pts == 70 ? 1.05f : 0.85f, 0.35f);
+        if (pts == 100) Sound.play("minecraft:entity.player.attack.crit", 1.2f, 0.2f);
+        if (targets.isEmpty()) spawnT = Math.min(spawnT, 0.08f);
+    }
 
-   @Override
-   protected void onClick(float var1, float var2, int var3) {
-      if (var3 == 0) {
-         if (!(var2 < 30.0F)) {
-            this.shots++;
-            AimTrainer.Target var4 = null;
-            float var5 = Float.MAX_VALUE;
-
-            for (AimTrainer.Target var7 : this.targets) {
-               float var8 = var7.radius();
-               float var9 = var1 - var7.x;
-               float var10 = var2 - var7.y;
-               float var11 = (float)Math.sqrt(var9 * var9 + var10 * var10);
-               if (var11 <= var8 + 1.2F && var11 / Math.max(1.0F, var8) < var5) {
-                  var5 = var11 / Math.max(1.0F, var8);
-                  var4 = var7;
-               }
+    // ------------------------------------------------------------------ update
+    @Override
+    protected void update(float dt) {
+        comboPop = Math.max(0, comboPop - dt * 4);
+        for (Target t : targets) t.age += dt;
+        for (int i = targets.size() - 1; i >= 0; i--) {
+            Target t = targets.get(i);
+            if (t.age >= t.life) {
+                targets.remove(i);
+                expired++;
+                combo = 0;
+                rings.add(new float[]{t.x, t.y, 0, 4, 0xFF8A909C});
             }
+        }
+        for (float[] p : parts) {
+            p[0] += p[2] * dt;
+            p[1] += p[3] * dt;
+            p[3] += 360 * dt;
+            p[2] *= 0.98f;
+            p[4] += dt;
+        }
+        parts.removeIf(p -> p[4] >= p[5]);
+        for (float[] r : rings) r[2] += dt;
+        rings.removeIf(r -> r[2] > 0.45f);
+        for (float[] p : pops) p[2] += dt;
+        pops.removeIf(p -> p[2] > 0.8f);
+        for (float[] m : misses) m[2] += dt;
+        misses.removeIf(m -> m[2] > 0.5f);
 
-            if (var4 == null) {
-               this.combo = 0;
-               this.misses.add(new float[]{var1, var2, 0.0F});
-               Sound.play("minecraft:block.note_block.hat", 0.6F, 0.25F);
-            } else {
-               this.targets.remove(var4);
-               int var12 = var5 <= 0.34F ? 100 : (var5 <= 0.67F ? 70 : 40);
-               this.score += var12;
-               this.hits++;
-               this.combo++;
-               this.bestCombo = Math.max(this.bestCombo, this.combo);
-               this.comboPop = 1.0F;
-               int var13 = var12 == 100 ? -15043 : (var12 == 70 ? Style.accent : -1);
-               this.pops.add(new float[]{var4.x, var4.y, 0.0F, var12});
-               this.rings.add(new float[]{var4.x, var4.y, 0.0F, var4.radius(), var13});
+        float prog = Math.min(1, time / DURATION);
+        int maxTargets = prog < 0.3f ? 2 : 3;
+        spawnT -= dt;
+        if (targets.isEmpty() && spawnT > 0.12f) spawnT = 0.12f;
+        if (spawnT <= 0 && targets.size() < maxTargets) {
+            spawn();
+            spawnT = 0.62f - 0.22f * prog + rnd.nextFloat() * 0.12f;
+        }
+        if (time + dt >= DURATION) {
+            targets.clear();
+            gameOver(true);
+        }
+    }
 
-               for (int var14 = 0; var14 < 16; var14++) {
-                  float var15 = (float)(this.rnd.nextFloat() * Math.PI * 2.0);
-                  float var16 = 50.0F + this.rnd.nextFloat() * 120.0F;
-                  int var17 = var14 % 3 == 0 ? -1 : (var14 % 3 == 1 ? this.info.color : var13);
-                  this.parts
-                     .add(
-                        new float[]{
-                           var4.x,
-                           var4.y,
-                           (float)Math.cos(var15) * var16,
-                           (float)Math.sin(var15) * var16 - 30.0F,
-                           0.0F,
-                           0.45F + this.rnd.nextFloat() * 0.35F,
-                           2.0F + this.rnd.nextFloat() * 2.5F,
-                           var17
-                        }
-                     );
-               }
+    // ------------------------------------------------------------------ render
+    @Override
+    protected void render() {
+        // background: subtle grid + vignette glow
+        boxV(0, 0, W, H, 12, Style.light ? 0xFFEEF0F5 : 0xFF10121A, Style.light ? 0xFFE0E3EA : 0xFF0A0B10);
+        int grid = Style.light ? 0x0C000000 : 0x0AFFFFFF;
+        for (float x = 20; x < W; x += 20) box(x, TOP, 0.6f, H - TOP, 0, grid);
+        for (float y = TOP + 18; y < H; y += 20) box(0, y, W, 0.6f, 0, grid);
+        Gx.glow(X(W / 2), Y(H / 2 + 10), S(170), Gx.withAlpha(info.color, 0.05f));
 
-               Sound.play("minecraft:entity.arrow.hit_player", var12 == 100 ? 1.25F : (var12 == 70 ? 1.05F : 0.85F), 0.35F);
-               if (var12 == 100) {
-                  Sound.play("minecraft:entity.player.attack.crit", 1.2F, 0.2F);
-               }
+        // expire / shock rings
+        for (float[] r : rings) {
+            float k = r[2] / 0.45f, e = Ease.outCubic(k);
+            float rad = r[3] + e * 16;
+            Gx.ringAt(X(r[0]), Y(r[1]), S(rad), Math.max(1, S(2.2f * (1 - k) + 0.4f)), Gx.withAlpha((int) r[4], 0.8f * (1 - k)));
+        }
 
-               if (this.targets.isEmpty()) {
-                  this.spawnT = Math.min(this.spawnT, 0.08F);
-               }
-            }
-         }
-      }
-   }
+        // targets
+        for (Target t : targets) drawTarget(t);
 
-   @Override
-   protected void update(float var1) {
-      this.comboPop = Math.max(0.0F, this.comboPop - var1 * 4.0F);
+        // particles
+        for (float[] p : parts) {
+            float a = 1 - p[4] / p[5];
+            box(p[0] - p[6] / 2, p[1] - p[6] / 2, p[6], p[6], p[6] * 0.25f, Gx.withAlpha((int) p[7], a));
+        }
+        // miss markers
+        for (float[] m : misses) {
+            float k = m[2] / 0.5f, a = 1 - k, s = 3 + Ease.outCubic(k) * 2;
+            Gx.push();
+            Gx.pushAlpha(a);
+            Gx.icon("x", X(m[0]), Y(m[1]), S(s * 2.4f), Style.danger);
+            Gx.popAlpha();
+            Gx.pop();
+        }
+        // floating points
+        for (float[] p : pops) {
+            float k = p[2] / 0.8f, a = k < 0.6f ? 1 : 1 - (k - 0.6f) / 0.4f;
+            float sc = Ease.outBack(Math.min(1, p[2] / 0.18f));
+            int pts = (int) p[3];
+            int col = pts == 100 ? 0xFFFFC53D : pts == 70 ? Style.accent : 0xFFFFFFFF;
+            Gx.push();
+            Gx.scaleAt(X(p[0]), Y(p[1] - 16 - k * 14), 0.6f + 0.4f * sc);
+            text("+" + pts, p[0], p[1] - 16 - k * 14, pts == 100 ? 11 : 9, Fonts.BOLD, Gx.withAlpha(col, a));
+            Gx.pop();
+        }
 
-      for (AimTrainer.Target var3 : this.targets) {
-         var3.age += var1;
-      }
+        hud();
+        crosshair();
+    }
 
-      for (int var4 = this.targets.size() - 1; var4 >= 0; var4--) {
-         AimTrainer.Target var10 = this.targets.get(var4);
-         if (var10.age >= var10.life) {
-            this.targets.remove(var4);
-            this.expired++;
-            this.combo = 0;
-            this.rings.add(new float[]{var10.x, var10.y, 0.0F, 4.0F, -7696228.0F});
-         }
-      }
+    private void drawTarget(Target t) {
+        float r = t.radius();
+        if (r < 0.6f) return;
+        float lifeK = t.age / t.life;
+        int red = info.color, acc = Style.accent;
+        Gx.glow(X(t.x), Y(t.y), S(r * 2.1f), Gx.withAlpha(red, 0.28f));
+        circle(t.x, t.y + r * 0.08f, r * 1.02f, 0x55000000);                 // drop shadow
+        circle(t.x, t.y, r, Gx.mix(red, 0xFF000000, 0.12f));
+        circle(t.x, t.y, r * 0.84f, 0xFFF4F5F7);
+        circle(t.x, t.y, r * 0.67f, red);
+        circle(t.x, t.y, r * 0.5f, 0xFFF4F5F7);
+        circle(t.x, t.y, r * 0.34f, acc);
+        circle(t.x, t.y - r * 0.08f, r * 0.2f, Gx.mix(acc, 0xFFFFFFFF, 0.55f));   // glossy center stud
+        // remaining-life arc hint: thin ring that fades as the target is about to vanish
+        if (lifeK > 0.6f) {
+            float a = (lifeK - 0.6f) / 0.4f;
+            Gx.ringAt(X(t.x), Y(t.y), S(r + 2.5f), Math.max(1, S(0.8f)), Gx.withAlpha(Style.danger, 0.6f * a));
+        }
+    }
 
-      for (float[] var11 : this.parts) {
-         var11[0] += var11[2] * var1;
-         var11[1] += var11[3] * var1;
-         var11[3] += 360.0F * var1;
-         var11[2] *= 0.98F;
-         var11[4] += var1;
-      }
+    private void hud() {
+        float prog = Math.min(1, time / DURATION);
+        float left = Math.max(0, DURATION - time);
+        // top bar background
+        box(0, 0, W, TOP - 4, 12, Style.light ? 0x0F000000 : 0x40000000);
+        box(0, 12, W, TOP - 16, 0, Style.light ? 0x0F000000 : 0x40000000);
+        box(0, TOP - 4, W, 0.7f, 0, Style.stroke);
+        // time bar
+        int barCol = left < 5 ? Gx.mix(Style.danger, 0xFFFFFFFF, (float) (0.5 + 0.5 * Math.sin(time * 12)) * 0.3f) : Style.accent;
+        box(0, TOP - 5.5f, W, 3, 0, Style.light ? 0x14000000 : 0x14FFFFFF);
+        box(0, TOP - 5.5f, W * (1 - prog), 3, 0, barCol);
+        Gx.glow(X(W * (1 - prog)), Y(TOP - 4), S(10), Gx.withAlpha(barCol, 0.5f));
 
-      this.parts.removeIf(var0 -> var0[4] >= var0[5]);
+        float cy = (TOP - 5) / 2f;
+        // timer (center)
+        String tt = String.format(Locale.ROOT, "%.1f s", left);
+        Gx.icon("clock", X(W / 2 - 24), Y(cy), S(9), left < 5 ? Style.danger : Style.sub);
+        Gx.textMid(tt, X(W / 2 - 17), Y(cy), S(10), Fonts.BOLD, left < 5 ? Style.danger : Style.text);
+        // hits (left)
+        stat(10, cy, "target", "Treffer", String.valueOf(hits));
+        stat(84, cy, "crosshair", "Genauigkeit", accuracy() + "%");
+        // combo (right)
+        float pop = 1 + 0.25f * Ease.outCubic(comboPop);
+        String cs = "x" + combo;
+        float cw = Gx.width(cs, S(10), Fonts.BOLD) / u;
+        float rx = W - 10;
+        Gx.push();
+        Gx.scaleAt(X(rx - cw / 2), Y(cy), pop);
+        Gx.textRight(cs, X(rx), Y(cy), S(10), Fonts.BOLD, combo >= 5 ? 0xFFFFC53D : combo > 0 ? Style.accent : Style.muted);
+        Gx.pop();
+        Gx.textRight("COMBO", X(rx - cw - 5), Y(cy), S(6), Fonts.BOLD, Style.muted);
+        if (combo >= 5) Gx.icon("flame", X(rx - cw - 40), Y(cy), S(9), 0xFFFFA53D);
+    }
 
-      for (float[] var12 : this.rings) {
-         var12[2] += var1;
-      }
+    private void stat(float x, float cy, String icon, String label, String value) {
+        Gx.icon(icon, X(x + 5), Y(cy), S(9), Style.sub);
+        Gx.textMid(label, X(x + 13), Y(cy - 4.5f), S(5.4f), Fonts.BOLD, Style.muted);
+        Gx.textMid(value, X(x + 13), Y(cy + 4.2f), S(8.5f), Fonts.BOLD, Style.text);
+    }
 
-      this.rings.removeIf(var0 -> var0[2] > 0.45F);
-
-      for (float[] var13 : this.pops) {
-         var13[2] += var1;
-      }
-
-      this.pops.removeIf(var0 -> var0[2] > 0.8F);
-
-      for (float[] var14 : this.misses) {
-         var14[2] += var1;
-      }
-
-      this.misses.removeIf(var0 -> var0[2] > 0.5F);
-      float var9 = Math.min(1.0F, this.time / 30.0F);
-      int var15 = var9 < 0.3F ? 2 : 3;
-      this.spawnT -= var1;
-      if (this.targets.isEmpty() && this.spawnT > 0.12F) {
-         this.spawnT = 0.12F;
-      }
-
-      if (this.spawnT <= 0.0F && this.targets.size() < var15) {
-         this.spawn();
-         this.spawnT = 0.62F - 0.22F * var9 + this.rnd.nextFloat() * 0.12F;
-      }
-
-      if (this.time + var1 >= 30.0F) {
-         this.targets.clear();
-         this.gameOver(true);
-      }
-   }
-
-   @Override
-   protected void render() {
-      this.boxV(0.0F, 0.0F, 380.0F, 270.0F, 12.0F, Style.light ? -1117963 : -15724006, Style.light ? -2038806 : -16119024);
-      int var1 = Style.light ? 201326592 : 184549375;
-
-      for (float var2 = 20.0F; var2 < 380.0F; var2 += 20.0F) {
-         this.box(var2, 34.0F, 0.6F, 236.0F, 0.0F, var1);
-      }
-
-      for (float var9 = 52.0F; var9 < 270.0F; var9 += 20.0F) {
-         this.box(0.0F, var9, 380.0F, 0.6F, 0.0F, var1);
-      }
-
-      Gx.glow(this.X(190.0F), this.Y(145.0F), this.S(170.0F), Gx.withAlpha(this.info.color, 0.05F));
-
-      for (float[] var3 : this.rings) {
-         float var4 = var3[2] / 0.45F;
-         float var5 = Ease.outCubic(var4);
-         float var6 = var3[3] + var5 * 16.0F;
-         Gx.ringAt(
-            this.X(var3[0]), this.Y(var3[1]), this.S(var6), Math.max(1, this.S(2.2F * (1.0F - var4) + 0.4F)), Gx.withAlpha((int)var3[4], 0.8F * (1.0F - var4))
-         );
-      }
-
-      for (AimTrainer.Target var15 : this.targets) {
-         this.drawTarget(var15);
-      }
-
-      for (float[] var16 : this.parts) {
-         float var19 = 1.0F - var16[4] / var16[5];
-         this.box(var16[0] - var16[6] / 2.0F, var16[1] - var16[6] / 2.0F, var16[6], var16[6], var16[6] * 0.25F, Gx.withAlpha((int)var16[7], var19));
-      }
-
-      for (float[] var17 : this.misses) {
-         float var20 = var17[2] / 0.5F;
-         float var22 = 1.0F - var20;
-         float var24 = 3.0F + Ease.outCubic(var20) * 2.0F;
-         Gx.push();
-         Gx.pushAlpha(var22);
-         Gx.icon("x", this.X(var17[0]), this.Y(var17[1]), this.S(var24 * 2.4F), Style.danger);
-         Gx.popAlpha();
-         Gx.pop();
-      }
-
-      for (float[] var18 : this.pops) {
-         float var21 = var18[2] / 0.8F;
-         float var23 = var21 < 0.6F ? 1.0F : 1.0F - (var21 - 0.6F) / 0.4F;
-         float var25 = Ease.outBack(Math.min(1.0F, var18[2] / 0.18F));
-         int var7 = (int)var18[3];
-         int var8 = var7 == 100 ? -15043 : (var7 == 70 ? Style.accent : -1);
-         Gx.push();
-         Gx.scaleAt(this.X(var18[0]), this.Y(var18[1] - 16.0F - var21 * 14.0F), 0.6F + 0.4F * var25);
-         this.text("+" + var7, var18[0], var18[1] - 16.0F - var21 * 14.0F, var7 == 100 ? 11.0F : 9.0F, 3, Gx.withAlpha(var8, var23));
-         Gx.pop();
-      }
-
-      this.hud();
-      this.crosshair();
-   }
-
-   private void drawTarget(AimTrainer.Target var1) {
-      float var2 = var1.radius();
-      if (!(var2 < 0.6F)) {
-         float var3 = var1.age / var1.life;
-         int var4 = this.info.color;
-         int var5 = Style.accent;
-         Gx.glow(this.X(var1.x), this.Y(var1.y), this.S(var2 * 2.1F), Gx.withAlpha(var4, 0.28F));
-         this.circle(var1.x, var1.y + var2 * 0.08F, var2 * 1.02F, 1426063360);
-         this.circle(var1.x, var1.y, var2, Gx.mix(var4, -16777216, 0.12F));
-         this.circle(var1.x, var1.y, var2 * 0.84F, -723465);
-         this.circle(var1.x, var1.y, var2 * 0.67F, var4);
-         this.circle(var1.x, var1.y, var2 * 0.5F, -723465);
-         this.circle(var1.x, var1.y, var2 * 0.34F, var5);
-         this.circle(var1.x, var1.y - var2 * 0.08F, var2 * 0.2F, Gx.mix(var5, -1, 0.55F));
-         if (var3 > 0.6F) {
-            float var6 = (var3 - 0.6F) / 0.4F;
-            Gx.ringAt(this.X(var1.x), this.Y(var1.y), this.S(var2 + 2.5F), Math.max(1, this.S(0.8F)), Gx.withAlpha(Style.danger, 0.6F * var6));
-         }
-      }
-   }
-
-   private void hud() {
-      float var1 = Math.min(1.0F, this.time / 30.0F);
-      float var2 = Math.max(0.0F, 30.0F - this.time);
-      this.box(0.0F, 0.0F, 380.0F, 30.0F, 12.0F, Style.light ? 251658240 : 1073741824);
-      this.box(0.0F, 12.0F, 380.0F, 18.0F, 0.0F, Style.light ? 251658240 : 1073741824);
-      this.box(0.0F, 30.0F, 380.0F, 0.7F, 0.0F, Style.stroke);
-      int var3 = var2 < 5.0F ? Gx.mix(Style.danger, -1, (float)(0.5 + 0.5 * Math.sin(this.time * 12.0F)) * 0.3F) : Style.accent;
-      this.box(0.0F, 28.5F, 380.0F, 3.0F, 0.0F, Style.light ? 335544320 : 352321535);
-      this.box(0.0F, 28.5F, 380.0F * (1.0F - var1), 3.0F, 0.0F, var3);
-      Gx.glow(this.X(380.0F * (1.0F - var1)), this.Y(30.0F), this.S(10.0F), Gx.withAlpha(var3, 0.5F));
-      float var4 = 14.5F;
-      String var5 = String.format(Locale.ROOT, "%.1f s", var2);
-      Gx.icon("clock", this.X(166.0F), this.Y(var4), this.S(9.0F), var2 < 5.0F ? Style.danger : Style.sub);
-      Gx.textMid(var5, this.X(173.0F), this.Y(var4), this.S(10.0F), 3, var2 < 5.0F ? Style.danger : Style.text);
-      this.stat(10.0F, var4, "target", "Treffer", String.valueOf(this.hits));
-      this.stat(84.0F, var4, "crosshair", "Genauigkeit", this.accuracy() + "%");
-      float var6 = 1.0F + 0.25F * Ease.outCubic(this.comboPop);
-      String var7 = "x" + this.combo;
-      float var8 = Gx.width(var7, this.S(10.0F), 3) / this.u;
-      float var9 = 370.0F;
-      Gx.push();
-      Gx.scaleAt(this.X(var9 - var8 / 2.0F), this.Y(var4), var6);
-      Gx.textRight(var7, this.X(var9), this.Y(var4), this.S(10.0F), 3, this.combo >= 5 ? -15043 : (this.combo > 0 ? Style.accent : Style.muted));
-      Gx.pop();
-      Gx.textRight("COMBO", this.X(var9 - var8 - 5.0F), this.Y(var4), this.S(6.0F), 3, Style.muted);
-      if (this.combo >= 5) {
-         Gx.icon("flame", this.X(var9 - var8 - 40.0F), this.Y(var4), this.S(9.0F), -23235);
-      }
-   }
-
-   private void stat(float var1, float var2, String var3, String var4, String var5) {
-      Gx.icon(var3, this.X(var1 + 5.0F), this.Y(var2), this.S(9.0F), Style.sub);
-      Gx.textMid(var4, this.X(var1 + 13.0F), this.Y(var2 - 4.5F), this.S(5.4F), 3, Style.muted);
-      Gx.textMid(var5, this.X(var1 + 13.0F), this.Y(var2 + 4.2F), this.S(8.5F), 3, Style.text);
-   }
-
-   private void crosshair() {
-      float var1 = (this.mx - this.bx) / this.u;
-      float var2 = (this.my - this.by) / this.u;
-      if (this.state == GameView.State.PLAYING && !(var1 < 0.0F) && !(var2 < 34.0F) && !(var1 > 380.0F) && !(var2 > 270.0F)) {
-         int var3 = Math.round(this.mx);
-         int var4 = Math.round(this.my);
-         int var5 = this.S(4.5F);
-         int var6 = this.S(2.2F);
-         int var7 = Math.max(1, this.S(0.9F));
-         int var8 = -2013265920;
-         byte var9 = -1;
-
-         for (int var10 = 0; var10 < 2; var10++) {
-            int var11 = var10 == 0 ? Math.max(1, this.S(0.5F)) : 0;
-            int var12 = var10 == 0 ? var8 : var9;
-            int var13 = var7 + (var10 == 0 ? 2 * var11 : 0);
-            Gx.fill(var3 - var6 - var5 - var11, var4 - var13 / 2, var5 + 2 * var11, var13, var12);
-            Gx.fill(var3 + var6 - var11, var4 - var13 / 2, var5 + 2 * var11, var13, var12);
-            Gx.fill(var3 - var13 / 2, var4 - var6 - var5 - var11, var13, var5 + 2 * var11, var12);
-            Gx.fill(var3 - var13 / 2, var4 + var6 - var11, var13, var5 + 2 * var11, var12);
-         }
-
-         Gx.circle(var3, var4, Math.max(1, this.S(0.8F)), Style.accent);
-      }
-   }
-
-   private static final class Target {
-      float x;
-      float y;
-      float age;
-      float life;
-
-      Target(float var1, float var2, float var3) {
-         this.x = var1;
-         this.y = var2;
-         this.life = var3;
-      }
-
-      float radius() {
-         float var1 = 0.14F;
-         return this.age < var1 ? 18.0F * Math.max(0.0F, Ease.outBack(this.age / var1)) : 18.0F * Math.max(0.0F, 1.0F - (this.age - var1) / (this.life - var1));
-      }
-   }
+    private void crosshair() {
+        float gx = (mx - bx) / u, gy = (my - by) / u;
+        if (state != State.PLAYING || gx < 0 || gy < TOP || gx > W || gy > H) return;
+        int x = Math.round(mx), y = Math.round(my);
+        int len = S(4.5f), gap = S(2.2f), th = Math.max(1, S(0.9f));
+        int sh = 0x88000000, c = 0xFFFFFFFF;
+        for (int pass = 0; pass < 2; pass++) {
+            int o = pass == 0 ? Math.max(1, S(0.5f)) : 0, col = pass == 0 ? sh : c;
+            int t2 = th + (pass == 0 ? 2 * o : 0);
+            Gx.fill(x - gap - len - o, y - t2 / 2, len + 2 * o, t2, col);
+            Gx.fill(x + gap - o, y - t2 / 2, len + 2 * o, t2, col);
+            Gx.fill(x - t2 / 2, y - gap - len - o, t2, len + 2 * o, col);
+            Gx.fill(x - t2 / 2, y + gap - o, t2, len + 2 * o, col);
+        }
+        Gx.circle(x, y, Math.max(1, S(0.8f)), Style.accent);
+    }
 }

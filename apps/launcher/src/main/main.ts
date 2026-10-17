@@ -509,6 +509,7 @@ function registerIpc(): void {
   ipcMain.on('vrb:input', (_e, ev: unknown) => vrBrowser.input(ev));
   ipcMain.handle('vrb:nav', (_e, action: string, text?: string) => vrBrowser.nav(String(action), typeof text === 'string' ? text : undefined));
   ipcMain.on('vrb:close', () => vrBrowser.close());
+  ipcMain.handle('vrb:suggest', (_e, q: unknown) => vrBrowser.suggest(typeof q === 'string' ? q.slice(0, 200) : ''));
   ipcMain.handle('client:modules', async (_e, profileId: string) => {
     const p = settings.profiles.find((x) => x.id === profileId);
     if (!p?.legoClient) return { available: false, modules: [] };
@@ -736,6 +737,28 @@ function registerIpc(): void {
     return installProject(fetch, profileDir(p), projectId, p.gameVersion, p.loaderType, type, { title: String(title).slice(0, 80), iconUrl: icon });
   });
   ipcMain.handle('mods:remove', (_e, profileId: string, filename: string) => removeMod(profileDir(profileById(profileId)), filename));
+  // Real VR inside Minecraft needs the Vivecraft mod: look it up for a version, create a profile with it.
+  ipcMain.handle('vr:vivecraft', async (_e, gameVersion: unknown) => {
+    const gv = typeof gameVersion === 'string' && /^[\w.\-]{1,20}$/.test(gameVersion) ? gameVersion : '1.21.11';
+    for (const loader of ['fabric', 'neoforge', 'forge'] as const) {
+      const v = await projectVersions(fetch, 'vivecraft', gv, loader).catch(() => []);
+      if (v.length) return { available: true, gameVersion: gv, loader };
+    }
+    // Newest version that has a Fabric build, as a suggestion.
+    const all = await projectVersions(fetch, 'vivecraft', null, 'fabric').catch(() => []);
+    const newest = all.flatMap((x) => x.game_versions).find((x) => /^\d+\.\d+(\.\d+)?$/.test(x)) ?? null;
+    return { available: false, gameVersion: gv, loader: null, suggestion: newest };
+  });
+  ipcMain.handle('vr:vivecraftProfile', async (_e, gameVersion: unknown, loader: unknown) => {
+    const gv = typeof gameVersion === 'string' && /^[\w.\-]{1,20}$/.test(gameVersion) ? gameVersion : '1.21.11';
+    const lt = loader === 'neoforge' || loader === 'forge' ? loader : 'fabric';
+    const p = await addProfile(`Vivecraft VR ${gv}`, gv, lt, null, 'glasses');
+    p.performancePack = true;
+    await saveSettings(settings);
+    await installProject(fetch, profileDir(p), 'vivecraft', gv, lt, 'mod', { title: 'Vivecraft', iconUrl: null });
+    if (lt === 'fabric') await installProject(fetch, profileDir(p), 'fabric-api', gv, lt, 'mod', { title: 'Fabric API', iconUrl: null }).catch(() => []);
+    return { profileId: p.id };
+  });
   ipcMain.handle('crash:last', () => lastCrash);
   ipcMain.handle('crash:analyze', async (_e, profileId: string) => {
     const p = profileById(profileId);

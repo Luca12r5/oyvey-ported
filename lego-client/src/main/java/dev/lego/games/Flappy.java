@@ -1,412 +1,326 @@
 package dev.lego.games;
 
-import dev.lego.ui.Ease;
-import dev.lego.ui.Gx;
-import dev.lego.ui.Sound;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
-import java.awt.geom.RoundRectangle2D.Float;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Path2D;
+import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
+import dev.lego.ui.Ease;
+import dev.lego.ui.Fonts;
+import dev.lego.ui.Gx;
+import dev.lego.ui.Sound;
+import dev.lego.ui.Style;
+
+/** Flappy Lego: a little brick flutters through gaps between stacked Lego pillars. */
 public final class Flappy extends GameView {
-   private static final float W = 360.0F;
-   private static final float H = 280.0F;
-   private static final float GROUND = 254.0F;
-   private static final float BIRD_X = 88.0F;
-   private static final float BW = 24.0F;
-   private static final float BH = 17.0F;
-   private static final float PW = 40.0F;
-   private static final float ROW = 12.0F;
-   private static final float SPACING = 165.0F;
-   private static final float GRAVITY = 980.0F;
-   private static final float FLAP = -268.0F;
-   private static final float MAX_FALL = 420.0F;
-   private static final int[] COLORS = new int[]{-3597815, -16755265, -11821238, -95720, -7194248, -13193537};
-   private static final int BIRD = -864969;
-   private final List<Flappy.Pillar> pillars = new ArrayList<>();
-   private final List<float[]> puffs = new ArrayList<>();
-   private final float[][] clouds = new float[7][3];
-   private float y;
-   private float vy;
-   private float scroll;
-   private float wing;
-   private float flash;
-   private float anim;
-   private float scorePop;
-   private boolean flying;
-   private int colorIdx;
+    private static final float W = 360, H = 280, GROUND = 254;
+    private static final float BIRD_X = 88, BW = 24, BH = 17;
+    private static final float PW = 40, ROW = 12, SPACING = 165;
+    private static final float GRAVITY = 980, FLAP = -268, MAX_FALL = 420;
+    private static final int[] COLORS = {0xFFC91A09, 0xFF0055BF, 0xFF4B9F4A, 0xFFFE8A18, 0xFF923978, 0xFF36AEBF};
+    private static final int BIRD = 0xFFF2CD37;
 
-   public Flappy() {
-      super("flappy");
-      Random var1 = new Random(7L);
+    private static final class Pillar {
+        float x, gapY, gap;
+        int color;
+        boolean passed;
+    }
 
-      for (int var2 = 0; var2 < this.clouds.length; var2++) {
-         this.clouds[var2][0] = var2 * 480.0F / this.clouds.length + var1.nextFloat() * 30.0F;
-         this.clouds[var2][1] = 22.0F + var1.nextFloat() * 80.0F;
-         this.clouds[var2][2] = 0.7F + var1.nextFloat() * 0.6F;
-      }
-   }
+    private final List<Pillar> pillars = new ArrayList<>();
+    private final List<float[]> puffs = new ArrayList<>();   // x, y, vx, vy, t
+    private final float[][] clouds = new float[7][3];         // x, y, scale
+    private float y, vy, scroll, wing, flash, anim, scorePop;
+    private boolean flying;
+    private int colorIdx;
 
-   @Override
-   protected float boardW() {
-      return 360.0F;
-   }
+    public Flappy() {
+        super("flappy");
+        java.util.Random r = new java.util.Random(7);
+        for (int i = 0; i < clouds.length; i++) {
+            clouds[i][0] = i * (W + 120) / clouds.length + r.nextFloat() * 30;
+            clouds[i][1] = 22 + r.nextFloat() * 80;
+            clouds[i][2] = 0.7f + r.nextFloat() * 0.6f;
+        }
+    }
 
-   @Override
-   protected float boardH() {
-      return 280.0F;
-   }
+    @Override protected float boardW() { return W; }
+    @Override protected float boardH() { return H; }
+    @Override protected String scoreLabel() { return "Säulen"; }
 
-   @Override
-   protected String scoreLabel() {
-      return "Säulen";
-   }
+    @Override
+    protected void reset() {
+        pillars.clear();
+        puffs.clear();
+        y = H * 0.42f;
+        vy = 0;
+        wing = 0;
+        flash = 0;
+        scorePop = 0;
+        flying = false;
+        colorIdx = rnd.nextInt(COLORS.length);
+    }
 
-   @Override
-   protected void reset() {
-      this.pillars.clear();
-      this.puffs.clear();
-      this.y = 117.6F;
-      this.vy = 0.0F;
-      this.wing = 0.0F;
-      this.flash = 0.0F;
-      this.scorePop = 0.0F;
-      this.flying = false;
-      this.colorIdx = this.rnd.nextInt(COLORS.length);
-   }
+    private void flap() {
+        if (!flying) {
+            flying = true;
+            addPillar(W + 60);
+        }
+        vy = FLAP;
+        wing = 1;
+        for (int i = 0; i < 4; i++)
+            puffs.add(new float[]{BIRD_X - 10, y + 4, -40 - rnd.nextFloat() * 50, 10 + rnd.nextFloat() * 40 - 20, 0});
+        Sound.play("minecraft:entity.bat.takeoff", 1.6f + rnd.nextFloat() * 0.2f, 0.12f);
+    }
 
-   private void flap() {
-      if (!this.flying) {
-         this.flying = true;
-         this.addPillar(420.0F);
-      }
+    private void addPillar(float x) {
+        Pillar p = new Pillar();
+        p.x = x;
+        p.gap = Math.max(70, 90 - score * 0.8f);
+        float min = 34 + p.gap / 2, max = GROUND - 30 - p.gap / 2;
+        p.gapY = min + rnd.nextFloat() * (max - min);
+        p.color = COLORS[colorIdx++ % COLORS.length];
+        pillars.add(p);
+    }
 
-      this.vy = -268.0F;
-      this.wing = 1.0F;
+    @Override
+    protected void onKey(int k) {
+        if (k == K_SPACE || k == K_UP || k == K_W) flap();
+    }
 
-      for (int var1 = 0; var1 < 4; var1++) {
-         this.puffs.add(new float[]{78.0F, this.y + 4.0F, -40.0F - this.rnd.nextFloat() * 50.0F, 10.0F + this.rnd.nextFloat() * 40.0F - 20.0F, 0.0F});
-      }
+    @Override
+    protected void onClick(float x, float yy, int button) {
+        if (button == 0) flap();
+    }
 
-      Sound.play("minecraft:entity.bat.takeoff", 1.6F + this.rnd.nextFloat() * 0.2F, 0.12F);
-   }
+    private float speed() { return 112 + Math.min(40, score * 1.2f); }
 
-   private void addPillar(float var1) {
-      Flappy.Pillar var2 = new Flappy.Pillar();
-      var2.x = var1;
-      var2.gap = Math.max(70.0F, 90.0F - (float)this.score * 0.8F);
-      float var3 = 34.0F + var2.gap / 2.0F;
-      float var4 = 224.0F - var2.gap / 2.0F;
-      var2.gapY = var3 + this.rnd.nextFloat() * (var4 - var3);
-      var2.color = COLORS[this.colorIdx++ % COLORS.length];
-      this.pillars.add(var2);
-   }
-
-   @Override
-   protected void onKey(int var1) {
-      if (var1 == 32 || var1 == 265 || var1 == 87) {
-         this.flap();
-      }
-   }
-
-   @Override
-   protected void onClick(float var1, float var2, int var3) {
-      if (var3 == 0) {
-         this.flap();
-      }
-   }
-
-   private float speed() {
-      return 112.0F + Math.min(40.0F, (float)this.score * 1.2F);
-   }
-
-   @Override
-   protected void update(float var1) {
-      float var2 = this.speed();
-      this.scroll += var2 * var1;
-      this.wing = Math.max(0.0F, this.wing - var1 * 5.0F);
-      this.scorePop = Math.max(0.0F, this.scorePop - var1 * 3.0F);
-
-      for (float[] var4 : this.puffs) {
-         var4[0] += var4[2] * var1;
-         var4[1] += var4[3] * var1;
-         var4[4] += var1;
-      }
-
-      this.puffs.removeIf(var0 -> var0[4] > 0.45F);
-      if (!this.flying) {
-         this.y = 117.6F + (float)Math.sin(this.time * 5.0F) * 5.0F;
-      } else {
-         this.vy = Math.min(420.0F, this.vy + 980.0F * var1);
-         this.y = this.y + this.vy * var1;
-         if (this.y < 8.5F) {
-            this.y = 8.5F;
-            this.vy = Math.max(this.vy, 0.0F);
-         }
-
-         for (Flappy.Pillar var14 : this.pillars) {
-            var14.x -= var2 * var1;
-         }
-
-         this.pillars.removeIf(var0 -> var0.x < -60.0F);
-         Flappy.Pillar var13 = this.pillars.isEmpty() ? null : this.pillars.get(this.pillars.size() - 1);
-         if (var13 == null || var13.x < 215.0F) {
-            this.addPillar(var13 == null ? 380.0F : var13.x + 165.0F);
-         }
-
-         float var15 = 79.0F;
-         float var5 = 98.0F;
-         float var6 = this.y - 8.5F + 3.0F;
-         float var7 = this.y + 8.5F - 2.0F;
-
-         for (Flappy.Pillar var9 : this.pillars) {
-            if (!var9.passed && var9.x + 40.0F < 76.0F) {
-               var9.passed = true;
-               this.score++;
-               this.scorePop = 1.0F;
-               Sound.play("minecraft:entity.experience_orb.pickup", 1.3F + this.rnd.nextFloat() * 0.2F, 0.25F);
+    @Override
+    protected void update(float dt) {
+        float sp = speed();
+        scroll += sp * dt;
+        wing = Math.max(0, wing - dt * 5);
+        scorePop = Math.max(0, scorePop - dt * 3);
+        for (float[] p : puffs) { p[0] += p[2] * dt; p[1] += p[3] * dt; p[4] += dt; }
+        puffs.removeIf(p -> p[4] > 0.45f);
+        if (!flying) {
+            y = H * 0.42f + (float) Math.sin(time * 5) * 5;
+            return;
+        }
+        vy = Math.min(MAX_FALL, vy + GRAVITY * dt);
+        y += vy * dt;
+        if (y < BH / 2) { y = BH / 2; vy = Math.max(vy, 0); }
+        for (Pillar p : pillars) p.x -= sp * dt;
+        pillars.removeIf(p -> p.x < -PW - 20);
+        Pillar last = pillars.isEmpty() ? null : pillars.get(pillars.size() - 1);
+        if (last == null || last.x < W + 20 - SPACING) addPillar(last == null ? W + 20 : last.x + SPACING);
+        // scoring + collision (slightly forgiving hit box)
+        float l = BIRD_X - BW / 2 + 3, r = BIRD_X + BW / 2 - 2, t = y - BH / 2 + 3, b = y + BH / 2 - 2;
+        for (Pillar p : pillars) {
+            if (!p.passed && p.x + PW < BIRD_X - BW / 2) {
+                p.passed = true;
+                score++;
+                scorePop = 1;
+                Sound.play("minecraft:entity.experience_orb.pickup", 1.3f + rnd.nextFloat() * 0.2f, 0.25f);
             }
+            float cl = p.x - 3, cr = p.x + PW + 3;   // caps are a bit wider
+            if (r > cl && l < cr && (t < p.gapY - p.gap / 2 || b > p.gapY + p.gap / 2)) { crash(); return; }
+        }
+        if (b >= GROUND) { y = GROUND - BH / 2 + 2; crash(); }
+    }
 
-            float var10 = var9.x - 3.0F;
-            float var11 = var9.x + 40.0F + 3.0F;
-            if (var5 > var10 && var15 < var11 && (var6 < var9.gapY - var9.gap / 2.0F || var7 > var9.gapY + var9.gap / 2.0F)) {
-               this.crash();
-               return;
+    private void crash() {
+        flash = 1;
+        Sound.play("minecraft:entity.arrow.hit_player", 0.8f, 0.4f);
+        gameOver();
+    }
+
+    // ------------------------------------------------------------------ drawing
+    @Override
+    protected void render() {
+        float dt = Math.min(0.05f, Gx.dt);
+        anim += dt;
+        flash = Math.max(0, flash - dt * 2.5f);
+        if (state == State.READY) y = H * 0.42f + (float) Math.sin(anim * 4) * 5;
+
+        // sky
+        boxV(0, 0, W, GROUND + 12, 12, 0xFF2A5B93, 0xFF93C9E8);
+        Gx.glow(X(W - 70), Y(52), S(90), 0x55FFF3C4);
+        circle(W - 70, 52, 17, 0xFFFFF1B8);
+        circle(W - 70, 52, 14, 0xFFFFF8DC);
+        // clouds (slowest parallax)
+        float wrap = W + 120;
+        for (float[] c : clouds) {
+            float cx = ((c[0] - scroll * 0.12f) % wrap + wrap) % wrap - 60;
+            cloud(cx, c[1], c[2]);
+        }
+        // far hills
+        hills(0.22f, 150, 70, GROUND - 26, 0xFF6FA7A0, 1);
+        // near hills with studs
+        hills(0.45f, 120, 52, GROUND - 6, 0xFF3F8C5A, 2);
+
+        // pillars
+        for (Pillar p : pillars) pillar(p);
+
+        // ground: green Lego baseplate with scrolling studs
+        box(0, H - 26, W, 26, 12, 0xFF6B4A2E);
+        boxV(0, GROUND, W, 12, 0, 0xFF2E9A4E, 0xFF1F7A3A);
+        box(0, GROUND, W, 2, 0, 0xFF5BC476);
+        float so = scroll % 12;
+        for (float sx = -so; sx < W + 12; sx += 12) {
+            boxV(sx + 2.5f, GROUND - 3.5f, 7, 4.5f, 1.2f, 0xFF62C97E, 0xFF2E9A4E);
+        }
+        for (float sx = -(scroll % 24); sx < W + 24; sx += 24) if (sx > 6 && sx < W - 6) box(sx, GROUND + 12, 1.2f, H - GROUND - 16, 0, 0x33000000);
+        box(0, GROUND + 12, W, 1.5f, 0, 0x44000000);
+
+        // puffs
+        for (float[] p : puffs) {
+            float a = 1 - p[4] / 0.45f;
+            circle(p[0], p[1], 2 + p[4] * 8, Gx.withAlpha(0xFFFFFFFF, a * 0.6f));
+        }
+
+        // bird
+        bird();
+
+        // score
+        if (flying || state == State.OVER) {
+            float s = 1 + 0.25f * Ease.outCubic(scorePop);
+            Gx.push();
+            Gx.scaleAt(X(W / 2), Y(34), s);
+            String sc = String.valueOf(score);
+            for (int i = 0; i < 8; i++) {
+                double a = i * Math.PI / 4;
+                text(sc, W / 2 + (float) Math.cos(a) * 1.4f, 34 + (float) Math.sin(a) * 1.4f + 0.6f, 26, Fonts.BOLD, 0xAA1B2A3A);
             }
-         }
+            text(sc, W / 2, 34, 26, Fonts.BOLD, 0xFFFFFFFF);
+            Gx.pop();
+        } else if (state == State.PLAYING) {
+            float a = 0.6f + 0.4f * (float) Math.sin(anim * 5);
+            box(W / 2 - 78, H * 0.62f - 12, 156, 24, 12, 0x55000000);
+            text("Leertaste oder Klick zum Flattern", W / 2, H * 0.62f, 7.6f, Fonts.BOLD, Gx.withAlpha(0xFFFFFFFF, a));
+        }
+        if (flash > 0) box(0, 0, W, H, 0, Gx.withAlpha(0xFFFFFFFF, flash * 0.55f));
+    }
 
-         if (var7 >= 254.0F) {
-            this.y = 247.5F;
-            this.crash();
-         }
-      }
-   }
+    private void cloud(float x, float y, float s) {
+        int c = 0xFFEEF4FA;
+        circle(x, y, 11 * s, c);
+        circle(x + 13 * s, y - 5 * s, 14 * s, c);
+        circle(x + 28 * s, y, 11 * s, c);
+        box(x, y - 1 * s, 28 * s, 11 * s, 5 * s, c);
+    }
 
-   private void crash() {
-      this.flash = 1.0F;
-      Sound.play("minecraft:entity.arrow.hit_player", 0.8F, 0.4F);
-      this.gameOver();
-   }
+    private void hills(float par, float spacing, float radius, float baseY, int col, int seed) {
+        float off = (scroll * par) % spacing;
+        for (float hx = -off - spacing; hx < W + spacing; hx += spacing) {
+            int idx = Math.floorMod(Math.round((hx + scroll * par) / spacing) * 31 + seed * 7, 5);
+            float r = radius * (0.8f + idx * 0.1f);
+            circle(hx + spacing / 2, baseY + r * 0.55f, r, col);
+            // a few studs on the hill top
+            if (seed == 2) {
+                float top = baseY + r * 0.55f - r;
+                box(hx + spacing / 2 - 9, top - 2.5f, 7, 3.5f, 1, Gx.mix(col, 0xFFFFFFFF, 0.12f));
+                box(hx + spacing / 2 + 2, top - 2.5f, 7, 3.5f, 1, Gx.mix(col, 0xFFFFFFFF, 0.12f));
+            }
+        }
+        box(0, baseY, W, GROUND - baseY + 1, 0, col);
+    }
 
-   @Override
-   protected void render() {
-      float var1 = Math.min(0.05F, Gx.dt);
-      this.anim += var1;
-      this.flash = Math.max(0.0F, this.flash - var1 * 2.5F);
-      if (this.state == GameView.State.READY) {
-         this.y = 117.6F + (float)Math.sin(this.anim * 4.0F) * 5.0F;
-      }
+    /** Side view brick: gradient body, highlight, studs on top. */
+    private void sideBrick(float x, float yy, float w, float h, int col, int studs) {
+        if (studs > 0) {
+            float sw = 7, gap = (w - studs * sw) / studs;
+            for (int i = 0; i < studs; i++) {
+                float sx = x + gap / 2 + i * (sw + gap);
+                boxV(sx, yy - 3, sw, 4, 1.2f, Gx.mix(col, 0xFFFFFFFF, 0.25f), col);
+            }
+        }
+        boxV(x, yy, w, h, 2, Gx.mix(col, 0xFFFFFFFF, 0.14f), Gx.mix(col, 0xFF000000, 0.16f));
+        box(x + 1.5f, yy + 1, w - 3, 1.2f, 0.6f, Gx.withAlpha(0xFFFFFFFF, 0.28f));
+        Gx.outline(X(x), Y(yy), S(w), S(h), S(2), Math.max(1, S(0.6f)), Gx.withAlpha(Gx.mix(col, 0xFF000000, 0.55f), 0.7f));
+    }
 
-      this.boxV(0.0F, 0.0F, 360.0F, 266.0F, 12.0F, -14001261, -7091736);
-      Gx.glow(this.X(290.0F), this.Y(52.0F), this.S(90.0F), 1442837444);
-      this.circle(290.0F, 52.0F, 17.0F, -3656);
-      this.circle(290.0F, 52.0F, 14.0F, -1828);
-      float var2 = 480.0F;
+    private void pillar(Pillar p) {
+        float top = p.gapY - p.gap / 2, bot = p.gapY + p.gap / 2;
+        int col = p.color, dark = Gx.mix(col, 0xFF000000, 0.12f);
+        Gx.shadow(X(p.x), Y(-10), S(PW), S(top + 10), S(2), S(4), 0.25f);
+        Gx.shadow(X(p.x), Y(bot), S(PW), S(GROUND - bot), S(2), S(4), 0.25f);
+        // upper stack (builds up from the cap)
+        int i = 0;
+        for (float yy = top - ROW * 2; yy > -ROW; yy -= ROW, i++) sideBrick(p.x + (i % 2 == 0 ? 0 : 0), yy, PW, ROW, i % 2 == 0 ? col : dark, 0);
+        sideBrick(p.x - 3, top - ROW, PW + 6, ROW, Gx.mix(col, 0xFFFFFFFF, 0.08f), 0);
+        // lower stack
+        i = 0;
+        for (float yy = bot + ROW; yy < GROUND; yy += ROW, i++) sideBrick(p.x, yy, PW, ROW, i % 2 == 0 ? dark : col, 0);
+        sideBrick(p.x - 3, bot, PW + 6, ROW, Gx.mix(col, 0xFFFFFFFF, 0.08f), 3);
+    }
 
-      for (float[] var6 : this.clouds) {
-         float var7 = ((var6[0] - this.scroll * 0.12F) % var2 + var2) % var2 - 60.0F;
-         this.cloud(var7, var6[1], var6[2]);
-      }
+    private void bird() {
+        float ang = flying || state == State.OVER ? Math.max(-24, Math.min(55, vy / MAX_FALL * 60)) : (float) Math.sin(anim * 4) * 4;
+        int q = Math.round(ang / 3) * 3;
+        int px = Math.max(8, S(40));
+        double rad = Math.toRadians(q);
+        Gx.glow(X(BIRD_X), Y(y), S(26), 0x22FFF3A0);
+        Gx.Img img = Gx.painted("flappyBird" + q, px, px, g -> paintBird(g, px, rad));
+        Gx.image(img, X(BIRD_X) - px / 2, Y(y) - px / 2, px, px, 0xFFFFFFFF);
+        // flapping wing (rotated with the body)
+        float wx = -4, wy = 2 + (wing > 0 ? -4 * wing : 0);
+        float cos = (float) Math.cos(rad), sin = (float) Math.sin(rad);
+        float rx = BIRD_X + wx * cos - wy * sin, ry = y + wx * sin + wy * cos;
+        float wh = 4 + 3 * wing;
+        boxV(rx - 5, ry - wh / 2, 10, wh, 2, 0xFFFFE27A, 0xFFE0A91C);
+        Gx.outline(X(rx - 5), Y(ry - wh / 2), S(10), S(wh), S(2), Math.max(1, S(0.5f)), 0x88704F00);
+    }
 
-      this.hills(0.22F, 150.0F, 70.0F, 228.0F, -9459808, 1);
-      this.hills(0.45F, 120.0F, 52.0F, 248.0F, -12612518, 2);
-
-      for (Flappy.Pillar var11 : this.pillars) {
-         this.pillar(var11);
-      }
-
-      this.box(0.0F, 254.0F, 360.0F, 26.0F, 12.0F, -9745874);
-      this.boxV(0.0F, 254.0F, 360.0F, 12.0F, 0.0F, -13723058, -14714310);
-      this.box(0.0F, 254.0F, 360.0F, 2.0F, 0.0F, -10763146);
-      float var10 = this.scroll % 12.0F;
-
-      for (float var12 = -var10; var12 < 372.0F; var12 += 12.0F) {
-         this.boxV(var12 + 2.5F, 250.5F, 7.0F, 4.5F, 1.2F, -10303106, -13723058);
-      }
-
-      for (float var13 = -(this.scroll % 24.0F); var13 < 384.0F; var13 += 24.0F) {
-         if (var13 > 6.0F && var13 < 354.0F) {
-            this.box(var13, 266.0F, 1.2F, 10.0F, 0.0F, 855638016);
-         }
-      }
-
-      this.box(0.0F, 266.0F, 360.0F, 1.5F, 0.0F, 1140850688);
-
-      for (float[] var17 : this.puffs) {
-         float var19 = 1.0F - var17[4] / 0.45F;
-         this.circle(var17[0], var17[1], 2.0F + var17[4] * 8.0F, Gx.withAlpha(-1, var19 * 0.6F));
-      }
-
-      this.bird();
-      if (this.flying || this.state == GameView.State.OVER) {
-         float var16 = 1.0F + 0.25F * Ease.outCubic(this.scorePop);
-         Gx.push();
-         Gx.scaleAt(this.X(180.0F), this.Y(34.0F), var16);
-         String var18 = String.valueOf(this.score);
-
-         for (int var20 = 0; var20 < 8; var20++) {
-            double var21 = var20 * Math.PI / 4.0;
-            this.text(var18, 180.0F + (float)Math.cos(var21) * 1.4F, 34.0F + (float)Math.sin(var21) * 1.4F + 0.6F, 26.0F, 3, -1441060294);
-         }
-
-         this.text(var18, 180.0F, 34.0F, 26.0F, 3, -1);
-         Gx.pop();
-      } else if (this.state == GameView.State.PLAYING) {
-         float var15 = 0.6F + 0.4F * (float)Math.sin(this.anim * 5.0F);
-         this.box(102.0F, 161.6F, 156.0F, 24.0F, 12.0F, 1426063360);
-         this.text("Leertaste oder Klick zum Flattern", 180.0F, 173.6F, 7.6F, 3, Gx.withAlpha(-1, var15));
-      }
-
-      if (this.flash > 0.0F) {
-         this.box(0.0F, 0.0F, 360.0F, 280.0F, 0.0F, Gx.withAlpha(-1, this.flash * 0.55F));
-      }
-   }
-
-   private void cloud(float var1, float var2, float var3) {
-      int var4 = -1116934;
-      this.circle(var1, var2, 11.0F * var3, var4);
-      this.circle(var1 + 13.0F * var3, var2 - 5.0F * var3, 14.0F * var3, var4);
-      this.circle(var1 + 28.0F * var3, var2, 11.0F * var3, var4);
-      this.box(var1, var2 - 1.0F * var3, 28.0F * var3, 11.0F * var3, 5.0F * var3, var4);
-   }
-
-   private void hills(float var1, float var2, float var3, float var4, int var5, int var6) {
-      float var7 = this.scroll * var1 % var2;
-
-      for (float var8 = -var7 - var2; var8 < 360.0F + var2; var8 += var2) {
-         int var9 = Math.floorMod(Math.round((var8 + this.scroll * var1) / var2) * 31 + var6 * 7, 5);
-         float var10 = var3 * (0.8F + var9 * 0.1F);
-         this.circle(var8 + var2 / 2.0F, var4 + var10 * 0.55F, var10, var5);
-         if (var6 == 2) {
-            float var11 = var4 + var10 * 0.55F - var10;
-            this.box(var8 + var2 / 2.0F - 9.0F, var11 - 2.5F, 7.0F, 3.5F, 1.0F, Gx.mix(var5, -1, 0.12F));
-            this.box(var8 + var2 / 2.0F + 2.0F, var11 - 2.5F, 7.0F, 3.5F, 1.0F, Gx.mix(var5, -1, 0.12F));
-         }
-      }
-
-      this.box(0.0F, var4, 360.0F, 254.0F - var4 + 1.0F, 0.0F, var5);
-   }
-
-   private void sideBrick(float var1, float var2, float var3, float var4, int var5, int var6) {
-      if (var6 > 0) {
-         float var7 = 7.0F;
-         float var8 = (var3 - var6 * var7) / var6;
-
-         for (int var9 = 0; var9 < var6; var9++) {
-            float var10 = var1 + var8 / 2.0F + var9 * (var7 + var8);
-            this.boxV(var10, var2 - 3.0F, var7, 4.0F, 1.2F, Gx.mix(var5, -1, 0.25F), var5);
-         }
-      }
-
-      this.boxV(var1, var2, var3, var4, 2.0F, Gx.mix(var5, -1, 0.14F), Gx.mix(var5, -16777216, 0.16F));
-      this.box(var1 + 1.5F, var2 + 1.0F, var3 - 3.0F, 1.2F, 0.6F, Gx.withAlpha(-1, 0.28F));
-      Gx.outline(
-         this.X(var1), this.Y(var2), this.S(var3), this.S(var4), this.S(2.0F), Math.max(1, this.S(0.6F)), Gx.withAlpha(Gx.mix(var5, -16777216, 0.55F), 0.7F)
-      );
-   }
-
-   private void pillar(Flappy.Pillar var1) {
-      float var2 = var1.gapY - var1.gap / 2.0F;
-      float var3 = var1.gapY + var1.gap / 2.0F;
-      int var4 = var1.color;
-      int var5 = Gx.mix(var4, -16777216, 0.12F);
-      Gx.shadow(this.X(var1.x), this.Y(-10.0F), this.S(40.0F), this.S(var2 + 10.0F), this.S(2.0F), this.S(4.0F), 0.25F);
-      Gx.shadow(this.X(var1.x), this.Y(var3), this.S(40.0F), this.S(254.0F - var3), this.S(2.0F), this.S(4.0F), 0.25F);
-      int var6 = 0;
-
-      for (float var7 = var2 - 24.0F; var7 > -12.0F; var6++) {
-         this.sideBrick(var1.x + (var6 % 2 == 0 ? 0 : 0), var7, 40.0F, 12.0F, var6 % 2 == 0 ? var4 : var5, 0);
-         var7 -= 12.0F;
-      }
-
-      this.sideBrick(var1.x - 3.0F, var2 - 12.0F, 46.0F, 12.0F, Gx.mix(var4, -1, 0.08F), 0);
-      var6 = 0;
-
-      for (float var9 = var3 + 12.0F; var9 < 254.0F; var6++) {
-         this.sideBrick(var1.x, var9, 40.0F, 12.0F, var6 % 2 == 0 ? var5 : var4, 0);
-         var9 += 12.0F;
-      }
-
-      this.sideBrick(var1.x - 3.0F, var3, 46.0F, 12.0F, Gx.mix(var4, -1, 0.08F), 3);
-   }
-
-   private void bird() {
-      float var1 = !this.flying && this.state != GameView.State.OVER
-         ? (float)Math.sin(this.anim * 4.0F) * 4.0F
-         : Math.max(-24.0F, Math.min(55.0F, this.vy / 420.0F * 60.0F));
-      int var2 = Math.round(var1 / 3.0F) * 3;
-      int var3 = Math.max(8, this.S(40.0F));
-      double var4 = Math.toRadians(var2);
-      Gx.glow(this.X(88.0F), this.Y(this.y), this.S(26.0F), 587199392);
-      Gx.Img var6 = Gx.painted("flappyBird" + var2, var3, var3, var3x -> paintBird(var3x, var3, var4));
-      Gx.image(var6, this.X(88.0F) - var3 / 2, this.Y(this.y) - var3 / 2, var3, var3, -1);
-      float var7 = -4.0F;
-      float var8 = 2.0F + (this.wing > 0.0F ? -4.0F * this.wing : 0.0F);
-      float var9 = (float)Math.cos(var4);
-      float var10 = (float)Math.sin(var4);
-      float var11 = 88.0F + var7 * var9 - var8 * var10;
-      float var12 = this.y + var7 * var10 + var8 * var9;
-      float var13 = 4.0F + 3.0F * this.wing;
-      this.boxV(var11 - 5.0F, var12 - var13 / 2.0F, 10.0F, var13, 2.0F, -7558, -2053860);
-      Gx.outline(this.X(var11 - 5.0F), this.Y(var12 - var13 / 2.0F), this.S(10.0F), this.S(var13), this.S(2.0F), Math.max(1, this.S(0.5F)), -2005905664);
-   }
-
-   private static void paintBird(Graphics2D var0, int var1, double var2) {
-      float var4 = var1 / 40.0F;
-      var0.translate(var1 / 2.0, var1 / 2.0);
-      var0.rotate(var2);
-      var0.scale(var4, var4);
-      Color var5 = new Color(-864969, true);
-      Color var6 = new Color(Gx.mix(-864969, -1, 0.3F), true);
-      Color var7 = new Color(Gx.mix(-864969, -16777216, 0.2F), true);
-      Color var8 = new Color(Gx.mix(-864969, -16777216, 0.55F), true);
-      var0.setStroke(new BasicStroke(0.8F));
-
-      for (int var9 = 0; var9 < 2; var9++) {
-         Float var10 = new Float(-9.5F + var9 * 11, -11.7F, 8.0F, 4.2F, 2.0F, 2.0F);
-         var0.setPaint(new GradientPaint(0.0F, -11.5F, var6, 0.0F, -8.5F, var5));
-         var0.fill(var10);
-         var0.setColor(var8);
-         var0.draw(var10);
-      }
-
-      Float var11 = new Float(-12.0F, -8.5F, 24.0F, 17.0F, 5.0F, 5.0F);
-      var0.setPaint(new GradientPaint(0.0F, -8.5F, var6, 0.0F, 8.5F, var7));
-      var0.fill(var11);
-      var0.setColor(new Color(255, 255, 255, 80));
-      var0.fill(new Float(-10.0F, -7.3F, 20.0F, 1.6F, 1.6F, 1.6F));
-      var0.setColor(var8);
-      var0.draw(var11);
-      java.awt.geom.Path2D.Float var12 = new java.awt.geom.Path2D.Float();
-      var12.moveTo(11.0, -1.5);
-      var12.lineTo(18.0, 1.5);
-      var12.lineTo(11.0, 4.5);
-      var12.closePath();
-      var0.setColor(new Color(16681496));
-      var0.fill(var12);
-      var0.setColor(new Color(10111488));
-      var0.draw(var12);
-      var0.setColor(Color.WHITE);
-      var0.fill(new java.awt.geom.Ellipse2D.Float(3.2F, -6.2F, 7.0F, 7.0F));
-      var0.setColor(new Color(8018432));
-      var0.draw(new java.awt.geom.Ellipse2D.Float(3.2F, -6.2F, 7.0F, 7.0F));
-      var0.setColor(new Color(1381914));
-      var0.fill(new java.awt.geom.Ellipse2D.Float(6.4F, -4.4F, 3.2F, 3.4F));
-      var0.setColor(Color.WHITE);
-      var0.fill(new java.awt.geom.Ellipse2D.Float(7.2F, -4.1F, 1.1F, 1.1F));
-      var0.setColor(new Color(255, 110, 80, 90));
-      var0.fill(new java.awt.geom.Ellipse2D.Float(2.5F, 1.8F, 5.0F, 3.0F));
-   }
-
-   private static final class Pillar {
-      float x;
-      float gapY;
-      float gap;
-      int color;
-      boolean passed;
-   }
+    private static void paintBird(Graphics2D g, int px, double rad) {
+        float k = px / 40f;
+        g.translate(px / 2.0, px / 2.0);
+        g.rotate(rad);
+        g.scale(k, k);
+        Color base = new Color(BIRD, true), light = new Color(Gx.mix(BIRD, 0xFFFFFFFF, 0.3f), true), dark = new Color(Gx.mix(BIRD, 0xFF000000, 0.2f), true);
+        Color line = new Color(Gx.mix(BIRD, 0xFF000000, 0.55f), true);
+        g.setStroke(new BasicStroke(0.8f));
+        // studs (side view)
+        for (int i = 0; i < 2; i++) {
+            RoundRectangle2D st = new RoundRectangle2D.Float(-9.5f + i * 11, -BH / 2 - 3.2f, 8, 4.2f, 2, 2);
+            g.setPaint(new GradientPaint(0, -BH / 2 - 3, light, 0, -BH / 2, base));
+            g.fill(st);
+            g.setColor(line);
+            g.draw(st);
+        }
+        // body
+        RoundRectangle2D body = new RoundRectangle2D.Float(-BW / 2, -BH / 2, BW, BH, 5, 5);
+        g.setPaint(new GradientPaint(0, -BH / 2, light, 0, BH / 2, dark));
+        g.fill(body);
+        g.setColor(new Color(255, 255, 255, 80));
+        g.fill(new RoundRectangle2D.Float(-BW / 2 + 2, -BH / 2 + 1.2f, BW - 4, 1.6f, 1.6f, 1.6f));
+        g.setColor(line);
+        g.draw(body);
+        // beak
+        Path2D beak = new Path2D.Float();
+        beak.moveTo(BW / 2 - 1, -1.5);
+        beak.lineTo(BW / 2 + 6, 1.5);
+        beak.lineTo(BW / 2 - 1, 4.5);
+        beak.closePath();
+        g.setColor(new Color(0xFE8A18));
+        g.fill(beak);
+        g.setColor(new Color(0x9A4A00));
+        g.draw(beak);
+        // eye
+        g.setColor(Color.WHITE);
+        g.fill(new Ellipse2D.Float(3.2f, -6.2f, 7, 7));
+        g.setColor(new Color(0x7A5A00));
+        g.draw(new Ellipse2D.Float(3.2f, -6.2f, 7, 7));
+        g.setColor(new Color(0x15161A));
+        g.fill(new Ellipse2D.Float(6.4f, -4.4f, 3.2f, 3.4f));
+        g.setColor(Color.WHITE);
+        g.fill(new Ellipse2D.Float(7.2f, -4.1f, 1.1f, 1.1f));
+        // blush
+        g.setColor(new Color(255, 110, 80, 90));
+        g.fill(new Ellipse2D.Float(2.5f, 1.8f, 5, 3));
+    }
 }

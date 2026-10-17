@@ -1,489 +1,326 @@
 package dev.lego.games;
 
-import dev.lego.ui.Ease;
-import dev.lego.ui.Gx;
-import dev.lego.ui.Sound;
-import dev.lego.ui.Style;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 
+import dev.lego.ui.Ease;
+import dev.lego.ui.Fonts;
+import dev.lego.ui.Gx;
+import dev.lego.ui.Sound;
+import dev.lego.ui.Style;
+
+/** Minesweeper with Lego bricks: the first click is always safe. */
 public final class Minesweeper extends GameView {
-   private static final int COLS = 12;
-   private static final int ROWS = 10;
-   private static final int MINES = 18;
-   private static final int N = 120;
-   private static final float CELL = 26.0F;
-   private static final float GX = 20.0F;
-   private static final float GY = 42.0F;
-   private static final int[] NUM = new int[]{0, -11688961, -12723068, -44462, -5011201, -30107, -14235942, -2039584, -6381922};
-   private static final int[] NUM_LIGHT = new int[]{0, -15374912, -13730510, -2937041, -12245088, -7525874, -16743537, -14606047, -10395295};
-   private static final int[] DEBRIS = new int[]{-1900533, -13053, -16098364, -6249047, -30208, -9671064};
-   private final boolean[] mine = new boolean[120];
-   private final boolean[] open = new boolean[120];
-   private final boolean[] flag = new boolean[120];
-   private final int[] adj = new int[120];
-   private final float[] openAt = new float[120];
-   private final float[] flagAt = new float[120];
-   private boolean generated;
-   private boolean lost;
-   private boolean won;
-   private int flags;
-   private int opened;
-   private int boom = -1;
-   private float startT;
-   private float endSecs;
-   private float endT;
-   private float clock;
-   private float boomAt;
-   private final List<float[]> parts = new ArrayList<>();
+    private static final int COLS = 12, ROWS = 10, MINES = 18, N = COLS * ROWS;
+    private static final float CELL = 26, GX = 20, GY = 42;
+    private static final int[] NUM = {0, 0xFF4DA3FF, 0xFF3DDC84, 0xFFFF5252, 0xFFB388FF, 0xFFFF8A65, 0xFF26C6DA, 0xFFE0E0E0, 0xFF9E9E9E};
+    private static final int[] NUM_LIGHT = {0, 0xFF1565C0, 0xFF2E7D32, 0xFFD32F2F, 0xFF4527A0, 0xFF8D2A0E, 0xFF00838F, 0xFF212121, 0xFF616161};
+    private static final int[] DEBRIS = {0xFFE3000B, 0xFFFFCD03, 0xFF0A5BC4, 0xFFA0A5A9, 0xFFFF8A00, 0xFF6C6E68};
 
-   public Minesweeper() {
-      super("minesweeper");
-   }
+    private final boolean[] mine = new boolean[N], open = new boolean[N], flag = new boolean[N];
+    private final int[] adj = new int[N];
+    private final float[] openAt = new float[N], flagAt = new float[N];
+    private boolean generated, lost, won;
+    private int flags, opened, boom = -1;
+    private float startT, endSecs, endT, clock, boomAt;
+    private final List<float[]> parts = new ArrayList<>();   // x, y, vx, vy, life, color, size
 
-   @Override
-   protected float boardW() {
-      return 352.0F;
-   }
+    public Minesweeper() { super("minesweeper"); }
 
-   @Override
-   protected float boardH() {
-      return 314.0F;
-   }
+    @Override protected float boardW() { return COLS * CELL + GX * 2; }
+    @Override protected float boardH() { return GY + ROWS * CELL + 12; }
 
-   @Override
-   protected void reset() {
-      for (int var1 = 0; var1 < 120; var1++) {
-         this.mine[var1] = this.open[var1] = this.flag[var1] = false;
-         this.adj[var1] = 0;
-         this.openAt[var1] = this.flagAt[var1] = 0.0F;
-      }
+    @Override
+    protected void reset() {
+        for (int i = 0; i < N; i++) { mine[i] = open[i] = flag[i] = false; adj[i] = 0; openAt[i] = flagAt[i] = 0; }
+        generated = lost = won = false;
+        flags = opened = 0;
+        boom = -1;
+        startT = endSecs = endT = 0;
+        parts.clear();
+    }
 
-      this.generated = this.lost = this.won = false;
-      this.flags = this.opened = 0;
-      this.boom = -1;
-      this.startT = this.endSecs = this.endT = 0.0F;
-      this.parts.clear();
-   }
+    @Override protected String overTitle() { return won ? "Geschafft!" : "Verloren"; }
 
-   @Override
-   protected String overTitle() {
-      return this.won ? "Geschafft!" : "Verloren";
-   }
+    private float secs() {
+        if (!generated) return 0;
+        if (won || lost) return endSecs;
+        return Math.max(0, time - startT);
+    }
 
-   private float secs() {
-      if (!this.generated) {
-         return 0.0F;
-      } else {
-         return !this.won && !this.lost ? Math.max(0.0F, this.time - this.startT) : this.endSecs;
-      }
-   }
+    // ------------------------------------------------------------------ logic
+    @Override
+    protected void update(float dt) {
+        if (won) { endT += dt; if (endT > 1.3f) gameOver(); }
+        else if (lost) { endT += dt; if (endT > 1.8f) gameOver(false); }
+    }
 
-   @Override
-   protected void update(float var1) {
-      if (this.won) {
-         this.endT += var1;
-         if (this.endT > 1.3F) {
-            this.gameOver();
-         }
-      } else if (this.lost) {
-         this.endT += var1;
-         if (this.endT > 1.8F) {
-            this.gameOver(false);
-         }
-      }
-   }
+    private int cellAt(float x, float y) {
+        int c = (int) Math.floor((x - GX) / CELL), r = (int) Math.floor((y - GY) / CELL);
+        if (c < 0 || r < 0 || c >= COLS || r >= ROWS) return -1;
+        return r * COLS + c;
+    }
 
-   private int cellAt(float var1, float var2) {
-      int var3 = (int)Math.floor((var1 - 20.0F) / 26.0F);
-      int var4 = (int)Math.floor((var2 - 42.0F) / 26.0F);
-      return var3 >= 0 && var4 >= 0 && var3 < 12 && var4 < 10 ? var4 * 12 + var3 : -1;
-   }
-
-   private List<Integer> neighbours(int var1) {
-      ArrayList var2 = new ArrayList(8);
-      int var3 = var1 % 12;
-      int var4 = var1 / 12;
-
-      for (int var5 = -1; var5 <= 1; var5++) {
-         for (int var6 = -1; var6 <= 1; var6++) {
-            if (var6 != 0 || var5 != 0) {
-               int var7 = var3 + var6;
-               int var8 = var4 + var5;
-               if (var7 >= 0 && var8 >= 0 && var7 < 12 && var8 < 10) {
-                  var2.add(var8 * 12 + var7);
-               }
+    private List<Integer> neighbours(int i) {
+        List<Integer> l = new ArrayList<>(8);
+        int c = i % COLS, r = i / COLS;
+        for (int dy = -1; dy <= 1; dy++)
+            for (int dx = -1; dx <= 1; dx++) {
+                if (dx == 0 && dy == 0) continue;
+                int cc = c + dx, rr = r + dy;
+                if (cc >= 0 && rr >= 0 && cc < COLS && rr < ROWS) l.add(rr * COLS + cc);
             }
-         }
-      }
+        return l;
+    }
 
-      return var2;
-   }
+    private void generate(int safe) {
+        List<Integer> forbidden = neighbours(safe);
+        forbidden.add(safe);
+        int placed = 0;
+        while (placed < MINES) {
+            int i = rnd.nextInt(N);
+            if (mine[i] || forbidden.contains(i)) continue;
+            mine[i] = true;
+            placed++;
+        }
+        for (int i = 0; i < N; i++) {
+            int n = 0;
+            for (int j : neighbours(i)) if (mine[j]) n++;
+            adj[i] = n;
+        }
+        generated = true;
+        startT = time;
+    }
 
-   private void generate(int var1) {
-      List var2 = this.neighbours(var1);
-      var2.add(var1);
-      int var3 = 0;
-
-      while (var3 < 18) {
-         int var4 = this.rnd.nextInt(120);
-         if (!this.mine[var4] && !var2.contains(var4)) {
-            this.mine[var4] = true;
-            var3++;
-         }
-      }
-
-      for (int var8 = 0; var8 < 120; var8++) {
-         int var5 = 0;
-
-         for (int var7 : this.neighbours(var8)) {
-            if (this.mine[var7]) {
-               var5++;
+    @Override
+    protected void onClick(float x, float y, int button) {
+        if (won || lost) return;
+        int i = cellAt(x, y);
+        if (i < 0) return;
+        if (button == 1) {
+            if (open[i]) return;
+            flag[i] = !flag[i];
+            flags += flag[i] ? 1 : -1;
+            flagAt[i] = clock;
+            Sound.play("minecraft:block.note_block.hat", flag[i] ? 1.6f : 1.2f, 0.35f);
+            return;
+        }
+        if (flag[i]) return;
+        if (!generated) generate(i);
+        if (open[i]) {
+            // chording
+            if (adj[i] == 0) return;
+            int f = 0;
+            for (int j : neighbours(i)) if (flag[j]) f++;
+            if (f != adj[i]) {
+                Sound.play("minecraft:block.note_block.bass", 1.4f, 0.2f);
+                return;
             }
-         }
-
-         this.adj[var8] = var5;
-      }
-
-      this.generated = true;
-      this.startT = this.time;
-   }
-
-   @Override
-   protected void onClick(float var1, float var2, int var3) {
-      if (!this.won && !this.lost) {
-         int var4 = this.cellAt(var1, var2);
-         if (var4 >= 0) {
-            if (var3 == 1) {
-               if (!this.open[var4]) {
-                  this.flag[var4] = !this.flag[var4];
-                  this.flags = this.flags + (this.flag[var4] ? 1 : -1);
-                  this.flagAt[var4] = this.clock;
-                  Sound.play("minecraft:block.note_block.hat", this.flag[var4] ? 1.6F : 1.2F, 0.35F);
-               }
-            } else if (!this.flag[var4]) {
-               if (!this.generated) {
-                  this.generate(var4);
-               }
-
-               if (this.open[var4]) {
-                  if (this.adj[var4] != 0) {
-                     int var9 = 0;
-
-                     for (int var7 : this.neighbours(var4)) {
-                        if (this.flag[var7]) {
-                           var9++;
-                        }
-                     }
-
-                     if (var9 != this.adj[var4]) {
-                        Sound.play("minecraft:block.note_block.bass", 1.4F, 0.2F);
-                     } else {
-                        boolean var10 = false;
-
-                        for (int var8 : this.neighbours(var4)) {
-                           if (!this.flag[var8] && !this.open[var8]) {
-                              if (this.mine[var8]) {
-                                 this.explode(var8);
-                                 return;
-                              }
-
-                              this.reveal(var8, false);
-                              var10 = true;
-                           }
-                        }
-
-                        if (var10) {
-                           Sound.play("minecraft:block.stone.break", 1.35F + this.rnd.nextFloat() * 0.2F, 0.25F);
-                           this.checkWin();
-                        }
-                     }
-                  }
-               } else if (this.mine[var4]) {
-                  this.explode(var4);
-               } else {
-                  int var5 = this.reveal(var4, true);
-                  Sound.play(
-                     var5 > 6 ? "minecraft:block.stone.break" : "minecraft:block.stone.hit",
-                     var5 > 6 ? 1.1F : 1.5F + this.rnd.nextFloat() * 0.2F,
-                     var5 > 6 ? 0.3F : 0.4F
-                  );
-                  this.checkWin();
-               }
+            boolean any = false;
+            for (int j : neighbours(i)) {
+                if (flag[j] || open[j]) continue;
+                if (mine[j]) { explode(j); return; }
+                reveal(j, false);
+                any = true;
             }
-         }
-      }
-   }
+            if (any) { Sound.play("minecraft:block.stone.break", 1.35f + rnd.nextFloat() * 0.2f, 0.25f); checkWin(); }
+            return;
+        }
+        if (mine[i]) { explode(i); return; }
+        int n = reveal(i, true);
+        Sound.play(n > 6 ? "minecraft:block.stone.break" : "minecraft:block.stone.hit", n > 6 ? 1.1f : 1.5f + rnd.nextFloat() * 0.2f, n > 6 ? 0.3f : 0.4f);
+        checkWin();
+    }
 
-   private int reveal(int var1, boolean var2) {
-      ArrayDeque var3 = new ArrayDeque();
-      var3.add(new int[]{var1, 0});
-      int var4 = 0;
+    /** Opens a cell (flood fill for zeros) and returns the number of opened cells. */
+    private int reveal(int start, boolean stagger) {
+        ArrayDeque<int[]> q = new ArrayDeque<>();
+        q.add(new int[]{start, 0});
+        int count = 0;
+        while (!q.isEmpty()) {
+            int[] e = q.poll();
+            int i = e[0];
+            if (open[i] || flag[i] || mine[i]) continue;
+            open[i] = true;
+            opened++;
+            count++;
+            openAt[i] = clock + (stagger ? Math.min(0.5f, e[1] * 0.035f) : 0);
+            if (adj[i] == 0) for (int j : neighbours(i)) if (!open[j] && !flag[j]) q.add(new int[]{j, e[1] + 1});
+        }
+        return count;
+    }
 
-      while (!var3.isEmpty()) {
-         int[] var5 = (int[])var3.poll();
-         int var6 = var5[0];
-         if (!this.open[var6] && !this.flag[var6] && !this.mine[var6]) {
-            this.open[var6] = true;
-            this.opened++;
-            var4++;
-            this.openAt[var6] = this.clock + (var2 ? Math.min(0.5F, var5[1] * 0.035F) : 0.0F);
-            if (this.adj[var6] == 0) {
-               for (int var8 : this.neighbours(var6)) {
-                  if (!this.open[var8] && !this.flag[var8]) {
-                     var3.add(new int[]{var8, var5[1] + 1});
-                  }
-               }
+    private void checkWin() {
+        if (opened < N - MINES) return;
+        won = true;
+        endSecs = Math.max(0, time - startT);
+        score = Math.max(1, 1000 - (long) Math.floor(endSecs) * 5);
+        for (int i = 0; i < N; i++)
+            if (mine[i] && !flag[i]) { flag[i] = true; flagAt[i] = clock + 0.15f + rnd.nextFloat() * 0.35f; }
+        flags = MINES;
+        Sound.play("minecraft:entity.player.levelup", 1.2f, 0.4f);
+    }
+
+    private void explode(int i) {
+        lost = true;
+        boom = i;
+        boomAt = clock;
+        endSecs = Math.max(0, time - startT);
+        int bc = i % COLS, br = i / COLS;
+        for (int j = 0; j < N; j++) {
+            if (!mine[j] || flag[j]) continue;
+            open[j] = true;
+            float d = (float) Math.hypot(j % COLS - bc, j / COLS - br);
+            openAt[j] = j == i ? clock : clock + 0.15f + d * 0.05f;
+        }
+        float cx = GX + bc * CELL + CELL / 2, cy = GY + br * CELL + CELL / 2;
+        for (int k = 0; k < 34; k++) {
+            double a = rnd.nextDouble() * Math.PI * 2;
+            float sp = 50 + rnd.nextFloat() * 170;
+            parts.add(new float[]{cx, cy, (float) Math.cos(a) * sp, (float) Math.sin(a) * sp - 80, 0.7f + rnd.nextFloat() * 0.7f,
+                    DEBRIS[rnd.nextInt(DEBRIS.length)], 2.5f + rnd.nextFloat() * 3});
+        }
+        Sound.play("minecraft:entity.generic.explode", 1.1f, 0.45f);
+    }
+
+    // ------------------------------------------------------------------ drawing
+    @Override
+    protected void render() {
+        float dt = Gx.dt;
+        clock += dt;
+        float hx = (mx - bx) / u, hy = (my - by) / u;
+        boolean active = state == State.PLAYING && !won && !lost;
+        int hover = active ? cellAt(hx, hy) : -1;
+        boolean chordHover = hover >= 0 && open[hover] && adj[hover] > 0;
+
+        header();
+
+        // screen shake after the explosion
+        float shake = lost ? Math.max(0, 1 - (clock - boomAt) / 0.4f) : 0;
+        Gx.push();
+        if (shake > 0) Gx.translate(S((rnd.nextFloat() - 0.5f) * 5 * shake), S((rnd.nextFloat() - 0.5f) * 5 * shake));
+
+        int ground = Style.light ? 0xFFD5D9E0 : 0xFF14161C, ground2 = Style.light ? 0xFFCED2DA : 0xFF111318;
+        box(GX - 3, GY - 3, COLS * CELL + 6, ROWS * CELL + 6, 9, Style.light ? 0x12000000 : 0x0DFFFFFF);
+        for (int i = 0; i < N; i++) {
+            int c = i % COLS, r = i / COLS;
+            float x = GX + c * CELL, y = GY + r * CELL, cx = x + CELL / 2, cy = y + CELL / 2;
+            boolean shownOpen = open[i] && clock >= openAt[i];
+            float pa = open[i] ? Ease.clamp((clock - openAt[i]) / 0.2f) : 0;
+            if (open[i] && shownOpen) {
+                int gc = (c + r) % 2 == 0 ? ground : ground2;
+                if (mine[i] && i == boom) gc = 0xFFE3000B;
+                else if (mine[i]) gc = Gx.mix(gc, 0xFFE3000B, 0.25f);
+                if (chordHover && i == hover) gc = Gx.mix(gc, Style.accent, 0.15f);
+                box(x + 0.6f, y + 0.6f, CELL - 1.2f, CELL - 1.2f, 4, gc);
+                if (mine[i]) {
+                    if (i == boom) Gx.glow(X(cx), Y(cy), S(30), Gx.withAlpha(0xFFFF8A00, 0.5f));
+                    mineIcon(cx, cy, Ease.outBack(pa));
+                } else if (adj[i] > 0) {
+                    float s = 0.6f + 0.4f * Ease.outBack(pa);
+                    int nc = (Style.light ? NUM_LIGHT : NUM)[adj[i]];
+                    Gx.push();
+                    Gx.scaleAt(X(cx), Y(cy), s);
+                    text(String.valueOf(adj[i]), cx, cy, 11, Fonts.BOLD, Gx.withAlpha(nc, pa));
+                    Gx.pop();
+                }
             }
-         }
-      }
-
-      return var4;
-   }
-
-   private void checkWin() {
-      if (this.opened >= 102) {
-         this.won = true;
-         this.endSecs = Math.max(0.0F, this.time - this.startT);
-         this.score = Math.max(1L, 1000L - (long)Math.floor(this.endSecs) * 5L);
-
-         for (int var1 = 0; var1 < 120; var1++) {
-            if (this.mine[var1] && !this.flag[var1]) {
-               this.flag[var1] = true;
-               this.flagAt[var1] = this.clock + 0.15F + this.rnd.nextFloat() * 0.35F;
+            if (!open[i] || pa < 1) {
+                // brick (fading + shrinking while it is being revealed)
+                float s = open[i] ? 1 - 0.4f * Ease.outCubic(pa) : 1;
+                float a = open[i] ? 1 - pa : 1;
+                int bc = (c + r) % 2 == 0 ? 0xFF959BA3 : 0xFF8C929A;
+                if (won && mine[i]) bc = Gx.mix(bc, Style.ok, 0.45f * Ease.clamp((clock - flagAt[i]) / 0.3f));
+                if (i == hover && !open[i]) bc = Gx.mix(bc, 0xFFFFFFFF, 0.25f);
+                else if (chordHover && !open[i] && !flag[i] && isNeighbour(hover, i)) bc = Gx.mix(bc, Style.accent, 0.3f);
+                Gx.push();
+                Gx.pushAlpha(a);
+                Gx.scaleAt(X(cx), Y(cy), s);
+                float lift = i == hover && !open[i] ? 0.8f : 0;
+                brick(x + 1, y + 1 - lift, CELL - 2, CELL - 2, bc);
+                if (flag[i]) {
+                    float fs = Ease.outBack((clock - flagAt[i]) / 0.25f);
+                    if (fs > 0) {
+                        Gx.icon("flag", X(cx + 0.6f), Y(cy + 0.8f - lift), S(12) * fs, 0x66000000);
+                        Gx.icon("flag", X(cx), Y(cy - lift), S(12) * fs, 0xFFE3000B);
+                    }
+                    if (lost && !mine[i]) {   // wrong flag
+                        float wa = Ease.clamp((clock - boomAt - 0.3f) / 0.2f);
+                        Gx.icon("x", X(cx), Y(cy), S(17), Gx.withAlpha(0xFFFFFFFF, wa));
+                    }
+                }
+                Gx.popAlpha();
+                Gx.pop();
             }
-         }
+        }
 
-         this.flags = 18;
-         Sound.play("minecraft:entity.player.levelup", 1.2F, 0.4F);
-      }
-   }
-
-   private void explode(int var1) {
-      this.lost = true;
-      this.boom = var1;
-      this.boomAt = this.clock;
-      this.endSecs = Math.max(0.0F, this.time - this.startT);
-      int var2 = var1 % 12;
-      int var3 = var1 / 12;
-
-      for (int var4 = 0; var4 < 120; var4++) {
-         if (this.mine[var4] && !this.flag[var4]) {
-            this.open[var4] = true;
-            float var5 = (float)Math.hypot(var4 % 12 - var2, var4 / 12 - var3);
-            this.openAt[var4] = var4 == var1 ? this.clock : this.clock + 0.15F + var5 * 0.05F;
-         }
-      }
-
-      float var10 = 20.0F + var2 * 26.0F + 13.0F;
-      float var11 = 42.0F + var3 * 26.0F + 13.0F;
-
-      for (int var6 = 0; var6 < 34; var6++) {
-         double var7 = this.rnd.nextDouble() * Math.PI * 2.0;
-         float var9 = 50.0F + this.rnd.nextFloat() * 170.0F;
-         this.parts
-            .add(
-               new float[]{
-                  var10,
-                  var11,
-                  (float)Math.cos(var7) * var9,
-                  (float)Math.sin(var7) * var9 - 80.0F,
-                  0.7F + this.rnd.nextFloat() * 0.7F,
-                  DEBRIS[this.rnd.nextInt(DEBRIS.length)],
-                  2.5F + this.rnd.nextFloat() * 3.0F
-               }
-            );
-      }
-
-      Sound.play("minecraft:entity.generic.explode", 1.1F, 0.45F);
-   }
-
-   @Override
-   protected void render() {
-      float var1 = Gx.dt;
-      this.clock += var1;
-      float var2 = (this.mx - this.bx) / this.u;
-      float var3 = (this.my - this.by) / this.u;
-      boolean var4 = this.state == GameView.State.PLAYING && !this.won && !this.lost;
-      int var5 = var4 ? this.cellAt(var2, var3) : -1;
-      boolean var6 = var5 >= 0 && this.open[var5] && this.adj[var5] > 0;
-      this.header();
-      float var7 = this.lost ? Math.max(0.0F, 1.0F - (this.clock - this.boomAt) / 0.4F) : 0.0F;
-      Gx.push();
-      if (var7 > 0.0F) {
-         Gx.translate(this.S((this.rnd.nextFloat() - 0.5F) * 5.0F * var7), this.S((this.rnd.nextFloat() - 0.5F) * 5.0F * var7));
-      }
-
-      int var8 = Style.light ? -2762272 : -15460836;
-      int var9 = Style.light ? -3222822 : -15658216;
-      this.box(17.0F, 39.0F, 318.0F, 266.0F, 9.0F, Style.light ? 301989888 : 234881023);
-
-      for (int var10 = 0; var10 < 120; var10++) {
-         int var11 = var10 % 12;
-         int var12 = var10 / 12;
-         float var13 = 20.0F + var11 * 26.0F;
-         float var14 = 42.0F + var12 * 26.0F;
-         float var15 = var13 + 13.0F;
-         float var16 = var14 + 13.0F;
-         boolean var17 = this.open[var10] && this.clock >= this.openAt[var10];
-         float var18 = this.open[var10] ? Ease.clamp((this.clock - this.openAt[var10]) / 0.2F) : 0.0F;
-         if (this.open[var10] && var17) {
-            int var19 = (var11 + var12) % 2 == 0 ? var8 : var9;
-            if (this.mine[var10] && var10 == this.boom) {
-               var19 = -1900533;
-            } else if (this.mine[var10]) {
-               var19 = Gx.mix(var19, -1900533, 0.25F);
+        // explosion
+        if (lost) {
+            float t = clock - boomAt;
+            float bcx = GX + (boom % COLS) * CELL + CELL / 2, bcy = GY + (boom / COLS) * CELL + CELL / 2;
+            if (t < 0.7f) {
+                float p = t / 0.7f;
+                Gx.glow(X(bcx), Y(bcy), S(20 + 70 * Ease.outCubic(p)), Gx.withAlpha(0xFFFFA23D, 0.8f * (1 - p)));
+                Gx.ringAt(X(bcx), Y(bcy), S(6 + 80 * Ease.outCubic(p)), Math.max(1, S(3 * (1 - p) + 0.5f)), Gx.withAlpha(0xFFFFFFFF, 0.8f * (1 - p)));
             }
-
-            if (var6 && var10 == var5) {
-               var19 = Gx.mix(var19, Style.accent, 0.15F);
+            for (float[] p : parts) {
+                p[3] += 420 * dt;
+                p[0] += p[2] * dt;
+                p[1] += p[3] * dt;
+                p[4] -= dt;
+                if (p[4] <= 0) continue;
+                float a = Math.min(1, p[4] / 0.3f);
+                box(p[0] - p[6] / 2, p[1] - p[6] / 2, p[6], p[6], 1, Gx.withAlpha((int) p[5], a));
             }
+            parts.removeIf(p -> p[4] <= 0);
+        }
+        Gx.pop();
+    }
 
-            this.box(var13 + 0.6F, var14 + 0.6F, 24.8F, 24.8F, 4.0F, var19);
-            if (this.mine[var10]) {
-               if (var10 == this.boom) {
-                  Gx.glow(this.X(var15), this.Y(var16), this.S(30.0F), Gx.withAlpha(-30208, 0.5F));
-               }
+    private boolean isNeighbour(int a, int b) {
+        int ac = a % COLS, ar = a / COLS, bc = b % COLS, br = b / COLS;
+        return a != b && Math.abs(ac - bc) <= 1 && Math.abs(ar - br) <= 1;
+    }
 
-               this.mineIcon(var15, var16, Ease.outBack(var18));
-            } else if (this.adj[var10] > 0) {
-               float var20 = 0.6F + 0.4F * Ease.outBack(var18);
-               int var21 = (Style.light ? NUM_LIGHT : NUM)[this.adj[var10]];
-               Gx.push();
-               Gx.scaleAt(this.X(var15), this.Y(var16), var20);
-               this.text(String.valueOf(this.adj[var10]), var15, var16, 11.0F, 3, Gx.withAlpha(var21, var18));
-               Gx.pop();
-            }
-         }
+    private void mineIcon(float cx, float cy, float s) {
+        if (s <= 0) return;
+        float r = 5.6f * s;
+        for (int k = 0; k < 8; k++) {
+            double a = k * Math.PI / 4;
+            circle(cx + (float) Math.cos(a) * r * 1.2f, cy + (float) Math.sin(a) * r * 1.2f, 1.3f * s, 0xFF1B1D22);
+        }
+        circle(cx, cy, r, 0xFF1B1D22);
+        circle(cx, cy, r * 0.62f, 0xFF30333B);
+        circle(cx - r * 0.35f, cy - r * 0.35f, r * 0.26f, 0xCCFFFFFF);
+    }
 
-         if (!this.open[var10] || var18 < 1.0F) {
-            float var32 = this.open[var10] ? 1.0F - 0.4F * Ease.outCubic(var18) : 1.0F;
-            float var33 = this.open[var10] ? 1.0F - var18 : 1.0F;
-            int var34 = (var11 + var12) % 2 == 0 ? -6972509 : -7564646;
-            if (this.won && this.mine[var10]) {
-               var34 = Gx.mix(var34, Style.ok, 0.45F * Ease.clamp((this.clock - this.flagAt[var10]) / 0.3F));
-            }
-
-            if (var10 == var5 && !this.open[var10]) {
-               var34 = Gx.mix(var34, -1, 0.25F);
-            } else if (var6 && !this.open[var10] && !this.flag[var10] && this.isNeighbour(var5, var10)) {
-               var34 = Gx.mix(var34, Style.accent, 0.3F);
-            }
-
-            Gx.push();
-            Gx.pushAlpha(var33);
-            Gx.scaleAt(this.X(var15), this.Y(var16), var32);
-            float var22 = var10 == var5 && !this.open[var10] ? 0.8F : 0.0F;
-            this.brick(var13 + 1.0F, var14 + 1.0F - var22, 24.0F, 24.0F, var34);
-            if (this.flag[var10]) {
-               float var23 = Ease.outBack((this.clock - this.flagAt[var10]) / 0.25F);
-               if (var23 > 0.0F) {
-                  Gx.icon("flag", this.X(var15 + 0.6F), this.Y(var16 + 0.8F - var22), this.S(12.0F) * var23, 1711276032);
-                  Gx.icon("flag", this.X(var15), this.Y(var16 - var22), this.S(12.0F) * var23, -1900533);
-               }
-
-               if (this.lost && !this.mine[var10]) {
-                  float var24 = Ease.clamp((this.clock - this.boomAt - 0.3F) / 0.2F);
-                  Gx.icon("x", this.X(var15), this.Y(var16), this.S(17.0F), Gx.withAlpha(-1, var24));
-               }
-            }
-
-            Gx.popAlpha();
-            Gx.pop();
-         }
-      }
-
-      if (this.lost) {
-         float var25 = this.clock - this.boomAt;
-         float var26 = 20.0F + this.boom % 12 * 26.0F + 13.0F;
-         float var27 = 42.0F + this.boom / 12 * 26.0F + 13.0F;
-         if (var25 < 0.7F) {
-            float var28 = var25 / 0.7F;
-            Gx.glow(this.X(var26), this.Y(var27), this.S(20.0F + 70.0F * Ease.outCubic(var28)), Gx.withAlpha(-24003, 0.8F * (1.0F - var28)));
-            Gx.ringAt(
-               this.X(var26),
-               this.Y(var27),
-               this.S(6.0F + 80.0F * Ease.outCubic(var28)),
-               Math.max(1, this.S(3.0F * (1.0F - var28) + 0.5F)),
-               Gx.withAlpha(-1, 0.8F * (1.0F - var28))
-            );
-         }
-
-         for (float[] var30 : this.parts) {
-            var30[3] += 420.0F * var1;
-            var30[0] += var30[2] * var1;
-            var30[1] += var30[3] * var1;
-            var30[4] -= var1;
-            if (!(var30[4] <= 0.0F)) {
-               float var31 = Math.min(1.0F, var30[4] / 0.3F);
-               this.box(var30[0] - var30[6] / 2.0F, var30[1] - var30[6] / 2.0F, var30[6], var30[6], 1.0F, Gx.withAlpha((int)var30[5], var31));
-            }
-         }
-
-         this.parts.removeIf(var0 -> var0[4] <= 0.0F);
-      }
-
-      Gx.pop();
-   }
-
-   private boolean isNeighbour(int var1, int var2) {
-      int var3 = var1 % 12;
-      int var4 = var1 / 12;
-      int var5 = var2 % 12;
-      int var6 = var2 / 12;
-      return var1 != var2 && Math.abs(var3 - var5) <= 1 && Math.abs(var4 - var6) <= 1;
-   }
-
-   private void mineIcon(float var1, float var2, float var3) {
-      if (!(var3 <= 0.0F)) {
-         float var4 = 5.6F * var3;
-
-         for (int var5 = 0; var5 < 8; var5++) {
-            double var6 = var5 * Math.PI / 4.0;
-            this.circle(var1 + (float)Math.cos(var6) * var4 * 1.2F, var2 + (float)Math.sin(var6) * var4 * 1.2F, 1.3F * var3, -15000286);
-         }
-
-         this.circle(var1, var2, var4, -15000286);
-         this.circle(var1, var2, var4 * 0.62F, -13618373);
-         this.circle(var1 - var4 * 0.35F, var2 - var4 * 0.35F, var4 * 0.26F, -855638017);
-      }
-   }
-
-   private void header() {
-      float var1 = 8.0F;
-      float var2 = 26.0F;
-      int var3 = 18 - this.flags;
-      this.box(20.0F, var1, 76.0F, var2, 13.0F, Style.surface);
-      Gx.icon("flag", this.X(36.0F), this.Y(var1 + var2 / 2.0F), this.S(12.0F), -1900533);
-      Gx.textMid(String.valueOf(var3), this.X(48.0F), this.Y(var1 + var2 / 2.0F), 10.0F * this.u, 3, var3 < 0 ? Style.danger : Style.text);
-      Gx.textRight("Minen", this.X(88.0F), this.Y(var1 + var2 / 2.0F + 0.5F), 6.0F * this.u, 2, Style.muted);
-      float var4 = 76.0F;
-      float var5 = 332.0F - var4;
-      int var6 = (int)this.secs();
-      this.box(var5, var1, var4, var2, 13.0F, Style.surface);
-      Gx.icon("clock", this.X(var5 + 16.0F), this.Y(var1 + var2 / 2.0F), this.S(11.0F), Style.accent);
-      Gx.textMid(String.format("%d:%02d", var6 / 60, var6 % 60), this.X(var5 + 28.0F), this.Y(var1 + var2 / 2.0F), 10.0F * this.u, 3, Style.text);
-      int var8 = Style.sub;
-      String var7;
-      if (this.won) {
-         var7 = "Alle Minen gefunden!";
-         var8 = Style.ok;
-      } else if (this.lost) {
-         var7 = "BOOM! Mine erwischt";
-         var8 = Style.danger;
-      } else if (!this.generated) {
-         var7 = "Erster Klick ist sicher";
-      } else {
-         var7 = Math.round(this.opened * 100.0F / 102.0F) + "% aufgedeckt";
-      }
-
-      this.text(var7, 176.0F, var1 + var2 / 2.0F, 7.4F, 2, var8);
-      if (this.generated && !this.won && !this.lost) {
-         float var9 = 90.0F;
-         float var10 = 176.0F - var9 / 2.0F;
-         this.box(var10, var1 + var2 - 3.0F, var9, 2.0F, 1.0F, Style.surface2);
-         this.box(var10, var1 + var2 - 3.0F, var9 * this.opened / 102.0F, 2.0F, 1.0F, Style.accent);
-      }
-   }
+    private void header() {
+        float y = 8, h = 26;
+        // flags left
+        int left = MINES - flags;
+        box(GX, y, 76, h, 13, Style.surface);
+        Gx.icon("flag", X(GX + 16), Y(y + h / 2), S(12), 0xFFE3000B);
+        Gx.textMid(String.valueOf(left), X(GX + 28), Y(y + h / 2), 10 * u, Fonts.BOLD, left < 0 ? Style.danger : Style.text);
+        Gx.textRight("Minen", X(GX + 68), Y(y + h / 2 + 0.5f), 6 * u, Fonts.MEDIUM, Style.muted);
+        // timer right
+        float tw = 76, tx = GX + COLS * CELL - tw;
+        int s = (int) secs();
+        box(tx, y, tw, h, 13, Style.surface);
+        Gx.icon("clock", X(tx + 16), Y(y + h / 2), S(11), Style.accent);
+        Gx.textMid(String.format("%d:%02d", s / 60, s % 60), X(tx + 28), Y(y + h / 2), 10 * u, Fonts.BOLD, Style.text);
+        // status middle
+        String st;
+        int sc = Style.sub;
+        if (won) { st = "Alle Minen gefunden!"; sc = Style.ok; }
+        else if (lost) { st = "BOOM! Mine erwischt"; sc = Style.danger; }
+        else if (!generated) st = "Erster Klick ist sicher";
+        else st = Math.round(opened * 100f / (N - MINES)) + "% aufgedeckt";
+        text(st, GX + COLS * CELL / 2f, y + h / 2, 7.4f, Fonts.MEDIUM, sc);
+        if (generated && !won && !lost) {
+            float pw = 90, px = GX + COLS * CELL / 2f - pw / 2;
+            box(px, y + h - 3, pw, 2, 1, Style.surface2);
+            box(px, y + h - 3, pw * opened / (float) (N - MINES), 2, 1, Style.accent);
+        }
+    }
 }
