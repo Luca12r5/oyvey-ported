@@ -21,6 +21,11 @@ public final class EmoteLib {
    private EmoteLib() {
    }
 
+   /** Used by EmotePack (keyframe emotes). */
+   public static void addGenerated(String id, String name, String icon, float dur, boolean loop, String bubble, float spin, EmoteLib.PoseFn fn) {
+      ALL.add(new EmoteLib.Emote(id, name, icon, dur, loop, bubble, spin, fn));
+   }
+
    private static void add(String var0, String var1, String var2, float var3, boolean var4, String var5, float var6, EmoteLib.PoseFn var7) {
       ALL.add(new EmoteLib.Emote(var0, var1, var2, var3, var4, var5, var6, var7));
    }
@@ -840,6 +845,7 @@ public final class EmoteLib {
          set(var1, 0, -0.75 * var2, s(var0 * 0.8) * 0.2 * var2, 0.0);
          set(var1, 3, -0.12 * var2, 0.0, 0.0);
       });
+      EmotePack.addAll();
    }
 
    public static final class Emote {

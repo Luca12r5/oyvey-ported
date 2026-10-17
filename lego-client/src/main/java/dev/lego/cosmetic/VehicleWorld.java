@@ -2,12 +2,8 @@ package dev.lego.cosmetic;
 
 import dev.lego.core.Mc;
 import dev.lego.emote.Emotes;
-import dev.lego.ui.Tx;
-import dev.lego.visual.AmbientTex;
-import dev.lego.visual.R3;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.resources.Identifier;
 
 public final class VehicleWorld {
    private static float wheel;
@@ -17,9 +13,6 @@ public final class VehicleWorld {
    private static float lastBodyYaw;
    private static double lx;
    private static double lz;
-   private static final double[][] PUFFS = new double[24][5];
-   private static int puffIdx;
-   private static Identifier glowTex;
 
    private VehicleWorld() {
    }
@@ -66,17 +59,7 @@ public final class VehicleWorld {
 
          lastBodyYaw = var7;
          lean = lean + (Math.max(-1.0F, Math.min(1.0F, var8 / 9.0F)) * Math.min(1.0F, speed * 2.0F) - lean) * 0.2F;
-         Cos.Item var9 = active();
-         if (var9 != null && speed > 0.2F && Mc.onGround(var0) || var9 != null && (var9.id.equals("veh_hover") || var9.id.equals("veh_ufo"))) {
-            double[] var10 = PUFFS[puffIdx = (puffIdx + 1) % PUFFS.length];
-            double var11 = Math.toRadians(var7);
-            double var13 = var9.id.startsWith("veh_car") ? 1.7 : (var9.id.equals("veh_kart") ? 1.0 : 0.7);
-            var10[0] = Mc.x(var0) + Math.sin(var11) * var13 + (Math.random() - 0.5) * 0.3;
-            var10[2] = Mc.z(var0) - Math.cos(var11) * var13 + (Math.random() - 0.5) * 0.3;
-            var10[1] = Mc.y(var0) + (!var9.id.equals("veh_hover") && !var9.id.equals("veh_ufo") ? 0.25 : 0.1);
-            var10[3] = 0.0;
-            var10[4] = var9.id.equals("veh_hover") ? 1.0 : (var9.id.equals("veh_ufo") ? 2.0 : (var9.id.equals("veh_cloud") ? 3.0 : 0.0));
-         }
+         VehicleFx.tick(active(), var0, speed, lean);
       }
    }
 
@@ -191,43 +174,11 @@ public final class VehicleWorld {
          var5.wheel = lastWheel + (wheel - lastWheel) * var0;
          var5.lean = lean;
          int var6 = CosRender.light(var3[0], var3[1] + 0.5, var3[2]);
-         CosRender.drawWorld(var1.model, var5, var3[0], var3[1], var3[2], var4, 0.0F, 0.0F, 1.0F, var6);
-         if (glowTex == null) {
-            glowTex = Identifier.fromNamespaceAndPath("legoclient", "vehicle/glow");
-
-            try {
-               Tx.register(glowTex, AmbientTex.paint("glow"), 128, 128, true);
-            } catch (Throwable var16) {
-            }
-         }
-
-         for (double[] var10 : PUFFS) {
-            if (!(var10[3] > 1.2)) {
-               var10[3] += 0.016;
-               double var11 = var10[3] / 1.2;
-               int var13;
-               double var14;
-               switch ((int)var10[4]) {
-                  case 1:
-                     var13 = R3.argb(2416895, 0.5 * (1.0 - var11));
-                     var14 = 0.25 + var11 * 0.2;
-                     break;
-                  case 2:
-                     var13 = R3.argb(8191851, 0.45 * (1.0 - var11));
-                     var14 = 0.3 + var11 * 0.3;
-                     break;
-                  case 3:
-                     var13 = R3.argb(16777215, 0.5 * (1.0 - var11));
-                     var14 = 0.4 + var11 * 0.5;
-                     break;
-                  default:
-                     var13 = R3.argb(12104360, 0.35 * (1.0 - var11));
-                     var14 = 0.25 + var11 * 0.6;
-               }
-
-               R3.glowBillboard(glowTex, var10[0], var10[1] + var11 * 0.4, var10[2], var14, var13);
-            }
-         }
+         float var7 = Vehicles.stance(var1.id) == Vehicles.Stance.SIT ? VehicleFx.pitch() : 0.0F;
+         CosRender.drawWorld(var1.model, var5, var3[0], var3[1], var3[2], var4, var7, 0.0F, 1.0F, var6);
+         VehicleFx.render(var3[0], var3[1], var3[2], var4, var5.time, var6, speed);
+      } else {
+         VehicleFx.tick(null, null, 0.0F, 0.0F);
       }
    }
 

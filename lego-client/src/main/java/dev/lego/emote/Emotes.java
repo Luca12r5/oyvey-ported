@@ -266,7 +266,7 @@ public final class Emotes {
       public final Setting.Num speed = this.add(new Setting.Num("Tempo", 0.5, 2.0, 0.1, 1.0, "x"));
 
       EmoteModule() {
-         super("emotes", "Emotes", "Taste B halten: Emote-Rad · " + EmoteLib.ALL.size() + " Emotes, nur für dich sichtbar", Category.EMOTES);
+         super("emotes", "Emotes", "Taste B halten: Emote-Rad · " + EmoteLib.ALL.size() + " Emotes, andere LEGO-Spieler sehen sie", Category.EMOTES);
          this.enabled = true;
          this.icon("emote");
       }

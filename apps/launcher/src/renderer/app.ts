@@ -11,7 +11,6 @@ import { headFromSkin } from './avatar.ts';
 import { setLang, t } from './i18n.ts';
 import { playPage, profileMenu, profileLine } from './pages/play.ts';
 import { skinsPage } from './pages/skins.ts';
-import { gamesPage, onDuelEvent } from './pages/games.ts';
 import { playSplash } from './splash.ts';
 import { webglAvailable } from './intro3d.ts';
 import { playIntroCave } from './introcave.ts';
@@ -47,7 +46,6 @@ const PAGES: PageDef[] = [
   { id: 'profiles', label: () => t('nav.profiles'), icon: 'profiles', page: profilesPage, slot: 'main' },
   { id: 'skins', label: () => 'Skins', icon: 'skins', page: skinsPage, slot: 'main' },
   { id: 'friends', label: () => t('nav.friends'), icon: 'friends', page: friendsPage, needsLego: true, slot: 'main' },
-  { id: 'games', label: () => (state.settings.language === 'de' ? 'Spiele' : 'Games'), icon: 'games', page: gamesPage, slot: 'main' },
   { id: 'cosmetics', label: () => t('nav.cosmetics'), icon: 'cosmetics', page: cosmeticsPage, needsLego: true, slot: 'main' },
   // Designs live under Optionen now; the route stays for deep links.
   { id: 'designs', label: () => t('nav.designs'), icon: 'brush', page: (el) => designsPage(el), slot: 'hidden' },
@@ -408,9 +406,9 @@ async function boot(): Promise<void> {
   });
   api.on('lego-event', (ev: { type: string; data: { from?: { name?: string }; from_id?: string; body?: string } }) => {
     if (ev.type === 'duel') {
-      const m = ev.data as unknown as Parameters<typeof onDuelEvent>[0];
-      onDuelEvent(m);
-      if (m.k === 'inv') { toast(`${m.from.name} fordert dich zu einem Duell heraus – Spiele`, 'ok'); notify(`Duell-Einladung von ${m.from.name}`); }
+      // Games live in the client only; the launcher just tells you about the invite.
+      const m = ev.data as unknown as { k?: string; from?: { name?: string } };
+      if (m.k === 'inv') { toast(`${m.from?.name ?? 'Jemand'} fordert dich zu einem Duell heraus – im Spiel annehmen`, 'ok'); notify(`Duell-Einladung von ${m.from?.name ?? 'Jemand'}`); }
       return;
     }
     const say = (text: string, kind?: 'ok') => { toast(text, kind); notify(text); };
