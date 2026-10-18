@@ -1,33 +1,33 @@
-// Button look of the LEGO launcher (Spotify-HUD style): rounded glass for quiet
-// buttons, a filled accent gradient with a soft glow for primary ones.
+// Button look of the LEGO launcher: primary buttons are real bricks (studs on
+// top, lit top edge, dark bottom edge, press-down on click); quiet buttons are
+// smooth "tiles" like LEGO flat tiles.
 import type React from 'react';
 import type { AccentColor } from '../../store/theme.ts';
 import type { ComponentVariant } from '../design-system.ts';
 
-const SOLID: Partial<Record<ComponentVariant, [string, string]>> = {
-  success: ['#22c55e', '#15803d'],
-  destructive: ['#ef4444', '#b91c1c'],
-  warning: ['#f59e0b', '#b45309'],
-  info: ['#3b82f6', '#1d4ed8'],
+/** Brick colours per variant (LEGO palette). */
+const BRICK: Partial<Record<ComponentVariant, string>> = {
+  success: '#237841',
+  destructive: '#c4161c',
+  warning: '#f2cd37',
+  info: '#0055bf',
 };
+
+export function isBrick(variant: ComponentVariant): boolean {
+  return !(variant === 'ghost' || variant === 'flat' || variant === 'flat-secondary' || variant === 'secondary' || variant === 'default');
+}
 
 export function buttonStyle(variant: ComponentVariant, accent: AccentColor, hovered: boolean, disabled: boolean): React.CSSProperties {
   const lift = hovered && !disabled;
   if (variant === 'ghost') return { backgroundColor: lift ? 'rgba(255,255,255,0.08)' : 'transparent', color: '#fff' };
-  if (variant === 'flat' || variant === 'flat-secondary' || variant === 'secondary' || variant === 'default') {
+  if (!isBrick(variant)) {
     return {
-      backgroundColor: lift ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.05)',
-      border: `1px solid ${lift ? `${accent.value}99` : 'rgba(255,255,255,0.12)'}`,
+      backgroundColor: lift ? '#30353c' : '#262a30',
+      border: '1px solid rgba(255,255,255,0.08)',
+      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -3px 0 rgba(0,0,0,0.35)${lift ? `, 0 0 0 1px ${accent.value}66` : ''}`,
       color: '#fff',
-      boxShadow: lift ? `0 6px 18px ${accent.value}26` : 'none',
     };
   }
-  const [a, b] = SOLID[variant] ?? [accent.light, accent.dark];
-  return {
-    backgroundImage: `linear-gradient(135deg, ${a}, ${b})`,
-    border: '1px solid rgba(255,255,255,0.18)',
-    color: '#fff',
-    boxShadow: lift ? `0 10px 30px ${a}66, inset 0 1px 0 rgba(255,255,255,0.35)` : `0 6px 20px ${a}40, inset 0 1px 0 rgba(255,255,255,0.25)`,
-    filter: lift ? 'brightness(1.08)' : undefined,
-  };
+  const c = BRICK[variant] ?? accent.value;
+  return { ['--bc' as string]: c, color: variant === 'warning' ? '#1b1b1b' : '#fff', filter: lift ? 'brightness(1.08)' : undefined } as React.CSSProperties;
 }

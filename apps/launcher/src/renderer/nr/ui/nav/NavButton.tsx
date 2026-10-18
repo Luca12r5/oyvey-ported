@@ -10,21 +10,20 @@ interface NavButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isActive?: boolean;
   variant?: 'default' | 'secondary' | 'ghost';
   label?: React.ReactNode;
+  /** LEGO colour of this rail brick (each tab has its own). */
+  brickColor?: string;
 }
 
-export const NavButton = forwardRef<HTMLButtonElement, NavButtonProps>(({ className, icon, isActive = false, variant: _v, label, style, onMouseEnter, onMouseLeave, ...props }, ref) => {
+export const NavButton = forwardRef<HTMLButtonElement, NavButtonProps>(({ className, icon, isActive = false, variant: _v, label, brickColor, style, onMouseEnter, onMouseLeave, ...props }, ref) => {
   const accent = useThemeStore((s) => s.accentColor);
   const [hover, setHover] = useState(false);
   return (
     <button
       ref={ref}
-      className={cn('lx-nav relative w-[62px] flex flex-col items-center justify-center gap-1 rounded-2xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40', label ? 'py-2' : 'h-[58px]', className)}
+      className={cn('lx-nav relative w-[62px] flex flex-col items-center justify-center gap-1 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40', isActive && 'lx-nav-on', label ? 'py-2' : 'h-[58px]', className)}
       style={{
-        color: isActive ? '#fff' : hover ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.58)',
-        backgroundImage: isActive ? `linear-gradient(140deg, ${accent.light}, ${accent.dark})` : undefined,
-        backgroundColor: !isActive && hover ? 'rgba(255,255,255,0.08)' : undefined,
-        boxShadow: isActive ? `0 8px 24px ${accent.value}59, inset 0 1px 0 rgba(255,255,255,0.3)` : undefined,
-        transform: hover && !isActive ? 'scale(1.06)' : undefined,
+        ['--bc' as string]: brickColor ?? accent.value,
+        color: isActive ? (brickColor === '#f2cd37' ? '#1b1b1b' : '#fff') : hover ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.6)',
         ...style,
       }}
       onMouseEnter={(e) => { setHover(true); onMouseEnter?.(e); }}

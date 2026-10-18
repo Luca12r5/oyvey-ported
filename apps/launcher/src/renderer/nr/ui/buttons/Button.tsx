@@ -4,7 +4,8 @@ import { forwardRef, useState } from 'react';
 import { cn } from '../../lib/utils.ts';
 import { useThemeStore } from '../../store/theme.ts';
 import { getAccessibilityProps, type ComponentSize, type ComponentVariant } from '../design-system.ts';
-import { buttonStyle } from './style.ts';
+import { buttonStyle, isBrick } from './style.ts';
+import { brickClick } from '../../lib/sound.ts';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ComponentVariant;
@@ -37,17 +38,19 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         type="button"
         disabled={disabled}
         className={cn(
-          'lx-btn relative overflow-hidden font-medium tracking-wide transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40',
+          isBrick(variant) ? 'lx-brick' : 'lx-tile',
+          'lx-btn relative font-semibold tracking-wide transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40',
           'flex items-center justify-center gap-2 backdrop-blur-md whitespace-nowrap rounded-[var(--border-radius)]',
           SIZES[size],
           disabled && 'opacity-50 cursor-not-allowed',
           widthClassName, heightClassName, className,
         )}
-        style={{ ...buttonStyle(variant, accent, hover, disabled), transform: press ? 'scale(0.97)' : hover && !disabled ? 'translateY(-1px)' : undefined, ...style }}
+        style={{ ...buttonStyle(variant, accent, hover, disabled), ...style }}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => { setHover(false); setPress(false); }}
-        onMouseDown={() => !disabled && setPress(true)}
+        onMouseDown={() => { if (!disabled) { setPress(true); brickClick(isBrick(variant)); } }}
         onMouseUp={() => setPress(false)}
+        data-press={press ? '1' : undefined}
         {...getAccessibilityProps({ label, description, disabled })}
         {...props}
       >

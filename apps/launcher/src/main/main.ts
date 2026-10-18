@@ -536,7 +536,7 @@ function registerIpc(): void {
     const allowed: (keyof Settings)[] = [
       'themeId', 'customThemes', 'language', 'backendUrl', 'selectedProfile', 'closeOnLaunch', 'reducedMotion', 'uiScale', 'autoUpdate', 'rarityColors',
       'accentColor', 'background', 'backgroundQuality', 'snow', 'showSnapshots', 'showHistorical', 'curseforgeKey', 'msClientId',
-      'introEnabled', 'introSound', 'autoConsole', 'fx', 'surface', 'stage', 'designPresets', 'bgImage', 'guest', 'uiFont', 'headFont', 'customFont', 'buttonStyle', 'customLanguage', 'transition', 'jumpscares', 'skinLibrary', 'guestName',
+      'introEnabled', 'introSound', 'uiSounds', 'autoConsole', 'fx', 'surface', 'stage', 'designPresets', 'bgImage', 'guest', 'uiFont', 'headFont', 'customFont', 'buttonStyle', 'customLanguage', 'transition', 'jumpscares', 'skinLibrary', 'guestName',
     ];
     for (const k of allowed) if (k in patch) (settings as unknown as Record<string, unknown>)[k] = patch[k];
     // Never trust the renderer: re-validate imported themes and clamp numbers.
@@ -551,10 +551,10 @@ function registerIpc(): void {
     settings.headFont = pick(HEAD_FONTS, settings.headFont, 'poppins');
     settings.customFont = sanitizeFont(settings.customFont);
     settings.buttonStyle = pick(BUTTON_STYLES, settings.buttonStyle, 'crypt');
-    settings.transition = pick(TRANSITIONS, settings.transition, 'slide');
+    settings.transition = pick(TRANSITIONS, settings.transition, 'lego');
     settings.skinLibrary = sanitizeSkinLib(settings.skinLibrary);
     settings.guestName = typeof settings.guestName === 'string' && /^[A-Za-z0-9_]{3,16}$/.test(settings.guestName.trim()) ? settings.guestName.trim() : '';
-    for (const k of ['snow', 'showSnapshots', 'showHistorical', 'closeOnLaunch', 'reducedMotion', 'introEnabled', 'introSound', 'autoConsole', 'guest', 'jumpscares'] as const) settings[k] = !!settings[k];
+    for (const k of ['snow', 'showSnapshots', 'showHistorical', 'closeOnLaunch', 'reducedMotion', 'introEnabled', 'introSound', 'uiSounds', 'autoConsole', 'guest', 'jumpscares'] as const) settings[k] = !!settings[k];
     settings.msClientId = typeof settings.msClientId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(settings.msClientId.trim()) ? settings.msClientId.trim().toLowerCase() : '';
     settings.curseforgeKey = typeof settings.curseforgeKey === 'string' ? settings.curseforgeKey.trim().slice(0, 200) : '';
     if (!['ask', 'auto', 'off'].includes(settings.autoUpdate)) settings.autoUpdate = 'ask';

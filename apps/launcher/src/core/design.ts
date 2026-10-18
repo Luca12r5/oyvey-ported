@@ -85,7 +85,7 @@ export type HeadFont = (typeof HEAD_FONTS)[number];
 export const BUTTON_STYLES = ['crypt', 'nocturne', 'brick', 'neon', 'glass', 'pixel'] as const;
 export type ButtonStyle = (typeof BUTTON_STYLES)[number];
 /** Page transition animations (Optionen → Animationen). */
-export const TRANSITIONS = ['slide', 'fade', 'zoom', 'glitch', 'pumpkin', 'none'] as const;
+export const TRANSITIONS = ['lego', 'slide', 'fade', 'zoom', 'glitch', 'pumpkin', 'none'] as const;
 export type Transition = (typeof TRANSITIONS)[number];
 
 export interface CustomFont { name: string; data: string }

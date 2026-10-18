@@ -7,6 +7,7 @@ import { VerticalNavbar } from '../navigation/VerticalNavbar.tsx';
 import { UserProfileBar } from '../header/UserProfileBar.tsx';
 import { NavigationHistory } from '../header/NavigationHistory.tsx';
 import { HeaderInfoCarousel } from '../header/HeaderInfoCarousel.tsx';
+import { LegoText } from '../ui/LegoText.tsx';
 import { useThemeStore } from '../store/theme.ts';
 import { actions, useShell } from '../store/shell.ts';
 
@@ -44,8 +45,8 @@ function HeaderBar() {
         <NavigationHistory />
         <div className="flex items-center gap-3 min-w-0">
           <h1 className="lx-title m-0 whitespace-nowrap" aria-label="LEGO Launcher">
-            <span className="lx-lego">LEGO</span>
-            <span className="lx-title-rest">Launcher</span>
+            <LegoText text="LEGO" colors={['red', 'yellow', 'blue', 'green']} height={30} />
+            <LegoText text="LAUNCHER" colors={['white']} height={22} />
           </h1>
           <HeaderInfoCarousel />
         </div>

@@ -35,6 +35,7 @@ function stars(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, n
 }
 
 export const EXTRA_BACKGROUNDS: { id: string; name: { de: string; en: string } }[] = [
+  { id: 'baseplate', name: { de: 'LEGO-Bauplatte', en: 'LEGO baseplate' } },
   { id: 'galaxy', name: { de: 'Galaxie', en: 'Galaxy' } },
   { id: 'sakura', name: { de: 'Kirschblüten', en: 'Cherry blossoms' } },
   { id: 'underwater', name: { de: 'Unterwasser', en: 'Underwater' } },
@@ -48,6 +49,64 @@ export const EXTRA_BACKGROUNDS: { id: string; name: { de: string; en: string } }
 ];
 
 export const EXTRA_DRAW: Record<string, Draw> = {
+  baseplate(ctx, w, h, t, _p, q) {
+    // A grey LEGO baseplate in perspective; colourful bricks drop in and snap onto the studs.
+    sky(ctx, w, h, '#101215', '#1b1e23');
+    const hor = h * 0.34, cx = w * 0.5 + Math.sin(t * 0.00005) * w * 0.04;
+    const rows = Math.round(26 + 16 * q), cols = 40;
+    const K = (h - hor) * 1.05, spacing = (w / cols) * 2.2;
+    const proj = (gx: number, gz: number) => {
+      const z = 1 + gz * 0.16;
+      return { x: cx + (gx - cols / 2) * spacing / z, y: hor + K / z - K * 0.08, s: 1 / z };
+    };
+    for (let gz = rows; gz >= 0; gz--) {
+      for (let gx = -cols; gx <= cols * 2; gx++) {
+        const { x, y, s } = proj(gx, gz);
+        if (y < hor || x < -40 || x > w + 40) continue;
+        const r = spacing * 0.3 * s;
+        const fade = Math.min(1, s * 2.2);
+        ctx.fillStyle = `rgba(0,0,0,${0.4 * fade})`;
+        ctx.beginPath(); ctx.ellipse(x + r * 0.2, y + r * 0.32, r, r * 0.48, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = `rgba(120,126,134,${0.6 * fade})`;
+        ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.48, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = `rgba(190,196,204,${0.5 * fade})`;
+        ctx.beginPath(); ctx.ellipse(x - r * 0.15, y - r * 0.12, r * 0.55, r * 0.24, 0, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    const fog = ctx.createLinearGradient(0, hor - 20, 0, hor + (h - hor) * 0.45);
+    fog.addColorStop(0, 'rgba(16,18,21,1)');
+    fog.addColorStop(1, 'rgba(16,18,21,0)');
+    ctx.fillStyle = fog;
+    ctx.fillRect(0, 0, w, hor + (h - hor) * 0.45);
+    const COLS = ['#d01012', '#f2cd37', '#0055bf', '#237841', '#fe8a18', '#ffffff', '#a0bcac'];
+    const n = Math.round(5 + 9 * q);
+    for (let i = 0; i < n; i++) {
+      const period = 9000 + i * 1300, ph = ((t + i * 2700) % period) / period;
+      const r = rng((i + 1) * 7919 + Math.floor((t + i * 2700) / period) * 104729);
+      r(); r(); r();
+      const gx = 4 + Math.floor(r() * (cols - 8)), gz = 1 + Math.floor(r() * rows * 0.6);
+      const base = proj(gx, gz);
+      const drop = ph < 0.18 ? 1 - ph / 0.18 : 0;
+      const alpha = ph > 0.85 ? (1 - ph) / 0.15 : 1;
+      const bw = 2 * spacing * base.s, bh = bw * 0.6;
+      const x = base.x - bw / 2, y = base.y - bh - drop * h * 0.5 + (ph > 0.18 && ph < 0.21 ? 2 : 0);
+      const c = COLS[i % COLS.length]!;
+      ctx.globalAlpha = alpha * Math.min(1, base.s * 1.6);
+      ctx.fillStyle = c;
+      ctx.fillRect(x, y, bw, bh);
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.fillRect(x, y, bw, bh * 0.12);
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.fillRect(x, y + bh * 0.82, bw, bh * 0.18);
+      for (let k = 0; k < 2; k++) {
+        ctx.fillStyle = c;
+        ctx.beginPath(); ctx.ellipse(x + bw * (0.27 + k * 0.46), y, bw * 0.15, bw * 0.06, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.beginPath(); ctx.ellipse(x + bw * (0.25 + k * 0.46), y - bw * 0.015, bw * 0.08, bw * 0.03, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+  },
   galaxy(ctx, w, h, t, p, q) {
     sky(ctx, w, h, '#05030f', '#0a0620');
     // Nebula clouds in the theme colours plus magenta and cyan.

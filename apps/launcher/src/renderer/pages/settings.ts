@@ -91,6 +91,7 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
       ${row(t('set.language'), LANGS.find(([c]) => c === s.language)?.[1] ?? s.customLanguage?.name ?? s.language, html`<button class="btn sm" id="toLang">${{ __raw: FLAGS[s.language] ?? '' }} Ändern</button>`)}
       ${row(t('set.intro'), t('set.intro.d'), html`<div class="row"><button class="btn sm" id="introPlay">${icon('play', 'sm')} ${t('set.introPlay')}</button>${sw('introEnabled', s.introEnabled)}</div>`)}
       ${row(t('set.introSound'), t('set.introSound.d'), sw('introSound', s.introSound))}
+      ${row('Klick-Geräusche', 'Leises LEGO-Klacken, wenn du auf Steine (Knöpfe) drückst.', sw('uiSounds', s.uiSounds !== false))}
       ${row(t('set.closeOnLaunch'), t('set.closeOnLaunch.d'), sw('closeOnLaunch', s.closeOnLaunch))}
       ${row(t('set.updates'), t('set.updates.d'), html`<select data-key="autoUpdate" class="compact"><option value="ask" ${s.autoUpdate === 'ask' ? 'selected' : ''}>${t('set.upd.ask')}</option><option value="auto" ${s.autoUpdate === 'auto' ? 'selected' : ''}>${t('set.upd.auto')}</option><option value="off" ${s.autoUpdate === 'off' ? 'selected' : ''}>${t('set.upd.off')}</option></select>`)}`,
     appearance: html`

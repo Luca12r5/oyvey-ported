@@ -10,6 +10,7 @@ import { Background } from './bg.ts';
 import { headFromSkin } from './avatar.ts';
 import { setLang, t } from './i18n.ts';
 import { playPage } from './pages/play.ts';
+import { setUiSounds } from './nr/lib/sound.ts';
 import { mountShell, setAccent, shellStore, actions, gameStore, initGame, NAV_ICONS } from './nr/mount.tsx';
 import { skinsPage } from './pages/skins.ts';
 import { playSplash } from './splash.ts';
@@ -163,6 +164,8 @@ export function retheme(): void {
   if (s.accentColor) document.documentElement.style.setProperty('--accent', s.accentColor);
   // The NoRisk-style UI follows the theme accent unless the user picked one.
   setAccent(s.accentColor || getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
+  setUiSounds(s.uiSounds !== false && !state.info?.e2e);
+  document.body.classList.toggle('reduced-motion', s.reducedMotion);
   bg ??= new Background(document.getElementById('bg') as HTMLCanvasElement, document.getElementById('bg3d') as HTMLCanvasElement);
   bg.configure({ id: s.background, quality: s.backgroundQuality, snow: s.snow, still: s.reducedMotion, fx: s.fx, image: s.bgImage });
   // Drop the previous choice's classes before adding the current ones.

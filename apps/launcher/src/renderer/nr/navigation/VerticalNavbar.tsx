@@ -10,6 +10,9 @@ import { NavTooltip } from '../ui/nav/NavTooltip.tsx';
 import { useThemeStore } from '../store/theme.ts';
 import type { NavItem } from '../store/shell.ts';
 
+/** Every rail tab is a brick in its own classic LEGO colour. */
+const RAIL_COLORS: Record<string, string> = { play: '#d01012', profiles: '#0055bf', mods: '#f2cd37', skins: '#237841', capes: '#fe8a18', settings: '#6c6e68' };
+
 interface VerticalNavbarProps {
   className?: string;
   items: NavItem[];
@@ -54,6 +57,7 @@ export function VerticalNavbar({ className, items, activeItem, onItemClick, onLo
         icon={<Icon icon={item.icon} className="w-6 h-6" />}
         label={!item.isAction && showNavLabels ? item.label : undefined}
         isActive={active === item.id}
+        brickColor={RAIL_COLORS[item.id]}
         onClick={() => handleItemClick(item.id, item.isAction)}
         onMouseEnter={() => handleMouseEnter(item.id)}
         onMouseLeave={() => setShowTooltip(null)}
