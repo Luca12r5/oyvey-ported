@@ -981,19 +981,19 @@ body.crypt ::-webkit-scrollbar-track { background: transparent; }
    Night blue, square tiles with hairline borders, pixel type everywhere and
    a blue rail; laid out like the NoRisk launcher screenshots. */
 body.nacht {
-  /* Round 7: graphite glass like the Spotify HUD; accent comes from the theme. */
-  --line: rgba(255, 255, 255, .09);
-  --line-hi: rgba(255, 255, 255, .16);
-  --pbg: rgba(20, 20, 22, .62);
-  --pbg2: rgba(14, 14, 16, .7);
+  /* NoRisk colours: navy from the accent (accent × 0.1), grey text; accent from the theme. */
+  --line: #1f2d4d;
+  --line-hi: #2c3f69;
+  --pbg: rgba(14, 22, 40, .92);
+  --pbg2: rgba(10, 17, 34, .92);
   --text: #ffffff;
-  --muted: #a0a0a5;
-  --pix: Poppins, Inter, sans-serif;
-  --font: Poppins, Inter, sans-serif;
-  --head: Poppins, Inter, sans-serif;
-  background: var(--bg, #0d0d10);
+  --muted: #ababab;
+  --pix: "Pixelify Sans", Silkscreen, monospace;
+  --font: "Pixelify Sans", Inter, sans-serif;
+  --head: "Pixelify Sans", monospace;
+  background: var(--bg, #070e19);
   font-size: 14px;
-  letter-spacing: 0;
+  letter-spacing: .01em;
 }
 body.nacht::after { background: none; }
 body.nacht #bg, body.nacht #bg3d { opacity: 1; }

@@ -1,15 +1,14 @@
-/* Styles of the React UI (structure from the NoRisk Client launcher's globals.css,
- * GPL-3.0), scoped to `.nr`. Look: the LEGO launcher's Spotify-HUD style —
- * Poppins, rounded graphite glass, accent glows. */
-@font-face { font-family: Poppins; src: url(fonts/Poppins-Medium.ttf); font-weight: 500 600; }
+/* Styles of the React UI ported from the NoRisk Client launcher (GPL-3.0):
+ * styles/globals.css, scoped to `.nr` so the launcher's other pages keep theirs.
+ * Fonts: free replacements for NoRisk's own (SmallCaps/MinecraftTen are not shipped). */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-smallcaps: Poppins, Inter, "Segoe UI", sans-serif;
-  --font-minecraft: Poppins, Inter, "Segoe UI", sans-serif;
-  --border-radius: 12px;
+  --font-smallcaps: "Pixelify Sans", "Silkscreen", monospace;
+  --font-minecraft: "Pixelify Sans", "Silkscreen", sans-serif;
+  --border-radius: 0px;
   --nr-accent: #4f8eff;
   --accent-hover: #3a7aff;
   --accent-shadow: rgba(79, 142, 255, 0.5);
@@ -34,23 +33,13 @@
 
 .nr, .nr-launcher {
   font-family: var(--font-smallcaps);
-  letter-spacing: 0;
+  letter-spacing: 0.03em;
   color: #fff;
-  -webkit-font-smoothing: antialiased;
 }
-
-/* Graphite glass panels (Spotify HUD: rgba(20,20,22,.69), 1px light edge). */
-.lx-glass { background: rgba(20, 20, 22, 0.62); backdrop-filter: blur(18px) saturate(1.25); }
-.lx-rail { border-right: 1px solid rgba(255, 255, 255, 0.07); }
-.lx-bar { border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
-.lx-card { background: rgba(20, 20, 22, 0.58); border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 15px; backdrop-filter: blur(14px); }
-.lx-ic { display: inline-flex; align-items: center; justify-content: center; flex: none; }
-.lx-ic > svg { width: 100%; height: 100%; }
-.nr-tip-in.lx-glass { border: 1px solid rgba(255, 255, 255, 0.1); }
 .nr-root { position: relative; z-index: 2; height: 100vh; }
 
-.font-smallcaps { font-family: var(--font-smallcaps); letter-spacing: 0.01em; }
-.font-minecraft { font-family: var(--font-minecraft); letter-spacing: 0; }
+.font-smallcaps { font-family: var(--font-smallcaps); letter-spacing: 0.05em; font-variant-caps: small-caps; }
+.font-minecraft { font-family: var(--font-minecraft); letter-spacing: 0.03em; }
 .text-shadow { text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9), 0 0 3px rgba(0, 0, 0, 1); }
 .text-shadow-sm { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 1); }
 .text-shadow-lg { text-shadow: 0 4px 10px rgba(0, 0, 0, 0.9), 0 0 5px rgba(0, 0, 0, 1); }
@@ -117,9 +106,8 @@ body.is-fullscreen .nr-drag { -webkit-app-region: no-drag; }
 
 /* Menus opened from the React header/launch button use the launcher's .menu,
    restyled like NoRisk's dropdowns. */
-.menu { border-radius: 14px !important; border: 1px solid rgba(255, 255, 255, .1) !important; background: rgba(20, 20, 22, .92) !important; backdrop-filter: blur(18px); font-family: var(--font-smallcaps); box-shadow: 0 18px 50px rgba(0,0,0,.5) !important; }
-.menu .menu-h { font-family: var(--font-smallcaps); }
-.menu .menu-i { border-radius: 9px !important; }
+.menu { border-radius: 0 !important; border: 2px solid rgba(var(--accent-rgb), .5) !important; border-bottom-width: 4px !important; background: rgba(8, 14, 25, .94) !important; backdrop-filter: blur(16px); font-family: var(--font-smallcaps); letter-spacing: .04em; }
+.menu .menu-h { font-family: var(--font-smallcaps); font-variant-caps: small-caps; }
 .menu .menu-i:hover, .menu .menu-i.on { background: rgba(var(--accent-rgb), .22) !important; }
 
 /* The launcher's themed input box (body.nacht input …) must not apply to the
@@ -132,28 +120,19 @@ body.is-fullscreen .nr-drag { -webkit-app-region: no-drag; }
 body.nacht .set-nav .searchbar { max-width: 100%; min-width: 0; overflow: hidden; }
 .set-nav .searchbar input { min-width: 0; width: 100%; }
 
-/* ===== Round 7: the launcher's other pages in the same look (rounded glass, Poppins) ===== */
-body.nacht.crypt .btn, body.nacht.crypt .icon-btn, body.nacht.crypt .tabs button, body.nacht.crypt .seg button,
-body.nacht.crypt input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]), body.nacht.crypt select, body.nacht.crypt textarea,
-body.nacht.crypt .searchbar, body.nacht.crypt .tag, body.nacht.crypt .set-nav nav button, body.nacht.crypt .menu-i, body.nacht.crypt .toast { border-radius: 10px; }
-body.nacht.crypt .card, body.nacht.crypt .glass, body.nacht.crypt .panel, body.nacht.crypt .rows, body.nacht.crypt .item, body.nacht.crypt .shop-card,
-body.nacht.crypt .gate, body.nacht.crypt .drawer, body.nacht.crypt dialog, body.nacht.crypt .mcard, body.nacht.crypt .pcard { border-radius: 15px; }
-body.nacht.crypt .card, body.nacht.crypt .glass, body.nacht.crypt .rows, body.nacht.crypt .item, body.nacht.crypt .gate { background: rgba(20, 20, 22, .58); border-color: rgba(255, 255, 255, .09); backdrop-filter: blur(14px); }
-body.nacht.crypt .btn.primary { background-image: linear-gradient(135deg, var(--accent2, var(--accent)), var(--accent)); border-color: rgba(255,255,255,.18); color: #fff; box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent); }
-body.nacht.crypt .tabs button.active { background: color-mix(in srgb, var(--accent) 22%, transparent); border-color: var(--accent); }
-body.nacht.crypt h1, body.nacht.crypt h2, body.nacht.crypt h3, body.nacht.crypt b, body.nacht.crypt strong { font-family: Poppins, Inter, sans-serif; }
-body.nacht.crypt dialog { background: rgba(20, 20, 22, .94); border: 1px solid rgba(255,255,255,.1); }
+/* The launcher's own icons (lib/iconify.tsx). */
+.lx-ic { display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.lx-ic > svg { width: 100%; height: 100%; }
 
-/* Soft accent glow behind the character (pulses with the idle animation). */
-@keyframes lx-breathe { 0%, 100% { opacity: .55; transform: translate(-50%, -50%) scale(1); } 50% { opacity: .85; transform: translate(-50%, -50%) scale(1.06); } }
-.lx-glow { background: radial-gradient(circle, rgba(var(--accent-rgb), .38) 0%, rgba(var(--accent-rgb), .12) 45%, transparent 70%); filter: blur(6px); animation: lx-breathe 4.8s ease-in-out infinite; }
-body.reduced-motion .lx-glow { animation: none; }
+/* Opaque shell like NoRisk; see-through only when an animated background is chosen. */
+body.has-bg .nr-shell-bg { opacity: .55; }
+body.nacht.crypt .bg-canvas { filter: none; }
 
-/* Language picker: tiles with round flags. */
+/* Language picker: square tiles with round flags, accent frame when selected. */
 .lang-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
-.lang-tile { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.09); background: rgba(20,20,22,.55); color: #fff; cursor: pointer; text-align: left; font: 500 .9rem Poppins, sans-serif; transition: background .2s, border-color .2s, transform .2s; }
-.lang-tile:hover { background: rgba(255,255,255,.08); transform: translateY(-1px); }
-.lang-tile.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, rgba(20,20,22,.6)); box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 25%, transparent); }
+.lang-tile { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 0; border: 2px solid rgba(255,255,255,.1); border-bottom-width: 3px; background: rgba(0,0,0,.3); color: #fff; cursor: pointer; text-align: left; font-family: var(--font-smallcaps); font-variant-caps: small-caps; letter-spacing: .05em; font-size: 1rem; transition: background .2s, border-color .2s; }
+.lang-tile:hover { background: rgba(0,0,0,.4); border-color: rgba(255,255,255,.2); }
+.lang-tile.on { border-color: var(--nr-accent); background: rgba(var(--accent-rgb), .2); }
 .lang-flag { width: 26px; height: 26px; display: inline-flex; flex: none; }
 .lang-flag svg, svg.flag { width: 100%; height: 100%; }
 #toLang svg.flag { width: 16px; height: 16px; }
@@ -161,84 +140,16 @@ body.reduced-motion .lx-glow { animation: none; }
 
 /* Launch confetti */
 .lx-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 900; overflow: hidden; }
-.lx-confetti i { position: absolute; top: -12px; width: 8px; height: 12px; border-radius: 2px; animation: lx-fall linear forwards; }
+.lx-confetti i { position: absolute; top: -12px; width: 8px; height: 12px; animation: lx-fall linear forwards; }
 @keyframes lx-fall { to { transform: translate(var(--dx), 105vh) rotate(var(--rot)); opacity: .9; } }
 
-/* Backgrounds at full brightness behind the glass (the old crypt look dimmed them). */
-body.nacht.crypt .bg-canvas { filter: none; }
-
-/* "LEGO" lettering in the style of the brick logo: red rounded tile, white heavy
-   letters with a black and yellow outline. */
-.lx-title { display: flex; align-items: center; gap: 10px; font-family: Poppins, sans-serif; }
-.lx-lego {
-  display: inline-block; padding: 1px 9px 2px; border-radius: 9px;
-  background: linear-gradient(180deg, #ff2a1a, #d01012);
-  box-shadow: inset 0 0 0 2px #ffd500, inset 0 0 0 3.5px #111, 0 4px 14px rgba(208, 16, 18, .45);
-  color: #fff; font-weight: 900; font-size: 1.15rem; letter-spacing: .02em; line-height: 1.35;
-  -webkit-text-stroke: 1px #111; paint-order: stroke fill;
-  text-shadow: 1px 1px 0 #ffd500, -1px -1px 0 #ffd500, 1px -1px 0 #ffd500, -1px 1px 0 #ffd500, 0 2px 0 #111;
-  transform: rotate(-2deg);
-}
-.lx-title-rest { font-weight: 700; font-size: 1.15rem; letter-spacing: -.01em; color: #f4f4f5; }
-
-/* ======================= Round 8: built from LEGO ======================= */
-/* Stud pattern of a LEGO plate (very subtle, sharp at any resolution). */
-:root { --lx-studs: radial-gradient(circle at 50% 50%, rgba(255,255,255,.045) 0 3.2px, rgba(0,0,0,.18) 3.3px 4px, transparent 4.2px); }
-.lx-glass { background-color: rgba(30, 33, 38, .80); background-image: var(--lx-studs); background-size: 16px 16px; backdrop-filter: blur(14px); }
-.lx-card { background-color: rgba(34, 38, 44, .82); background-image: var(--lx-studs); background-size: 16px 16px; border-radius: 10px; box-shadow: inset 0 1px 0 rgba(255,255,255,.08), inset 0 -4px 0 rgba(0,0,0,.3), 0 8px 20px rgba(0,0,0,.35); }
-
-/* Bricks: real studs on top, lit top edge, darker bottom side, press-down. */
-.lx-brick {
-  --bc: #d01012;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--bc) 100%, #fff 12%), var(--bc) 30%, color-mix(in srgb, var(--bc) 88%, #000));
-  border: 0 !important; border-radius: 7px !important; overflow: visible !important; margin-top: 7px;
-  box-shadow: inset 0 2px 0 rgba(255,255,255,.38), inset 0 -5px 0 rgba(0,0,0,.25), 0 6px 0 color-mix(in srgb, var(--bc) 55%, #000), 0 12px 22px rgba(0,0,0,.45);
-  transition: transform .12s cubic-bezier(.3,1.6,.5,1), box-shadow .12s, filter .2s !important;
-  text-shadow: 0 1px 0 rgba(0,0,0,.35);
-}
-.lx-brick::before {
-  content: ""; position: absolute; left: 10px; right: 10px; top: -7px; height: 8px; pointer-events: none;
-  background: radial-gradient(ellipse 6.5px 4.5px at 50% 55%, color-mix(in srgb, var(--bc) 85%, #fff 25%) 0 70%, color-mix(in srgb, var(--bc) 70%, #000) 72% 100%, transparent 102%) 0 0 / 22px 8px repeat-x;
-}
-.lx-brick:hover:not(:disabled) { transform: translateY(-2px); }
-.lx-brick[data-press], .lx-brick:active:not(:disabled) { transform: translateY(5px); box-shadow: inset 0 2px 0 rgba(255,255,255,.3), inset 0 -3px 0 rgba(0,0,0,.25), 0 1px 0 color-mix(in srgb, var(--bc) 55%, #000), 0 4px 10px rgba(0,0,0,.4); }
-.nr .rounded-r-none.lx-brick { border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important; }
-.nr .rounded-l-none.lx-brick { border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; }
-/* Tiles: smooth flat LEGO tiles for quiet buttons. */
-.lx-tile { border-radius: 8px !important; transition: transform .18s ease, background-color .2s, box-shadow .2s !important; }
-.lx-tile:active:not(:disabled) { transform: translateY(2px); }
-
-/* Rail: each tab is a brick in its own colour; hover wobbles like a loose brick. */
-.lx-nav { border-radius: 9px; }
-.lx-nav.lx-nav-on { background: linear-gradient(180deg, color-mix(in srgb, var(--bc) 100%, #fff 14%), var(--bc) 35%, color-mix(in srgb, var(--bc) 86%, #000)); box-shadow: inset 0 2px 0 rgba(255,255,255,.35), inset 0 -4px 0 rgba(0,0,0,.25), 0 5px 0 color-mix(in srgb, var(--bc) 55%, #000), 0 10px 20px rgba(0,0,0,.4); margin-top: 6px; }
-.lx-nav.lx-nav-on::before { content: ""; position: absolute; left: 9px; right: 9px; top: -6px; height: 7px; background: radial-gradient(ellipse 6px 4px at 50% 55%, color-mix(in srgb, var(--bc) 85%, #fff 25%) 0 70%, color-mix(in srgb, var(--bc) 70%, #000) 72% 100%, transparent 102%) 0 0 / 22px 7px repeat-x; }
-@keyframes lx-wobble { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-4deg) translateY(-1px); } 75% { transform: rotate(4deg) translateY(-1px); } }
-.lx-nav:not(.lx-nav-on):hover { animation: lx-wobble .45s ease; background: rgba(255,255,255,.06); }
-@keyframes lx-drop { 0% { opacity: 0; transform: translateY(-40px) rotate(-6deg); } 70% { opacity: 1; transform: translateY(4px) rotate(1deg); } 100% { transform: none; } }
-.nr-stagger { animation: lx-drop .55s cubic-bezier(.3,1.4,.5,1) both !important; }
-
-/* Brick lettering: bricks snap in one by one. */
-.lx-title { gap: 8px; }
-.lx-legotext { display: block; overflow: visible; filter: drop-shadow(0 3px 4px rgba(0,0,0,.45)); }
+/* "LEGO" title built from bricks: they snap in one by one. */
+.lx-legotext { display: block; overflow: visible; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
 @keyframes lx-snap { 0% { opacity: 0; transform: translateY(-14px); } 80% { opacity: 1; transform: translateY(1px); } 100% { transform: none; } }
-.lx-build .lx-brick-cell { animation: lx-snap .35s cubic-bezier(.3,1.5,.5,1) both; }
-.lx-legotext:hover .lx-brick-cell { animation: lx-snap .35s cubic-bezier(.3,1.5,.5,1) both; }
-
-/* Cards look like plates; every page type moves differently. */
-.nr-pcard, .nr-mod-row, .nr-skin-card, .nr-cape-card, #progressCard, .lx-news {
-  background-color: rgba(34, 38, 44, .82) !important; background-image: var(--lx-studs); background-size: 16px 16px;
-  border: 1px solid rgba(255,255,255,.07) !important; border-radius: 10px !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.07), inset 0 -4px 0 rgba(0,0,0,.28), 0 6px 16px rgba(0,0,0,.3);
-}
-.nr-pcard:hover, .nr-mod-row:hover { transform: translateY(-2px); box-shadow: inset 0 1px 0 rgba(255,255,255,.1), inset 0 -4px 0 rgba(0,0,0,.28), 0 12px 26px rgba(0,0,0,.4); }
-.nr-skin-card { transition: transform .35s cubic-bezier(.3,1.4,.5,1), box-shadow .3s !important; transform-style: preserve-3d; }
-.nr-skin-card:hover { transform: perspective(700px) rotateY(-8deg) rotateX(4deg) translateY(-4px); }
-@keyframes lx-flutter { 0%, 100% { transform: skewY(0) translateY(-3px); } 50% { transform: skewY(-2.5deg) translateY(-5px); } }
-.nr-cape-card:hover { animation: lx-flutter 1.1s ease-in-out infinite; }
-.lx-news:hover { transform: translateY(-3px) scale(1.01); }
+.lx-build .lx-brick-cell, .lx-legotext:hover .lx-brick-cell { animation: lx-snap .35s cubic-bezier(.3,1.5,.5,1) both; }
 
 /* Page transitions ("Bauen"): one per page. */
-@keyframes lx-page-build { 0% { opacity: 0; transform: translateY(40px) scale(.94); filter: blur(4px); } 70% { opacity: 1; transform: translateY(-4px) scale(1.01); filter: none; } 100% { transform: none; } }
+@keyframes lx-page-build { 0% { opacity: 0; transform: translateY(40px) scale(.94); } 70% { opacity: 1; transform: translateY(-4px) scale(1.01); } 100% { transform: none; } }
 @keyframes lx-page-right { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: none; } }
 @keyframes lx-page-left { from { opacity: 0; transform: translateX(-60px); } to { opacity: 1; transform: none; } }
 @keyframes lx-page-drop { 0% { opacity: 0; transform: translateY(-60px); } 75% { opacity: 1; transform: translateY(6px); } 100% { transform: none; } }
@@ -252,69 +163,4 @@ body.nacht.crypt .bg-canvas { filter: none; }
 #view[data-page="skins"] .view-enter.tr-lego { animation: lx-page-spin .5s cubic-bezier(.2,.9,.3,1) both; }
 #view[data-page="capes"] .view-enter.tr-lego { animation: lx-page-flip .5s cubic-bezier(.2,.9,.3,1) both; }
 #view[data-page="settings"] .view-enter.tr-lego { animation: lx-page-left .4s cubic-bezier(.2,.9,.3,1) both; }
-/* Rows and cards inside a page snap in one after another. */
-.tr-lego .nr-pcard, .tr-lego .nr-mod-row, .tr-lego .nr-skin-card, .tr-lego .nr-cape-card, .tr-lego .lang-tile { animation: lx-snap .4s cubic-bezier(.3,1.5,.5,1) both; }
-.tr-lego :is(.nr-pcard, .nr-mod-row, .nr-skin-card, .nr-cape-card, .lang-tile):nth-child(2) { animation-delay: .04s; }
-.tr-lego :is(.nr-pcard, .nr-mod-row, .nr-skin-card, .nr-cape-card, .lang-tile):nth-child(3) { animation-delay: .08s; }
-.tr-lego :is(.nr-pcard, .nr-mod-row, .nr-skin-card, .nr-cape-card, .lang-tile):nth-child(4) { animation-delay: .12s; }
-.tr-lego :is(.nr-pcard, .nr-mod-row, .nr-skin-card, .nr-cape-card, .lang-tile):nth-child(5) { animation-delay: .16s; }
-.tr-lego :is(.nr-pcard, .nr-mod-row, .nr-skin-card, .nr-cape-card, .lang-tile):nth-child(6) { animation-delay: .2s; }
-.tr-lego :is(.nr-pcard, .nr-mod-row, .nr-skin-card, .nr-cape-card, .lang-tile):nth-child(n+7) { animation-delay: .24s; }
-/* LAUNCH brick: light runs over the studs now and then. */
-@keyframes lx-sheen { 0%, 70% { background-position: -150% 0; } 100% { background-position: 250% 0; } }
-.nr-play-group .lx-brick::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.28) 50%, transparent 65%) -150% 0 / 60% 100% no-repeat; animation: lx-sheen 5s ease-in-out infinite; }
-body.reduced-motion .lx-build .lx-brick-cell, body.reduced-motion .nr-stagger, body.reduced-motion #view .view-enter.tr-lego, body.reduced-motion .tr-lego * { animation: none !important; }
-
-/* Other launcher pages: brick buttons and plate panels there too. */
-body.nacht.crypt .btn.primary { --bc: var(--accent); background: linear-gradient(180deg, color-mix(in srgb, var(--bc) 100%, #fff 12%), var(--bc) 30%, color-mix(in srgb, var(--bc) 88%, #000)); border: 0; border-radius: 7px; box-shadow: inset 0 2px 0 rgba(255,255,255,.35), inset 0 -4px 0 rgba(0,0,0,.25), 0 4px 0 color-mix(in srgb, var(--bc) 55%, #000); }
-body.nacht.crypt .btn.primary:active { transform: translateY(3px); box-shadow: inset 0 2px 0 rgba(255,255,255,.3), 0 1px 0 color-mix(in srgb, var(--bc) 55%, #000); }
-body.nacht.crypt .card, body.nacht.crypt .glass, body.nacht.crypt .rows, body.nacht.crypt .item, body.nacht.crypt .gate { background-color: rgba(34, 38, 44, .82); background-image: var(--lx-studs); background-size: 16px 16px; }
-body.nacht.crypt .switch i { border-radius: 99px; }
-body.nacht.crypt .switch i::after { border-radius: 50%; }
-
-/* ===== Round 9: Spotify look — round, calm, LEGO only in the title ===== */
-.lx-glass { background-color: rgba(18, 18, 18, .86); background-image: none; backdrop-filter: blur(16px); }
-.lx-card, .nr-pcard, .nr-mod-row, .nr-skin-card, .nr-cape-card, #progressCard, .lx-news {
-  background-color: rgba(24, 24, 24, .9) !important; background-image: none !important;
-  border: 1px solid rgba(255, 255, 255, .05) !important; border-radius: 16px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, .35) !important; transition: background-color .25s, transform .25s cubic-bezier(.2,.9,.3,1) !important;
-}
-.nr-pcard:hover, .nr-mod-row:hover, .nr-skin-card:hover, .nr-cape-card:hover { background-color: rgba(40, 40, 40, .94) !important; transform: translateY(-2px); animation: none; }
-.nr-skin-card:hover { transform: translateY(-3px) scale(1.01); }
-.lx-news { border-radius: 14px !important; }
-/* Primary buttons: solid accent pills that grow a little on hover (Spotify). */
-.lx-brick {
-  background: var(--bc) !important; border-radius: 999px !important; margin-top: 0 !important; overflow: hidden !important;
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--bc) 30%, transparent) !important; text-shadow: none;
-  transition: transform .15s ease, filter .15s, box-shadow .2s !important;
-}
-.lx-brick::before { display: none; }
-.lx-brick:hover:not(:disabled) { transform: scale(1.04); filter: brightness(1.1); }
-.lx-brick[data-press], .lx-brick:active:not(:disabled) { transform: scale(.97); }
-/* Split LAUNCH pill: left half and arrow half. */
-.nr .rounded-r-none.lx-brick { border-radius: 999px 0 0 999px !important; }
-.nr .rounded-l-none.lx-brick { border-radius: 0 999px 999px 0 !important; border-left: 1px solid rgba(0,0,0,.18) !important; }
-.nr-play-group .lx-brick:hover:not(:disabled) { transform: none; filter: brightness(1.1); }
-/* Quiet buttons: dark round pills. */
-.lx-tile { border-radius: 999px !important; background-color: rgba(255,255,255,.07) !important; border: 1px solid rgba(255,255,255,.08) !important; box-shadow: none !important; }
-.lx-tile:hover:not(:disabled) { background-color: rgba(255,255,255,.13) !important; transform: scale(1.03); }
-/* Rail: rounded pills; the active tab is softly lit with its own colour. */
-.lx-nav { border-radius: 16px; }
-.lx-nav.lx-nav-on { background: color-mix(in srgb, var(--bc) 22%, rgba(255,255,255,.06)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bc) 45%, transparent); margin-top: 0; color: #fff !important; }
-.lx-nav.lx-nav-on::before { display: none; }
-.lx-nav.lx-nav-on .lx-ic { color: color-mix(in srgb, var(--bc) 70%, #fff); }
-.lx-nav:not(.lx-nav-on):hover { animation: none; background: rgba(255,255,255,.07); }
-.lx-rail, .lx-bar { border-color: rgba(255,255,255,.05); }
-.nr-stagger { animation: nr-stagger .4s cubic-bezier(.33,1,.68,1) both !important; }
-/* Calmer page transitions (fade + slight movement, still different per page). */
-#view .view-enter.tr-lego, #view[data-page] .view-enter.tr-lego { animation-duration: .35s !important; animation-timing-function: cubic-bezier(.2,.9,.3,1) !important; }
-@keyframes lx-snap { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: none; } }
-.nr-play-group .lx-brick::after { display: none; }
-/* Other pages too. */
-body.nacht.crypt .btn, body.nacht.crypt .icon-btn, body.nacht.crypt .tabs button, body.nacht.crypt .seg button { border-radius: 999px; }
-body.nacht.crypt .btn.primary { background: var(--accent); box-shadow: none; border-radius: 999px; color: #000; }
-body.nacht.crypt .btn.primary:hover { transform: scale(1.04); filter: brightness(1.1); }
-body.nacht.crypt .card, body.nacht.crypt .glass, body.nacht.crypt .rows, body.nacht.crypt .item, body.nacht.crypt .gate { background-color: rgba(24, 24, 24, .9); background-image: none; border-radius: 16px; border-color: rgba(255,255,255,.05); }
-body.nacht.crypt input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]), body.nacht.crypt select, body.nacht.crypt .searchbar { border-radius: 999px; background: rgba(255,255,255,.07); border-color: transparent; }
-.lang-tile { border-radius: 999px; }
-.menu { border-radius: 16px !important; background: rgba(40, 40, 40, .97) !important; }
+body.reduced-motion .lx-build .lx-brick-cell, body.reduced-motion #view .view-enter.tr-lego { animation: none !important; }

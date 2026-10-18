@@ -45,7 +45,6 @@ export function PlayerRig({ playerName, skin, variant, cape, animated, reducedMo
 
   return (
     <div className="relative flex-shrink-0" style={{ width: `${Math.round(PLAYER_RIG_WIDTH * k)}px`, height: `${Math.round(height)}px` }}>
-      <div className="lx-glow absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none" style={{ width: `${Math.round(360 * k)}px`, height: `${Math.round(360 * k)}px` }} />
       <div className="nr-nametag absolute left-1/2 -translate-x-1/2 -top-2 z-20 px-3 py-1 rounded-full bg-black/45 backdrop-blur-md border border-white/10 text-white text-sm font-medium whitespace-nowrap pointer-events-none" style={{ fontSize: `${Math.round(14 * Math.min(1.6, k))}px` }}>
         {playerName}
       </div>
@@ -53,7 +52,7 @@ export function PlayerRig({ playerName, skin, variant, cape, animated, reducedMo
         ref={canvasRef}
         id="avatar"
         className="absolute"
-        style={{ left: '50%', top: '50%', transform: 'translate(-50%, -48%)', width: `${Math.round(520 * k)}px`, height: `${Math.round(640 * k)}px`, maxWidth: 'none', filter: 'drop-shadow(5px 10px 6px rgba(0,0,0,0.7))' }}
+        style={{ left: '50%', top: '50%', transform: 'translate(-50%, -48%)', width: `${Math.round(520 * k)}px`, height: `${Math.round(640 * k)}px`, maxWidth: 'none', filter: 'drop-shadow(5px 10px 5px rgba(0,0,0,0.75))' }}
       />
     </div>
   );

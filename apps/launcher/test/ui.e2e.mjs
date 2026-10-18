@@ -100,9 +100,10 @@ async function page(id, expect) {
 await win.waitForSelector('#launch');
 await win.waitForTimeout(1500); // character + background settle
 await page('play', 'SPIELEN');
-// Old settings are migrated to the graphite Spotify-HUD look.
+// Old settings are migrated to the night-blue look (NoRisk colours).
 const bgColor = await win.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
-if (bgColor !== '#0d0d10') problems.push(`old settings were not migrated to Graphit: --bg is ${bgColor}`);
+if (bgColor !== '#070e19') problems.push(`old settings were not migrated to Nacht: --bg is ${bgColor}`);
+if (shots) await win.screenshot({ path: join(shots, 'launcher-play-default.png') });
 for (const id of ['play', 'profiles', 'mods', 'skins', 'capes']) if (!(await win.locator(`#sidebar [data-page=${id}]`).count())) problems.push(`${id} tab missing`);
 if (await win.locator('#sidebar [data-page=designs]').count()) problems.push('designs should live under Optionen');
 // Custom window controls: minimize, fullscreen, close (maximize = double-click on the header).
@@ -158,10 +159,10 @@ await win.fill('#sq', '');
 // Designs studio: accent override, 3D scene, effects, presets.
 await page('designs', 'Designs');
 await win.click('[data-tab=colors]');
-await win.click('[data-accent="#22c55e"]');
+await win.click('[data-accent="#ec4899"]');
 await win.waitForTimeout(400);
 const accent = await win.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
-if (accent !== '#22c55e') problems.push(`accent override not applied: ${accent}`);
+if (accent !== '#ec4899') problems.push(`accent override not applied: ${accent}`);
 await win.click('[data-accent=""]');
 await win.waitForTimeout(300);
 await win.click('[data-tab=scene]');

@@ -127,7 +127,7 @@ export function migrateProfile(p: Partial<GameProfile> & { loader?: string | nul
   } as GameProfile;
 }
 
-export const SETTINGS_VERSION = 9;
+export const SETTINGS_VERSION = 10;
 
 /** Settings saved by older launcher versions: adopt the new default look once. */
 export function migrateSettings(s: Partial<Settings>): Partial<Settings> {
@@ -149,19 +149,21 @@ export function migrateSettings(s: Partial<Settings>): Partial<Settings> {
   if (v < 8) s = { ...s, themeId: 'spotify', background: 'plain', accentColor: null };
   // Spotify look without green: graphite with a blue accent.
   if (v < 9 && (s.themeId === 'spotify' || v < 8)) s = { ...s, themeId: 'graphit', accentColor: null };
+  // v10: colours and fonts like the NoRisk launcher again (night blue #4f8eff, square, pixel type).
+  if (v < 10) s = { ...s, themeId: 'nacht', accentColor: null, background: 'plain', uiFont: 'pixel', headFont: 'pixel', buttonStyle: 'crypt', introEnabled: false };
   return { ...s, settingsVersion: SETTINGS_VERSION };
 }
 
 export function defaultSettings(): Settings {
   return {
     settingsVersion: SETTINGS_VERSION,
-    themeId: 'graphit', customThemes: [], language: 'de', backendUrl: 'https://api.lego-launcher.example',
+    themeId: 'nacht', customThemes: [], language: 'de', backendUrl: 'https://api.lego-launcher.example',
     selectedProfile: DEFAULT_PROFILE.id, profiles: [{ ...DEFAULT_PROFILE, createdAt: Date.now() }],
     closeOnLaunch: false, reducedMotion: false, uiScale: 1, autoUpdate: 'ask', rarityColors: {},
     accentColor: null, background: 'plain', backgroundQuality: 0.6, snow: false, showSnapshots: false, showHistorical: false, curseforgeKey: '', msClientId: '',
     introEnabled: false, introSound: true, uiSounds: true, autoConsole: true,
     fx: { ...DEFAULT_FX }, surface: 'glass', stage: 'portal', designPresets: [], bgImage: '', guest: false,
-    uiFont: 'poppins', headFont: 'poppins', customFont: null, buttonStyle: 'crypt', customLanguage: null, transition: 'lego', jumpscares: false, skinLibrary: [], guestName: '',
+    uiFont: 'pixel', headFont: 'pixel', customFont: null, buttonStyle: 'crypt', customLanguage: null, transition: 'lego', jumpscares: false, skinLibrary: [], guestName: '',
   };
 }
 

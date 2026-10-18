@@ -54,7 +54,7 @@ export function MainLaunchButton({ profileId, selectedVersionLabel, signedIn, on
     const displaySubText = statusSubText || selectedVersionLabel;
     return (
       <div className="w-full flex flex-col items-center justify-center leading-none -translate-y-[5px]">
-        <span className="text-center font-semibold tracking-wide" style={{ fontSize: `${Math.round(26 * scale)}px` }}>{actionText}</span>
+        <span className="text-center" style={{ fontSize: `${Math.round(30 * scale)}px` }}>{actionText}</span>
         {displaySubText && (
           <span
             className={cn('text-xs font-minecraft tracking-normal text-center normal-case whitespace-nowrap overflow-hidden text-ellipsis', isButtonLaunching ? 'max-w-64' : 'max-w-[16rem]', statusColorClass)}

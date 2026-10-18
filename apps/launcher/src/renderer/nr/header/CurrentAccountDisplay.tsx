@@ -26,9 +26,9 @@ export function CurrentAccountDisplay({ onClick, className, compact = false }: C
       aria-haspopup="menu"
       className={cn(
         'font-smallcaps relative overflow-hidden backdrop-blur-md transition-all duration-200 nr-pop',
-        'rounded-[var(--border-radius)] text-white',
+        'rounded-md text-white tracking-wider',
         'flex items-center gap-3 px-4 py-1',
-        'border cursor-pointer active:scale-[0.98]',
+        'text-shadow-sm border border-b-2 cursor-pointer hover:brightness-110 active:brightness-90',
         className,
       )}
       onClick={onClick}
@@ -36,19 +36,21 @@ export function CurrentAccountDisplay({ onClick, className, compact = false }: C
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
-        backgroundColor: isHovered ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.05)',
-        borderColor: isHovered ? `${accentColor.value}99` : 'rgba(255,255,255,0.12)',
+        backgroundColor: `${accentColor.value}30`,
+        borderColor: `${accentColor.value}80`,
+        borderBottomColor: isHovered ? accentColor.hoverValue : accentColor.value,
+        filter: isHovered ? 'brightness(1.1)' : 'brightness(1)',
       }}
     >
       <div
-        className="relative w-7 h-7 overflow-hidden rounded-lg flex-shrink-0 flex items-center justify-center"
-        style={{ backgroundColor: `${accentColor.value}33` }}
+        className="relative w-7 h-7 overflow-hidden border-2 rounded-sm flex-shrink-0 flex items-center justify-center"
+        style={{ borderColor: `${accentColor.value}60`, backgroundColor: `${accentColor.value}20` }}
       >
         {signedIn && head ? <img src={head} alt="" className="w-full h-full" style={{ imageRendering: 'pixelated' }} /> : <span className="text-white font-smallcaps text-xs">+</span>}
       </div>
       {!compact && (
         <div className="flex flex-col min-w-0">
-          <span className={cn(signedIn ? 'text-base' : 'text-sm', 'text-white font-medium truncate')} title={username}>
+          <span className={cn(signedIn ? 'text-base' : 'text-sm', 'text-white font-smallcaps truncate')} title={username}>
             {signedIn ? username : 'Konto hinzufügen'}
           </span>
         </div>

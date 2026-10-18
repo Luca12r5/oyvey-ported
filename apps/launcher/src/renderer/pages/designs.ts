@@ -27,7 +27,8 @@ const TABS: [Tab, string, string][] = [
   ['presets', 'star', 'Presets'],
   ['editor', 'brush', 'Theme-Editor'],
 ];
-const ACCENTS = ['#3d8bfd', '#1ed760', '#4fd1c5', '#ffb199', '#d68cff', '#ffd166', '#ff7a1a', '#e11d48', '#8b5cf6', '#c084fc', '#39ff88', '#d946ef', '#6366f1', '#3b82f6', '#06b6d4', '#14b8a6', '#22c55e', '#eab308', '#e3000b', '#a1a1aa'];
+/** Accent colours of the NoRisk launcher (useThemeStore ACCENT_COLORS, GPL-3.0). */
+const ACCENTS = ['#4f8eff', '#00B9E8', '#9c5fff', '#8b5cf6', '#ec4899', '#10b981', '#059669', '#14b8a6', '#f97316', '#f59e0b', '#ef4444', '#f43f5e', '#6366f1', '#64748b', '#8b9dc3', '#6b7280'];
 
 /** Starting points that ship with the launcher. */
 const BUILT_IN: DesignPreset[] = [

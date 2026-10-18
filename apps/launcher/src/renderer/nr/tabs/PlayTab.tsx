@@ -52,7 +52,7 @@ export function PlayTab(p: PlayTabProps) {
   return (
     <div className="flex h-full relative">
       <div ref={stageRef} className="flex-grow flex flex-col items-center justify-center p-8 relative min-w-0">
-        <RetroGridEffect renderMode="bottom" isAnimationEnabled={!p.reducedMotion} customGridLineColor={`${accentColor.value}45`} />
+        <RetroGridEffect renderMode="both" isAnimationEnabled={!p.reducedMotion} customGridLineColor={`${accentColor.value}80`} />
 
         <div className="absolute top-3 left-3 z-20">
           <CoinsBanner key={String(coinsKey)} connected={p.connected} onChanged={p.onRefresh} />
@@ -88,7 +88,7 @@ export function PlayTab(p: PlayTabProps) {
         {consoleOpen && p.profile && <GameConsole profileId={p.profile.id} />}
       </div>
 
-      <NewsSection onOpenAll={p.onOpenNews} className="lx-glass border-l border-white/10 p-5 overflow-hidden flex flex-col relative z-10" />
+      <NewsSection onOpenAll={p.onOpenNews} className="border-l-2 border-white/40 bg-black/10 backdrop-blur-lg p-5 overflow-hidden flex flex-col relative z-10" />
     </div>
   );
 }

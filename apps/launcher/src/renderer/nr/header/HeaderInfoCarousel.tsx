@@ -27,7 +27,7 @@ export function HeaderInfoCarousel() {
       </span>
       {online != null && (
         <span id="tbOnline" title="Spieler gerade online" className={`${TEXT_CLASSES} absolute inset-0 flex items-center whitespace-nowrap transition-opacity duration-300 ease-out ${playerSlideActive ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} aria-hidden={!playerSlideActive}>
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400 mr-1 align-middle" style={{ boxShadow: '0 0 4px rgba(56, 189, 248, 0.7)' }} />
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 align-middle" style={{ boxShadow: '0 0 4px rgba(74, 222, 128, 0.7)' }} />
           {online.toLocaleString('de-DE')} online
         </span>
       )}

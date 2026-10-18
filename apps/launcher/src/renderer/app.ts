@@ -166,6 +166,7 @@ export function retheme(): void {
   setAccent(s.accentColor || getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
   setUiSounds(s.uiSounds !== false && !state.info?.e2e);
   document.body.classList.toggle('reduced-motion', s.reducedMotion);
+  document.body.classList.toggle('has-bg', s.background !== 'plain');
   bg ??= new Background(document.getElementById('bg') as HTMLCanvasElement, document.getElementById('bg3d') as HTMLCanvasElement);
   bg.configure({ id: s.background, quality: s.backgroundQuality, snow: s.snow, still: s.reducedMotion, fx: s.fx, image: s.bgImage });
   // Drop the previous choice's classes before adding the current ones.
