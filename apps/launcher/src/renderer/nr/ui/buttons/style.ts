@@ -29,5 +29,7 @@ export function buttonStyle(variant: ComponentVariant, accent: AccentColor, hove
     };
   }
   const c = BRICK[variant] ?? accent.value;
-  return { ['--bc' as string]: c, color: variant === 'warning' ? '#1b1b1b' : '#fff', filter: lift ? 'brightness(1.08)' : undefined } as React.CSSProperties;
+  // Light accents (Spotify green, yellow) get black text like Spotify's buttons.
+  const light = /^#(1ed760|f2cd37|ffd166|ffd500|4fd1c5|a1a1aa|e4e4e7)$/i.test(c);
+  return { ['--bc' as string]: c, color: light || variant === 'warning' ? '#000' : '#fff', fontWeight: 700 } as React.CSSProperties;
 }

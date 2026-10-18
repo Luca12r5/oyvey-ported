@@ -127,7 +127,7 @@ export function migrateProfile(p: Partial<GameProfile> & { loader?: string | nul
   } as GameProfile;
 }
 
-export const SETTINGS_VERSION = 7;
+export const SETTINGS_VERSION = 8;
 
 /** Settings saved by older launcher versions: adopt the new default look once. */
 export function migrateSettings(s: Partial<Settings>): Partial<Settings> {
@@ -145,16 +145,18 @@ export function migrateSettings(s: Partial<Settings>): Partial<Settings> {
   if (v < 6) s = { ...s, themeId: 'grau', background: 'plain', uiFont: 'poppins', headFont: 'poppins', introEnabled: false, accentColor: null };
   // Round 8: everything built from LEGO (brick buttons, baseplate background, brick page transitions).
   if (v < 7) s = { ...s, themeId: 'lego', background: 'baseplate', transition: 'lego', accentColor: null, uiSounds: true };
+  // Round 9: Spotify look by default (round, dark, green); LEGO stays in the title only.
+  if (v < 8) s = { ...s, themeId: 'spotify', background: 'plain', accentColor: null };
   return { ...s, settingsVersion: SETTINGS_VERSION };
 }
 
 export function defaultSettings(): Settings {
   return {
     settingsVersion: SETTINGS_VERSION,
-    themeId: 'lego', customThemes: [], language: 'de', backendUrl: 'https://api.lego-launcher.example',
+    themeId: 'spotify', customThemes: [], language: 'de', backendUrl: 'https://api.lego-launcher.example',
     selectedProfile: DEFAULT_PROFILE.id, profiles: [{ ...DEFAULT_PROFILE, createdAt: Date.now() }],
     closeOnLaunch: false, reducedMotion: false, uiScale: 1, autoUpdate: 'ask', rarityColors: {},
-    accentColor: null, background: 'baseplate', backgroundQuality: 0.6, snow: false, showSnapshots: false, showHistorical: false, curseforgeKey: '', msClientId: '',
+    accentColor: null, background: 'plain', backgroundQuality: 0.6, snow: false, showSnapshots: false, showHistorical: false, curseforgeKey: '', msClientId: '',
     introEnabled: false, introSound: true, uiSounds: true, autoConsole: true,
     fx: { ...DEFAULT_FX }, surface: 'glass', stage: 'portal', designPresets: [], bgImage: '', guest: false,
     uiFont: 'poppins', headFont: 'poppins', customFont: null, buttonStyle: 'crypt', customLanguage: null, transition: 'lego', jumpscares: false, skinLibrary: [], guestName: '',

@@ -24,7 +24,7 @@ export function AppLayout({ onView }: { onView: (el: HTMLElement) => void }) {
       className="nr-launcher lx-shell h-screen w-full overflow-hidden relative flex"
       style={{
         // See-through so the animated background (bg.ts) shows; the theme adds soft glows on top.
-        backgroundImage: `radial-gradient(1100px 620px at 88% -12%, ${accent.value}2e, transparent 62%), radial-gradient(900px 520px at -8% 112%, ${accent.dark}29, transparent 60%), linear-gradient(160deg, rgba(10,10,14,0.18), rgba(0,0,0,0.42))`,
+        backgroundImage: `linear-gradient(180deg, ${accent.value}38 0%, ${accent.value}0d 32%, transparent 55%), linear-gradient(160deg, rgba(10,10,10,0.2), rgba(0,0,0,0.45))`,
       }}
     >
       <VerticalNavbar items={nav} activeItem={activeTab} onItemClick={(id) => actions.go(id)} onLogoClick={() => actions.credits()} className="h-full z-10" />
@@ -46,7 +46,7 @@ function HeaderBar() {
         <div className="flex items-center gap-3 min-w-0">
           <h1 className="lx-title m-0 whitespace-nowrap" aria-label="LEGO Launcher">
             <LegoText text="LEGO" colors={['red', 'yellow', 'blue', 'green']} height={30} />
-            <LegoText text="LAUNCHER" colors={['white']} height={22} />
+            <span className="lx-title-rest">Launcher</span>
           </h1>
           <HeaderInfoCarousel />
         </div>

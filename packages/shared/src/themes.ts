@@ -277,7 +277,7 @@ function build(seed: Seed): Theme {
 }
 
 export const THEMES: readonly Theme[] = Object.freeze(SEEDS.map(build));
-export const DEFAULT_THEME_ID = 'lego';
+export const DEFAULT_THEME_ID = 'spotify';
 
 export function getTheme(id: string): Theme | undefined {
   return THEMES.find((t) => t.id === id);

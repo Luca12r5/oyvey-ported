@@ -271,3 +271,50 @@ body.nacht.crypt .btn.primary:active { transform: translateY(3px); box-shadow: i
 body.nacht.crypt .card, body.nacht.crypt .glass, body.nacht.crypt .rows, body.nacht.crypt .item, body.nacht.crypt .gate { background-color: rgba(34, 38, 44, .82); background-image: var(--lx-studs); background-size: 16px 16px; }
 body.nacht.crypt .switch i { border-radius: 99px; }
 body.nacht.crypt .switch i::after { border-radius: 50%; }
+
+/* ===== Round 9: Spotify look — round, calm, LEGO only in the title ===== */
+.lx-glass { background-color: rgba(18, 18, 18, .86); background-image: none; backdrop-filter: blur(16px); }
+.lx-card, .nr-pcard, .nr-mod-row, .nr-skin-card, .nr-cape-card, #progressCard, .lx-news {
+  background-color: rgba(24, 24, 24, .9) !important; background-image: none !important;
+  border: 1px solid rgba(255, 255, 255, .05) !important; border-radius: 16px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .35) !important; transition: background-color .25s, transform .25s cubic-bezier(.2,.9,.3,1) !important;
+}
+.nr-pcard:hover, .nr-mod-row:hover, .nr-skin-card:hover, .nr-cape-card:hover { background-color: rgba(40, 40, 40, .94) !important; transform: translateY(-2px); animation: none; }
+.nr-skin-card:hover { transform: translateY(-3px) scale(1.01); }
+.lx-news { border-radius: 14px !important; }
+/* Primary buttons: solid accent pills that grow a little on hover (Spotify). */
+.lx-brick {
+  background: var(--bc) !important; border-radius: 999px !important; margin-top: 0 !important; overflow: hidden !important;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--bc) 30%, transparent) !important; text-shadow: none;
+  transition: transform .15s ease, filter .15s, box-shadow .2s !important;
+}
+.lx-brick::before { display: none; }
+.lx-brick:hover:not(:disabled) { transform: scale(1.04); filter: brightness(1.1); }
+.lx-brick[data-press], .lx-brick:active:not(:disabled) { transform: scale(.97); }
+/* Split LAUNCH pill: left half and arrow half. */
+.nr .rounded-r-none.lx-brick { border-radius: 999px 0 0 999px !important; }
+.nr .rounded-l-none.lx-brick { border-radius: 0 999px 999px 0 !important; border-left: 1px solid rgba(0,0,0,.18) !important; }
+.nr-play-group .lx-brick:hover:not(:disabled) { transform: none; filter: brightness(1.1); }
+/* Quiet buttons: dark round pills. */
+.lx-tile { border-radius: 999px !important; background-color: rgba(255,255,255,.07) !important; border: 1px solid rgba(255,255,255,.08) !important; box-shadow: none !important; }
+.lx-tile:hover:not(:disabled) { background-color: rgba(255,255,255,.13) !important; transform: scale(1.03); }
+/* Rail: rounded pills; the active tab is softly lit with its own colour. */
+.lx-nav { border-radius: 16px; }
+.lx-nav.lx-nav-on { background: color-mix(in srgb, var(--bc) 22%, rgba(255,255,255,.06)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bc) 45%, transparent); margin-top: 0; color: #fff !important; }
+.lx-nav.lx-nav-on::before { display: none; }
+.lx-nav.lx-nav-on .lx-ic { color: color-mix(in srgb, var(--bc) 70%, #fff); }
+.lx-nav:not(.lx-nav-on):hover { animation: none; background: rgba(255,255,255,.07); }
+.lx-rail, .lx-bar { border-color: rgba(255,255,255,.05); }
+.nr-stagger { animation: nr-stagger .4s cubic-bezier(.33,1,.68,1) both !important; }
+/* Calmer page transitions (fade + slight movement, still different per page). */
+#view .view-enter.tr-lego, #view[data-page] .view-enter.tr-lego { animation-duration: .35s !important; animation-timing-function: cubic-bezier(.2,.9,.3,1) !important; }
+@keyframes lx-snap { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: none; } }
+.nr-play-group .lx-brick::after { display: none; }
+/* Other pages too. */
+body.nacht.crypt .btn, body.nacht.crypt .icon-btn, body.nacht.crypt .tabs button, body.nacht.crypt .seg button { border-radius: 999px; }
+body.nacht.crypt .btn.primary { background: var(--accent); box-shadow: none; border-radius: 999px; color: #000; }
+body.nacht.crypt .btn.primary:hover { transform: scale(1.04); filter: brightness(1.1); }
+body.nacht.crypt .card, body.nacht.crypt .glass, body.nacht.crypt .rows, body.nacht.crypt .item, body.nacht.crypt .gate { background-color: rgba(24, 24, 24, .9); background-image: none; border-radius: 16px; border-color: rgba(255,255,255,.05); }
+body.nacht.crypt input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]), body.nacht.crypt select, body.nacht.crypt .searchbar { border-radius: 999px; background: rgba(255,255,255,.07); border-color: transparent; }
+.lang-tile { border-radius: 999px; }
+.menu { border-radius: 16px !important; background: rgba(40, 40, 40, .97) !important; }
