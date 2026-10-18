@@ -20,8 +20,9 @@ import { cosmeticsPage, shopPage } from './pages/cosmetics.ts';
 import { friendsPage } from './pages/social.ts';
 import { rewardsPage } from './pages/rewards.ts';
 import { accountPage, signInFlow } from './pages/account.ts';
-import { openSettingsAt, settingsPage } from './pages/settings.ts';
-import { mountSpotifyHud, updateSpotifyHud } from './spotifyhud.ts';
+import { settingsPage } from './pages/settings.ts';
+import { modsPage } from './pages/mods.ts';
+import { capesPage } from './pages/capes.ts';
 import { designsPage } from './pages/designs.ts';
 import { vrPage } from './pages/vr.ts';
 import { newsPage, feedbackPage, devPage } from './pages/misc.ts';
@@ -44,14 +45,16 @@ type Page = (el: HTMLElement) => Promise<void> | void;
 interface PageDef { id: string; label: () => string; icon: string; page: Page; needsLego?: boolean; staff?: boolean; slot: 'main' | 'bottom' | 'more' | 'hidden' }
 const PAGES: PageDef[] = [
   { id: 'play', label: () => t('nav.home'), icon: 'play', page: playPage, slot: 'main' },
-  { id: 'profiles', label: () => t('nav.profiles'), icon: 'profiles', page: profilesPage, slot: 'main' },
+  { id: 'profiles', label: () => (state.settings.language === 'en' ? 'Profiles' : 'Profile'), icon: 'profiles', page: profilesPage, slot: 'main' },
+  { id: 'mods', label: () => 'Mods', icon: 'mods', page: modsPage, slot: 'main' },
   { id: 'skins', label: () => 'Skins', icon: 'skins', page: skinsPage, slot: 'main' },
-  { id: 'friends', label: () => t('nav.friends'), icon: 'friends', page: friendsPage, needsLego: true, slot: 'main' },
-  { id: 'cosmetics', label: () => t('nav.cosmetics'), icon: 'cosmetics', page: cosmeticsPage, needsLego: true, slot: 'main' },
+  { id: 'capes', label: () => 'Capes', icon: 'cape', page: capesPage, slot: 'main' },
   // Designs live under Optionen now; the route stays for deep links.
   { id: 'designs', label: () => t('nav.designs'), icon: 'brush', page: (el) => designsPage(el), slot: 'hidden' },
-  { id: 'vr', label: () => t('nav.vr'), icon: 'vr', page: vrPage, slot: 'main' },
+  { id: 'friends', label: () => t('nav.friends'), icon: 'friends', page: friendsPage, needsLego: true, slot: 'more' },
+  { id: 'cosmetics', label: () => t('nav.cosmetics'), icon: 'cosmetics', page: cosmeticsPage, needsLego: true, slot: 'more' },
   { id: 'shop', label: () => t('nav.shop'), icon: 'shop', page: shopPage, needsLego: true, slot: 'more' },
+  { id: 'vr', label: () => t('nav.vr'), icon: 'vr', page: vrPage, slot: 'more' },
   { id: 'rewards', label: () => t('nav.rewards'), icon: 'rewards', page: rewardsPage, needsLego: true, slot: 'more' },
   { id: 'news', label: () => t('nav.news'), icon: 'news', page: newsPage, slot: 'more' },
   { id: 'feedback', label: () => t('nav.feedback'), icon: 'feedback', page: feedbackPage, needsLego: true, slot: 'more' },
@@ -163,14 +166,16 @@ export function retheme(): void {
   if (s.accentColor) document.documentElement.style.setProperty('--accent', s.accentColor);
   bg ??= new Background(document.getElementById('bg') as HTMLCanvasElement, document.getElementById('bg3d') as HTMLCanvasElement);
   bg.configure({ id: s.background, quality: s.backgroundQuality, snow: s.snow, still: s.reducedMotion, fx: s.fx, image: s.bgImage });
+  // Drop the previous choice's classes before adding the current ones.
+  for (const c of [...document.body.classList]) if (/^(surf|stage|uif|hf|btn)-/.test(c)) document.body.classList.remove(c);
+  // The NoRisk-style layout is the launcher's layout, not a theme option.
+  document.body.classList.add('nacht');
   document.body.classList.add('nocturne', 'crypt', `surf-${s.surface}`, `stage-${s.stage}`, `uif-${s.uiFont}`, `hf-${s.headFont}`, `btn-${s.buttonStyle}`);
   void loadCustomFont(s.customFont);
   document.body.classList.toggle('no-vignette', !s.fx.vignette);
   document.body.classList.toggle('no-glow', !s.fx.glow);
   if (state.info && !state.info.e2e) armJumpscare(s.jumpscares, s.reducedMotion);
-  if (spotifyMounted) updateSpotifyHud(s.spotifyHud);
 }
-let spotifyMounted = false;
 
 function visiblePages(): PageDef[] {
   const staff = state.auth.lego.roles.length > 0;
@@ -183,7 +188,7 @@ function renderSidebar(): void {
   const inMore = more.some((p) => p.id === state.page);
   const item = (p: PageDef) => html`<button class="nav-item ${state.page === p.id ? 'active' : ''}" data-page="${p.id}" aria-label="${p.label()}" title="${p.label()}">${icon(p.icon)}<span class="lbl">${SHORT[p.id]?.() ?? p.label()}</span></button>`;
   const list = visiblePages();
-  mount(document.getElementById('sidebar')!, html`<div class="rail-logo" title="LEGO Launcher">${icon('pumpkin')}</div><span class="rail-ind" aria-hidden="true"></span>
+  mount(document.getElementById('sidebar')!, html`<div class="rail-logo" title="LEGO Launcher">${brickLogo()}</div><span class="rail-ind" aria-hidden="true"></span>
     ${list.filter((p) => p.slot === 'main').map(item)}<div class="spacer"></div>
     <button class="nav-item ${inMore ? 'active' : ''}" id="more" aria-haspopup="menu" aria-label="${t('nav.more')}" title="${t('nav.more')}">${icon('grid')}<span class="lbl">${t('nav.more')}</span></button>
     ${list.filter((p) => p.slot === 'bottom').map(item)}`);
@@ -208,8 +213,14 @@ function moreMenu(anchor: HTMLElement): void {
   mount(m, html`<div class="menu-h">${t('nav.more')}</div><div class="more-grid">${visiblePages().filter((p) => p.slot === 'more').map((p) => html`<button class="more-i ${state.page === p.id ? 'on' : ''}" data-page="${p.id}" role="menuitem">${icon(p.icon)}<span>${p.label()}</span></button>`)}</div>`);
   document.body.append(m);
   const r = anchor.getBoundingClientRect();
-  m.style.left = `${r.right + 12}px`;
-  m.style.top = `${Math.max(60, Math.min(r.top - 40, innerHeight - m.offsetHeight - 16))}px`;
+  if (r.left > innerWidth / 2) {
+    // Opened from the title bar: drop down, right-aligned.
+    m.style.left = `${Math.max(8, r.right - m.offsetWidth)}px`;
+    m.style.top = `${r.bottom + 8}px`;
+  } else {
+    m.style.left = `${r.right + 12}px`;
+    m.style.top = `${Math.max(60, Math.min(r.top - 40, innerHeight - m.offsetHeight - 16))}px`;
+  }
   const close = (e?: Event) => {
     if (e && (m.contains(e.target as Node) || anchor.contains(e.target as Node))) return;
     m.remove();
@@ -240,6 +251,7 @@ function renderTitlebar(): void {
   (document.getElementById('navBack') as HTMLButtonElement).disabled = back.length === 0;
   (document.getElementById('navFwd') as HTMLButtonElement).disabled = fwd.length === 0;
   mount(document.getElementById('tbFriends')!, icon('friends', 'sm'));
+  mount(document.getElementById('tbMore')!, icon('link', 'sm'));
   renderBell();
   const sel = state.settings.profiles.find((p) => p.id === state.settings.selectedProfile) ?? state.settings.profiles[0];
   mount(document.getElementById('tbInst')!, html`<button class="tb-chip" id="instBtn" aria-haspopup="menu" title="${sel ? profileLine(sel) : ''}">${icon('cube', 'sm')}<span>${sel ? sel.name : 'Keine Instanz'}</span>${icon('chevron', 'xs')}</button>`);
@@ -359,10 +371,6 @@ export function refreshChrome(): void {
 async function boot(): Promise<void> {
   [state.settings, state.auth, state.info] = await Promise.all([api.getSettings(), api.authState(), api.info()]);
   retheme();
-  mountSpotifyHud(state.settings.spotifyHud, () => { openSettingsAt('spotify'); void go('settings'); }, (p) => {
-    void api.setSettings({ spotifyHud: { ...state.settings.spotifyHud, ...p } }).then((next) => { state.settings = next; });
-  });
-  spotifyMounted = true;
   mount(document.getElementById('tbLogo')!, brickLogo());
   renderWindowButtons(await api.windowState());
   api.on('window-state', renderWindowButtons);
@@ -386,6 +394,7 @@ async function boot(): Promise<void> {
   });
   document.getElementById('tbBell')!.addEventListener('click', (e) => bellMenu(e.currentTarget as HTMLElement));
   document.getElementById('tbFriends')!.addEventListener('click', () => void go('friends'));
+  document.getElementById('tbMore')!.addEventListener('click', (e) => moreMenu(e.currentTarget as HTMLButtonElement));
   document.getElementById('tbInst')!.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLElement>('#instBtn');
     if (b) profileMenu(b, 'down');

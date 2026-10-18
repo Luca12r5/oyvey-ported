@@ -25,8 +25,6 @@ await build({ ...common, entryPoints: ['src/renderer/app.ts'], outfile: `${out}/
 
 cpSync('src/renderer/index.html', `${out}/renderer/index.html`);
 cpSync('src/renderer/styles.css', `${out}/renderer/styles.css`);
-// Windows media-session script shared with the in-game Spotify HUD.
-copyFileSync('../../lego-client/src/main/resources/assets/spotifyhud/smtc.ps1', `${out}/smtc.ps1`);
 const fonts = [
   ['@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2', 'silkscreen-400.woff2'],
   ['@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2', 'jetbrains-mono-400.woff2'],

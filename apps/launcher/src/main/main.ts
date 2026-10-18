@@ -15,7 +15,7 @@ import {
 } from '../core/install.ts';
 import { loaderSupports } from '../core/loaders.ts';
 import {
-  installedMods, installMrPack, installProject, packLoader, performanceFiles, projectVersions, readPackIndex, removeMod, search, toggleMod,
+  installedMods, installMrPack, installProject, type SearchFilters, packLoader, performanceFiles, projectVersions, readPackIndex, removeMod, search, toggleMod,
   type ProjectType,
 } from '../core/modrinth.ts';
 import { cfLoader, copyInstance, installCfPack, readCfManifest, readFolder, scanInstances, type FoundInstance } from '../core/importers.ts';
@@ -23,12 +23,10 @@ import { listEntries, readEntry } from '../core/zip.ts';
 import { exportToOfficial, officialLauncherPresent, officialMinecraftDir, openOfficialLauncher } from '../core/official.ts';
 import { fetchJson } from '../core/net.ts';
 import { createLogCleaner, diagnose, startGame } from '../core/launch.ts';
-import { DEFAULT_PROFILE, sanitizeSpotifyHud, fastJvmFlags, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
+import { DEFAULT_PROFILE, fastJvmFlags, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
 import { encryptionAvailable, loadAccounts, loadSettings, paths, saveAccounts, saveSettings, type Account, type AccountStore } from './store.ts';
 import { setupUpdater, checkForUpdate, installUpdate } from './updater.ts';
 import { VrBrowser } from './vrbrowser.ts';
-import { SpotifyBridge } from './spotify.ts';
-import { fetchLyrics, type LyricsResult } from '../core/lyrics.ts';
 import { listModules, setModule } from '../core/clientcfg.ts';
 import type { AuthState, LaunchProgress, ModEntry, SkinData } from '../ipc-types.ts';
 import { validateTheme } from '@lego/shared';
@@ -47,18 +45,6 @@ const CURSEFORGE_KEY = typeof __CURSEFORGE_KEY__ === 'string' ? __CURSEFORGE_KEY
 
 let win: BrowserWindow | null = null;
 const vrBrowser = new VrBrowser((channel, data) => send(channel, data));
-let spotify: SpotifyBridge | null = null;
-const lyricsCache = new Map<string, LyricsResult>();
-
-/** Starts or stops the now-playing bridge to match the Spotify HUD setting. */
-function syncSpotify(): void {
-  if (settings.spotifyHud.enabled) {
-    spotify ??= new SpotifyBridge(join(__dirname, 'smtc.ps1'), join(app.getPath('userData'), 'spotifyhud'), (ch, data) => send(ch, data));
-    spotify.start();
-  } else {
-    spotify?.stop();
-  }
-}
 let settings: Settings;
 let store: AccountStore = { accounts: [], active: null };
 let legoError: string | null = null;
@@ -507,7 +493,7 @@ function rememberInstance(i: FoundInstance): FoundInstance {
 }
 
 // ---- IPC -----------------------------------------------------------------------
-const PROJECT_TYPES: ProjectType[] = ['mod', 'resourcepack', 'shader', 'modpack'];
+const PROJECT_TYPES: ProjectType[] = ['mod', 'resourcepack', 'shader', 'modpack', 'datapack'];
 const HEX = /^#[0-9a-f]{6}$/i;
 
 function registerIpc(): void {
@@ -545,27 +531,12 @@ function registerIpc(): void {
     return listModules(next);
   });
   ipcMain.handle('window:state', () => windowState());
-  ipcMain.handle('spotify:state', () => spotify?.current() ?? null);
-  ipcMain.handle('spotify:cmd', (_e, cmd: unknown) => (typeof cmd === 'string' ? spotify?.command(cmd) ?? false : false));
-  ipcMain.handle('spotify:lyrics', async (_e, title: unknown, artist: unknown, durMs: unknown) => {
-    const t = String(title ?? '').slice(0, 300), a = String(artist ?? '').slice(0, 300), d = Math.max(0, Number(durMs) || 0);
-    if (!t.trim()) return { status: 'none', lines: [] };
-    const key = `${t}\u0000${a}`.toLowerCase();
-    const hit = lyricsCache.get(key);
-    if (hit) return hit;
-    const r = await fetchLyrics(fetch, t, a, d);
-    if (r.status !== 'error') {
-      lyricsCache.set(key, r);
-      if (lyricsCache.size > 40) lyricsCache.delete(lyricsCache.keys().next().value!);
-    }
-    return r;
-  });
   ipcMain.handle('settings:get', () => settings);
   ipcMain.handle('settings:set', async (_e, patch: Partial<Settings>) => {
     const allowed: (keyof Settings)[] = [
       'themeId', 'customThemes', 'language', 'backendUrl', 'selectedProfile', 'closeOnLaunch', 'reducedMotion', 'uiScale', 'autoUpdate', 'rarityColors',
       'accentColor', 'background', 'backgroundQuality', 'snow', 'showSnapshots', 'showHistorical', 'curseforgeKey', 'msClientId',
-      'introEnabled', 'introSound', 'autoConsole', 'fx', 'surface', 'stage', 'designPresets', 'bgImage', 'guest', 'uiFont', 'headFont', 'customFont', 'buttonStyle', 'customLanguage', 'transition', 'jumpscares', 'skinLibrary', 'guestName', 'spotifyHud',
+      'introEnabled', 'introSound', 'autoConsole', 'fx', 'surface', 'stage', 'designPresets', 'bgImage', 'guest', 'uiFont', 'headFont', 'customFont', 'buttonStyle', 'customLanguage', 'transition', 'jumpscares', 'skinLibrary', 'guestName',
     ];
     for (const k of allowed) if (k in patch) (settings as unknown as Record<string, unknown>)[k] = patch[k];
     // Never trust the renderer: re-validate imported themes and clamp numbers.
@@ -582,8 +553,6 @@ function registerIpc(): void {
     settings.buttonStyle = pick(BUTTON_STYLES, settings.buttonStyle, 'crypt');
     settings.transition = pick(TRANSITIONS, settings.transition, 'slide');
     settings.skinLibrary = sanitizeSkinLib(settings.skinLibrary);
-    settings.spotifyHud = sanitizeSpotifyHud(settings.spotifyHud);
-    syncSpotify();
     settings.guestName = typeof settings.guestName === 'string' && /^[A-Za-z0-9_]{3,16}$/.test(settings.guestName.trim()) ? settings.guestName.trim() : '';
     for (const k of ['snow', 'showSnapshots', 'showHistorical', 'closeOnLaunch', 'reducedMotion', 'introEnabled', 'introSound', 'autoConsole', 'guest', 'jumpscares'] as const) settings[k] = !!settings[k];
     settings.msClientId = typeof settings.msClientId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(settings.msClientId.trim()) ? settings.msClientId.trim().toLowerCase() : '';
@@ -748,17 +717,24 @@ function registerIpc(): void {
   ipcMain.handle('game:running', () => !!running);
   ipcMain.handle('folder', async (_e, kind: string, profileId?: string) => {
     const gameDir = profileDir(profileById(profileId));
-    const sub: Record<string, string> = { mods: 'mods', screenshots: 'screenshots', resourcepacks: 'resourcepacks', shaderpacks: 'shaderpacks' };
+    const sub: Record<string, string> = { mods: 'mods', screenshots: 'screenshots', resourcepacks: 'resourcepacks', shaderpacks: 'shaderpacks', datapacks: 'datapacks' };
     const target = kind === 'logs' ? paths.logs() : sub[kind] ? join(gameDir, sub[kind]!) : gameDir;
     await mkdir(target, { recursive: true });
     await shell.openPath(target);
   });
 
   ipcMain.handle('mods:list', (_e, profileId: string) => listMods(profileById(profileId)));
-  ipcMain.handle('mods:search', async (_e, profileId: string, query: string, type: ProjectType, offset: number) => {
+  ipcMain.handle('mods:search', async (_e, profileId: string, query: string, type: ProjectType, offset: number, filters?: unknown) => {
     if (!PROJECT_TYPES.includes(type)) throw new Error('invalid type');
     const p = profileById(profileId);
-    return search(fetch, { query: String(query).slice(0, 100), type, gameVersion: p.gameVersion, loader: p.loaderType, offset: Math.max(0, Math.floor(Number(offset) || 0)) });
+    const f = (filters && typeof filters === 'object' ? filters : {}) as Record<string, unknown>;
+    const list = (v: unknown, re: RegExp) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && re.test(x)).slice(0, 12) : []);
+    const clean: SearchFilters = {
+      versions: list(f.versions, /^[\w.\-]{1,24}$/), categories: list(f.categories, /^[a-z0-9-]{1,32}$/), loaders: list(f.loaders, /^[a-z0-9-]{1,24}$/),
+      env: f.env === 'client' || f.env === 'server' ? f.env : null,
+      sort: (['relevance', 'downloads', 'follows', 'newest', 'updated'] as const).find((x) => x === f.sort),
+    };
+    return search(fetch, { query: String(query).slice(0, 100), type, gameVersion: p.gameVersion, loader: p.loaderType, offset: Math.max(0, Math.floor(Number(offset) || 0)), filters: clean });
   });
   ipcMain.handle('mods:install', async (_e, profileId: string, projectId: string, type: ProjectType, title: string, iconUrl: string | null) => {
     if (!PROJECT_TYPES.includes(type) || !/^[\w-]{1,64}$/.test(projectId)) throw new Error('invalid project');
@@ -972,7 +948,6 @@ if (!app.requestSingleInstanceLock()) {
     }
     registerIpc();
     createWindow();
-    syncSpotify();
     setupUpdater(send, () => settings.autoUpdate);
     if (active()) void restoreLego();
     if (!encryptionAvailable()) {
@@ -980,5 +955,4 @@ if (!app.requestSingleInstanceLock()) {
     }
   });
   app.on('window-all-closed', () => app.quit());
-  app.on('will-quit', () => spotify?.stop());
 }

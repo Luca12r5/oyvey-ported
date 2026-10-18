@@ -20,6 +20,8 @@ export interface IntroOptions {
   quality: number;
   /** Shown on the skip button. */
   skipLabel: string;
+  /** Start this many seconds in (previews / checks of single scenes). */
+  startAt?: number;
 }
 
 const DURATION = 18.6;

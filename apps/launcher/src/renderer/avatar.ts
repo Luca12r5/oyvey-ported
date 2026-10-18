@@ -285,3 +285,40 @@ export function headFromSkin(skin: string | null, size = 64): Promise<string> {
     img.src = skin ?? DEFAULT_SKIN;
   });
 }
+
+let posterViewer: SkinViewer | null = null;
+const posterCache = new Map<string, string>();
+/**
+ * Still image of a skin in a waving pose (skin cards). One shared offscreen
+ * viewer renders all of them, so a grid of skins costs a single WebGL context.
+ */
+export async function skinPoster(skin: string | null, variant: 'classic' | 'slim', w = 260, h = 300): Promise<string> {
+  const key = `${variant}|${w}x${h}|${skin ?? ''}`;
+  const hit = posterCache.get(key);
+  if (hit) return hit;
+  if (!webglAvailable()) return '';
+  if (!posterViewer) {
+    const canvas = document.createElement('canvas');
+    posterViewer = new SkinViewer({ canvas, width: w, height: h, preserveDrawingBuffer: true, zoom: 0.78, fov: 38 });
+    posterViewer.renderer.setClearColor(0x000000, 0);
+    posterViewer.autoRotate = false;
+    posterViewer.animation = null;
+    posterViewer.globalLight.intensity = 2.6;
+    posterViewer.cameraLight.intensity = 0.8;
+  }
+  const v = posterViewer;
+  v.setSize(w, h);
+  await v.loadSkin(skin ?? DEFAULT_SKIN, { model: variant === 'slim' ? 'slim' : 'default' });
+  const p = v.playerObject.skin;
+  v.playerWrapper.rotation.y = 0.45;
+  p.rightArm.rotation.set(-0.3, 0, 2.5);
+  p.leftArm.rotation.set(0.25, 0, -0.12);
+  p.rightLeg.rotation.set(-0.35, 0, 0.04);
+  p.leftLeg.rotation.set(0.3, 0, -0.04);
+  p.head.rotation.set(0.05, -0.25, 0);
+  v.render();
+  const url = v.canvas.toDataURL('image/png');
+  posterCache.set(key, url);
+  if (posterCache.size > 80) posterCache.delete(posterCache.keys().next().value!);
+  return url;
+}

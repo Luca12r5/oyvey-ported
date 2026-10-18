@@ -215,6 +215,8 @@ const SEEDS: Seed[] = [
   ['winter-holiday', 'Winter Holiday', 'seasonal', '#0b1730', '#13254a', '#eaf4ff', '#e53935', '#7cd1ff'],
   // Default since the Halloween edition ("Nocturne" palette, see design.ts)
   ['crypt', 'Halloween Crypt', 'seasonal', '#05040a', '#0c0a14', '#e6dfef', '#ff7a1a', '#7c3aed', { radius: 2, blur: 0, surfaceAlpha: 0.96, borderWidth: 1, shadow: 'soft', background: 'solid', intensity: 0.2, font: 'sans', motion: 'smooth' }],
+  // Default since round 4: night blue, square tiles, pixel type (NoRisk-like layout)
+  ['nacht', 'Nacht', 'minimal', '#0b1120', '#0e1628', '#e6ecf7', '#3b82f6', '#60a5fa', { radius: 0, blur: 0, surfaceAlpha: 0.97, borderWidth: 1, shadow: 'soft', background: 'solid', intensity: 0.1, font: 'sans', motion: 'subtle' }],
   ['halloween', 'Halloween Nocturne', 'seasonal', '#07060b', '#15101e', '#f3ecff', '#ff7a1a', '#8b5cf6', { radius: 14, blur: 14, surfaceAlpha: 0.72, shadow: 'glow', background: 'gradient', intensity: 0.55, font: 'sans', motion: 'lively' }],
 ];
 
@@ -259,7 +261,7 @@ function build(seed: Seed): Theme {
 }
 
 export const THEMES: readonly Theme[] = Object.freeze(SEEDS.map(build));
-export const DEFAULT_THEME_ID = 'crypt';
+export const DEFAULT_THEME_ID = 'nacht';
 
 export function getTheme(id: string): Theme | undefined {
   return THEMES.find((t) => t.id === id);

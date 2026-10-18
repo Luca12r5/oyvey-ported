@@ -93,3 +93,30 @@ export function itemArt(id: string, name: string, slot: string): Raw {
   const gid = `g${seed.toString(36)}`;
   return { __raw: `<svg class="item-art" viewBox="0 0 120 110" aria-hidden="true"><defs><radialGradient id="${gid}" cx="50%" cy="55%" r="60%"><stop offset="0" stop-color="${p[0]}" stop-opacity=".28"/><stop offset="1" stop-color="${p[0]}" stop-opacity="0"/></radialGradient></defs><rect width="120" height="110" fill="url(#${gid})"/><g shape-rendering="geometricPrecision">${shape(slot, name, p, seed)}</g></svg>` };
 }
+
+/** Pixel-art front of a cape (10 × 16 texels, like the real cape texture) for the Capes gallery. */
+export function capeFront(id: string, name: string): Raw {
+  const [a, b, d] = palette(id, name);
+  const seed = hash(id);
+  const kind = seed % 6;
+  const cells: string[] = [];
+  const rnd = (i: number) => ((seed >>> (i % 24)) ^ (i * 2654435761)) >>> 0;
+  for (let y = 0; y < 16; y++) {
+    for (let x = 0; x < 10; x++) {
+      let c = a;
+      const cx = x - 4.5, cy = y - 7.5;
+      switch (kind) {
+        case 0: c = y < 5 ? b : y > 11 ? d : a; break; // three bands
+        case 1: c = (x + y) % 4 < 2 ? a : b; break; // diagonal stripes
+        case 2: c = cx * cx + cy * cy < 9 ? b : cx * cx + cy * cy < 16 ? d : a; break; // emblem
+        case 3: c = x === 0 || x === 9 || y === 0 || y === 15 ? d : (y + (x % 2)) % 5 === 0 ? b : a; break; // framed
+        case 4: c = Math.abs(cx) < 1.2 || Math.abs(cy + 2) < 1.2 ? b : a; break; // cross
+        default: c = rnd(y * 10 + x) % 7 === 0 ? b : y > 10 && rnd(x) % 3 === 0 ? d : a; break; // sparkle
+      }
+      // Soft vertical shading like cloth.
+      const shade = y / 15 * 0.28;
+      cells.push(`<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${c}"/>${shade > 0.02 ? `<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="#000" opacity="${shade.toFixed(2)}"/>` : ''}`);
+    }
+  }
+  return { __raw: `<svg class="cape-art" viewBox="0 0 10 16" shape-rendering="crispEdges" aria-hidden="true">${cells.join('')}</svg>` };
+}

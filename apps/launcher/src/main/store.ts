@@ -6,7 +6,7 @@
 import { app, safeStorage } from 'electron';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { defaultSettings, migrateProfile, migrateSettings, sanitizeSpotifyHud, type Settings } from '../core/settings.ts';
+import { defaultSettings, migrateProfile, migrateSettings, type Settings } from '../core/settings.ts';
 import { sanitizeFx, sanitizeImage } from '../core/design.ts';
 import type { MinecraftSession } from '../core/msauth.ts';
 
@@ -32,7 +32,7 @@ export async function loadSettings(): Promise<Settings> {
   try {
     const s = migrateSettings(JSON.parse(await readFile(settingsFile(), 'utf8')) as Partial<Settings>);
     const d = defaultSettings();
-    return { ...d, ...s, fx: sanitizeFx(s.fx), bgImage: sanitizeImage(s.bgImage), spotifyHud: sanitizeSpotifyHud(s.spotifyHud), profiles: s.profiles?.length ? s.profiles.map((p) => migrateProfile(p)) : d.profiles };
+    return { ...d, ...s, fx: sanitizeFx(s.fx), bgImage: sanitizeImage(s.bgImage), profiles: s.profiles?.length ? s.profiles.map((p) => migrateProfile(p)) : d.profiles };
   } catch {
     return defaultSettings();
   }

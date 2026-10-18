@@ -87,7 +87,7 @@ async function page(id, expect) {
     await win.click('[data-tab=designs]');
   } else {
     // Secondary pages live in the dock's "Mehr" menu.
-    if (!(await win.locator(`#sidebar [data-page=${id}]`).count())) await win.click('#more');
+    if (!(await win.locator(`#sidebar [data-page=${id}]`).count())) await win.click('#tbMore');
     await win.click(`[data-page=${id}]`);
   }
   await win.waitForTimeout(600);
@@ -100,10 +100,10 @@ async function page(id, expect) {
 await win.waitForSelector('#launch');
 await win.waitForTimeout(1500); // character + background settle
 await page('play', 'SPIELEN');
-// Old default settings are migrated to the "Halloween Crypt" look.
+// Old settings are migrated to the night-blue NoRisk-style look.
 const bgColor = await win.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
-if (bgColor !== '#05040a') problems.push(`old settings were not migrated to Halloween Crypt: --bg is ${bgColor}`);
-if (!(await win.locator('#sidebar [data-page=skins]').count())) problems.push('skins tab missing');
+if (bgColor !== '#0b1120') problems.push(`old settings were not migrated to Nacht: --bg is ${bgColor}`);
+for (const id of ['play', 'profiles', 'mods', 'skins', 'capes']) if (!(await win.locator(`#sidebar [data-page=${id}]`).count())) problems.push(`${id} tab missing`);
 if (await win.locator('#sidebar [data-page=designs]').count()) problems.push('designs should live under Optionen');
 // Custom window controls: minimize, fullscreen, maximize/restore, close.
 for (const w of ['minimize', 'fullscreen', 'maximize', 'close']) if (!(await win.locator(`[data-win=${w}]`).count())) problems.push(`window button ${w} missing`);
@@ -118,7 +118,7 @@ if (maxed) { await win.click('[data-win=maximize]'); await win.waitForTimeout(50
 // The window layout must fill the window in every theme.
 async function layoutOk(label) {
   const r = await win.evaluate(() => ({ shell: document.querySelector('.frame').getBoundingClientRect().width, bar: document.querySelector('.titlebar').getBoundingClientRect().width, w: innerWidth }));
-  if (r.shell < r.w - 2 || r.bar < r.w - 90) problems.push(`${label}: layout collapsed (shell ${r.shell}px, titlebar ${r.bar}px, window ${r.w}px)`);
+  if (r.shell < r.w - 2 || r.bar < r.w - 120) problems.push(`${label}: layout collapsed (shell ${r.shell}px, titlebar ${r.bar}px, window ${r.w}px)`);
 }
 await layoutOk('nocturne');
 // Profile dropdown lists the profiles.
@@ -137,13 +137,15 @@ await win.click('#new');
 await win.waitForSelector('#loaders [data-loader=fabric]');
 await win.waitForTimeout(400);
 if (shots) await win.screenshot({ path: join(shots, 'launcher-profile-editor.png') });
-// Mods are managed per profile (no separate tab any more).
-if (await win.locator('#sidebar [data-page=mods]').count()) problems.push('mods tab should be gone');
+// A profile's MODS button opens the Mods page on that profile's installed files.
 await page('profiles', 'LEGO Client');
 await win.locator('[data-mods]').first().click();
-await win.waitForTimeout(600);
-if (!(await win.locator('#view').innerText()).includes('Mods & Inhalte')) problems.push('profile mods view did not open');
+await win.waitForTimeout(800);
+if (!(await win.locator('#tabs [data-tab=installed].active').count())) problems.push('profile mods view did not open');
 if (shots) await win.screenshot({ path: join(shots, 'launcher-profile-mods.png') });
+await page('mods', 'Modpacks');
+await page('skins', 'Add New Skin');
+await page('capes', 'No Cape');
 await page('cosmetics', 'Sammlung');
 await page('shop', 'Shop');
 await page('friends', 'Alex');
@@ -254,7 +256,7 @@ await win.keyboard.press('Escape');
 await win.waitForSelector('.vr-root', { state: 'detached', timeout: 8000 }).catch(() => problems.push('VR did not close on Esc'));
 
 // Buy something through the launcher shop.
-await win.click('#more');
+await win.click('#tbMore');
 await win.click('[data-page=shop]');
 await win.waitForSelector('[data-buy]');
 await win.locator('[data-buy]').first().click();
@@ -264,7 +266,7 @@ const inv = await call(me.token, 'GET', '/api/inventory');
 if (inv.owned.filter((id) => !id.startsWith('tag_')).length === 0 && inv.owned.length < 30) problems.push('purchase not reflected in inventory');
 
 // Chat from the launcher.
-await win.click('[data-page=friends]');
+await win.click('#tbFriends');
 await win.click('[data-chat]');
 await win.waitForSelector('#send');
 await win.fill('#send input', 'Antwort aus dem Launcher');

@@ -1,10 +1,10 @@
 // Skins tab: the account's real Minecraft skin in 3D (zoom, rotate, poses),
 // upload a new one through the official API, and a local skin library.
 
-import { loadIdentity, onLeave, state } from '../app.ts';
-import { api, errorToast, html, mount, toast } from '../ui.ts';
+import { loadIdentity, state } from '../app.ts';
+import { api, confirm, dialog, errorToast, html, mount, toast, type Raw } from '../ui.ts';
 import { icon } from '../icons.ts';
-import { createAvatar, type Anim, type Avatar } from '../avatar.ts';
+import { skinPoster } from '../avatar.ts';
 import type { SkinEntry } from '../../core/design.ts';
 
 
@@ -24,115 +24,112 @@ function readPng(file: File): Promise<string> {
   });
 }
 
+let sq = '';
+
+/** Skins: grid of the skin library like the NoRisk launcher (posed 3D figures). Click = use in Minecraft. */
 export async function skinsPage(el: HTMLElement): Promise<void> {
   const signed = state.auth.signedIn;
-  let preview: { data: string | null; variant: 'classic' | 'slim' } = { data: state.skin.skin, variant: state.skin.variant };
-  const anim: Anim = 'idle';
   const lib = (): SkinEntry[] => state.settings.skinLibrary ?? [];
-
-  mount(el, html`<div class="skins">
-    <section class="panel skins-stage">
-      <div class="panel-h"><span>${icon('skins', 'sm')} Dein Skin</span><span class="muted small" id="skinSrc">${signed ? `Aktiv in Minecraft · ${state.auth.name}` : state.settings.guestName ? `Skin von ${state.settings.guestName}` : 'Gastmodus – Standard-Skin'}</span></div>
-      <div class="grid-floor" aria-hidden="true"><i class="gf-floor"></i><i class="gf-ceil"></i></div>
-      <canvas id="skinView"></canvas>
-      <p class="small muted hint">Mausrad = Zoom · Ziehen = Drehen</p>
-    </section>
-    <aside class="panel skins-side">
-      <div class="panel-h"><span>${icon('upload', 'sm')} Skin ändern</span></div>
-      <label class="drop" id="drop"><input type="file" id="file" accept="image/png" hidden>${icon('upload')}<b>PNG hier ablegen</b><small>oder klicken · 64×64 Pixel</small></label>
-      <div class="row gap"><span class="small">Modell</span><div class="seg" id="variant"><button data-v="classic">Classic</button><button data-v="slim">Slim</button></div></div>
-      <div class="row gap wrap">
-        <button class="btn primary" id="apply" ${signed ? '' : 'disabled'}>${icon('check', 'sm')} In Minecraft übernehmen</button>
-        <button class="btn" id="save">${icon('plus', 'sm')} In Bibliothek</button>
-        <button class="btn ghost" id="reset" ${signed ? '' : 'disabled'}>Standard-Skin</button>
-      </div>
-      ${signed ? '' : html`<div class="panel-h sub"><span>Dein Minecraft-Name</span></div>
-        <p class="small muted">Als Gast zeigen wir den Skin, den du in Minecraft spielst – trag einfach deinen Namen ein (nur Anzeige, kein Login).</p>
-        <div class="row gap"><input id="gname" class="compact" maxlength="16" placeholder="z. B. LegoCpvp" value="${state.settings.guestName}"><button class="btn" id="gload">Laden</button></div>`}
-      <div class="panel-h sub"><span>Bibliothek</span><span class="muted small" id="libCount"></span></div>
-      <div class="skin-lib" id="lib"></div>
-    </aside>
-  </div>`);
-
-  let avatar: Avatar | null = null;
-  try {
-    avatar = createAvatar(el.querySelector<HTMLCanvasElement>('#skinView')!, state.settings.reducedMotion);
-    avatar.play(anim);
-  } catch (e) { console.warn('avatar unavailable', e); }
-  onLeave(() => avatar?.dispose());
-  const show = () => {
-    void avatar?.setSkin(preview.data, preview.variant, state.skin.cape).catch(() => {});
-    el.querySelectorAll<HTMLButtonElement>('#variant button').forEach((b) => b.classList.toggle('on', b.dataset.v === preview.variant));
+  mount(el, html`<div class="skins-head">
+      <div class="searchbar">${icon('search', 'sm')}<input id="sq" placeholder="Search skins…" value="${sq}" autocomplete="off"></div>
+      <span class="grow"></span>
+      <button class="btn" id="add">${icon('plus', 'sm')} ADD SKIN</button>
+      <input type="file" id="file" accept="image/png" hidden>
+    </div>
+    <div class="page-sep"></div>
+    ${signed ? '' : html`<div class="guest-skin"><span class="small muted">Als Gast: Minecraft-Namen eintragen, um deinen Skin zu sehen (nur Anzeige).</span><input id="gname" class="compact" maxlength="16" placeholder="z. B. LegoCpvp" value="${state.settings.guestName}"><button class="btn sm" id="gload">Laden</button></div>`}
+    <div class="skin-grid" id="grid"></div>`);
+  const grid = el.querySelector<HTMLElement>('#grid')!;
+  const current = state.skin.skin;
+  const draw = async () => {
+    const q = sq.trim().toLowerCase();
+    const items = lib().filter((s) => !q || s.name.toLowerCase().includes(q));
+    mount(grid, html`<label class="skin-card add" id="addCard"><div class="sc-fig ghost"><img id="ghostImg" alt=""><span class="sc-plus">${icon('plus')}</span></div><div class="sc-name">Add New Skin</div><div class="sc-sub">${icon('upload', 'xs')} Upload or import a skin</div></label>
+      ${current && !lib().some((s) => s.data === current) ? html`<div class="skin-card active" data-cur="1"><div class="sc-fig"><img data-poster="cur" alt=""></div><div class="sc-name">${state.auth.name ?? 'Aktiver Skin'}</div><div class="sc-sub">${icon('check', 'xs')} Aktiv in Minecraft</div>
+        <div class="sc-tools"><button class="icon-btn sq" data-keep="1" title="In Bibliothek speichern">${icon('plus', 'sm')}</button></div></div>` : ''}
+      ${items.map((s) => html`<div class="skin-card ${s.data === current ? 'active' : ''}" data-id="${s.id}"><div class="sc-fig"><img data-poster="${s.id}" alt=""></div>
+        <div class="sc-name" title="${s.name}">${s.name}</div><div class="sc-sub">${icon('skins', 'xs')} ${s.variant === 'slim' ? 'Slim' : 'Classic'}${s.data === current ? ' · aktiv' : ''}</div>
+        <div class="sc-tools"><button class="icon-btn sq" data-edit="${s.id}" title="Umbenennen / Modell">${icon('brush', 'sm')}</button><button class="icon-btn sq" data-del="${s.id}" title="Löschen">${icon('trash', 'sm')}</button></div></div>`)}`);
+    const ghost = await skinPoster(null, 'classic').catch(() => '');
+    const gi = grid.querySelector<HTMLImageElement>('#ghostImg');
+    if (gi && ghost) gi.src = ghost;
+    if (current) { const img = grid.querySelector<HTMLImageElement>('[data-poster="cur"]'); if (img) img.src = await skinPoster(current, state.skin.variant).catch(() => ''); }
+    for (const s of items) {
+      const img = grid.querySelector<HTMLImageElement>(`[data-poster="${s.id}"]`);
+      if (img) img.src = await skinPoster(s.data, s.variant).catch(() => '');
+    }
   };
-  show();
-
-  const drawLib = () => {
-    const items = lib();
-    el.querySelector('#libCount')!.textContent = `${items.length}/40`;
-    mount(el.querySelector('#lib')!, items.length
-      ? html`${items.map((s) => html`<div class="lib-i ${preview.data === s.data ? 'on' : ''}" data-id="${s.id}" title="${s.name}"><img src="${s.data}" alt=""><span>${s.name}</span><button class="x" data-del="${s.id}" aria-label="Löschen">${icon('close', 'xs')}</button></div>`)}`
-      : html`<p class="small muted">Noch keine Skins gespeichert.</p>`);
-  };
-  drawLib();
-
-  const saveLib = async (items: SkinEntry[]) => { state.settings = await api.setSettings({ skinLibrary: items }); drawLib(); };
-
-  el.querySelector('#variant')!.addEventListener('click', (e) => {
-    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-v]');
-    if (b) { preview = { ...preview, variant: b.dataset.v as 'classic' | 'slim' }; show(); }
-  });
+  void draw();
+  const saveLib = async (items: SkinEntry[]) => { state.settings = await api.setSettings({ skinLibrary: items.slice(-40) }); void draw(); };
+  const file = el.querySelector<HTMLInputElement>('#file')!;
   const take = async (f: File | undefined) => {
     if (!f) return;
-    try { preview = { ...preview, data: await readPng(f) }; show(); drawLib(); toast('Vorschau geladen', 'ok'); } catch (e) { errorToast(e); }
+    try {
+      const data = await readPng(f);
+      if (lib().some((s) => s.data === data)) return toast('Schon in der Bibliothek.');
+      const name = f.name.replace(/\.png$/i, '').slice(0, 40) || `Skin ${lib().length + 1}`;
+      const variant = await askVariant();
+      await saveLib([...lib(), { id: `s-${Date.now().toString(36)}`, name, data, variant }]);
+      toast('Skin hinzugefügt', 'ok');
+    } catch (e) { errorToast(e); }
   };
-  const drop = el.querySelector<HTMLElement>('#drop')!;
-  el.querySelector<HTMLInputElement>('#file')!.addEventListener('change', (e) => void take((e.target as HTMLInputElement).files?.[0]));
-  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
-  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
-  drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); void take(e.dataTransfer?.files[0]); });
-
+  file.addEventListener('change', () => { void take(file.files?.[0]); file.value = ''; });
+  el.querySelector('#add')!.addEventListener('click', () => file.click());
+  el.querySelector('#sq')!.addEventListener('input', (e) => { sq = (e.target as HTMLInputElement).value; void draw(); });
+  grid.addEventListener('dragover', (e) => e.preventDefault());
+  grid.addEventListener('drop', (e) => { e.preventDefault(); void take(e.dataTransfer?.files[0]); });
   el.querySelector('#gload')?.addEventListener('click', async () => {
     const name = el.querySelector<HTMLInputElement>('#gname')!.value.trim();
     if (name && !/^[A-Za-z0-9_]{3,16}$/.test(name)) return toast('Minecraft-Namen haben 3–16 Zeichen (Buchstaben, Zahlen, _).', 'error');
     state.settings = await api.setSettings({ guestName: name });
     await loadIdentity();
     if (name && !state.skin.skin) return toast('Diesen Namen gibt es nicht oder Mojang ist gerade nicht erreichbar.', 'error');
-    preview = { data: state.skin.skin, variant: state.skin.variant };
-    show();
-    toast(name ? `Skin von ${name} geladen` : 'Standard-Skin', 'ok');
+    void skinsPage(el);
   });
-  el.querySelector('#apply')!.addEventListener('click', async (e) => {
-    if (!preview.data) return toast('Wähle zuerst einen Skin.');
-    const b = e.currentTarget as HTMLButtonElement;
-    b.disabled = true;
+  grid.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement;
+    if (t.closest('#addCard')) { e.preventDefault(); return file.click(); }
+    const del = t.closest<HTMLElement>('[data-del]');
+    if (del) { if (await confirm('Skin löschen?', 'Der Skin wird aus deiner Bibliothek entfernt.', 'Löschen', true)) await saveLib(lib().filter((s) => s.id !== del.dataset.del)); return; }
+    if (t.closest('[data-keep]') && current) { await saveLib([...lib(), { id: `s-${Date.now().toString(36)}`, name: state.auth.name ?? 'Mein Skin', data: current, variant: state.skin.variant }]); return; }
+    const ed = t.closest<HTMLElement>('[data-edit]');
+    if (ed) {
+      const s = lib().find((x) => x.id === ed.dataset.edit);
+      if (!s) return;
+      const name = await form<string>('Skin bearbeiten', html`<label class="field"><span>Name</span><input id="dn" maxlength="40" value="${s.name}"></label>
+        <div class="seg" id="dv"><button type="button" data-v="classic" class="${s.variant === 'classic' ? 'on' : ''}">Classic</button><button type="button" data-v="slim" class="${s.variant === 'slim' ? 'on' : ''}">Slim</button></div>`, (box) => {
+        let v = s.variant;
+        box.querySelector('#dv')!.addEventListener('click', (ev) => { const b = (ev.target as HTMLElement).closest<HTMLButtonElement>('[data-v]'); if (b) { v = b.dataset.v as 'classic' | 'slim'; box.querySelectorAll('#dv button').forEach((x) => x.classList.toggle('on', x === b)); } });
+        return () => { s.variant = v; return (box.querySelector<HTMLInputElement>('#dn')!.value.trim() || s.name).slice(0, 40); };
+      });
+      if (name) await saveLib(lib().map((x) => (x.id === s.id ? { ...x, name, variant: s.variant } : x)));
+      return;
+    }
+    const card = t.closest<HTMLElement>('[data-id]');
+    const s = card && lib().find((x) => x.id === card.dataset.id);
+    if (!s) return;
+    if (!signed) return toast('Zum Übernehmen in Minecraft bitte anmelden.');
+    if (!(await confirm('Skin übernehmen?', `„${s.name}“ wird dein Skin in Minecraft.`, 'Übernehmen'))) return;
     try {
-      state.skin = await api.uploadSkin(preview.data, preview.variant);
+      state.skin = await api.uploadSkin(s.data, s.variant);
       await loadIdentity();
       toast('Skin in Minecraft geändert', 'ok');
-    } catch (err) { errorToast(err); } finally { b.disabled = false; }
-  });
-  el.querySelector('#reset')!.addEventListener('click', async () => {
-    try {
-      state.skin = await api.resetSkin();
-      preview = { data: state.skin.skin, variant: state.skin.variant };
-      show();
-      await loadIdentity();
-      toast('Standard-Skin aktiv', 'ok');
+      void skinsPage(el);
     } catch (err) { errorToast(err); }
   });
-  el.querySelector('#save')!.addEventListener('click', async () => {
-    if (!preview.data) return toast('Kein Skin zum Speichern.');
-    if (lib().some((s) => s.data === preview.data)) return toast('Schon in der Bibliothek.');
-    const name = `Skin ${lib().length + 1}`;
-    await saveLib([...lib(), { id: `s-${Date.now().toString(36)}`, name, data: preview.data, variant: preview.variant }].slice(-40));
-    toast('Gespeichert', 'ok');
-  });
-  el.querySelector('#lib')!.addEventListener('click', async (e) => {
-    const t = e.target as HTMLElement;
-    const del = t.closest<HTMLElement>('[data-del]');
-    if (del) { await saveLib(lib().filter((s) => s.id !== del.dataset.del)); return; }
-    const it = t.closest<HTMLElement>('[data-id]');
-    const s = it && lib().find((x) => x.id === it.dataset.id);
-    if (s) { preview = { data: s.data, variant: s.variant }; show(); drawLib(); }
-  });
+}
+
+function askVariant(): Promise<'classic' | 'slim'> {
+  return form<'classic' | 'slim'>('Modell wählen', html`<p class="small muted">Classic = 4 Pixel breite Arme, Slim = 3 Pixel (Alex).</p><div class="seg" id="dv"><button type="button" data-v="classic" class="on">Classic</button><button type="button" data-v="slim">Slim</button></div>`, (box) => {
+    let v: 'classic' | 'slim' = 'classic';
+    box.querySelector('#dv')!.addEventListener('click', (ev) => { const b = (ev.target as HTMLElement).closest<HTMLButtonElement>('[data-v]'); if (b) { v = b.dataset.v as 'classic' | 'slim'; box.querySelectorAll('#dv button').forEach((x) => x.classList.toggle('on', x === b)); } });
+    return () => v;
+  }).then((v) => v ?? 'classic');
+}
+
+/** Small form dialog: `setup` wires the controls and returns the value getter used on OK. */
+function form<T>(title: string, body: Raw, setup: (box: HTMLElement) => () => T): Promise<T | null> {
+  const d = dialog(html`<form method="dialog"><h2>${title}</h2>${body}<div class="row between gap"><button class="btn" value="cancel">Abbrechen</button><button class="btn primary" value="ok">OK</button></div></form>`);
+  const get = setup(d);
+  return new Promise((resolve) => { d.onclose = () => resolve(d.returnValue === 'ok' ? get() : null); });
 }

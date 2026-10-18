@@ -85,7 +85,7 @@ export interface LauncherApi {
   gameRunning(): Promise<boolean>;
   openFolder(kind: 'game' | 'logs' | 'mods' | 'screenshots' | 'resourcepacks' | 'shaderpacks', profileId?: string): Promise<void>;
   mods(profileId: string): Promise<ModEntry[]>;
-  searchProjects(profileId: string, query: string, type: ProjectType, offset: number): Promise<{ hits: SearchHit[]; total: number }>;
+  searchProjects(profileId: string, query: string, type: ProjectType, offset: number, filters?: import('./core/modrinth.ts').SearchFilters): Promise<{ hits: SearchHit[]; total: number }>;
   installProject(profileId: string, projectId: string, type: ProjectType, title: string, iconUrl: string | null): Promise<string[]>;
   removeMod(profileId: string, filename: string): Promise<void>;
   toggleMod(profileId: string, filename: string, enabled: boolean): Promise<void>;
@@ -102,9 +102,5 @@ export interface LauncherApi {
   diagnostics(): Promise<string>;
   checkUpdate(): Promise<{ available: boolean; version?: string; error?: string }>;
   installUpdate(): Promise<void>;
-  /** Spotify HUD: now-playing state (also pushed on 'spotify', cover on 'spotify-art'), media commands, LRCLIB lyrics. */
-  spotifyState(): Promise<import('./main/spotify.ts').SpotifyState | null>;
-  spotifyCommand(cmd: string): Promise<boolean>;
-  spotifyLyrics(title: string, artist: string, durMs: number): Promise<import('./core/lyrics.ts').LyricsResult>;
-  on(channel: 'auth' | 'launch-progress' | 'game-log' | 'game-exit' | 'lego-event' | 'update' | 'window-state' | 'vrb-frame' | 'vrb-state' | 'spotify' | 'spotify-art', cb: (data: any) => void): () => void;
+  on(channel: 'auth' | 'launch-progress' | 'game-log' | 'game-exit' | 'lego-event' | 'update' | 'window-state' | 'vrb-frame' | 'vrb-state', cb: (data: any) => void): () => void;
 }

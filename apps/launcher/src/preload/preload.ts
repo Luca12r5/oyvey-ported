@@ -3,7 +3,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { LauncherApi } from '../ipc-types.ts';
 
-const CHANNELS = new Set(['auth', 'launch-progress', 'game-log', 'game-exit', 'lego-event', 'update', 'window-state', 'vrb-frame', 'vrb-state', 'spotify', 'spotify-art']);
+const CHANNELS = new Set(['auth', 'launch-progress', 'game-log', 'game-exit', 'lego-event', 'update', 'window-state', 'vrb-frame', 'vrb-state']);
 
 const api: LauncherApi = {
   info: () => ipcRenderer.invoke('info'),
@@ -42,7 +42,7 @@ const api: LauncherApi = {
   gameRunning: () => ipcRenderer.invoke('game:running'),
   openFolder: (k, id) => ipcRenderer.invoke('folder', k, id),
   mods: (id) => ipcRenderer.invoke('mods:list', id),
-  searchProjects: (id, q, t, o) => ipcRenderer.invoke('mods:search', id, q, t, o),
+  searchProjects: (id, q, t, o, f) => ipcRenderer.invoke('mods:search', id, q, t, o, f),
   installProject: (id, pid, t, title, icon) => ipcRenderer.invoke('mods:install', id, pid, t, title, icon),
   removeMod: (id, f) => ipcRenderer.invoke('mods:remove', id, f),
   toggleMod: (id, f, e) => ipcRenderer.invoke('mods:toggle', id, f, e),
@@ -59,9 +59,6 @@ const api: LauncherApi = {
   diagnostics: () => ipcRenderer.invoke('diagnostics'),
   checkUpdate: () => ipcRenderer.invoke('update:check'),
   installUpdate: () => ipcRenderer.invoke('update:install'),
-  spotifyState: () => ipcRenderer.invoke('spotify:state'),
-  spotifyCommand: (c) => ipcRenderer.invoke('spotify:cmd', c),
-  spotifyLyrics: (t, a, d) => ipcRenderer.invoke('spotify:lyrics', t, a, d),
   on: (channel, cb) => {
     if (!CHANNELS.has(channel)) throw new Error('unknown channel');
     const listener = (_e: unknown, data: unknown) => cb(data);

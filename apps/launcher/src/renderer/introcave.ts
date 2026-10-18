@@ -1,4 +1,4 @@
-// Start sequence "LEGO Hell Cave" (three.js / WebGL, ~24 s).
+// Start sequence "LEGO Hell Cave" (three.js / WebGL): a 24 s script, played stretched to ~33 s (see introhalloween.ts).
 //   0–3 s   darkness, heartbeat
 //   3–4 s   a torch ignites next to the camera
 //   4–12 s  flight through a cave built from LEGO bricks (studs, stalactites, torches)
@@ -17,6 +17,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { IntroOptions } from './intro3d.ts';
+import { addHalloween, REAL_DURATION, realTime, scriptTime } from './introhalloween.ts';
 
 const DURATION = 24;
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
@@ -190,7 +191,8 @@ class CaveAudio {
   }
 
   setMuted(m: boolean): void { if (this.ctx && this.master) this.master.gain.setTargetAtTime(m ? 0 : 0.6, this.ctx.currentTime, 0.05); }
-  private at(t: number): number { return this.ctx!.currentTime + t; }
+  /** Sounds are written in script seconds; the intro plays stretched (see introhalloween.ts). */
+  private at(t: number): number { return this.ctx!.currentTime + realTime(t); }
 
   private src(t: number, dur: number): AudioBufferSourceNode {
     const s = this.ctx!.createBufferSource();
@@ -420,7 +422,7 @@ export function playIntroCave(opts: IntroOptions): Promise<void> {
     const camera = new THREE.PerspectiveCamera(55, 1, 0.05, 300);
     const dot = glowDot();
 
-    scene.add(new THREE.AmbientLight('#1a0c08', 0.25));
+    scene.add(new THREE.AmbientLight('#140a10', 0.12));
     const lavaHemi = new THREE.HemisphereLight('#120606', '#ff5a10', 0);
     scene.add(lavaHemi);
 
@@ -583,7 +585,9 @@ export function playIntroCave(opts: IntroOptions): Promise<void> {
       top.position.y = 0.2;
       const bottom = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.05, 10), rustMat);
       bottom.position.y = -0.2;
-      const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.34, 12, 1, true), new THREE.MeshPhysicalMaterial({ color: '#ffd9a0', transparent: true, opacity: 0.35, roughness: 0.1, transmission: 0.4, side: THREE.DoubleSide }));
+      // Halloween lanterns: warm orange, witch-fire green and ghost purple in turn.
+      const hue = (['#ffa050', '#6dff5a', '#b866ff'] as const)[i % 3]!;
+      const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.34, 12, 1, true), new THREE.MeshPhysicalMaterial({ color: hue, transparent: true, opacity: 0.35, roughness: 0.1, transmission: 0.4, side: THREE.DoubleSide }));
       const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.4, 4), rustMat);
       wire.position.y = 0.45;
       cage.add(top, bottom, glass, wire);
@@ -597,18 +601,19 @@ export function playIntroCave(opts: IntroOptions): Promise<void> {
       const flameGroup = new THREE.Group();
       cage.add(flameGroup);
       const sprites = [0, 1, 2].map((j) => {
-        const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: dot, color: new THREE.Color(j === 0 ? '#fff1c0' : j === 1 ? '#ffb347' : '#ff7a1a').multiplyScalar(j === 0 ? 3 : 2), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, toneMapped: false }));
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: dot, color: new THREE.Color(j === 0 ? '#ffffff' : hue).lerp(new THREE.Color(j === 2 ? '#000000' : hue), j === 2 ? 0.25 : 0).multiplyScalar(j === 0 ? 2.4 : 2.2), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, toneMapped: false }));
         sp.scale.setScalar(0.12 + j * 0.12);
         flameGroup.add(sp);
         return sp;
       });
-      const light = i < (q > 0.5 ? 8 : 5) ? new THREE.PointLight('#ffa050', 0, 18, 1.6) : null;
+      const light = i < (q > 0.5 ? 8 : 5) ? new THREE.PointLight(hue, 0, 18, 1.6) : null;
       if (light) {
         light.position.copy(pos).add(new THREE.Vector3(0, -0.15, 0));
         if (i === 0 && renderer.shadowMap.enabled) { light.castShadow = true; light.shadow.mapSize.set(512, 512); light.shadow.bias = -0.002; }
         scene.add(light);
       }
-      return { flameGroup, sprites, light, cage, ph: Math.random() * 10, on: i === 0 ? 3 : 4 + i * 0.55 };
+      // Coloured witch-fire is dimmer than the warm lanterns so the tunnel stays dark.
+      return { flameGroup, sprites, light, cage, ph: Math.random() * 10, on: i === 0 ? 3 : 4 + i * 0.55, power: i % 3 === 0 ? 1 : i % 3 === 1 ? 0.28 : 0.42 };
     });
 
     // The minecart the camera rides in (rim and corners visible at the bottom of the frame).
@@ -850,6 +855,7 @@ export function playIntroCave(opts: IntroOptions): Promise<void> {
     };
     const pkLook = new THREE.Vector3(0, 1.5, -118);
     const logoLook = new THREE.Vector3(0, 10, -116);
+    const halloween = addHalloween(scene, { railPoint, frameZ, dot, q, cubeGeo, logoAt: logoLook });
 
     // ---- post
     const composer = new EffectComposer(renderer);
@@ -871,7 +877,8 @@ export function playIntroCave(opts: IntroOptions): Promise<void> {
     const audio = new CaveAudio();
     audio.start(!muted);
 
-    let t = 0, last = performance.now(), raf = 0, ending = false, finished = false;
+    // `real` = seconds since start, `t` = position in the 24 s script (stretched, see introhalloween.ts).
+    let real = Math.max(0, opts.startAt ?? 0), t = scriptTime(real), last = performance.now(), raf = 0, ending = false, finished = false;
     const dummy = new THREE.Object3D();
     const look = new THREE.Vector3();
     const finish = () => {
@@ -918,14 +925,16 @@ export function playIntroCave(opts: IntroOptions): Promise<void> {
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
       const dt = Math.min(0.1, (now - last) / 1000);
-      t += dt;
+      real += dt;
+      t = scriptTime(real);
       last = now;
-      if (!ending && t >= DURATION - 1.1) end(false);
+      if (!ending && real >= REAL_DURATION - 1.1) end(false);
+      halloween(t, camera.position, dt);
 
       helmet.intensity = 45 * smooth(3.4, 3.9, t) * (1 - smooth(11.5, 13, t) * 0.7);
       // Exposure stays low: the scene is lit by fire, not by a grading curve.
       const torchOn = smooth(3, 3.5, t);
-      renderer.toneMappingExposure = 0.15 + torchOn * 0.75 + smooth(12, 14, t) * 0.15 + smooth(22.8, 23.6, t) * 2.2;
+      renderer.toneMappingExposure = 0.1 + torchOn * 0.62 + smooth(12, 14, t) * 0.12 + smooth(22.8, 23.6, t) * 2.2;
       flash.style.opacity = String(smooth(22.9, 23.5, t) * 0.9);
       fog.density = lerp(0.07, 0.045, torchOn) - smooth(11.5, 14, t) * 0.03;
       fog.color.setRGB(0.04 + smooth(11, 14, t) * 0.06, 0.012 + smooth(11, 14, t) * 0.01, 0.008);
@@ -956,10 +965,10 @@ export function playIntroCave(opts: IntroOptions): Promise<void> {
         tc2.cage.rotation.z = Math.sin(t * 1.6 + tc2.ph) * 0.06;
         const on = smooth(tc2.on, tc2.on + 0.35, t);
         const fl = 0.82 + Math.sin(t * 13 + tc2.ph) * 0.08 + Math.sin(t * 31 + tc2.ph * 2) * 0.06 + (Math.random() - 0.5) * 0.08;
-        if (tc2.light) tc2.light.intensity = 70 * on * fl;
+        if (tc2.light) tc2.light.intensity = 70 * on * fl * tc2.power;
         tc2.sprites.forEach((sp, j) => {
           sp.position.set(Math.sin(t * 9 + j * 2 + tc2.ph) * 0.01, j * 0.02, 0);
-          sp.scale.setScalar((0.2 + j * 0.16) * on * (0.9 + Math.sin(t * 17 + j * 3 + tc2.ph) * 0.12));
+          sp.scale.setScalar((0.2 + j * 0.16) * on * (0.55 + tc2.power * 0.45) * (0.9 + Math.sin(t * 17 + j * 3 + tc2.ph) * 0.12));
         });
       });
 

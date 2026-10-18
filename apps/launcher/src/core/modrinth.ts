@@ -10,7 +10,7 @@ import type { LoaderType } from './settings.ts';
 import { listEntries, readEntry } from './zip.ts';
 
 export const MODRINTH = 'https://api.modrinth.com/v2';
-export type ProjectType = 'mod' | 'resourcepack' | 'shader' | 'modpack';
+export type ProjectType = 'mod' | 'resourcepack' | 'shader' | 'modpack' | 'datapack';
 
 export interface SearchHit {
   project_id: string;
@@ -47,13 +47,22 @@ export interface InstalledMod {
   source: 'modrinth' | 'modpack' | 'import' | 'manual';
 }
 
-const FOLDER: Record<ProjectType, string> = { mod: 'mods', resourcepack: 'resourcepacks', shader: 'shaderpacks', modpack: '' };
+const FOLDER: Record<ProjectType, string> = { mod: 'mods', resourcepack: 'resourcepacks', shader: 'shaderpacks', modpack: '', datapack: 'datapacks' };
 
-export async function search(f: FetchLike, q: { query: string; type: ProjectType; gameVersion: string | null; loader: LoaderType | null; offset?: number; limit?: number }): Promise<{ hits: SearchHit[]; total: number }> {
+/** Optional filters of the Mods page (right-hand column). */
+export interface SearchFilters { versions?: string[]; categories?: string[]; loaders?: string[]; env?: 'client' | 'server' | null; sort?: 'relevance' | 'downloads' | 'follows' | 'newest' | 'updated' }
+
+export async function search(f: FetchLike, q: { query: string; type: ProjectType; gameVersion: string | null; loader: LoaderType | null; offset?: number; limit?: number; filters?: SearchFilters }): Promise<{ hits: SearchHit[]; total: number }> {
   const facets: string[][] = [[`project_type:${q.type}`]];
-  if (q.gameVersion && q.type !== 'modpack') facets.push([`versions:${q.gameVersion}`]);
-  if (q.loader && (q.type === 'mod' || q.type === 'modpack')) facets.push([`categories:${q.loader}`]);
-  const params = new URLSearchParams({ query: q.query, facets: JSON.stringify(facets), limit: String(q.limit ?? 20), offset: String(q.offset ?? 0), index: q.query ? 'relevance' : 'downloads' });
+  const fl = q.filters ?? {};
+  if (fl.versions?.length) facets.push(fl.versions.map((v) => `versions:${v}`));
+  else if (q.gameVersion && q.type !== 'modpack') facets.push([`versions:${q.gameVersion}`]);
+  if (fl.loaders?.length) facets.push(fl.loaders.map((l) => `categories:${l}`));
+  else if (q.loader && (q.type === 'mod' || q.type === 'modpack')) facets.push([`categories:${q.loader}`]);
+  for (const c of fl.categories ?? []) facets.push([`categories:${c}`]);
+  if (fl.env === 'client') facets.push(['client_side:required', 'client_side:optional']);
+  if (fl.env === 'server') facets.push(['server_side:required', 'server_side:optional']);
+  const params = new URLSearchParams({ query: q.query, facets: JSON.stringify(facets), limit: String(q.limit ?? 20), offset: String(q.offset ?? 0), index: fl.sort ?? (q.query ? 'relevance' : 'downloads') });
   const r = await fetchJson<{ hits: SearchHit[]; total_hits: number }>(f, `${MODRINTH}/search?${params}`);
   return { hits: r.hits, total: r.total_hits };
 }
@@ -62,6 +71,7 @@ export async function projectVersions(f: FetchLike, projectId: string, gameVersi
   const p = new URLSearchParams();
   if (gameVersion) p.set('game_versions', JSON.stringify([gameVersion]));
   if (loader && type === 'mod') p.set('loaders', JSON.stringify([loader]));
+  if (type === 'datapack') p.set('loaders', JSON.stringify(['datapack']));
   return fetchJson<MrVersion[]>(f, `${MODRINTH}/project/${encodeURIComponent(projectId)}/version?${p}`);
 }
 
