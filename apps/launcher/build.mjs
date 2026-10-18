@@ -29,7 +29,7 @@ const twConfig = {
   theme: {
     extend: {
       // From the NoRisk launcher's tailwind.config.js.
-      colors: { norisk: { DEFAULT: '#125a9d', light: '#1a6ebd', dark: '#0e4678' }, panel: { DEFAULT: '#1e1e1e', light: '#262626', border: '#3a3a3a' }, dark: '#121212' },
+      colors: { brand: { DEFAULT: '#125a9d', light: '#1a6ebd', dark: '#0e4678' }, panel: { DEFAULT: '#1e1e1e', light: '#262626', border: '#3a3a3a' }, dark: '#121212' },
       fontFamily: { smallcaps: ['var(--font-smallcaps)'], minecraft: ['var(--font-minecraft)'] },
       backgroundImage: { 'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))' },
       boxShadow: { glow: '0 0 10px rgba(18, 90, 157, 0.4)', 'glow-lg': '0 0 20px rgba(18, 90, 157, 0.6)', 'inner-glow': 'inset 0 0 10px rgba(18, 90, 157, 0.4)' },

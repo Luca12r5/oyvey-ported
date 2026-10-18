@@ -981,23 +981,22 @@ body.crypt ::-webkit-scrollbar-track { background: transparent; }
    Night blue, square tiles with hairline borders, pixel type everywhere and
    a blue rail; laid out like the NoRisk launcher screenshots. */
 body.nacht {
-  --line: #1f2d4d;
-  --line-hi: #2c3f69;
-  --pbg: #0e1628;
-  --pbg2: #0a1122;
-  --accent: #3b82f6;
-  --accent2: #60a5fa;
-  --text: #e6ecf7;
-  --muted: #8a99b8;
-  --pix: "Pixelify Sans", Silkscreen, monospace;
-  --font: "Pixelify Sans", Inter, sans-serif;
-  --head: "Pixelify Sans", monospace;
-  background: #0b1120;
+  /* Round 7: graphite glass like the Spotify HUD; accent comes from the theme. */
+  --line: rgba(255, 255, 255, .09);
+  --line-hi: rgba(255, 255, 255, .16);
+  --pbg: rgba(20, 20, 22, .62);
+  --pbg2: rgba(14, 14, 16, .7);
+  --text: #ffffff;
+  --muted: #a0a0a5;
+  --pix: Poppins, Inter, sans-serif;
+  --font: Poppins, Inter, sans-serif;
+  --head: Poppins, Inter, sans-serif;
+  background: var(--bg, #0d0d10);
   font-size: 14px;
-  letter-spacing: .01em;
+  letter-spacing: 0;
 }
 body.nacht::after { background: none; }
-body.nacht #bg, body.nacht #bg3d { opacity: .35; }
+body.nacht #bg, body.nacht #bg3d { opacity: 1; }
 body.nacht .rail { width: 98px; background: linear-gradient(180deg, #1e3a6e, #16294d 60%, #13234a); border-right: 1px solid #2c4a85; }
 body.nacht .rail-logo { border-bottom: 0; height: 72px; color: #e6ecf7; }
 body.nacht .rail-logo .i { width: 34px; height: 34px; }

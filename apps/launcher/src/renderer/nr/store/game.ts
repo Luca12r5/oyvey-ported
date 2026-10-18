@@ -77,5 +77,26 @@ export async function launchProfile(profileId: string): Promise<void> {
   }
   gameStore.set({ launching: false, running: true, status: null, pct: null, mb: null, react: { kind: 'success', at: Date.now() } });
   hooks.lowPower(true);
+  confetti();
   toast(t('play.fun'), 'ok');
+}
+
+/** Short colourful burst over the window when the game starts (skipped with reduced motion). */
+function confetti(): void {
+  if (document.body.classList.contains('reduced-motion') || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const box = document.createElement('div');
+  box.className = 'lx-confetti';
+  const cols = ['#3d8bfd', '#1ed760', '#ffd166', '#ff6f61', '#d68cff', '#4fd1c5', '#e3000b'];
+  for (let i = 0; i < 90; i++) {
+    const p = document.createElement('i');
+    p.style.left = `${Math.random() * 100}%`;
+    p.style.background = cols[i % cols.length]!;
+    p.style.animationDelay = `${Math.random() * 0.4}s`;
+    p.style.animationDuration = `${1.6 + Math.random() * 1.4}s`;
+    p.style.setProperty('--dx', `${(Math.random() - 0.5) * 240}px`);
+    p.style.setProperty('--rot', `${Math.random() * 900}deg`);
+    box.append(p);
+  }
+  document.body.append(box);
+  setTimeout(() => box.remove(), 3400);
 }

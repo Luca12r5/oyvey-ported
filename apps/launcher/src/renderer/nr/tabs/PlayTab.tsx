@@ -1,7 +1,7 @@
 // Ported from the NoRisk Client launcher (GPL-3.0): components/tabs/PlayTab.tsx and
 // launcher/PlayerActionsDisplay.tsx, wired to the LEGO launcher's profiles,
 // accounts, launch flow and console.
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { RetroGridEffect } from '../effects/RetroGridEffect.tsx';
 import { ToggleSwitch } from '../ui/ToggleSwitch.tsx';
 import { PlayerRig } from '../launcher/PlayerRig.tsx';
@@ -37,11 +37,22 @@ export function PlayTab(p: PlayTabProps) {
   const consoleOpen = useGame((s) => s.consoleOpen);
   const coinsKey = useShell((s) => s.coins);
   const [anim, setAnim] = useState(loadAnim);
+  // Character and LAUNCH grow with the window (fullscreen on big screens).
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [rigH, setRigH] = useState(450);
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setRigH(Math.round(Math.max(420, Math.min(900, el.clientHeight * 0.66)))));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const k = rigH / 450;
 
   return (
     <div className="flex h-full relative">
-      <div className="flex-grow flex flex-col items-center justify-center p-8 relative min-w-0">
-        <RetroGridEffect renderMode="both" isAnimationEnabled={!p.reducedMotion} customGridLineColor={`${accentColor.value}80`} />
+      <div ref={stageRef} className="flex-grow flex flex-col items-center justify-center p-8 relative min-w-0">
+        <RetroGridEffect renderMode="bottom" isAnimationEnabled={!p.reducedMotion} customGridLineColor={`${accentColor.value}45`} />
 
         <div className="absolute top-3 left-3 z-20">
           <CoinsBanner key={String(coinsKey)} connected={p.connected} onChanged={p.onRefresh} />
@@ -56,19 +67,18 @@ export function PlayTab(p: PlayTabProps) {
 
         <div className="relative z-10">
           <div className="flex flex-col items-center">
-            <div className="relative w-full max-w-[500px] flex flex-col items-center">
-              <PlayerRig playerName={p.playerName} skin={p.skin.skin} variant={p.skin.variant} cape={p.skin.cape} animated={anim && !p.reducedMotion} reducedMotion={p.reducedMotion} />
+            <div className="relative w-full flex flex-col items-center" style={{ maxWidth: `${Math.round(500 * k)}px` }}>
+              <PlayerRig playerName={p.playerName} skin={p.skin.skin} variant={p.skin.variant} cape={p.skin.cape} animated={anim && !p.reducedMotion} reducedMotion={p.reducedMotion} height={rigH} />
               <div className="absolute left-0 right-0 flex justify-center px-4 bottom-2 z-30">
-                <div className="max-w-xs sm:max-w-sm">
+                <div style={{ width: `${Math.round(Math.min(520, 330 * Math.min(1.5, k)))}px` }}>
                   <MainLaunchButton
                     profileId={p.profile?.id ?? ''}
                     selectedVersionLabel={p.profileLabel}
                     signedIn={p.signedIn}
                     onSignIn={p.onSignIn}
                     onPickProfile={p.onPickProfile}
-                    mainButtonWidth="w-80"
-                    maxWidth="400px"
-                    mainButtonHeight="h-20"
+                    maxWidth="none"
+                    scale={Math.min(1.4, k)}
                   />
                 </div>
               </div>
@@ -78,7 +88,7 @@ export function PlayTab(p: PlayTabProps) {
         {consoleOpen && p.profile && <GameConsole profileId={p.profile.id} />}
       </div>
 
-      <NewsSection onOpenAll={p.onOpenNews} className="border-l-2 border-white/40 bg-black/10 backdrop-blur-lg p-5 overflow-hidden flex flex-col relative z-10" />
+      <NewsSection onOpenAll={p.onOpenNews} className="lx-glass border-l border-white/10 p-5 overflow-hidden flex flex-col relative z-10" />
     </div>
   );
 }

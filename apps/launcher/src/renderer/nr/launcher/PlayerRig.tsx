@@ -14,9 +14,12 @@ interface PlayerRigProps {
   cape: string | null;
   animated: boolean;
   reducedMotion: boolean;
+  /** Rig height in px (follows the stage size). */
+  height?: number;
 }
 
-export function PlayerRig({ playerName, skin, variant, cape, animated, reducedMotion }: PlayerRigProps) {
+export function PlayerRig({ playerName, skin, variant, cape, animated, reducedMotion, height = PLAYER_RIG_HEIGHT }: PlayerRigProps) {
+  const k = height / PLAYER_RIG_HEIGHT;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const avatarRef = useRef<Avatar | null>(null);
 
@@ -41,15 +44,16 @@ export function PlayerRig({ playerName, skin, variant, cape, animated, reducedMo
   useEffect(() => { avatarRef.current?.setPaused(!animated); }, [animated, reducedMotion]);
 
   return (
-    <div className="relative flex-shrink-0" style={{ width: `${PLAYER_RIG_WIDTH}px`, height: `${PLAYER_RIG_HEIGHT}px` }}>
-      <div className="nr-nametag absolute left-1/2 -translate-x-1/2 -top-2 z-20 px-2 py-0.5 bg-black/40 text-white font-minecraft text-base whitespace-nowrap pointer-events-none">
+    <div className="relative flex-shrink-0" style={{ width: `${Math.round(PLAYER_RIG_WIDTH * k)}px`, height: `${Math.round(height)}px` }}>
+      <div className="lx-glow absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none" style={{ width: `${Math.round(360 * k)}px`, height: `${Math.round(360 * k)}px` }} />
+      <div className="nr-nametag absolute left-1/2 -translate-x-1/2 -top-2 z-20 px-3 py-1 rounded-full bg-black/45 backdrop-blur-md border border-white/10 text-white text-sm font-medium whitespace-nowrap pointer-events-none" style={{ fontSize: `${Math.round(14 * Math.min(1.6, k))}px` }}>
         {playerName}
       </div>
       <canvas
         ref={canvasRef}
         id="avatar"
         className="absolute"
-        style={{ left: '50%', top: '50%', transform: 'translate(-50%, -48%)', width: '520px', height: '640px', maxWidth: 'none', filter: 'drop-shadow(5px 10px 5px rgba(0,0,0,0.75))' }}
+        style={{ left: '50%', top: '50%', transform: 'translate(-50%, -48%)', width: `${Math.round(520 * k)}px`, height: `${Math.round(640 * k)}px`, maxWidth: 'none', filter: 'drop-shadow(5px 10px 6px rgba(0,0,0,0.7))' }}
       />
     </div>
   );

@@ -29,7 +29,7 @@ export function CoinsBanner({ connected, onChanged }: { connected: boolean; onCh
 
   const q = data?.p.quests.find((x) => x.period === 'daily' && !x.claimed) ?? data?.p.quests.find((x) => !x.claimed);
   return (
-    <div id="progressCard" className="font-smallcaps backdrop-blur-md border border-b-2 px-3 py-2 min-w-[220px] max-w-[260px] text-white" style={{ backgroundColor: `${accent.value}20`, borderColor: `${accent.value}60`, borderBottomColor: accent.value }}>
+    <div id="progressCard" className="lx-card px-3 py-2.5 min-w-[230px] max-w-[270px] text-white">
       <div className="flex items-center gap-2">
         <span className="nr-px" dangerouslySetInnerHTML={{ __html: pixel('coin', 'md').__raw }} />
         <div className="flex-1 min-w-0">
@@ -47,7 +47,7 @@ export function CoinsBanner({ connected, onChanged }: { connected: boolean; onCh
       {q && (
         <div className="mt-2">
           <div className="flex justify-between text-xs text-white/80"><span className="truncate">{q.title.de}</span><span className="text-white/60">{q.progress}/{q.target}</span></div>
-          <div className="h-1.5 mt-1 bg-white/10"><div className="h-full" style={{ width: `${Math.min(100, (q.progress / q.target) * 100)}%`, backgroundColor: accent.value }} /></div>
+          <div className="h-1 mt-1 rounded-full bg-white/15 overflow-hidden"><div className="h-full rounded-full" style={{ width: `${Math.min(100, (q.progress / q.target) * 100)}%`, backgroundColor: accent.value }} /></div>
         </div>
       )}
     </div>

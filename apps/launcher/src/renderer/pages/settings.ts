@@ -10,6 +10,7 @@ import { LANGS } from '../lang.ts';
 import { icon } from '../icons.ts';
 import { headFromSkin } from '../avatar.ts';
 import { languageTemplate, t } from '../i18n.ts';
+import { FLAGS } from '../flags.ts';
 import { sanitizeLanguage } from '../../core/design.ts';
 import type { Settings } from '../../core/settings.ts';
 import { signInFlow } from './account.ts';
@@ -87,7 +88,7 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
   const s = state.settings;
   const parts: Record<string, Raw> = {
     general: html`
-      ${row(t('set.language'), t('set.language.d'), html`<select data-key="language" class="compact">${LANGS.map(([c, n]) => html`<option value="${c}" ${s.language === c ? 'selected' : ''}>${n}</option>`)}${s.customLanguage ? html`<option value="custom" ${s.language === 'custom' ? 'selected' : ''}>${s.customLanguage.name}</option>` : ''}</select>`)}
+      ${row(t('set.language'), LANGS.find(([c]) => c === s.language)?.[1] ?? s.customLanguage?.name ?? s.language, html`<button class="btn sm" id="toLang">${{ __raw: FLAGS[s.language] ?? '' }} Ändern</button>`)}
       ${row(t('set.intro'), t('set.intro.d'), html`<div class="row"><button class="btn sm" id="introPlay">${icon('play', 'sm')} ${t('set.introPlay')}</button>${sw('introEnabled', s.introEnabled)}</div>`)}
       ${row(t('set.introSound'), t('set.introSound.d'), sw('introSound', s.introSound))}
       ${row(t('set.closeOnLaunch'), t('set.closeOnLaunch.d'), sw('closeOnLaunch', s.closeOnLaunch))}
@@ -135,6 +136,7 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!b) return;
     if (b.id === 'toDesigns') return void settingsPage(page(box), 'designs');
+    if (b.id === 'toLang') return void settingsPage(page(box), 'language');
     if (b.parentElement?.dataset.seg === 'transition') { await save({ transition: b.dataset.v as Settings['transition'] }); rerender(); toast(t('set.saved'), 'ok'); return; }
     if (b.parentElement?.dataset.seg === 'language') { await save({ language: b.dataset.v === 'en' ? 'en' : b.dataset.v === 'custom' ? 'custom' : 'de' }); return void settingsPage(page(box), only ?? 'general'); }
     if (b.id === 'game') return void api.openFolder('game');
@@ -183,14 +185,15 @@ function languageTab(box: HTMLElement): void {
   const draft: Record<string, string> = { ...(s.customLanguage?.strings ?? {}) };
   let q = '';
   const done = () => rows.filter((r) => draft[r.key]?.trim()).length;
-  mount(box, html`<section class="set-sec"><h2>${t('set.language')}</h2><div class="glass rows">
-      <div class="setting"><div><b>${t('set.language')}</b><small>${t('set.language.d')}</small></div><div class="ctl"><div class="seg" id="langSeg"><button data-v="de" class="${s.language === 'de' ? 'on' : ''}">Deutsch</button><button data-v="en" class="${s.language === 'en' ? 'on' : ''}">English</button>${s.customLanguage ? html`<button data-v="custom" class="${s.language === 'custom' ? 'on' : ''}">${s.customLanguage.name}</button>` : ''}</div></div></div></div></section>
-    <section class="set-sec"><h2>Eigene Sprache</h2><div class="card">
+  mount(box, html`<section class="set-sec"><h2>${t('set.language')}</h2>
+      <div class="lang-grid" id="langGrid">${LANGS.map(([c, n]) => html`<button class="lang-tile ${s.language === c ? 'on' : ''}" data-lang="${c}" title="${n}"><span class="lang-flag">${{ __raw: FLAGS[c] ?? '' }}</span><span class="grow">${n}</span>${s.language === c ? icon('check', 'sm') : ''}</button>`)}
+      ${s.customLanguage ? html`<button class="lang-tile ${s.language === 'custom' ? 'on' : ''}" data-lang="custom"><span class="lang-flag">${icon('globe')}</span><span class="grow">${s.customLanguage.name}</span>${s.language === 'custom' ? icon('check', 'sm') : ''}</button>` : ''}</div></section>
+    <details class="set-sec lang-more" id="customLang"><summary>Eigene Übersetzung (Erweitert)</summary><div class="card">
       <p class="small muted">Übersetze die Texte des Launchers in deine eigene Sprache (oder schreib sie einfach so, wie du sie magst). Leere Felder bleiben Deutsch. Sprachpakete kannst du exportieren und mit Freunden teilen.</p>
       <div class="row"><input id="lname" class="grow" maxlength="30" placeholder="Name der Sprache, z. B. Türkçe" value="${s.customLanguage?.name ?? ''}"><span class="badge" id="lcount">${done()} / ${rows.length}</span></div>
       <div class="row gap"><button class="btn primary" id="lsave">${icon('check', 'sm')} Speichern & aktivieren</button><button class="btn" id="lexport">${icon('download', 'sm')} Exportieren</button><label class="btn">${icon('import', 'sm')} Importieren<input type="file" id="limport" accept="application/json" hidden></label>${s.customLanguage ? html`<button class="btn danger" id="ldel">${icon('trash', 'sm')} Löschen</button>` : ''}</div>
       <div class="searchbar sm gap">${icon('search', 'sm')}<input id="lq" placeholder="Text suchen …" autocomplete="off"></div>
-      <div class="lang-table" id="ltable"></div></div></section>`);
+      <div class="lang-table" id="ltable"></div></div></details>`);
   const table = box.querySelector<HTMLElement>('#ltable')!;
   const draw = () => {
     const list = rows.filter((r) => !q || `${r.key} ${r.de} ${r.en} ${draft[r.key] ?? ''}`.toLowerCase().includes(q)).slice(0, 400);
@@ -209,7 +212,7 @@ function languageTab(box: HTMLElement): void {
   box.onclick = async (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!b) return;
-    if (b.parentElement?.id === 'langSeg') { await save({ language: b.dataset.v! }); return void settingsPage(page(box), 'language'); }
+    if (b.dataset.lang) { await save({ language: b.dataset.lang }); return void settingsPage(page(box), 'language'); }
     if (b.id === 'lsave') {
       const p = sanitizeLanguage(pack());
       if (!p) return errorToast(new Error('Bitte einen Namen eingeben.'));

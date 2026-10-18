@@ -40,7 +40,7 @@ async function browser(el: HTMLElement, mode: 'collection' | 'shop'): Promise<vo
   const f = { slot: '', rarity: '', q: '', owned: false };
   mount(el, html`<div class="row between"><h1>${mode === 'shop' ? 'Shop' : 'Cosmetics'}</h1><span class="badge">${pixel('coin', 'xs')} <span id="bal">${fmtNum(me.credits)}</span> Coins</span></div>
     ${mode === 'collection'
-      ? html`<p class="muted">Sammlung ${inv.owned.length} / ${CATALOG.length}. Ausgerüstete Cosmetics sehen andere Spieler mit LEGO Client auf jedem Server und in jedem Spielmodus, solange beide mit dem LEGO-Server verbunden sind. Spieler mit anderen Clients (Vanilla, NoRisk, Lunar …) sehen sie nicht.</p><div class="progress"><i data-p="${(inv.owned.length / CATALOG.length) * 100}"></i></div>`
+      ? html`<p class="muted">Sammlung ${inv.owned.length} / ${CATALOG.length}. Ausgerüstete Cosmetics sehen andere Spieler mit LEGO Client auf jedem Server und in jedem Spielmodus, solange beide mit dem LEGO-Server verbunden sind. Spieler mit anderen Clients (Vanilla, Lunar …) sehen sie nicht.</p><div class="progress"><i data-p="${(inv.owned.length / CATALOG.length) * 100}"></i></div>`
       : html`<p class="muted">Feste Preise, keine Lootboxen. Gekauft wird mit LEGO Coins.</p>`}
     <div class="row gap filterbar"><input id="q" class="grow" placeholder="Suchen…"><select id="rar"><option value="">Alle Seltenheiten</option>${(Object.keys(RARITY_INFO) as Rarity[]).map((r) => html`<option value="${r}">${RARITY_INFO[r].label.de}</option>`)}</select>
       ${mode === 'collection' ? html`<label class="check"><input type="checkbox" id="owned"> Nur im Besitz</label>` : ''}</div>

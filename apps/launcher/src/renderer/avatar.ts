@@ -299,7 +299,7 @@ export async function skinPoster(skin: string | null, variant: 'classic' | 'slim
   if (!webglAvailable()) return '';
   if (!posterViewer) {
     const canvas = document.createElement('canvas');
-    posterViewer = new SkinViewer({ canvas, width: w, height: h, preserveDrawingBuffer: true, zoom: 0.78, fov: 38 });
+    posterViewer = new SkinViewer({ canvas, width: w, height: h, pixelRatio: Math.min(2, window.devicePixelRatio || 1), preserveDrawingBuffer: true, zoom: 0.78, fov: 38 });
     posterViewer.renderer.setClearColor(0x000000, 0);
     posterViewer.autoRotate = false;
     posterViewer.animation = null;
@@ -321,4 +321,45 @@ export async function skinPoster(skin: string | null, variant: 'classic' | 'slim
   posterCache.set(key, url);
   if (posterCache.size > 80) posterCache.delete(posterCache.keys().next().value!);
   return url;
+}
+
+/**
+ * Accent colour from a skin, like the Spotify HUD takes its colour from the
+ * cover: average hue of the saturated pixels, pushed to a bright, readable tone.
+ */
+export function skinAccent(skin: string | null): Promise<string | null> {
+  return new Promise((resolve) => {
+    if (!skin) return resolve(null);
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = 64; c.height = 64;
+      const g = c.getContext('2d')!;
+      g.drawImage(img, 0, 0);
+      const d = g.getImageData(0, 0, 64, 64).data;
+      let sx = 0, sy = 0, sat = 0, n = 0;
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i + 3]! < 200) continue;
+        const r = d[i]! / 255, gg = d[i + 1]! / 255, b = d[i + 2]! / 255;
+        const max = Math.max(r, gg, b), min = Math.min(r, gg, b), s = max === 0 ? 0 : (max - min) / max;
+        if (s < 0.25 || max < 0.2) continue;
+        let h = 0;
+        if (max === r) h = ((gg - b) / (max - min)) % 6; else if (max === gg) h = (b - r) / (max - min) + 2; else h = (r - gg) / (max - min) + 4;
+        const a = (h / 6) * Math.PI * 2;
+        sx += Math.cos(a) * s; sy += Math.sin(a) * s; sat += s; n++;
+      }
+      if (n < 12) return resolve(null);
+      const hue = ((Math.atan2(sy, sx) / (Math.PI * 2)) + 1) % 1;
+      const s = Math.min(0.85, Math.max(0.5, sat / n));
+      resolve(hsvHex(hue, s, 0.95));
+    };
+    img.onerror = () => resolve(null);
+    img.src = skin;
+  });
+}
+
+function hsvHex(h: number, s: number, v: number): string {
+  const i = Math.floor(h * 6), f = h * 6 - i, p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
+  const [r, g, b] = [[v, t, p], [q, v, p], [p, v, t], [p, q, v], [t, p, v], [v, p, q]][i % 6]!;
+  return '#' + [r, g, b].map((x) => Math.round(x! * 255).toString(16).padStart(2, '0')).join('');
 }

@@ -6,7 +6,7 @@ import { Icon } from '../lib/iconify.tsx';
 import { cn } from '../lib/utils.ts';
 import { useThemeStore } from '../store/theme.ts';
 import { lego, fmtDate } from '../../ui.ts';
-import { thumbnail, type Scene3DId } from '../../bg3d.ts';
+import { drawPreview } from '../../bg.ts';
 
 interface NewsItem { id: number; title: string; body: string; created_at: number }
 
@@ -16,7 +16,17 @@ export const BUILTIN_NEWS: NewsItem[] = [
   { id: -3, title: 'VR-Modus', body: 'Visueller VR-Modus mit Tastatur und Maus oder echtes VR mit Headset – mit Browser in der Lobby.', created_at: Date.UTC(2026, 9, 16) },
   { id: -4, title: 'Konsole & Crash-Hilfe', body: 'Die Konsole zeigt Fehler farbig an, der Crash-Doktor schlägt Fixes vor.', created_at: Date.UTC(2026, 9, 15) },
 ];
-const SCENES: Scene3DId[] = ['graveyard', 'castle', 'portal', 'forest', 'tunnel', 'rooms'];
+const SCENES = ['galaxy', 'space', 'synthwave', 'aurora', 'legocity', 'sakura'];
+
+/** News art: a still of one of the launcher's own 2D backgrounds. */
+function newsArt(id: string): string {
+  const c = document.createElement('canvas');
+  c.style.width = '320px';
+  c.style.height = '180px';
+  c.width = 640; c.height = 360;
+  document.body.append(c);
+  try { drawPreview(c, id, 20_000); return c.toDataURL('image/jpeg', 0.85); } finally { c.remove(); }
+}
 
 function loadWidth(): number {
   try { const v = Number(localStorage.getItem('lego.newsWidth')); return v >= 120 && v <= 500 ? v : 300; } catch { return 300; }
@@ -24,9 +34,9 @@ function loadWidth(): number {
 
 function NewsCard({ title, imageUrl, date, onClick }: { title: string; imageUrl: string; date: string; onClick: () => void }) {
   return (
-    <div className="relative w-full h-full overflow-hidden rounded-lg border-2 border-white/10 hover:border-white/20 transition-all duration-200 cursor-pointer" onClick={onClick} title={title}>
+    <div className="lx-news relative w-full h-full overflow-hidden rounded-[14px] border border-white/10 hover:border-white/25 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer" onClick={onClick} title={title}>
       {imageUrl ? <img src={imageUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-white/5" />}
-      <span className="absolute left-1.5 bottom-1.5 px-1.5 py-0.5 bg-black/60 text-white/80 font-minecraft text-[10px]">{date}</span>
+      <span className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" /><span className="absolute left-2 bottom-2 px-2 py-0.5 rounded-full bg-black/50 backdrop-blur text-white/85 text-[10px]">{date}</span>
     </div>
   );
 }
@@ -52,14 +62,12 @@ export function NewsSection({ className, onOpenAll }: { className?: string; onOp
   // Card art one after another so the UI stays responsive.
   useEffect(() => {
     if (!posts) return;
-    const cs = getComputedStyle(document.documentElement);
-    const pal = { bg: '#070e19', accent: accentColor.value, accent2: cs.getPropertyValue('--accent2').trim() || '#7c3aed' };
     let i = 0;
     let timer = 0;
     const next = () => {
       const p = posts[i];
       if (!p) return;
-      try { const src = thumbnail(SCENES[i % SCENES.length]!, pal); setArt((a) => ({ ...a, [p.id]: src })); } catch { /* no WebGL */ }
+      try { const src = newsArt(SCENES[i % SCENES.length]!); setArt((a) => ({ ...a, [p.id]: src })); } catch { /* canvas blocked */ }
       i++;
       timer = window.setTimeout(next, 40);
     };
@@ -86,14 +94,14 @@ export function NewsSection({ className, onOpenAll }: { className?: string; onOp
   return (
     <div
       className={cn('h-full flex flex-col !p-3 z-0 relative', className)}
-      style={{ width: `${width}px`, flex: '0 0 auto', borderLeft: `2px solid ${accentColor.value}60`, borderRight: `2px solid ${accentColor.value}60`, boxShadow: `0 0 15px ${accentColor.value}30 inset` }}
+      style={{ width: `${width}px`, flex: '0 0 auto' }}
     >
       <div className={cn('absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize z-10', isResizing && 'bg-white/20')} style={{ backgroundColor: isResizing ? `${accentColor.value}40` : 'transparent' }} onMouseDown={(e) => { drag.current = { x: e.clientX, w: width }; setIsResizing(true); e.preventDefault(); }} />
       <div className="pb-1">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Icon icon="pixel:newspaper-solid" className="w-7 h-7 text-white" />
-            <h2 className="text-base font-smallcaps text-white m-0">News</h2>
+            <Icon icon="pixel:newspaper-solid" className="w-5 h-5 text-white" />
+            <h2 className="text-base font-semibold text-white m-0">News</h2>
           </div>
           <button id="allNews" className="text-white/60 hover:text-white transition-colors" title="Alle News" onClick={onOpenAll}>
             <Icon icon="solar:alt-arrow-right-bold" className="w-5 h-5" />
@@ -108,7 +116,7 @@ export function NewsSection({ className, onOpenAll }: { className?: string; onOp
           <div className="flex flex-col space-y-1 w-full">
             {posts.map((post) => (
               <div key={post.id} className="news-item w-full flex flex-col">
-                <p className="font-smallcaps text-base text-white/70 truncate m-0" title={post.title}>{post.title}</p>
+                <p className="text-sm font-medium text-white/80 truncate m-0 mt-2 mb-1" title={post.title}>{post.title}</p>
                 <div className="relative w-full pt-[56.25%]">
                   <div className="absolute top-0 left-0 w-full h-full">
                     <NewsCard title={`${post.title} – ${post.body}`} imageUrl={art[post.id] ?? ''} date={fmtDate(post.created_at)} onClick={onOpenAll} />

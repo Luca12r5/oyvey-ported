@@ -18,9 +18,12 @@ interface MainLaunchButtonProps {
   maxWidth?: string;
   mainButtonWidth?: string;
   mainButtonHeight?: string;
+  /** Size factor for big windows. */
+  scale?: number;
 }
 
-export function MainLaunchButton({ profileId, selectedVersionLabel, signedIn, onSignIn, onPickProfile, className, maxWidth = '300px', mainButtonWidth, mainButtonHeight }: MainLaunchButtonProps) {
+export function MainLaunchButton({ profileId, selectedVersionLabel, signedIn, onSignIn, onPickProfile, className, maxWidth = '300px', mainButtonWidth, mainButtonHeight, scale = 1 }: MainLaunchButtonProps) {
+  const h = Math.round(80 * scale);
   const groupRef = useRef<HTMLDivElement>(null);
   const isButtonLaunching = useGame((s) => s.launching);
   const running = useGame((s) => s.running);
@@ -51,7 +54,7 @@ export function MainLaunchButton({ profileId, selectedVersionLabel, signedIn, on
     const displaySubText = statusSubText || selectedVersionLabel;
     return (
       <div className="w-full flex flex-col items-center justify-center leading-none -translate-y-[5px]">
-        <span className="text-3xl text-center">{actionText}</span>
+        <span className="text-center font-semibold tracking-wide" style={{ fontSize: `${Math.round(26 * scale)}px` }}>{actionText}</span>
         {displaySubText && (
           <span
             className={cn('text-xs font-minecraft tracking-normal text-center normal-case whitespace-nowrap overflow-hidden text-ellipsis', isButtonLaunching ? 'max-w-64' : 'max-w-[16rem]', statusColorClass)}
@@ -69,7 +72,7 @@ export function MainLaunchButton({ profileId, selectedVersionLabel, signedIn, on
     <div className={cn('relative flex flex-col justify-center', className)} style={{ maxWidth }}>
       <div className="flex flex-col gap-3">
         <div className="flex items-center relative nr-play-group" ref={groupRef}>
-          <Button id={signedIn ? 'launch' : 'signin'} onClick={handleLaunch} disabled={signedIn && !profileId} size="xl" variant={variant} className={cn("flex-1 rounded-r-none", mainButtonWidth)} heightClassName={mainButtonHeight}>
+          <Button id={signedIn ? 'launch' : 'signin'} onClick={handleLaunch} disabled={signedIn && !profileId} size="xl" variant={variant} className={cn("flex-1 rounded-r-none", mainButtonWidth)} heightClassName={mainButtonHeight} style={{ height: `${h}px` }}>
             {renderLaunchButtonContent()}
           </Button>
           <IconButton
@@ -78,6 +81,7 @@ export function MainLaunchButton({ profileId, selectedVersionLabel, signedIn, on
             disabled={isButtonLaunching}
             size="xl"
             className={cn('rounded-l-none border-l-0', mainButtonHeight)}
+            style={{ height: `${h}px`, width: `${Math.round(66 * scale)}px` }}
             icon={<Icon icon="solar:alt-arrow-down-bold" width="24" height="24" />}
             variant={variant === 'destructive' ? 'destructive' : variant === 'success' ? 'success' : '3d'}
             aria-label="Profil wählen"

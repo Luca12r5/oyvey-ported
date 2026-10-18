@@ -41,7 +41,7 @@ export interface ThemeState {
   isBackgroundAnimationEnabled: boolean;
 }
 
-export const themeStore = createStore<ThemeState>({ accentColor: accentFrom(null), showNavLabels: true, borderRadius: 0, isBackgroundAnimationEnabled: true });
+export const themeStore = createStore<ThemeState>({ accentColor: accentFrom(null), showNavLabels: true, borderRadius: 12, isBackgroundAnimationEnabled: true });
 
 /** Same CSS variables the NoRisk launcher writes (scrollbars, glows). */
 export function applyAccentToDOM(): void {

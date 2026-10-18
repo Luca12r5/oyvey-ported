@@ -461,12 +461,11 @@ async function boot(): Promise<void> {
 /** Logo click: credits and licence (the UI is based on the NoRisk Client launcher, GPL-3.0). */
 function credits(): void {
   const d = dialog(html`<h2>LEGO Launcher v${state.info.version}</h2>
-    <p>Oberfläche nach dem NoRisk Client Launcher (GPL-3.0). Der LEGO Launcher ist deshalb ebenfalls unter der GNU GPL v3 lizenziert; der Quellcode liegt im Repository.</p>
-    <ul class="small muted"><li>NoRisk Client Launcher – NoRiskClient Team, GPL-3.0</li><li>Icons: Solar (480 Design) und Pixel Icon (HackerNoon), CC BY 4.0</li><li>Schriften: Pixelify Sans, Silkscreen, Inter, Poppins (OFL)</li><li>skinview3d, three.js, React (MIT)</li></ul>
-    <p class="small muted">„NoRisk“ und das NoRisk-Logo gehören ihren Inhabern und werden hier nicht verwendet.</p>
-    <div class="row between gap"><button class="btn" id="crSrc">${icon('link', 'sm')} Quellcode</button><button class="btn primary" id="crOk">OK</button></div>`);
+    <p>Freie Software unter der GNU GPL v3. Den Quellcode und alle Lizenzhinweise findest du im Repository.</p>
+    <ul class="small muted"><li>Icons, Schriften und Bibliotheken: siehe THIRD_PARTY_ICONS.md und NOTICE.md</li><li>Schrift: Poppins (OFL)</li><li>skinview3d, three.js, React (MIT)</li></ul>
+    <div class="row between gap"><button class="btn" id="crSrc">${icon('link', 'sm')} Quellcode &amp; Lizenzen</button><button class="btn primary" id="crOk">OK</button></div>`);
   d.querySelector('#crOk')!.addEventListener('click', () => d.close());
-  d.querySelector('#crSrc')!.addEventListener('click', () => void api.openExternal('https://github.com/Luca12r5/oyvey-ported'));
+  d.querySelector('#crSrc')!.addEventListener('click', () => void api.openExternal('https://github.com/Luca12r5/oyvey-ported/tree/main/apps/launcher'));
 }
 
 /** First start without an account: sign in, or try everything as a guest. */

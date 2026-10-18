@@ -1,14 +1,15 @@
-/* Styles of the React UI ported from the NoRisk Client launcher (GPL-3.0):
- * styles/globals.css, scoped to `.nr` so the launcher's other pages keep theirs.
- * Fonts: free replacements for NoRisk's own (SmallCaps/MinecraftTen are not shipped). */
+/* Styles of the React UI (structure from the NoRisk Client launcher's globals.css,
+ * GPL-3.0), scoped to `.nr`. Look: the LEGO launcher's Spotify-HUD style —
+ * Poppins, rounded graphite glass, accent glows. */
+@font-face { font-family: Poppins; src: url(fonts/Poppins-Medium.ttf); font-weight: 500 600; }
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-smallcaps: "Pixelify Sans", "Silkscreen", monospace;
-  --font-minecraft: "Pixelify Sans", "Silkscreen", sans-serif;
-  --border-radius: 0px;
+  --font-smallcaps: Poppins, Inter, "Segoe UI", sans-serif;
+  --font-minecraft: Poppins, Inter, "Segoe UI", sans-serif;
+  --border-radius: 12px;
   --nr-accent: #4f8eff;
   --accent-hover: #3a7aff;
   --accent-shadow: rgba(79, 142, 255, 0.5);
@@ -33,13 +34,23 @@
 
 .nr, .nr-launcher {
   font-family: var(--font-smallcaps);
-  letter-spacing: 0.03em;
+  letter-spacing: 0;
   color: #fff;
+  -webkit-font-smoothing: antialiased;
 }
+
+/* Graphite glass panels (Spotify HUD: rgba(20,20,22,.69), 1px light edge). */
+.lx-glass { background: rgba(20, 20, 22, 0.62); backdrop-filter: blur(18px) saturate(1.25); }
+.lx-rail { border-right: 1px solid rgba(255, 255, 255, 0.07); }
+.lx-bar { border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+.lx-card { background: rgba(20, 20, 22, 0.58); border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 15px; backdrop-filter: blur(14px); }
+.lx-ic { display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.lx-ic > svg { width: 100%; height: 100%; }
+.nr-tip-in.lx-glass { border: 1px solid rgba(255, 255, 255, 0.1); }
 .nr-root { position: relative; z-index: 2; height: 100vh; }
 
-.font-smallcaps { font-family: var(--font-smallcaps); letter-spacing: 0.05em; font-variant-caps: small-caps; }
-.font-minecraft { font-family: var(--font-minecraft); letter-spacing: 0.03em; }
+.font-smallcaps { font-family: var(--font-smallcaps); letter-spacing: 0.01em; }
+.font-minecraft { font-family: var(--font-minecraft); letter-spacing: 0; }
 .text-shadow { text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9), 0 0 3px rgba(0, 0, 0, 1); }
 .text-shadow-sm { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 1); }
 .text-shadow-lg { text-shadow: 0 4px 10px rgba(0, 0, 0, 0.9), 0 0 5px rgba(0, 0, 0, 1); }
@@ -106,8 +117,9 @@ body.is-fullscreen .nr-drag { -webkit-app-region: no-drag; }
 
 /* Menus opened from the React header/launch button use the launcher's .menu,
    restyled like NoRisk's dropdowns. */
-.menu { border-radius: 0 !important; border: 2px solid rgba(var(--accent-rgb), .5) !important; border-bottom-width: 4px !important; background: rgba(8, 14, 25, .94) !important; backdrop-filter: blur(16px); font-family: var(--font-smallcaps); letter-spacing: .04em; }
-.menu .menu-h { font-family: var(--font-smallcaps); font-variant-caps: small-caps; }
+.menu { border-radius: 14px !important; border: 1px solid rgba(255, 255, 255, .1) !important; background: rgba(20, 20, 22, .92) !important; backdrop-filter: blur(18px); font-family: var(--font-smallcaps); box-shadow: 0 18px 50px rgba(0,0,0,.5) !important; }
+.menu .menu-h { font-family: var(--font-smallcaps); }
+.menu .menu-i { border-radius: 9px !important; }
 .menu .menu-i:hover, .menu .menu-i.on { background: rgba(var(--accent-rgb), .22) !important; }
 
 /* The launcher's themed input box (body.nacht input …) must not apply to the
@@ -119,3 +131,52 @@ body.is-fullscreen .nr-drag { -webkit-app-region: no-drag; }
 /* Settings search must stay inside the category column. */
 body.nacht .set-nav .searchbar { max-width: 100%; min-width: 0; overflow: hidden; }
 .set-nav .searchbar input { min-width: 0; width: 100%; }
+
+/* ===== Round 7: the launcher's other pages in the same look (rounded glass, Poppins) ===== */
+body.nacht.crypt .btn, body.nacht.crypt .icon-btn, body.nacht.crypt .tabs button, body.nacht.crypt .seg button,
+body.nacht.crypt input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]), body.nacht.crypt select, body.nacht.crypt textarea,
+body.nacht.crypt .searchbar, body.nacht.crypt .tag, body.nacht.crypt .set-nav nav button, body.nacht.crypt .menu-i, body.nacht.crypt .toast { border-radius: 10px; }
+body.nacht.crypt .card, body.nacht.crypt .glass, body.nacht.crypt .panel, body.nacht.crypt .rows, body.nacht.crypt .item, body.nacht.crypt .shop-card,
+body.nacht.crypt .gate, body.nacht.crypt .drawer, body.nacht.crypt dialog, body.nacht.crypt .mcard, body.nacht.crypt .pcard { border-radius: 15px; }
+body.nacht.crypt .card, body.nacht.crypt .glass, body.nacht.crypt .rows, body.nacht.crypt .item, body.nacht.crypt .gate { background: rgba(20, 20, 22, .58); border-color: rgba(255, 255, 255, .09); backdrop-filter: blur(14px); }
+body.nacht.crypt .btn.primary { background-image: linear-gradient(135deg, var(--accent2, var(--accent)), var(--accent)); border-color: rgba(255,255,255,.18); color: #fff; box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent); }
+body.nacht.crypt .tabs button.active { background: color-mix(in srgb, var(--accent) 22%, transparent); border-color: var(--accent); }
+body.nacht.crypt h1, body.nacht.crypt h2, body.nacht.crypt h3, body.nacht.crypt b, body.nacht.crypt strong { font-family: Poppins, Inter, sans-serif; }
+body.nacht.crypt dialog { background: rgba(20, 20, 22, .94); border: 1px solid rgba(255,255,255,.1); }
+
+/* Soft accent glow behind the character (pulses with the idle animation). */
+@keyframes lx-breathe { 0%, 100% { opacity: .55; transform: translate(-50%, -50%) scale(1); } 50% { opacity: .85; transform: translate(-50%, -50%) scale(1.06); } }
+.lx-glow { background: radial-gradient(circle, rgba(var(--accent-rgb), .38) 0%, rgba(var(--accent-rgb), .12) 45%, transparent 70%); filter: blur(6px); animation: lx-breathe 4.8s ease-in-out infinite; }
+body.reduced-motion .lx-glow { animation: none; }
+
+/* Language picker: tiles with round flags. */
+.lang-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.lang-tile { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.09); background: rgba(20,20,22,.55); color: #fff; cursor: pointer; text-align: left; font: 500 .9rem Poppins, sans-serif; transition: background .2s, border-color .2s, transform .2s; }
+.lang-tile:hover { background: rgba(255,255,255,.08); transform: translateY(-1px); }
+.lang-tile.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, rgba(20,20,22,.6)); box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 25%, transparent); }
+.lang-flag { width: 26px; height: 26px; display: inline-flex; flex: none; }
+.lang-flag svg, svg.flag { width: 100%; height: 100%; }
+#toLang svg.flag { width: 16px; height: 16px; }
+.lang-more > summary { cursor: pointer; color: var(--muted); font-size: .85rem; margin: 6px 4px 10px; }
+
+/* Launch confetti */
+.lx-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 900; overflow: hidden; }
+.lx-confetti i { position: absolute; top: -12px; width: 8px; height: 12px; border-radius: 2px; animation: lx-fall linear forwards; }
+@keyframes lx-fall { to { transform: translate(var(--dx), 105vh) rotate(var(--rot)); opacity: .9; } }
+
+/* Backgrounds at full brightness behind the glass (the old crypt look dimmed them). */
+body.nacht.crypt .bg-canvas { filter: none; }
+
+/* "LEGO" lettering in the style of the brick logo: red rounded tile, white heavy
+   letters with a black and yellow outline. */
+.lx-title { display: flex; align-items: center; gap: 10px; font-family: Poppins, sans-serif; }
+.lx-lego {
+  display: inline-block; padding: 1px 9px 2px; border-radius: 9px;
+  background: linear-gradient(180deg, #ff2a1a, #d01012);
+  box-shadow: inset 0 0 0 2px #ffd500, inset 0 0 0 3.5px #111, 0 4px 14px rgba(208, 16, 18, .45);
+  color: #fff; font-weight: 900; font-size: 1.15rem; letter-spacing: .02em; line-height: 1.35;
+  -webkit-text-stroke: 1px #111; paint-order: stroke fill;
+  text-shadow: 1px 1px 0 #ffd500, -1px -1px 0 #ffd500, 1px -1px 0 #ffd500, -1px 1px 0 #ffd500, 0 2px 0 #111;
+  transform: rotate(-2deg);
+}
+.lx-title-rest { font-weight: 700; font-size: 1.15rem; letter-spacing: -.01em; color: #f4f4f5; }

@@ -6,6 +6,7 @@
 
 import { Bg3D, is3D } from './bg3d.ts';
 import { DEFAULT_FX, type DesignFx } from '../core/design.ts';
+import { EXTRA_BACKGROUNDS, EXTRA_DRAW } from './bg-extra.ts';
 
 export interface BackgroundDef { id: string; name: { de: string; en: string }; kind: '3d' | '2d' }
 
@@ -31,6 +32,7 @@ export const BACKGROUNDS: BackgroundDef[] = [
   { id: 'voxels', name: { de: 'Voxel-Feld', en: 'Voxel field' }, kind: '2d' },
   { id: 'plain', name: { de: 'Schlicht', en: 'Plain' }, kind: '2d' },
   { id: 'haunted', name: { de: 'Spukhaus (2D)', en: 'Haunted (2D)' }, kind: '2d' },
+  ...EXTRA_BACKGROUNDS.map((b) => ({ ...b, kind: '2d' as const })),
 ];
 
 interface Palette { bg: string; bg2: string; accent: string; accent2: string; text: string }
@@ -373,6 +375,8 @@ const DRAW: Record<string, Draw> = {
   },
 };
 
+Object.assign(DRAW, EXTRA_DRAW);
+
 /** Draws a single frame into any canvas (used for the picker previews). */
 export function drawPreview(canvas: HTMLCanvasElement, id: string, t = 12_000): void {
   const ctx = canvas.getContext('2d');
@@ -472,7 +476,7 @@ export class Background {
 
   private resize(): void {
     // Quality controls the internal resolution: 50 %..100 % of device pixels.
-    const scale = (window.devicePixelRatio || 1) * (0.5 + this.quality * 0.5);
+    const scale = (window.devicePixelRatio || 1) * (0.75 + this.quality * 0.25);
     this.canvas.width = Math.round(innerWidth * scale);
     this.canvas.height = Math.round(innerHeight * scale);
     this.ctx.setTransform(scale, 0, 0, scale, 0, 0);

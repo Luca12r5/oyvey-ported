@@ -22,7 +22,6 @@ export function VerticalNavbar({ className, items, activeItem, onItemClick, onLo
   const [active, setActive] = useState(activeItem || items[0]?.id);
   const [showTooltip, setShowTooltip] = useState<string | null>(null);
   const buttonRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const accentColor = useThemeStore((state) => state.accentColor);
   const showNavLabels = useThemeStore((state) => state.showNavLabels);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
 
@@ -52,7 +51,7 @@ export function VerticalNavbar({ className, items, activeItem, onItemClick, onLo
       ref={(el) => { buttonRefs.current[item.id] = el; }}
     >
       <NavButton
-        icon={<Icon icon={item.icon} className="w-8 h-8" />}
+        icon={<Icon icon={item.icon} className="w-6 h-6" />}
         label={!item.isAction && showNavLabels ? item.label : undefined}
         isActive={active === item.id}
         onClick={() => handleItemClick(item.id, item.isAction)}
@@ -68,22 +67,12 @@ export function VerticalNavbar({ className, items, activeItem, onItemClick, onLo
   const bottom = items.filter((item) => item.isAction);
   return (
     <>
-      <nav
-        id="sidebar"
-        className={cn('nr flex flex-col items-center py-6 w-24 backdrop-blur-lg', className)}
-        style={{
-          backgroundColor: `rgba(${parseInt(accentColor.value.slice(1, 3), 16)}, ${parseInt(accentColor.value.slice(3, 5), 16)}, ${parseInt(accentColor.value.slice(5, 7), 16)}, 0.4)`,
-          borderRight: `2px solid ${accentColor.value}60`,
-          borderLeft: `2px solid ${accentColor.value}60`,
-          boxShadow: `0 0 10px ${accentColor.value}30 inset`,
-        }}
-        aria-label="Navigation"
-      >
-        <div className="mb-12">
+      <nav id="sidebar" className={cn('nr lx-glass lx-rail flex flex-col items-center py-4 w-[88px] gap-1', className)} aria-label="Navigation">
+        <div className="mb-6 mt-1">
           <Logo size="sm" onClick={onLogoClick} />
         </div>
-        <div className="flex-1 flex flex-col items-center space-y-4 min-h-[300px]">{main.map(renderItem)}</div>
-        {bottom.length > 0 && <div className="flex flex-col items-center space-y-4 mt-4">{bottom.map((it, i) => renderItem(it, main.length + i))}</div>}
+        <div className="flex-1 flex flex-col items-center gap-2 min-h-[300px]">{main.map(renderItem)}</div>
+        {bottom.length > 0 && <div className="flex flex-col items-center gap-2 mt-4">{bottom.map((it, i) => renderItem(it, main.length + i))}</div>}
       </nav>
       {showTooltip &&
         createPortal(

@@ -100,21 +100,14 @@ async function page(id, expect) {
 await win.waitForSelector('#launch');
 await win.waitForTimeout(1500); // character + background settle
 await page('play', 'SPIELEN');
-// Old settings are migrated to the night-blue NoRisk-style look.
+// Old settings are migrated to the graphite Spotify-HUD look.
 const bgColor = await win.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
-if (bgColor !== '#0b1120') problems.push(`old settings were not migrated to Nacht: --bg is ${bgColor}`);
+if (bgColor !== '#18181b') problems.push(`old settings were not migrated to Grau: --bg is ${bgColor}`);
 for (const id of ['play', 'profiles', 'mods', 'skins', 'capes']) if (!(await win.locator(`#sidebar [data-page=${id}]`).count())) problems.push(`${id} tab missing`);
 if (await win.locator('#sidebar [data-page=designs]').count()) problems.push('designs should live under Optionen');
-// Custom window controls: minimize, fullscreen, maximize/restore, close.
-for (const w of ['minimize', 'fullscreen', 'maximize', 'close']) if (!(await win.locator(`[data-win=${w}]`).count())) problems.push(`window button ${w} missing`);
-// The button must mirror the real window state (xvfb has no window manager, so
-// the window may not actually maximize there).
-await win.click('[data-win=maximize]');
-await win.waitForTimeout(800);
-const maxed = await eapp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isMaximized());
-const label = await win.getAttribute('[data-win=maximize]', 'aria-label');
-if ((label === 'Wiederherstellen') !== maxed) problems.push(`maximize button out of sync (maximized=${maxed}, label=${label})`);
-if (maxed) { await win.click('[data-win=maximize]'); await win.waitForTimeout(500); }
+// Custom window controls: minimize, fullscreen, close (maximize = double-click on the header).
+for (const w of ['minimize', 'fullscreen', 'close']) if (!(await win.locator(`[data-win=${w}]`).count())) problems.push(`window button ${w} missing`);
+if (await win.locator('[data-win=maximize]').count()) problems.push('maximize button should be gone');
 // The window layout must fill the window in every theme.
 async function layoutOk(label) {
   const r = await win.evaluate(() => ({ shell: document.querySelector('.nr-launcher').getBoundingClientRect().width, bar: document.querySelector('.nr-titlebar').getBoundingClientRect().width, w: innerWidth }));
@@ -239,12 +232,14 @@ await win.click('[data-btnstyle=nocturne]');
 await win.click('[data-head=poppins]');
 await page('settings', 'Einstellungen');
 await win.click('[data-tab=language]');
+if ((await win.locator('#langGrid [data-lang]').count()) < 16) problems.push('language tiles missing');
+await win.click('#customLang summary');
 await win.fill('#lname', 'Testisch');
 await win.fill('input[data-k="nav.home"]', 'Zuhause');
 await win.click('#lsave');
 await win.waitForTimeout(600);
 if (!(await win.locator('#sidebar [data-page=play]').innerText()).toLowerCase().includes('zuhause')) problems.push('custom language not applied to the dock');
-await win.click('#langSeg [data-v=de]');
+await win.click('#langGrid [data-lang=de]');
 await win.waitForTimeout(400);
 
 // VR mode: page, desktop preview (no headset in CI), click GUI + browser panels, exit with Esc.

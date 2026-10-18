@@ -63,13 +63,13 @@ export function GroupTabs({
             key={group.id}
             data-tab={group.id}
             onClick={() => handleGroupClick(group.id)}
-                         className={`px-3 py-1 rounded-lg font-smallcaps text-lg transition-all duration-200 flex items-center gap-2 border-2 ${
+                         className={`px-4 py-1.5 rounded-full font-medium text-sm transition-all duration-200 flex items-center gap-2 border capitalize ${
               activeGroup === group.id
                 ? 'active text-white'
-                : 'text-white/70 bg-black/30 hover:bg-black/40 border-white/10 hover:border-white/20'
+                : 'text-white/70 bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20'
             }`}
             style={{
-              backgroundColor: activeGroup === group.id ? `${accentColor.value}20` : undefined,
+              backgroundColor: activeGroup === group.id ? `${accentColor.value}33` : undefined,
               borderColor: activeGroup === group.id ? accentColor.value : undefined,
             }}
           >

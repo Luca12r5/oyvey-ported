@@ -732,7 +732,7 @@ export function thumbnail(id: Scene3DId, pal: Palette3D): string {
   const hit = thumbs.get(key);
   if (hit) return hit;
   thumbRenderer ??= new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, powerPreference: 'low-power' });
-  thumbRenderer.setSize(320, 200, false);
+  thumbRenderer.setSize(640, 400, false);
   thumbRenderer.toneMapping = THREE.ACESFilmicToneMapping;
   thumbRenderer.outputColorSpace = THREE.SRGBColorSpace;
   const scene = new THREE.Scene();

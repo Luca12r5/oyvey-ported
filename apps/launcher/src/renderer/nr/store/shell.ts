@@ -3,7 +3,7 @@
 // registers the actions the shell buttons call.
 import { createStore, useStore } from './store.ts';
 
-/** Rail icons, as in the NoRisk launcher's AppLayout navItems. */
+/** Rail icons (mapped to the launcher's own icon set in lib/iconify.tsx). */
 export const NAV_ICONS: Record<string, string> = {
   play: 'solar:play-bold',
   profiles: 'solar:user-id-bold',

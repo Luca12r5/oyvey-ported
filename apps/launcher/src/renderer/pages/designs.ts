@@ -11,6 +11,7 @@ import { backgroundInfo, retheme, state } from '../app.ts';
 import { api, confirm, errorToast, html, mount, toast, type Raw } from '../ui.ts';
 import { allThemes, applyTheme, findTheme } from '../theme.ts';
 import { icon } from '../icons.ts';
+import { skinAccent } from '../avatar.ts';
 import { BACKGROUNDS as LAUNCHER_BACKGROUNDS, drawPreview } from '../bg.ts';
 import { is3D, thumbnail } from '../bg3d.ts';
 import { getLang, t as tr } from '../i18n.ts';
@@ -26,7 +27,7 @@ const TABS: [Tab, string, string][] = [
   ['presets', 'star', 'Presets'],
   ['editor', 'brush', 'Theme-Editor'],
 ];
-const ACCENTS = ['#ff7a1a', '#e11d48', '#8b5cf6', '#c084fc', '#39ff88', '#d946ef', '#6366f1', '#3b82f6', '#06b6d4', '#14b8a6', '#22c55e', '#eab308', '#e3000b', '#a1a1aa'];
+const ACCENTS = ['#3d8bfd', '#1ed760', '#4fd1c5', '#ffb199', '#d68cff', '#ffd166', '#ff7a1a', '#e11d48', '#8b5cf6', '#c084fc', '#39ff88', '#d946ef', '#6366f1', '#3b82f6', '#06b6d4', '#14b8a6', '#22c55e', '#eab308', '#e3000b', '#a1a1aa'];
 
 /** Starting points that ship with the launcher. */
 const BUILT_IN: DesignPreset[] = [
@@ -162,9 +163,14 @@ function colorsTab(box: HTMLElement): void {
   mount(box, html`<section class="set-sec"><h2>${tr('set.accent')}</h2><div class="glass rows"><div class="setting stack"><div><small>${tr('set.accent.d')}</small></div>
       <div class="swatches">${ACCENTS.map((c) => html`<button class="swatch ${s.accentColor === c ? 'on' : ''}" data-accent="${c}" data-c="${c}" title="${c}"></button>`)}
         <label class="swatch custom" title="${tr('set.custom')}">${icon('plus', 'xs')}<input type="color" id="customAccent" value="${s.accentColor ?? '#ff7a1a'}"></label>
+        <button class="btn sm" id="skinAccent" title="Farbe automatisch aus deinem Skin">${icon('skins', 'sm')} Aus Skin</button>
         <button class="btn sm" data-accent="">${tr('set.reset')}</button></div></div></div></section>
     <section class="set-sec"><h2>Themes</h2><div id="themes"></div></section>`);
   box.onclick = (e) => {
+    if ((e.target as HTMLElement).closest('#skinAccent')) {
+      void skinAccent(state.skin.skin).then((c) => c ? saveNow({ accentColor: c }).then(() => colorsTab(box)) : toast('Aus diesem Skin lässt sich keine Farbe ablesen.'));
+      return;
+    }
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-accent]');
     if (!b) return;
     void saveNow({ accentColor: b.dataset.accent || null }).then(() => colorsTab(box));

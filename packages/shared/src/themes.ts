@@ -8,7 +8,7 @@ import { contrast, isHexColor, mix } from './color.ts';
 
 export const THEME_FAMILIES = [
   'dark-gaming', 'minimal', 'neon', 'cyberpunk', 'purple', 'blue', 'red', 'green', 'white', 'black',
-  'glass', 'amoled', 'retro', 'futuristic', 'minecraft', 'desktop', 'seasonal',
+  'glass', 'amoled', 'retro', 'futuristic', 'minecraft', 'desktop', 'seasonal', 'hud',
 ] as const;
 export type ThemeFamily = (typeof THEME_FAMILIES)[number];
 
@@ -87,6 +87,8 @@ const FAMILY_STYLE: Record<ThemeFamily, FamilyStyle> = {
   minecraft: { radius: 0, blur: 0, surfaceAlpha: 0.95, borderWidth: 2, shadow: 'hard', background: 'blocks', intensity: 0.5, font: 'pixel', motion: 'subtle' },
   desktop: { radius: 6, blur: 0, surfaceAlpha: 1, borderWidth: 1, shadow: 'soft', background: 'solid', intensity: 0, font: 'sans', motion: 'subtle' },
   seasonal: { radius: 12, blur: 4, surfaceAlpha: 0.88, borderWidth: 1, shadow: 'glow', background: 'stars', intensity: 0.7, font: 'rounded', motion: 'smooth' },
+  // Spotify HUD look (launcher default since round 7): rounded graphite glass.
+  hud: { radius: 12, blur: 18, surfaceAlpha: 0.69, borderWidth: 1, shadow: 'glow', background: 'gradient', intensity: 0.5, font: 'rounded', motion: 'smooth' },
 };
 
 // [id, name, family, bg, surface, text, accent, accent2, overrides?]
@@ -217,6 +219,18 @@ const SEEDS: Seed[] = [
   ['crypt', 'Halloween Crypt', 'seasonal', '#05040a', '#0c0a14', '#e6dfef', '#ff7a1a', '#7c3aed', { radius: 2, blur: 0, surfaceAlpha: 0.96, borderWidth: 1, shadow: 'soft', background: 'solid', intensity: 0.2, font: 'sans', motion: 'smooth' }],
   // Default since round 4: night blue, square tiles, pixel type (NoRisk-like layout)
   ['nacht', 'Nacht', 'minimal', '#0b1120', '#0e1628', '#e6ecf7', '#4f8eff', '#60a5fa', { radius: 0, blur: 0, surfaceAlpha: 0.97, borderWidth: 1, shadow: 'soft', background: 'solid', intensity: 0.1, font: 'sans', motion: 'subtle' }],
+  // Spotify HUD themes (graphite default from the standalone HUD mod; the rest from the client HUD).
+  // Default since round 7c: modern grey (NoRisk-like layout); Galaxy stays selectable.
+  ['grau', 'Grau', 'hud', '#18181b', '#222226', '#f4f4f5', '#a1a1aa', '#e4e4e7'],
+  ['galaxy', 'Galaxy', 'hud', '#07051a', '#120d2c', '#f4f1ff', '#6d7dff', '#b38cff'],
+  ['graphit', 'Graphit', 'hud', '#0d0d10', '#141416', '#ffffff', '#3d8bfd', '#7ab3ff'],
+  ['spotify', 'Spotify', 'hud', '#0a0a0a', '#121212', '#eaeceb', '#1ed760', '#1db954'],
+  ['hud-glass', 'Glass', 'hud', '#101016', '#16161c', '#ffffff', '#e5e7eb', '#9ca3af', { surfaceAlpha: 0.45 }],
+  ['midnight', 'Midnight', 'hud', '#0c163a', '#221038', '#eef2ff', '#8ab4ff', '#5a78ff'],
+  ['hud-purple', 'Purple', 'hud', '#260840', '#3a1d66', '#f8eeff', '#d68cff', '#c85aff'],
+  ['ocean', 'Ocean', 'hud', '#0a1e28', '#1a4658', '#e6fffb', '#4fd1c5', '#2cb1bc'],
+  ['sunset', 'Sunset', 'hud', '#3a120e', '#4a1230', '#fff1ec', '#ffb199', '#ff6f61'],
+  ['christmas', 'Christmas', 'hud', '#3e0a0f', '#0c3a22', '#fff8e6', '#ffd166', '#ef4444'],
   ['halloween', 'Halloween Nocturne', 'seasonal', '#07060b', '#15101e', '#f3ecff', '#ff7a1a', '#8b5cf6', { radius: 14, blur: 14, surfaceAlpha: 0.72, shadow: 'glow', background: 'gradient', intensity: 0.55, font: 'sans', motion: 'lively' }],
 ];
 
@@ -261,7 +275,7 @@ function build(seed: Seed): Theme {
 }
 
 export const THEMES: readonly Theme[] = Object.freeze(SEEDS.map(build));
-export const DEFAULT_THEME_ID = 'nacht';
+export const DEFAULT_THEME_ID = 'grau';
 
 export function getTheme(id: string): Theme | undefined {
   return THEMES.find((t) => t.id === id);

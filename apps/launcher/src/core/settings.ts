@@ -125,7 +125,7 @@ export function migrateProfile(p: Partial<GameProfile> & { loader?: string | nul
   } as GameProfile;
 }
 
-export const SETTINGS_VERSION = 5;
+export const SETTINGS_VERSION = 6;
 
 /** Settings saved by older launcher versions: adopt the new default look once. */
 export function migrateSettings(s: Partial<Settings>): Partial<Settings> {
@@ -139,19 +139,21 @@ export function migrateSettings(s: Partial<Settings>): Partial<Settings> {
   if (v < 4 && (s.headFont ?? 'poppins') === 'poppins') s = { ...s, headFont: 'press' };
   // Round 4: night-blue NoRisk-like look (pixel type, plain background) replaces the Crypt default.
   if (v < 5) s = { ...s, themeId: 'nacht', background: 'plain', uiFont: 'pixel', headFont: 'pixel', buttonStyle: 'crypt' };
+  // Round 7: own Spotify-HUD look (graphite + blue, Poppins), a visible background, no start-up film by default.
+  if (v < 6) s = { ...s, themeId: 'grau', background: 'plain', uiFont: 'poppins', headFont: 'poppins', introEnabled: false, accentColor: null };
   return { ...s, settingsVersion: SETTINGS_VERSION };
 }
 
 export function defaultSettings(): Settings {
   return {
     settingsVersion: SETTINGS_VERSION,
-    themeId: 'nacht', customThemes: [], language: 'de', backendUrl: 'https://api.lego-launcher.example',
+    themeId: 'grau', customThemes: [], language: 'de', backendUrl: 'https://api.lego-launcher.example',
     selectedProfile: DEFAULT_PROFILE.id, profiles: [{ ...DEFAULT_PROFILE, createdAt: Date.now() }],
     closeOnLaunch: false, reducedMotion: false, uiScale: 1, autoUpdate: 'ask', rarityColors: {},
     accentColor: null, background: 'plain', backgroundQuality: 0.6, snow: false, showSnapshots: false, showHistorical: false, curseforgeKey: '', msClientId: '',
-    introEnabled: true, introSound: true, autoConsole: true,
+    introEnabled: false, introSound: true, autoConsole: true,
     fx: { ...DEFAULT_FX }, surface: 'glass', stage: 'portal', designPresets: [], bgImage: '', guest: false,
-    uiFont: 'pixel', headFont: 'pixel', customFont: null, buttonStyle: 'crypt', customLanguage: null, transition: 'slide', jumpscares: false, skinLibrary: [], guestName: '',
+    uiFont: 'poppins', headFont: 'poppins', customFont: null, buttonStyle: 'crypt', customLanguage: null, transition: 'slide', jumpscares: false, skinLibrary: [], guestName: '',
   };
 }
 
