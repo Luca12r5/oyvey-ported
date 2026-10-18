@@ -183,18 +183,29 @@ public final class CosRender {
       if (KNIFE_REMOTE.size() > 256) KNIFE_REMOTE.clear();
    }
 
+   private static final int REMOTE_BUDGET = 3;
+   private static long remoteFrame;
+   private static int remoteBuilds;
+   /** Smooth normals for other players too (costly with many players; off in low mode). */
+   static boolean smoothRemote = true;
+
    static void drawRemote(java.util.UUID id, java.util.Map<Cos.Slot, String> items, PoseStack var0, SubmitNodeCollector var1, int var2, ModelPart var3, Cos.A var4, boolean head) {
       long now = System.currentTimeMillis();
       CosRender.Built[] slot = REMOTE.computeIfAbsent(id, k -> new CosRender.Built[2]);
       int mq = Math.round(var4.move * 10.0F);
       int ver = items.hashCode();
       CosRender.Built b = slot[head ? 1 : 0];
-      if (b == null || now - b.t > 33L || b.ver != ver || b.sneak != var4.sneak || b.mq != mq) {
+      // Other players: rebuild at most ~12x per second, and only a few per frame (the rest reuse
+      // their last geometry) so a crowd of LEGO players does not stall the frame.
+      if (now - remoteFrame > 6L) { remoteFrame = now; remoteBuilds = 0; }
+      boolean stale = b == null || b.ver != ver || b.sneak != var4.sneak || b.mq != mq || now - b.t > 80L;
+      if (stale && (b == null || remoteBuilds < REMOTE_BUDGET)) {
+         remoteBuilds++;
          LinkedHashMap<String, List<CosRender.Q>> normal = new LinkedHashMap<>();
          LinkedHashMap<String, List<CosRender.Q>> glow = new LinkedHashMap<>();
          G g = new G((tex, p, uv, argb, glowing, n0, n1, n2) -> (glowing ? glow : normal).computeIfAbsent(tex, k -> new ArrayList<>()).add(new CosRender.Q(p, uv, argb, n0, n1, n2)));
          Cos.renderItems(g, var4, head, items);
-         smooth(normal);
+         if (smoothRemote && !dev.lego.perf.Performance.lowMode()) smooth(normal);
          b = new CosRender.Built();
          b.t = now;
          b.ver = ver;

@@ -37,6 +37,7 @@ const fonts = [
   ['@fontsource/orbitron/files/orbitron-latin-500-normal.woff2', 'orbitron-500.woff2'],
   ['@fontsource/orbitron/files/orbitron-latin-800-normal.woff2', 'orbitron-800.woff2'],
   ['@fontsource/press-start-2p/files/press-start-2p-latin-400-normal.woff2', 'press-start-400.woff2'],
+  ...['400', '500', '600', '700'].map((w) => [`@fontsource/pixelify-sans/files/pixelify-sans-latin-${w}-normal.woff2`, `pixelify-${w}.woff2`]),
 ];
 for (const [src, name] of fonts) copyFileSync(require.resolve(src), join(out, 'renderer', 'fonts', name));
 for (const w of ['Regular', 'Medium', 'Bold']) copyFileSync(`../../lego-client/src/main/resources/assets/legoclient/fonts/Poppins-${w}.ttf`, join(out, 'renderer', 'fonts', `Poppins-${w}.ttf`));

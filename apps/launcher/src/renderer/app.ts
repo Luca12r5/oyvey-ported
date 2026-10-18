@@ -253,8 +253,8 @@ function renderTitlebar(): void {
   mount(document.getElementById('tbFriends')!, icon('friends', 'sm'));
   mount(document.getElementById('tbMore')!, icon('link', 'sm'));
   renderBell();
-  const sel = state.settings.profiles.find((p) => p.id === state.settings.selectedProfile) ?? state.settings.profiles[0];
-  mount(document.getElementById('tbInst')!, html`<button class="tb-chip" id="instBtn" aria-haspopup="menu" title="${sel ? profileLine(sel) : ''}">${icon('cube', 'sm')}<span>${sel ? sel.name : 'Keine Instanz'}</span>${icon('chevron', 'xs')}</button>`);
+  // Like NoRisk: the title bar shows running instances; the profile is picked at the LAUNCH button.
+  mount(document.getElementById('tbInst')!, html`<button class="tb-chip ${gameRunning ? 'live' : ''}" id="instBtn" title="${gameRunning ? 'Minecraft läuft – Konsole öffnen' : 'Kein Spiel gestartet'}">${icon(gameRunning ? 'terminal' : 'cube', 'sm')}<span>${gameRunning ? '1 Instanz läuft' : 'Keine Instanz'}</span></button>`);
   document.body.classList.toggle('guest', !state.auth.signedIn);
   const coins = document.getElementById('tbCoins')!;
   coins.hidden = state.coins === null;
@@ -263,7 +263,57 @@ function renderTitlebar(): void {
   const acct = document.getElementById('acct')!;
   mount(acct, a.signedIn
     ? html`<button class="acct-chip" id="acctBtn" aria-haspopup="menu">${state.head ? html`<img src="${state.head}" alt="">` : html`<span class="ph"></span>`}<span class="nm"><b>${a.name}</b><small>${a.lego.connected ? 'Microsoft' : t('acc.offline')}</small></span>${icon('chevron', 'sm')}</button>`
-    : html`<button class="acct-chip add" id="acctBtn">${icon('plus', 'sm')}<span class="nm"><b>${t('acc.signin')}</b></span></button>`);
+    : html`<button class="acct-chip add" id="acctBtn" aria-haspopup="menu">${icon('account', 'sm')}<span class="nm"><b>${t('acc.signin')}</b></span>${icon('chevron', 'sm')}</button>`);
+}
+
+let gameRunning = false;
+
+/** Guest: small account dropdown (sign in, what works without an account). */
+function guestMenu(anchor: HTMLElement): void {
+  document.querySelector('.menu')?.remove();
+  const m = document.createElement('div');
+  m.className = 'menu';
+  m.setAttribute('role', 'menu');
+  mount(m, html`<div class="menu-h">Gastmodus</div>
+    <button class="menu-i" data-act="signin" role="menuitem">${icon('account', 'sm')}<span class="grow">${t('play.signin')}</span></button>
+    <div class="menu-sep"></div>
+    <p class="menu-note">Ohne Konto kannst du Profile, Mods, Skins-Vorschau, Designs und VR ausprobieren. Spielen, Freunde und Shop brauchen ein Minecraft-Konto.</p>`);
+  document.body.append(m);
+  const r = anchor.getBoundingClientRect();
+  m.style.top = `${r.bottom + 6}px`;
+  m.style.right = `${Math.max(8, innerWidth - r.right)}px`;
+  const close = (e?: Event) => { if (e && m.contains(e.target as Node)) return; m.remove(); document.removeEventListener('mousedown', close); };
+  setTimeout(() => document.addEventListener('mousedown', close));
+  m.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('[data-act=signin]')) { close(); void signInFlow(); } });
+}
+
+/** Friends open as a panel from the right (list, requests, search, chat). */
+async function friendsDrawer(): Promise<void> {
+  let d = document.getElementById('drawer');
+  if (d?.classList.contains('open')) { d.classList.remove('open'); return; }
+  if (!d) {
+    d = document.createElement('aside');
+    d.id = 'drawer';
+    d.className = 'drawer';
+    document.body.append(d);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') d!.classList.remove('open'); });
+    document.addEventListener('mousedown', (e) => {
+      const t = e.target as HTMLElement;
+      if (d!.classList.contains('open') && !d!.contains(t) && !t.closest('#tbFriends, .menu, dialog')) d!.classList.remove('open');
+    });
+  }
+  mount(d, html`<div class="drawer-h"><span>${icon('friends', 'sm')} Freunde</span><button class="icon-btn" id="drawerX" aria-label="Schließen">${icon('close', 'sm')}</button></div><div class="drawer-b" id="drawerB"></div>`);
+  d.querySelector('#drawerX')!.addEventListener('click', () => d!.classList.remove('open'));
+  requestAnimationFrame(() => d!.classList.add('open'));
+  const body = d.querySelector<HTMLElement>('#drawerB')!;
+  if (!state.auth.lego.connected) {
+    mount(body, html`<div class="drawer-empty">${icon('friends', 'lg')}<h2>Spiel mit Freunden</h2><p class="muted">Sieh, wer online ist, chatte, lade in deine Party ein und fordere Freunde zu Duellen heraus. Dafür brauchst du ein Minecraft-Konto und die Verbindung zum LEGO-Server.</p>
+      ${state.auth.signedIn ? html`<p class="small muted">${state.auth.lego.error ?? 'Nicht mit dem LEGO-Server verbunden.'}</p><button class="btn primary" id="dRe">Erneut verbinden</button>` : html`<button class="btn primary" id="dIn">${icon('account', 'sm')} ${t('play.signin')}</button>`}</div>`);
+    body.querySelector('#dIn')?.addEventListener('click', () => void signInFlow());
+    body.querySelector('#dRe')?.addEventListener('click', async () => { state.auth = await api.reconnectLego(); await loadIdentity(); void friendsDrawer().then(() => friendsDrawer()); });
+    return;
+  }
+  try { await friendsPage(body); } catch (e) { mount(body, html`<div class="drawer-empty"><p>${e instanceof Error ? e.message : String(e)}</p></div>`); }
 }
 
 function accountMenu(anchor: HTMLElement): void {
@@ -348,9 +398,9 @@ export async function go(page: string, how: 'push' | 'back' | 'fwd' | 'replace' 
   renderTitlebar();
   host.replaceChildren(view);
   if (def.needsLego && !state.auth.lego.connected) {
-    mount(view, html`<div class="card narrow"><h1>${def.label()}</h1>${state.auth.signedIn ? '' : html`<p><span class="badge c" data-c="#ff7a1a">${icon('ghost', 'xs')} Gastmodus</span></p>`}<p class="muted">Diese Seite braucht ein Konto und eine Verbindung zum LEGO-Server. Im Gastmodus kannst du Home, Profile, Designs, Startanimation, VR-Vorschau und alle Einstellungen ausprobieren.</p>
-      <p>${state.auth.signedIn ? (state.auth.lego.error ?? 'Nicht verbunden.') : 'Melde dich zuerst mit deinem Microsoft-Konto an.'}</p>
-      <div class="row">${state.auth.signedIn ? html`<button class="btn primary" id="reconnect">Erneut verbinden</button>` : html`<button class="btn primary" id="signin">${t('play.signin')}</button>`}</div></div>`);
+    mount(view, html`<div class="gate"><div class="gate-ic">${icon(def.icon, 'lg')}</div><h1>${def.label()}</h1>
+      <p class="muted">${state.auth.signedIn ? (state.auth.lego.error ?? 'Diese Seite braucht die Verbindung zum LEGO-Server.') : 'Dafür brauchst du ein Minecraft-Konto. Im Gastmodus kannst du Play, Profile, Mods, Skins, Capes, Designs und VR ausprobieren.'}</p>
+      <div class="row center">${state.auth.signedIn ? html`<button class="btn primary" id="reconnect">${icon('refresh', 'sm')} Erneut verbinden</button>` : html`<button class="btn primary" id="signin">${icon('account', 'sm')} ${t('play.signin')}</button>`}</div></div>`);
     view.querySelector('#reconnect')?.addEventListener('click', async () => { state.auth = await api.reconnectLego(); await loadIdentity(); void go(page); });
     view.querySelector('#signin')?.addEventListener('click', () => void signInFlow());
     return;
@@ -393,11 +443,13 @@ async function boot(): Promise<void> {
     if (e.button === 4) { const p = fwd.pop(); if (p) void go(p, 'fwd'); }
   });
   document.getElementById('tbBell')!.addEventListener('click', (e) => bellMenu(e.currentTarget as HTMLElement));
-  document.getElementById('tbFriends')!.addEventListener('click', () => void go('friends'));
+  document.getElementById('tbFriends')!.addEventListener('click', () => void friendsDrawer());
+  void api.gameRunning().then((r) => { gameRunning = !!r; renderTitlebar(); });
+  api.on('launch-progress', () => { if (!gameRunning) { gameRunning = true; renderTitlebar(); } });
+  api.on('game-exit', () => { gameRunning = false; renderTitlebar(); });
   document.getElementById('tbMore')!.addEventListener('click', (e) => moreMenu(e.currentTarget as HTMLButtonElement));
   document.getElementById('tbInst')!.addEventListener('click', (e) => {
-    const b = (e.target as HTMLElement).closest<HTMLElement>('#instBtn');
-    if (b) profileMenu(b, 'down');
+    if ((e.target as HTMLElement).closest('#instBtn')) void go('play');
   });
   void refreshOnline();
   setInterval(() => void refreshOnline(), 60_000);
@@ -405,7 +457,7 @@ async function boot(): Promise<void> {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('#acctBtn');
     if (!b) return;
     if (state.auth.signedIn) accountMenu(b);
-    else void signInFlow();
+    else guestMenu(b);
   });
   api.on('auth', (a: AuthState & { error?: string }) => {
     const changed = a.uuid !== state.auth.uuid || a.lego.connected !== state.auth.lego.connected;
