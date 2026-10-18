@@ -11,7 +11,7 @@ import { useThemeStore } from '../store/theme.ts';
 import type { NavItem } from '../store/shell.ts';
 
 /** Every rail tab is a brick in its own classic LEGO colour. */
-const RAIL_COLORS: Record<string, string> = { play: '#d01012', profiles: '#0055bf', mods: '#f2cd37', skins: '#237841', capes: '#fe8a18', settings: '#6c6e68' };
+const RAIL_COLORS: Record<string, string> = { play: '#d01012', profiles: '#0055bf', mods: '#f2cd37', skins: '#a855f7', capes: '#fe8a18', settings: '#6c6e68' };
 
 interface VerticalNavbarProps {
   className?: string;

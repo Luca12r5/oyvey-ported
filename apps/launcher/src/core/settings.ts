@@ -127,7 +127,7 @@ export function migrateProfile(p: Partial<GameProfile> & { loader?: string | nul
   } as GameProfile;
 }
 
-export const SETTINGS_VERSION = 8;
+export const SETTINGS_VERSION = 9;
 
 /** Settings saved by older launcher versions: adopt the new default look once. */
 export function migrateSettings(s: Partial<Settings>): Partial<Settings> {
@@ -147,13 +147,15 @@ export function migrateSettings(s: Partial<Settings>): Partial<Settings> {
   if (v < 7) s = { ...s, themeId: 'lego', background: 'baseplate', transition: 'lego', accentColor: null, uiSounds: true };
   // Round 9: Spotify look by default (round, dark, green); LEGO stays in the title only.
   if (v < 8) s = { ...s, themeId: 'spotify', background: 'plain', accentColor: null };
+  // Spotify look without green: graphite with a blue accent.
+  if (v < 9 && (s.themeId === 'spotify' || v < 8)) s = { ...s, themeId: 'graphit', accentColor: null };
   return { ...s, settingsVersion: SETTINGS_VERSION };
 }
 
 export function defaultSettings(): Settings {
   return {
     settingsVersion: SETTINGS_VERSION,
-    themeId: 'spotify', customThemes: [], language: 'de', backendUrl: 'https://api.lego-launcher.example',
+    themeId: 'graphit', customThemes: [], language: 'de', backendUrl: 'https://api.lego-launcher.example',
     selectedProfile: DEFAULT_PROFILE.id, profiles: [{ ...DEFAULT_PROFILE, createdAt: Date.now() }],
     closeOnLaunch: false, reducedMotion: false, uiScale: 1, autoUpdate: 'ask', rarityColors: {},
     accentColor: null, background: 'plain', backgroundQuality: 0.6, snow: false, showSnapshots: false, showHistorical: false, curseforgeKey: '', msClientId: '',

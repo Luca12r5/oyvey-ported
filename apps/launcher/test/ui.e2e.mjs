@@ -102,7 +102,7 @@ await win.waitForTimeout(1500); // character + background settle
 await page('play', 'SPIELEN');
 // Old settings are migrated to the graphite Spotify-HUD look.
 const bgColor = await win.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
-if (bgColor !== '#0a0a0a') problems.push(`old settings were not migrated to Spotify: --bg is ${bgColor}`);
+if (bgColor !== '#0d0d10') problems.push(`old settings were not migrated to Graphit: --bg is ${bgColor}`);
 for (const id of ['play', 'profiles', 'mods', 'skins', 'capes']) if (!(await win.locator(`#sidebar [data-page=${id}]`).count())) problems.push(`${id} tab missing`);
 if (await win.locator('#sidebar [data-page=designs]').count()) problems.push('designs should live under Optionen');
 // Custom window controls: minimize, fullscreen, close (maximize = double-click on the header).

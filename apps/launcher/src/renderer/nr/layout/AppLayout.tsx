@@ -45,7 +45,7 @@ function HeaderBar() {
         <NavigationHistory />
         <div className="flex items-center gap-3 min-w-0">
           <h1 className="lx-title m-0 whitespace-nowrap" aria-label="LEGO Launcher">
-            <LegoText text="LEGO" colors={['red', 'yellow', 'blue', 'green']} height={30} />
+            <LegoText text="LEGO" colors={['red', 'yellow', 'blue', 'white']} height={30} />
             <span className="lx-title-rest">Launcher</span>
           </h1>
           <HeaderInfoCarousel />
