@@ -6,6 +6,10 @@ import { build } from 'esbuild';
 import { cpSync, mkdirSync, rmSync, copyFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import postcss from 'postcss';
+import tailwind from 'tailwindcss';
 
 const require = createRequire(import.meta.url);
 const out = 'dist';
@@ -17,14 +21,34 @@ const define = {
   __BACKEND_URL__: JSON.stringify(process.env.LEGO_BACKEND_URL ?? ''),
   __CURSEFORGE_KEY__: JSON.stringify(process.env.LEGO_CURSEFORGE_KEY ?? ''),
 };
+// Offline icon subset for the React UI (nr/), then the Tailwind stylesheet.
+execFileSync(process.execPath, ['tools/gen-icons.mjs'], { stdio: 'inherit' });
+const twConfig = {
+  content: ['src/renderer/nr/**/*.{ts,tsx}'],
+  corePlugins: { preflight: false },
+  theme: {
+    extend: {
+      // From the NoRisk launcher's tailwind.config.js.
+      colors: { norisk: { DEFAULT: '#125a9d', light: '#1a6ebd', dark: '#0e4678' }, panel: { DEFAULT: '#1e1e1e', light: '#262626', border: '#3a3a3a' }, dark: '#121212' },
+      fontFamily: { smallcaps: ['var(--font-smallcaps)'], minecraft: ['var(--font-minecraft)'] },
+      backgroundImage: { 'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))' },
+      boxShadow: { glow: '0 0 10px rgba(18, 90, 157, 0.4)', 'glow-lg': '0 0 20px rgba(18, 90, 157, 0.6)', 'inner-glow': 'inset 0 0 10px rgba(18, 90, 157, 0.4)' },
+      keyframes: { float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } } },
+      animation: { float: 'float 3s ease-in-out infinite' },
+    },
+  },
+};
+const nrCss = await postcss([tailwind(twConfig)]).process(readFileSync('src/renderer/nr/nr.css', 'utf8'), { from: 'src/renderer/nr/nr.css' });
+
 const common = { bundle: true, sourcemap: true, logLevel: 'warning', define, legalComments: 'none' };
 
 await build({ ...common, entryPoints: ['src/main/main.ts'], outfile: `${out}/main.cjs`, platform: 'node', target: 'node22', format: 'cjs', external: ['electron'] });
 await build({ ...common, entryPoints: ['src/preload/preload.ts'], outfile: `${out}/preload.cjs`, platform: 'node', target: 'node22', format: 'cjs', external: ['electron'] });
-await build({ ...common, entryPoints: ['src/renderer/app.ts'], outfile: `${out}/renderer/app.js`, platform: 'browser', target: 'chrome130', format: 'esm', loader: { '.png': 'dataurl' }, minify: true });
+await build({ ...common, entryPoints: ['src/renderer/app.ts'], outfile: `${out}/renderer/app.js`, platform: 'browser', target: 'chrome130', format: 'esm', loader: { '.png': 'dataurl' }, jsx: 'automatic', minify: true });
 
 cpSync('src/renderer/index.html', `${out}/renderer/index.html`);
 cpSync('src/renderer/styles.css', `${out}/renderer/styles.css`);
+writeFileSync(`${out}/renderer/nr.css`, nrCss.css);
 const fonts = [
   ['@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2', 'silkscreen-400.woff2'],
   ['@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2', 'jetbrains-mono-400.woff2'],

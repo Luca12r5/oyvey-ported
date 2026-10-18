@@ -5,11 +5,12 @@ import type { AppInfo, AuthState } from '../ipc-types.ts';
 import type { Settings } from '../core/settings.ts';
 import { api, dialog, html, mount, toast, errorToast, fmtNum, lego } from './ui.ts';
 import { applyTheme, findTheme } from './theme.ts';
-import { brickLogo, icon, pixel } from './icons.ts';
+import { icon } from './icons.ts';
 import { Background } from './bg.ts';
 import { headFromSkin } from './avatar.ts';
 import { setLang, t } from './i18n.ts';
-import { playPage, profileMenu, profileLine } from './pages/play.ts';
+import { playPage } from './pages/play.ts';
+import { mountShell, setAccent, shellStore, actions, gameStore, initGame, NAV_ICONS } from './nr/mount.tsx';
 import { skinsPage } from './pages/skins.ts';
 import { playSplash } from './splash.ts';
 import { webglAvailable } from './intro3d.ts';
@@ -80,10 +81,7 @@ export function notify(text: string): void {
 }
 
 function renderBell(): void {
-  const b = document.getElementById('tbBell');
-  if (!b) return;
-  const unread = notes.filter((n) => !n.read).length;
-  mount(b, html`${icon('bell', 'sm')}${unread ? html`<i class="badge-n">${unread > 9 ? '9+' : unread}</i>` : ''}`);
+  shellStore.set({ unread: notes.filter((n) => !n.read).length });
 }
 
 function bellMenu(anchor: HTMLElement): void {
@@ -114,8 +112,7 @@ async function refreshOnline(): Promise<void> {
     const st = await lego<{ online?: number }>('GET', '/api/public/status');
     online = typeof st.online === 'number' ? st.online : null;
   } catch { online = null; }
-  const el = document.getElementById('tbOnline');
-  if (el) { el.hidden = online === null; el.textContent = online === null ? '' : fmtNum(online); }
+  shellStore.set({ online });
 }
 
 /** Registers cleanup for the current page (runs on the next navigation). */
@@ -164,6 +161,8 @@ export function retheme(): void {
   }
   applyTheme(findTheme(s.themeId, s.customThemes), { reducedMotion: s.reducedMotion, uiScale: s.uiScale });
   if (s.accentColor) document.documentElement.style.setProperty('--accent', s.accentColor);
+  // The NoRisk-style UI follows the theme accent unless the user picked one.
+  setAccent(s.accentColor || getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
   bg ??= new Background(document.getElementById('bg') as HTMLCanvasElement, document.getElementById('bg3d') as HTMLCanvasElement);
   bg.configure({ id: s.background, quality: s.backgroundQuality, snow: s.snow, still: s.reducedMotion, fx: s.fx, image: s.bgImage });
   // Drop the previous choice's classes before adding the current ones.
@@ -184,25 +183,11 @@ function visiblePages(): PageDef[] {
 
 function renderSidebar(): void {
   document.body.dataset.staff = state.auth.lego.roles.length > 0 ? '1' : '0';
-  const more = visiblePages().filter((p) => p.slot === 'more');
-  const inMore = more.some((p) => p.id === state.page);
-  const item = (p: PageDef) => html`<button class="nav-item ${state.page === p.id ? 'active' : ''}" data-page="${p.id}" aria-label="${p.label()}" title="${p.label()}">${icon(p.icon)}<span class="lbl">${SHORT[p.id]?.() ?? p.label()}</span></button>`;
   const list = visiblePages();
-  mount(document.getElementById('sidebar')!, html`<div class="rail-logo" title="LEGO Launcher">${brickLogo()}</div><span class="rail-ind" aria-hidden="true"></span>
-    ${list.filter((p) => p.slot === 'main').map(item)}<div class="spacer"></div>
-    <button class="nav-item ${inMore ? 'active' : ''}" id="more" aria-haspopup="menu" aria-label="${t('nav.more')}" title="${t('nav.more')}">${icon('grid')}<span class="lbl">${t('nav.more')}</span></button>
-    ${list.filter((p) => p.slot === 'bottom').map(item)}`);
-  requestAnimationFrame(moveIndicator);
-}
-
-/** Slides the glowing marker to the active dock item. */
-function moveIndicator(): void {
-  const rail = document.getElementById('sidebar');
-  const ind = rail?.querySelector<HTMLElement>('.rail-ind');
-  const act = rail?.querySelector<HTMLElement>('.nav-item.active');
-  if (!rail || !ind) return;
-  ind.classList.toggle('on', !!act);
-  if (act) ind.style.transform = `translateY(${act.offsetTop}px)`;
+  shellStore.set({
+    page: state.page,
+    nav: [...list.filter((p) => p.slot === 'main'), ...list.filter((p) => p.slot === 'bottom')].map((p) => ({ id: p.id, icon: NAV_ICONS[p.id] ?? 'solar:widget-bold', label: SHORT[p.id]?.() ?? p.label(), isAction: p.slot === 'bottom' })),
+  });
 }
 
 function moreMenu(anchor: HTMLElement): void {
@@ -236,34 +221,19 @@ function moreMenu(anchor: HTMLElement): void {
 }
 
 function renderWindowButtons(st: { maximized: boolean; fullscreen: boolean }): void {
-  mount(document.getElementById('win')!, html`<button class="tb-btn" data-win="minimize" aria-label="Minimieren" title="Minimieren">${icon('minimize', 'sm')}</button>
-    <button class="tb-btn" data-win="fullscreen" aria-label="Vollbild" title="Vollbild (F11)">${icon(st.fullscreen ? 'exitFullscreen' : 'fullscreen', 'sm')}</button>
-    <button class="tb-btn" data-win="maximize" aria-label="${st.maximized || st.fullscreen ? 'Wiederherstellen' : 'Maximieren'}" title="${st.maximized || st.fullscreen ? 'Wiederherstellen' : 'Maximieren'}">${icon(st.maximized || st.fullscreen ? 'restore' : 'maximize', 'sm')}</button>
-    <button class="tb-btn close" data-win="close" aria-label="Schließen" title="Schließen">${icon('close', 'sm')}</button>`);
+  shellStore.set({ maximized: st.maximized, fullscreen: st.fullscreen });
   document.body.classList.toggle('is-fullscreen', st.fullscreen);
   document.body.classList.toggle('is-maximized', st.maximized);
 }
 
 function renderTitlebar(): void {
-  document.getElementById('tbVersion')!.textContent = `v${state.info.version}`;
-  mount(document.getElementById('navBack')!, icon('back', 'sm'));
-  mount(document.getElementById('navFwd')!, icon('forward', 'sm'));
-  (document.getElementById('navBack') as HTMLButtonElement).disabled = back.length === 0;
-  (document.getElementById('navFwd') as HTMLButtonElement).disabled = fwd.length === 0;
-  mount(document.getElementById('tbFriends')!, icon('friends', 'sm'));
-  mount(document.getElementById('tbMore')!, icon('link', 'sm'));
-  renderBell();
-  // Like NoRisk: the title bar shows running instances; the profile is picked at the LAUNCH button.
-  mount(document.getElementById('tbInst')!, html`<button class="tb-chip ${gameRunning ? 'live' : ''}" id="instBtn" title="${gameRunning ? 'Minecraft läuft – Konsole öffnen' : 'Kein Spiel gestartet'}">${icon(gameRunning ? 'terminal' : 'cube', 'sm')}<span>${gameRunning ? '1 Instanz läuft' : 'Keine Instanz'}</span></button>`);
   document.body.classList.toggle('guest', !state.auth.signedIn);
-  const coins = document.getElementById('tbCoins')!;
-  coins.hidden = state.coins === null;
-  if (state.coins !== null) mount(coins, html`${pixel('coin')}<b>${fmtNum(state.coins)}</b>`);
   const a = state.auth;
-  const acct = document.getElementById('acct')!;
-  mount(acct, a.signedIn
-    ? html`<button class="acct-chip" id="acctBtn" aria-haspopup="menu">${state.head ? html`<img src="${state.head}" alt="">` : html`<span class="ph"></span>`}<span class="nm"><b>${a.name}</b><small>${a.lego.connected ? 'Microsoft' : t('acc.offline')}</small></span>${icon('chevron', 'sm')}</button>`
-    : html`<button class="acct-chip add" id="acctBtn" aria-haspopup="menu">${icon('account', 'sm')}<span class="nm"><b>${t('acc.signin')}</b></span>${icon('chevron', 'sm')}</button>`);
+  shellStore.set({
+    version: state.info.version, canBack: back.length > 0, canFwd: fwd.length > 0,
+    signedIn: a.signedIn, name: a.signedIn ? a.name ?? '' : '', head: state.head, coins: state.coins,
+    running: gameRunning ? 1 : 0,
+  });
 }
 
 let gameRunning = false;
@@ -391,7 +361,7 @@ export async function go(page: string, how: 'push' | 'back' | 'fwd' | 'replace' 
   renderSidebar();
   document.querySelector('.menu')?.remove();
   const def = PAGES.find((p) => p.id === page) ?? PAGES[0]!;
-  const host = document.getElementById('view')!;
+  const host = viewEl;
   host.dataset.page = def.id;
   const view = document.createElement('div');
   view.className = `view-enter tr-${state.settings.reducedMotion ? 'none' : state.settings.transition ?? 'slide'}`;
@@ -413,6 +383,8 @@ export async function go(page: string, how: 'push' | 'back' | 'fwd' | 'replace' 
   host.focus({ preventScroll: true });
 }
 
+let viewEl: HTMLElement = document.createElement('main');
+
 export function refreshChrome(): void {
   renderSidebar();
   renderTitlebar();
@@ -421,44 +393,31 @@ export function refreshChrome(): void {
 async function boot(): Promise<void> {
   [state.settings, state.auth, state.info] = await Promise.all([api.getSettings(), api.authState(), api.info()]);
   retheme();
-  mount(document.getElementById('tbLogo')!, brickLogo());
+  viewEl = await mountShell(document.getElementById('nrRoot')!);
   renderWindowButtons(await api.windowState());
   api.on('window-state', renderWindowButtons);
   refreshChrome();
-  document.getElementById('sidebar')!.addEventListener('click', (e) => {
-    const more = (e.target as HTMLElement).closest<HTMLButtonElement>('#more');
-    if (more) return moreMenu(more);
-    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-page]');
-    if (b) void go(b.dataset.page!);
-  });
-  document.getElementById('win')!.addEventListener('click', (e) => {
-    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-win]');
-    if (b) api.window(b.dataset.win as 'minimize');
-  });
-  addEventListener('resize', moveIndicator);
-  document.getElementById('navBack')!.addEventListener('click', () => { const p = back.pop(); if (p) void go(p, 'back'); });
-  document.getElementById('navFwd')!.addEventListener('click', () => { const p = fwd.pop(); if (p) void go(p, 'fwd'); });
+  actions.go = (id) => void go(id);
+  actions.back = () => { const p = back.pop(); if (p) void go(p, 'back'); };
+  actions.fwd = () => { const p = fwd.pop(); if (p) void go(p, 'fwd'); };
+  actions.window = (cmd) => api.window(cmd);
+  actions.bell = (a) => bellMenu(a);
+  actions.friends = () => void friendsDrawer();
+  actions.more = (a) => moreMenu(a);
+  actions.account = (a) => { if (state.auth.signedIn) accountMenu(a); else guestMenu(a); };
+  actions.instances = () => { gameStore.set({ consoleOpen: true }); if (state.page !== 'play') void go('play'); };
+  actions.credits = credits;
   addEventListener('mouseup', (e) => {
-    if (e.button === 3) { const p = back.pop(); if (p) void go(p, 'back'); }
-    if (e.button === 4) { const p = fwd.pop(); if (p) void go(p, 'fwd'); }
+    if (e.button === 3) actions.back();
+    if (e.button === 4) actions.fwd();
   });
-  document.getElementById('tbBell')!.addEventListener('click', (e) => bellMenu(e.currentTarget as HTMLElement));
-  document.getElementById('tbFriends')!.addEventListener('click', () => void friendsDrawer());
-  void api.gameRunning().then((r) => { gameRunning = !!r; renderTitlebar(); });
-  api.on('launch-progress', () => { if (!gameRunning) { gameRunning = true; renderTitlebar(); } });
-  api.on('game-exit', () => { gameRunning = false; renderTitlebar(); });
-  document.getElementById('tbMore')!.addEventListener('click', (e) => moreMenu(e.currentTarget as HTMLButtonElement));
-  document.getElementById('tbInst')!.addEventListener('click', (e) => {
-    if ((e.target as HTMLElement).closest('#instBtn')) void go('play');
+  initGame({ lowPower: backgroundLowPower, refresh: () => void loadIdentity(), autoConsole: () => state.settings.autoConsole });
+  gameStore.subscribe(() => {
+    const r = gameStore.get().running;
+    if (r !== gameRunning) { gameRunning = r; renderTitlebar(); }
   });
   void refreshOnline();
   setInterval(() => void refreshOnline(), 60_000);
-  document.getElementById('acct')!.addEventListener('click', (e) => {
-    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('#acctBtn');
-    if (!b) return;
-    if (state.auth.signedIn) accountMenu(b);
-    else guestMenu(b);
-  });
   api.on('auth', (a: AuthState & { error?: string }) => {
     const changed = a.uuid !== state.auth.uuid || a.lego.connected !== state.auth.lego.connected;
     state.auth = a;
@@ -497,6 +456,17 @@ async function boot(): Promise<void> {
   await intro;
   bg?.start();
   if (!state.auth.signedIn && !state.settings.guest && !state.info.e2e) welcome();
+}
+
+/** Logo click: credits and licence (the UI is based on the NoRisk Client launcher, GPL-3.0). */
+function credits(): void {
+  const d = dialog(html`<h2>LEGO Launcher v${state.info.version}</h2>
+    <p>Oberfläche nach dem NoRisk Client Launcher (GPL-3.0). Der LEGO Launcher ist deshalb ebenfalls unter der GNU GPL v3 lizenziert; der Quellcode liegt im Repository.</p>
+    <ul class="small muted"><li>NoRisk Client Launcher – NoRiskClient Team, GPL-3.0</li><li>Icons: Solar (480 Design) und Pixel Icon (HackerNoon), CC BY 4.0</li><li>Schriften: Pixelify Sans, Silkscreen, Inter, Poppins (OFL)</li><li>skinview3d, three.js, React (MIT)</li></ul>
+    <p class="small muted">„NoRisk“ und das NoRisk-Logo gehören ihren Inhabern und werden hier nicht verwendet.</p>
+    <div class="row between gap"><button class="btn" id="crSrc">${icon('link', 'sm')} Quellcode</button><button class="btn primary" id="crOk">OK</button></div>`);
+  d.querySelector('#crOk')!.addEventListener('click', () => d.close());
+  d.querySelector('#crSrc')!.addEventListener('click', () => void api.openExternal('https://github.com/Luca12r5/oyvey-ported'));
 }
 
 /** First start without an account: sign in, or try everything as a guest. */

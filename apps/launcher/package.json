@@ -9,7 +9,7 @@
     "email": "lego-launcher@users.noreply.github.com"
   },
   "homepage": "https://github.com/Luca12r5/oyvey-ported",
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "main": "dist/main.cjs",
   "scripts": {
     "build": "node build.mjs",
@@ -34,12 +34,24 @@
     "@fontsource/orbitron": "^5.3.0",
     "@fontsource/press-start-2p": "^5.3.0",
     "@fontsource/silkscreen": "^5.3.0",
+    "@iconify-json/pixel": "^1.2.2",
+    "@iconify-json/solar": "^1.2.2",
+    "@iconify/react": "^5.2.1",
+    "@iconify/utils": "^2.3.0",
     "@lego/shared": "*",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
     "@types/three": "^0.156.0",
+    "clsx": "^2.1.1",
     "electron": "38.8.6",
     "electron-builder": "^26.0.12",
     "esbuild": "^0.25.10",
+    "postcss": "^8.5.6",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "skinview3d": "^3.4.2",
+    "tailwind-merge": "^3.2.0",
+    "tailwindcss": "^3.4.19",
     "three": "^0.156.1"
   },
   "type": "module"

@@ -75,7 +75,7 @@ const problems = [];
 win.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
 win.on('console', (m) => { if (m.type() === 'error') problems.push(`console: ${m.text()}`); });
 await win.setViewportSize?.({ width: 1280, height: 800 });
-await win.waitForSelector('.nav-item');
+await win.waitForSelector('#sidebar [data-page=play]');
 // Wait until the stored LEGO session was validated (roles arrive -> Dev page appears in "Mehr").
 await win.waitForSelector('body[data-staff="1"]', { timeout: 10_000 });
 
@@ -117,19 +117,21 @@ if ((label === 'Wiederherstellen') !== maxed) problems.push(`maximize button out
 if (maxed) { await win.click('[data-win=maximize]'); await win.waitForTimeout(500); }
 // The window layout must fill the window in every theme.
 async function layoutOk(label) {
-  const r = await win.evaluate(() => ({ shell: document.querySelector('.frame').getBoundingClientRect().width, bar: document.querySelector('.titlebar').getBoundingClientRect().width, w: innerWidth }));
+  const r = await win.evaluate(() => ({ shell: document.querySelector('.nr-launcher').getBoundingClientRect().width, bar: document.querySelector('.nr-titlebar').getBoundingClientRect().width, w: innerWidth }));
   if (r.shell < r.w - 2 || r.bar < r.w - 120) problems.push(`${label}: layout collapsed (shell ${r.shell}px, titlebar ${r.bar}px, window ${r.w}px)`);
 }
 await layoutOk('nocturne');
 // Profile dropdown lists the profiles.
 await win.click('#drop');
 await win.waitForSelector('.menu [data-profile]');
+await win.waitForTimeout(300);
 if (shots) await win.screenshot({ path: join(shots, 'launcher-profile-menu.png') });
 await win.keyboard.press('Escape');
 await win.mouse.click(5, 300);
 // Account switcher.
 await win.click('#acctBtn');
 await win.waitForSelector('.menu [data-act=add]');
+await win.waitForTimeout(300);
 if (shots) await win.screenshot({ path: join(shots, 'launcher-account-menu.png') });
 await win.mouse.click(5, 300);
 await page('profiles', 'LEGO Client');

@@ -1,0 +1,111 @@
+/* Styles of the React UI ported from the NoRisk Client launcher (GPL-3.0):
+ * styles/globals.css, scoped to `.nr` so the launcher's other pages keep theirs.
+ * Fonts: free replacements for NoRisk's own (SmallCaps/MinecraftTen are not shipped). */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-smallcaps: "Pixelify Sans", "Silkscreen", monospace;
+  --font-minecraft: "Pixelify Sans", "Silkscreen", sans-serif;
+  --border-radius: 0px;
+  --nr-accent: #4f8eff;
+  --accent-hover: #3a7aff;
+  --accent-shadow: rgba(79, 142, 255, 0.5);
+  --accent-rgb: 79, 142, 255;
+}
+
+/* Scoped subset of Tailwind's preflight. :where() keeps it below every utility
+   but above the launcher's bare element rules (this file loads after styles.css). */
+@layer base {
+  :where(.nr), :where(.nr) *, :where(.nr) ::before, :where(.nr) ::after { border-width: 0; border-style: solid; border-color: currentColor; }
+  :where(.nr) button, :where(.nr) input, :where(.nr) select, :where(.nr) textarea { font: inherit; color: inherit; margin: 0; letter-spacing: inherit; }
+  :where(.nr) button { background-color: transparent; background-image: none; padding: 0; cursor: pointer; line-height: inherit; text-transform: none; }
+  :where(.nr) button:disabled { cursor: default; }
+  :where(.nr) img, :where(.nr) svg, :where(.nr) canvas, :where(.nr) video { display: block; vertical-align: middle; }
+  :where(.nr) img { max-width: 100%; height: auto; }
+  :where(.nr) h1, :where(.nr) h2, :where(.nr) h3, :where(.nr) h4, :where(.nr) p, :where(.nr) hr { margin: 0; }
+  :where(.nr) h1, :where(.nr) h2, :where(.nr) h3, :where(.nr) h4 { font-size: inherit; font-weight: normal; font-family: var(--font-smallcaps); letter-spacing: 0.05em; user-select: none; }
+  :where(.nr) hr { height: 0; color: inherit; border-top-width: 1px; }
+  :where(.nr) b, :where(.nr) strong { font-weight: bolder; }
+  :where(.nr) p { line-height: 1.6; letter-spacing: 0.02em; }
+}
+
+.nr, .nr-launcher {
+  font-family: var(--font-smallcaps);
+  letter-spacing: 0.03em;
+  color: #fff;
+}
+.nr-root { position: relative; z-index: 2; height: 100vh; }
+
+.font-smallcaps { font-family: var(--font-smallcaps); letter-spacing: 0.05em; font-variant-caps: small-caps; }
+.font-minecraft { font-family: var(--font-minecraft); letter-spacing: 0.03em; }
+.text-shadow { text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9), 0 0 3px rgba(0, 0, 0, 1); }
+.text-shadow-sm { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 1); }
+.text-shadow-lg { text-shadow: 0 4px 10px rgba(0, 0, 0, 0.9), 0 0 5px rgba(0, 0, 0, 1); }
+
+.custom-scrollbar { scrollbar-width: thin; scrollbar-color: rgba(var(--accent-rgb), 0.4) transparent; }
+.custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(var(--accent-rgb), 0.4); border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(var(--accent-rgb), 0.6); }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+/* NoRisk's global border-radius setting (0 = square, like the screenshots). */
+:where(.nr) button:not(.no-radius) { border-radius: var(--border-radius); }
+.nr .rounded-sm, .nr .rounded, .nr .rounded-md, .nr .rounded-lg, .nr .rounded-xl, .nr .rounded-2xl, .nr [class*="rounded-["] { border-radius: var(--border-radius) !important; }
+.nr .rounded-r-none { border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important; }
+.nr .rounded-l-none { border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; }
+.nr .rounded-full { border-radius: 9999px; }
+
+@keyframes moveGrid { 0% { background-position-y: 0; } 100% { background-position-y: -200px; } }
+@keyframes moveGridReverse { 0% { background-position-y: -200px; } 100% { background-position-y: 0; } }
+@keyframes skeleton-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.8; } }
+.animate-skeleton-pulse { animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+/* Entrance animations (gsap in the original). */
+@keyframes nr-stagger { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: none; } }
+.nr-stagger { animation: nr-stagger 0.4s cubic-bezier(.33,1,.68,1) both; }
+@keyframes nr-tip { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+.nr-tip-in { animation: nr-tip 0.3s cubic-bezier(.33,1,.68,1) both; }
+@keyframes nr-pop { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: none; } }
+.nr-pop { animation: nr-pop 0.4s cubic-bezier(.33,1,.68,1) both; }
+@keyframes nr-drop { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+.nr-drop-in { animation: nr-drop 0.5s cubic-bezier(.22,1,.36,1) both; }
+@keyframes nr-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+.nr-slide-up { animation: nr-up 0.35s cubic-bezier(.22,1,.36,1) both; }
+@keyframes nr-launcher-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: none; } }
+.nr-launcher { animation: nr-launcher-in 0.8s cubic-bezier(.22,1,.36,1) both; }
+body.reduced-motion .nr-launcher, body.reduced-motion .nr-stagger, body.reduced-motion .nr-pop, body.reduced-motion .nr-drop-in { animation: none; }
+
+/* Window dragging (Electron): the header is the drag handle, its controls are not. */
+.nr-drag { -webkit-app-region: drag; user-select: none; }
+.nr-drag button, .nr-drag [role="button"], .nr-drag a, .nr-drag input { -webkit-app-region: no-drag; }
+body.is-fullscreen .nr-drag { -webkit-app-region: no-drag; }
+
+.nr-logo svg { width: 100%; height: 100%; }
+.nr-px { display: inline-flex; }
+.nr-px img, .nr-px svg { display: block; }
+
+/* Content area: the launcher's other pages scroll inside it like before. */
+#view { overflow-y: auto; padding: 18px 22px 22px; user-select: text; }
+#view:focus { outline: none; }
+#view[data-page="play"] { overflow: hidden; padding: 0; }
+#view[data-page="play"] > .view-enter { height: 100%; }
+
+/* Game console lines. */
+.nr-console { white-space: pre-wrap; word-break: break-all; user-select: text; color: #c8d0e8; }
+.nr-console .ln { display: flex; gap: 8px; line-height: 1.5; }
+.nr-console .ts { color: rgba(255,255,255,.35); flex: none; }
+.nr-console .lv { flex: none; width: 44px; color: rgba(255,255,255,.55); }
+.nr-console .src { flex: none; color: rgba(var(--accent-rgb), .9); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nr-console .tx { flex: 1; min-width: 0; }
+.nr-console .lv-WARN .lv, .nr-console .lv-WARN .tx { color: #fbbf24; }
+.nr-console .lv-ERROR .lv, .nr-console .lv-ERROR .tx, .nr-console .lv-FATAL .lv, .nr-console .lv-FATAL .tx { color: #f87171; }
+
+/* Menus opened from the React header/launch button use the launcher's .menu,
+   restyled like NoRisk's dropdowns. */
+.menu { border-radius: 0 !important; border: 2px solid rgba(var(--accent-rgb), .5) !important; border-bottom-width: 4px !important; background: rgba(8, 14, 25, .94) !important; backdrop-filter: blur(16px); font-family: var(--font-smallcaps); letter-spacing: .04em; }
+.menu .menu-h { font-family: var(--font-smallcaps); font-variant-caps: small-caps; }
+.menu .menu-i:hover, .menu .menu-i.on { background: rgba(var(--accent-rgb), .22) !important; }
