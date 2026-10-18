@@ -46,12 +46,12 @@ export function CurrentAccountDisplay({ onClick, className, compact = false }: C
         className="relative w-7 h-7 overflow-hidden border-2 rounded-sm flex-shrink-0 flex items-center justify-center"
         style={{ borderColor: `${accentColor.value}60`, backgroundColor: `${accentColor.value}20` }}
       >
-        {signedIn && head ? <img src={head} alt="" className="w-full h-full" style={{ imageRendering: 'pixelated' }} /> : <span className="text-white font-smallcaps text-xs">+</span>}
+        {head ? <img src={head} alt="" className="w-full h-full" style={{ imageRendering: 'pixelated' }} /> : <span className="text-white font-smallcaps text-xs">+</span>}
       </div>
       {!compact && (
         <div className="flex flex-col min-w-0">
-          <span className={cn(signedIn ? 'text-base' : 'text-sm', 'text-white font-smallcaps truncate')} title={username}>
-            {signedIn ? username : 'Konto hinzufügen'}
+          <span className={cn(signedIn || username ? 'text-base' : 'text-sm', 'text-white font-smallcaps truncate')} title={username}>
+            {signedIn ? username : username ? `Gast: ${username}` : 'Konto hinzufügen'}
           </span>
         </div>
       )}

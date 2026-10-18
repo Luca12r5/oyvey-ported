@@ -16,9 +16,11 @@ interface PlayerRigProps {
   reducedMotion: boolean;
   /** Rig height in px (follows the stage size). */
   height?: number;
+  /** Name tag above the head. */
+  showTag?: boolean;
 }
 
-export function PlayerRig({ playerName, skin, variant, cape, animated, reducedMotion, height = PLAYER_RIG_HEIGHT }: PlayerRigProps) {
+export function PlayerRig({ playerName, skin, variant, cape, animated, reducedMotion, height = PLAYER_RIG_HEIGHT, showTag = true }: PlayerRigProps) {
   const k = height / PLAYER_RIG_HEIGHT;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const avatarRef = useRef<Avatar | null>(null);
@@ -43,16 +45,34 @@ export function PlayerRig({ playerName, skin, variant, cape, animated, reducedMo
   useEffect(() => { void avatarRef.current?.setSkin(skin, variant, cape).catch(() => {}); }, [skin, variant, cape, reducedMotion]);
   useEffect(() => { avatarRef.current?.setPaused(!animated); }, [animated, reducedMotion]);
 
+  // Name tag follows the head (projected from the 3D model), so it sits just above it at any size or zoom.
+  const tagRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!showTag) return;
+    let raf = 0, last = 0;
+    const tick = (t: number) => {
+      raf = requestAnimationFrame(tick);
+      if (t - last < 80) return;
+      last = t;
+      const top = avatarRef.current?.headTop();
+      if (tagRef.current) tagRef.current.style.top = top == null ? '0px' : `calc(${(top * 100).toFixed(2)}% - ${Math.round(34 * Math.min(1.6, k))}px)`;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [showTag, k]);
+
   return (
-    <div className="relative flex-shrink-0" style={{ width: `${Math.round(PLAYER_RIG_WIDTH * k)}px`, height: `${Math.round(height)}px` }}>
-      <div className="nr-nametag absolute left-1/2 -translate-x-1/2 -top-2 z-20 px-3 py-1 rounded-full bg-black/45 backdrop-blur-md border border-white/10 text-white text-sm font-medium whitespace-nowrap pointer-events-none" style={{ fontSize: `${Math.round(14 * Math.min(1.6, k))}px` }}>
-        {playerName}
-      </div>
+    <div className="relative flex-shrink-0" style={{ width: `${Math.round(height * 0.62)}px`, height: `${Math.round(height)}px` }}>
+      {showTag && (
+        <div ref={tagRef} className="nr-nametag absolute left-1/2 -translate-x-1/2 z-20 px-2 py-0.5 bg-black/40 text-white font-minecraft whitespace-nowrap pointer-events-none" style={{ top: 0, fontSize: `${Math.round(16 * Math.min(1.6, k))}px` }}>
+          {playerName}
+        </div>
+      )}
       <canvas
         ref={canvasRef}
         id="avatar"
-        className="absolute"
-        style={{ left: '50%', top: '50%', transform: 'translate(-50%, -48%)', width: `${Math.round(520 * k)}px`, height: `${Math.round(640 * k)}px`, maxWidth: 'none', filter: 'drop-shadow(5px 10px 5px rgba(0,0,0,0.75))' }}
+        className="absolute inset-0"
+        style={{ width: '100%', height: '100%', maxWidth: 'none', filter: 'drop-shadow(5px 10px 5px rgba(0,0,0,0.75))' }}
       />
     </div>
   );

@@ -14,6 +14,7 @@ import { rgbOf } from '../lib/utils.ts';
 
 export function AppLayout({ onView }: { onView: (el: HTMLElement) => void }) {
   const themeAccentColor = useThemeStore((s) => s.accentColor);
+  const glowLines = useThemeStore((s) => s.glowLines);
   const nav = useShell((s) => s.nav);
   const activeTab = useShell((s) => s.page);
   const viewRef = useRef<HTMLElement>(null);
@@ -41,7 +42,7 @@ export function AppLayout({ onView }: { onView: (el: HTMLElement) => void }) {
         className="nr-shell-bg absolute inset-0 pointer-events-none"
         style={{ backgroundColor, backgroundImage: `linear-gradient(to bottom right, ${backgroundColor}, rgba(0,0,0,0.9))` }}
       />
-      <BorderGlowEffects accentColor={themeAccentColor.value} />
+      {glowLines && <BorderGlowEffects accentColor={themeAccentColor.value} />}
       <VerticalNavbar items={nav} activeItem={activeTab} onItemClick={(id) => actions.go(id)} onLogoClick={() => actions.credits()} className="h-full border-r-2 z-10" />
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
         <HeaderBar />
@@ -67,6 +68,7 @@ function BorderGlowEffects({ accentColor }: { accentColor: string }) {
 function HeaderBar() {
   const accentColor = useThemeStore((s) => s.accentColor);
   const titleColors = useThemeStore((s) => s.titleColors);
+  const titleSub = useThemeStore((s) => s.titleSub);
   const c = rgbOf(accentColor.value);
   return (
     <header
@@ -78,7 +80,7 @@ function HeaderBar() {
         <div className="flex flex-col items-start min-w-0">
           <h1 className="lx-title m-0 whitespace-nowrap flex items-end gap-2" aria-label="LEGO Launcher">
             <LegoText text="LEGO" colors={titleColors} height={30} />
-            <LegoText text="LAUNCHER" colors={[accentColor.value]} height={17} className="lx-title-sub" />
+            {titleSub && <LegoText text="LAUNCHER" colors={[accentColor.value]} height={17} className="lx-title-sub" />}
           </h1>
           <HeaderInfoCarousel />
         </div>

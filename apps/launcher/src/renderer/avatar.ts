@@ -6,7 +6,7 @@
 // back to a flat 2D render of the skin when WebGL is not available.
 
 import { SkinViewer, WalkingAnimation, WaveAnimation, PlayerAnimation, type PlayerObject } from 'skinview3d';
-import { AmbientLight, CanvasTexture, DirectionalLight, Mesh, MeshBasicMaterial, PlaneGeometry, Box3 } from 'three';
+import { AmbientLight, CanvasTexture, DirectionalLight, Mesh, MeshBasicMaterial, PlaneGeometry, Box3, Vector3 } from 'three';
 import minifig from './assets/minifig.png';
 
 export const DEFAULT_SKIN: string = minifig;
@@ -23,6 +23,10 @@ export interface Avatar {
   /** Zoom step (+1 closer, -1 further); the mouse wheel zooms as well. */
   zoom(step: number): void;
   resize(): void;
+  /** Top of the head as a share of the canvas height (0 = top), or null without 3D. */
+  headTop(): number | null;
+  /** Three.js access for extra meshes (cosmetics); null without 3D. */
+  viewer: SkinViewer | null;
   dispose(): void;
 }
 
@@ -121,7 +125,7 @@ export function createAvatar(canvas: HTMLCanvasElement, reducedMotion: boolean):
   // Create the context ourselves with alpha so the stage glow shows through.
   canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: true });
   const box = () => canvas.parentElement!.getBoundingClientRect();
-  const viewer = new SkinViewer({ canvas, width: box().width, height: box().height, pixelRatio: 'match-device', skin: DEFAULT_SKIN, model: 'default', zoom: 0.62, fov: 40 });
+  const viewer = new SkinViewer({ canvas, width: box().width, height: box().height, pixelRatio: 'match-device', skin: DEFAULT_SKIN, model: 'default', zoom: 0.8, fov: 40 });
   viewer.renderer.setClearColor(0x000000, 0);
   // Three-quarter view like a character select screen.
   viewer.playerWrapper.rotation.y = 0.5;
@@ -216,6 +220,13 @@ export function createAvatar(canvas: HTMLCanvasElement, reducedMotion: boolean):
       viewer.autoRotate = current === 'spin' && !paused;
     },
     resize() { const b = box(); viewer.setSize(b.width, b.height); },
+    headTop() {
+      const b = new Box3().setFromObject(viewer.playerObject.skin.head);
+      if (!Number.isFinite(b.max.y)) return null;
+      const p = new Vector3((b.min.x + b.max.x) / 2, b.max.y, (b.min.z + b.max.z) / 2).project(viewer.camera);
+      return (1 - p.y) / 2;
+    },
+    viewer,
     dispose() {
       removeEventListener('mousemove', onMove);
       ro.disconnect();
@@ -264,6 +275,8 @@ function flatAvatar(canvas: HTMLCanvasElement): Avatar {
     react() { /* static */ },
     setPaused() { /* static */ },
     resize: draw,
+    headTop: () => null,
+    viewer: null,
     dispose() { ro.disconnect(); },
   };
 }

@@ -245,6 +245,8 @@ await win.click('[data-head=creepster]');
 await win.waitForTimeout(400);
 const cls = await win.evaluate(() => document.body.className);
 if (!cls.includes('btn-brick') || !cls.includes('hf-creepster')) problems.push(`button/font style not applied: ${cls}`);
+const headFont = await win.evaluate(() => getComputedStyle(document.querySelector('.set-nav h1')).fontFamily);
+if (!headFont.includes('Creepster')) problems.push(`heading font choice not applied: ${headFont}`);
 if (shots) await win.screenshot({ path: join(shots, 'launcher-designs-style.png') });
 await page('play', 'LegoDev');
 if (shots) await win.screenshot({ path: join(shots, 'launcher-play-brick.png') });

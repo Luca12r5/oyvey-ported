@@ -32,7 +32,7 @@ import type { AuthState, LaunchProgress, ModEntry, SkinData } from '../ipc-types
 import { validateTheme } from '@lego/shared';
 import { LANG_CODES } from '../renderer/lang.ts';
 import { analyzeLog, type Diagnosis, type Fix, type ModInfo } from '../core/crashdoc.ts';
-import { BUTTON_STYLES, TRANSITIONS, HEAD_FONTS, pick, sanitizeFont, sanitizeSkinLib, sanitizeFx, sanitizeImage, sanitizeLanguage, sanitizePreset, STAGES, SURFACES, UI_FONTS, type DesignPreset } from '../core/design.ts';
+import { BUTTON_STYLES, TRANSITIONS, HEAD_FONTS, pick, sanitizeFont, sanitizeSkinLib, sanitizeFx, sanitizeImage, sanitizeLanguage, sanitizeLook, sanitizePreset, STAGES, SURFACES, UI_FONTS, type DesignPreset } from '../core/design.ts';
 
 declare const __MS_CLIENT_ID__: string;
 declare const __BACKEND_URL__: string;
@@ -536,7 +536,7 @@ function registerIpc(): void {
     const allowed: (keyof Settings)[] = [
       'themeId', 'customThemes', 'language', 'backendUrl', 'selectedProfile', 'closeOnLaunch', 'reducedMotion', 'uiScale', 'autoUpdate',
       'accentColor', 'background', 'backgroundQuality', 'snow', 'showSnapshots', 'showHistorical', 'curseforgeKey', 'msClientId',
-      'introEnabled', 'introSound', 'uiSounds', 'autoConsole', 'fx', 'surface', 'stage', 'designPresets', 'bgImage', 'guest', 'uiFont', 'headFont', 'customFont', 'buttonStyle', 'customLanguage', 'transition', 'jumpscares', 'skinLibrary', 'guestName',
+      'introEnabled', 'introSound', 'uiSounds', 'autoConsole', 'fx', 'surface', 'stage', 'designPresets', 'bgImage', 'look', 'guest', 'uiFont', 'headFont', 'customFont', 'buttonStyle', 'customLanguage', 'transition', 'jumpscares', 'skinLibrary', 'guestName',
     ];
     for (const k of allowed) if (k in patch) (settings as unknown as Record<string, unknown>)[k] = patch[k];
     // Never trust the renderer: re-validate imported themes and clamp numbers.
@@ -563,6 +563,7 @@ function registerIpc(): void {
     if (!(STAGES as readonly string[]).includes(settings.stage)) settings.stage = 'portal';
     settings.designPresets = (Array.isArray(settings.designPresets) ? settings.designPresets : []).map(sanitizePreset).filter((p): p is DesignPreset => !!p).slice(0, 30);
     settings.bgImage = sanitizeImage(settings.bgImage);
+    settings.look = sanitizeLook(settings.look);
     if (typeof settings.backendUrl === 'string' && settings.backendUrl && !/^https:\/\//.test(settings.backendUrl) && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(settings.backendUrl)) {
       settings.backendUrl = '';
     }

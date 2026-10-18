@@ -58,9 +58,15 @@ export interface ThemeState {
   isBackgroundAnimationEnabled: boolean;
   /** Brick colours of the "LEGO" title (Designs → Stil). */
   titleColors: string[];
+  /** "LAUNCHER" next to the bricks. */
+  titleSub: boolean;
+  /** Character size on the play screen (1 = default) and its name tag. */
+  rigScale: number;
+  nametag: boolean;
+  glowLines: boolean;
 }
 
-export const themeStore = createStore<ThemeState>({ accentColor: accentFrom(null), showNavLabels: true, borderRadius: 0, isBackgroundAnimationEnabled: true, titleColors: ['red', 'yellow', 'blue', 'white'] });
+export const themeStore = createStore<ThemeState>({ accentColor: accentFrom(null), showNavLabels: true, borderRadius: 0, isBackgroundAnimationEnabled: true, titleColors: ['red', 'yellow', 'blue', 'white'], titleSub: true, rigScale: 1, nametag: true, glowLines: true });
 
 /** Same CSS variables the NoRisk launcher writes (scrollbars, glows). */
 export function applyAccentToDOM(): void {

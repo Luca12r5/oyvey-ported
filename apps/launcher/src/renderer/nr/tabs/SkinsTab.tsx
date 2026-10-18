@@ -74,14 +74,12 @@ const SkinPreview = memo(function SkinPreview({ skin, isApplied, onClick, onEdit
 function AddSkinCard({ onClick }: { onClick: () => void }) {
   const [isHovered, setIsHovered] = useState(false);
   const accentColor = useThemeStore((s) => s.accentColor);
-  const ghost = usePoster(null, 'classic');
   return (
     <div id="addCard" className="relative flex flex-col gap-3 p-4 rounded-lg bg-black/20 border border-dashed border-white/10 hover:border-white/30 transition-all duration-200 cursor-pointer nr-pop" onClick={onClick} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       <div className="flex flex-col items-center gap-3 relative z-10 w-full">
         <div className="relative flex-shrink-0 rounded-lg flex items-center justify-center overflow-hidden border border-transparent" style={{ width: `${PREVIEW_WIDTH}px`, height: `${PREVIEW_HEIGHT}px` }}>
-          {ghost && <img src={ghost} alt="" className="w-full h-full object-contain opacity-40 hover:opacity-70 transition-opacity" />}
           <div className="absolute inset-0 flex items-center justify-center">
-            <Icon icon="solar:add-circle-bold" className="w-12 h-12 text-white/70 hover:text-white transition-colors" style={{ color: isHovered ? accentColor.value : undefined }} />
+            <Icon icon="solar:add-circle-bold" className="w-16 h-16 text-white/50 transition-all duration-200" style={{ color: isHovered ? accentColor.value : undefined, transform: isHovered ? 'scale(1.1)' : undefined }} />
           </div>
         </div>
         <div className="flex-grow min-w-0 w-full text-center">

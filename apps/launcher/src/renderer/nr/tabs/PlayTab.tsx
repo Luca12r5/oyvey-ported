@@ -36,6 +36,8 @@ export function PlayTab(p: PlayTabProps) {
   const accentColor = useThemeStore((s) => s.accentColor);
   const consoleOpen = useGame((s) => s.consoleOpen);
   const coinsKey = useShell((s) => s.coins);
+  const rigScale = useThemeStore((s) => s.rigScale);
+  const nametag = useThemeStore((s) => s.nametag);
   const [anim, setAnim] = useState(loadAnim);
   // Character and LAUNCH grow with the window (fullscreen on big screens).
   const stageRef = useRef<HTMLDivElement>(null);
@@ -43,10 +45,12 @@ export function PlayTab(p: PlayTabProps) {
   useEffect(() => {
     const el = stageRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setRigH(Math.round(Math.max(420, Math.min(900, el.clientHeight * 0.66)))));
+    const fit = () => setRigH(Math.round(Math.max(360, Math.min(1200, el.clientHeight * 0.8 * rigScale))));
+    const ro = new ResizeObserver(fit);
     ro.observe(el);
+    fit();
     return () => ro.disconnect();
-  }, []);
+  }, [rigScale]);
   const k = rigH / 450;
 
   return (
@@ -68,7 +72,7 @@ export function PlayTab(p: PlayTabProps) {
         <div className="relative z-10">
           <div className="flex flex-col items-center">
             <div className="relative w-full flex flex-col items-center" style={{ maxWidth: `${Math.round(500 * k)}px` }}>
-              <PlayerRig playerName={p.playerName} skin={p.skin.skin} variant={p.skin.variant} cape={p.skin.cape} animated={anim && !p.reducedMotion} reducedMotion={p.reducedMotion} height={rigH} />
+              <PlayerRig playerName={p.playerName} skin={p.skin.skin} variant={p.skin.variant} cape={p.skin.cape} animated={anim && !p.reducedMotion} reducedMotion={p.reducedMotion} height={rigH} showTag={nametag} />
               <div className="absolute left-0 right-0 flex justify-center px-4 bottom-2 z-30">
                 <div style={{ width: `${Math.round(Math.min(520, 330 * Math.min(1.5, k)))}px` }}>
                   <MainLaunchButton

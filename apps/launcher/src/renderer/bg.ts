@@ -5,7 +5,7 @@
 // stops when the window is hidden or motion is reduced.
 
 import { Bg3D, is3D } from './bg3d.ts';
-import { DEFAULT_FX, type DesignFx } from '../core/design.ts';
+import { DEFAULT_FX, DEFAULT_IMAGE_FIT, type DesignFx, type ImageFit } from '../core/design.ts';
 import { EXTRA_BACKGROUNDS, EXTRA_DRAW } from './bg-extra.ts';
 
 export interface BackgroundDef { id: string; name: { de: string; en: string }; kind: '3d' | '2d' }
@@ -391,7 +391,7 @@ export function drawPreview(canvas: HTMLCanvasElement, id: string, t = 12_000): 
 
 interface Flake { x: number; y: number; r: number; s: number; d: number }
 
-export interface BackgroundConfig { id: string; quality: number; snow: boolean; still: boolean; fx?: DesignFx; image?: string }
+export interface BackgroundConfig { id: string; quality: number; snow: boolean; still: boolean; fx?: DesignFx; image?: string; imageFit?: ImageFit }
 
 /** Full-window background: a 3D scene when possible, otherwise a 2D style. Snow is a 2D overlay on top. */
 export class Background {
@@ -406,6 +406,7 @@ export class Background {
   private still = false;
   private fx: DesignFx = { ...DEFAULT_FX };
   private image: HTMLImageElement | null = null;
+  private fit: ImageFit = DEFAULT_IMAGE_FIT;
   private imageSrc = '';
   private raf = 0;
   private pal = palette();
@@ -439,6 +440,7 @@ export class Background {
     this.still = o.still;
     this.fx = o.fx ?? { ...DEFAULT_FX };
     this.pal = palette();
+    if (o.imageFit) this.fit = o.imageFit;
     if (o.image !== undefined && o.image !== this.imageSrc) {
       this.imageSrc = o.image;
       this.image = null;
@@ -496,13 +498,21 @@ export class Background {
     c.fillRect(0, 0, w, h);
     const img = this.image;
     if (!img) return;
-    // Slow "Ken Burns" drift for depth.
-    const k = 1.08 + Math.sin(t * 0.00005 * this.fx.speed) * 0.04;
-    const s = Math.max(w / img.width, h / img.height) * k;
-    const dx = (w - img.width * s) / 2 + Math.sin(t * 0.00007 * this.fx.speed) * w * 0.02;
-    const dy = (h - img.height * s) / 2 + Math.cos(t * 0.00006 * this.fx.speed) * h * 0.02;
-    c.globalAlpha = 0.55 + this.fx.light * 0.25;
-    c.drawImage(img, dx, dy, img.width * s, img.height * s);
+    // Position, zoom and fit from Designs → Szene; optional slow "Ken Burns" drift.
+    const f = this.fit;
+    const drift = f.motion && !this.still ? 1 : 0;
+    const k = (f.zoom / 100) * (1 + drift * (0.04 + Math.sin(t * 0.00005 * this.fx.speed) * 0.03));
+    let sw: number, sh: number;
+    if (f.mode === 'stretch') { sw = w * k; sh = h * k; } else {
+      const base = f.mode === 'contain' ? Math.min(w / img.width, h / img.height) : Math.max(w / img.width, h / img.height);
+      sw = img.width * base * k; sh = img.height * base * k;
+    }
+    const dx = (w - sw) / 2 + (f.x / 100) * w + drift * Math.sin(t * 0.00007 * this.fx.speed) * w * 0.015;
+    const dy = (h - sh) / 2 + (f.y / 100) * h + drift * Math.cos(t * 0.00006 * this.fx.speed) * h * 0.015;
+    c.filter = f.blur > 0 ? `blur(${f.blur}px)` : 'none';
+    c.drawImage(img, dx, dy, sw, sh);
+    c.filter = 'none';
+    if (f.dim > 0) { c.fillStyle = `rgba(0,0,0,${f.dim / 100})`; c.fillRect(0, 0, w, h); }
     c.globalAlpha = 1;
   }
 

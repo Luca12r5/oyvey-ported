@@ -1,6 +1,6 @@
 // Launcher settings and game profiles (stored as JSON in the user data dir).
 
-import { DEFAULT_FX, type ButtonStyle, type CustomFont, type CustomLanguage, type DesignFx, type DesignPreset, type HeadFont, type StageStyle, type SurfaceStyle, type SkinEntry, type Transition, type UiFont } from './design.ts';
+import { DEFAULT_FX, type ButtonStyle, type CustomFont, type CustomLanguage, type DesignFx, type DesignPreset, type HeadFont, type StageStyle, type SurfaceStyle, type SkinEntry, type Transition, type UiFont, type LookSettings, DEFAULT_LOOK } from './design.ts';
 
 export const LOADER_TYPES = ['fabric', 'quilt', 'forge', 'neoforge'] as const;
 export type LoaderType = (typeof LOADER_TYPES)[number];
@@ -87,6 +87,8 @@ export interface Settings {
   stage: StageStyle;
   designPresets: DesignPreset[];
   bgImage: string;
+  /** Free customisation of the launcher frame, title, character and custom image. */
+  look: LookSettings;
   /** User chose to try the launcher without signing in (guest mode). */
   guest: boolean;
   uiFont: UiFont;
@@ -161,7 +163,7 @@ export function defaultSettings(): Settings {
     closeOnLaunch: false, reducedMotion: false, uiScale: 1, autoUpdate: 'ask',
     accentColor: null, background: 'plain', backgroundQuality: 0.6, snow: false, showSnapshots: false, showHistorical: false, curseforgeKey: '', msClientId: '',
     introEnabled: false, introSound: true, uiSounds: true, autoConsole: true,
-    fx: { ...DEFAULT_FX }, surface: 'glass', stage: 'portal', designPresets: [], bgImage: '', guest: false,
+    fx: { ...DEFAULT_FX }, surface: 'glass', stage: 'portal', designPresets: [], bgImage: '', look: structuredClone(DEFAULT_LOOK), guest: false,
     uiFont: 'pixel', headFont: 'pixel', customFont: null, buttonStyle: 'crypt', customLanguage: null, transition: 'lego', jumpscares: false, skinLibrary: [], guestName: '',
   };
 }

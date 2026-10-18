@@ -129,7 +129,9 @@ body.nacht .set-nav .searchbar { max-width: 100%; min-width: 0; overflow: hidden
 .lx-ic > svg { width: 100%; height: 100%; }
 
 /* Opaque shell like NoRisk; see-through only when an animated background is chosen. */
-body.has-bg .nr-shell-bg { opacity: .55; }
+body.has-bg .nr-shell-bg { opacity: var(--shell-alpha, .55); }
+/* Designs → Effekte: no frosted glass unless "Weichzeichnen" is on. */
+body.no-blur .nr-launcher, body.no-blur .nr-launcher * { backdrop-filter: none !important; }
 body.nacht.crypt .bg-canvas { filter: none; }
 
 /* Language picker: square tiles with round flags, accent frame when selected. */

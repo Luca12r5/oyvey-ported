@@ -33,7 +33,7 @@ export function skinsPage(el: HTMLElement): void {
   const rerender = () => {
     unmount = renderSkins(el, {
       signedIn: state.auth.signedIn,
-      accountName: state.auth.name ?? '',
+      accountName: state.auth.signedIn ? state.auth.name ?? '' : state.settings.guestName,
       library: lib(),
       current: { skin: state.skin.skin, variant: state.skin.variant },
       guestName: state.settings.guestName,

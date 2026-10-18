@@ -15,7 +15,7 @@ import { skinAccent } from '../avatar.ts';
 import { BACKGROUNDS as LAUNCHER_BACKGROUNDS, drawPreview } from '../bg.ts';
 import { is3D, thumbnail } from '../bg3d.ts';
 import { getLang, t as tr } from '../i18n.ts';
-import { DEFAULT_FX, sanitizePreset, type ButtonStyle, type DesignFx, type DesignPreset, type HeadFont, type UiFont } from '../../core/design.ts';
+import { DEFAULT_FX, DEFAULT_IMAGE_FIT, DEFAULT_LOOK, sanitizePreset, type ImageFit, type LookSettings, type ButtonStyle, type DesignFx, type DesignPreset, type HeadFont, type UiFont } from '../../core/design.ts';
 import type { Settings } from '../../core/settings.ts';
 
 type Tab = 'scene' | 'colors' | 'style' | 'effects' | 'presets' | 'editor';
@@ -63,6 +63,18 @@ function live(patch: Partial<Settings>): void {
     }).catch(errorToast);
   }, 250);
 }
+/** Changes part of the free customisation (Designs → Stil / Szene) live. */
+function lookLive(patch: Partial<LookSettings>): void {
+  live({ look: { ...state.settings.look, ...patch } });
+}
+function fitLive(patch: Partial<ImageFit>): void {
+  lookLive({ imageFit: { ...state.settings.look.imageFit, ...patch } });
+}
+const lookRow = (label: string, desc: string, control: Raw) => html`<div class="setting"><div><b>${label}</b><small>${desc}</small></div><div class="ctl row">${control}</div></div>`;
+const lookRange = (attr: string, key: string, value: number, min: number, max: number, unit: string) =>
+  html`<input type="range" ${{ __raw: `data-${attr}="${key}"` }} min="${min}" max="${max}" step="1" value="${value}"><output class="mono small" data-out-${attr}="${key}">${Math.round(value)}${unit}</output>`;
+const lookSwitch = (attr: string, key: string, on: boolean) => html`<label class="switch"><input type="checkbox" ${{ __raw: `data-${attr}="${key}"` }} ${on ? 'checked' : ''}><i></i></label>`;
+
 async function saveNow(patch: Partial<Settings>): Promise<void> {
   clearTimeout(saveTimer);
   patch = { ...pending, ...patch };
@@ -123,6 +135,7 @@ function sceneTab(box: HTMLElement): void {
   const tile = (b: (typeof LAUNCHER_BACKGROUNDS)[number]) => html`<button class="bg-tile ${s.background === b.id ? 'on' : ''}" data-bg="${b.id}">${b.kind === '3d' ? html`<img alt="" data-thumb="${b.id}">` : html`<canvas data-preview="${b.id}"></canvas>`}<span>${b.name[getLang()]}${b.kind === '3d' ? html` <em>3D</em>` : ''}</span></button>`;
   mount(box, html`<section class="set-sec"><h2>3D-Szenen</h2><div class="bgpick">${three.map(tile)}
       <label class="bg-tile upload ${s.background === 'image' ? 'on' : ''}" data-bg-image>${s.bgImage ? html`<img alt="" src="${s.bgImage}">` : html`<span class="up-ic">${icon('upload')}</span>`}<span>Eigenes Bild</span><input type="file" id="bgFile" accept="image/png,image/jpeg,image/webp" hidden></label></div></section>
+    ${s.bgImage ? imageFitSection(s.look.imageFit) : ''}
     <section class="set-sec"><h2>Klassisch (2D, sparsam)</h2><div class="bgpick">${flat.map(tile)}</div></section>
     <section class="set-sec"><h2>Qualität</h2><div class="glass rows"><div class="setting"><div><b>${tr('set.quality')}</b><small>Ultra rendert in voller Bildschirmauflösung bis 4K mit Kantenglättung und Tiefenunschärfe. Wird es zu langsam, senkt der Launcher die Auflösung automatisch – kein Ruckeln. <span id="resInfo" class="mono"></span></small></div>
       <div class="ctl"><div class="seg" id="tiers">${([[0.2, 'Niedrig'], [0.55, 'Mittel'], [0.8, 'Hoch'], [1, 'Ultra 4K']] as [number, string][]).map(([v, l]) => html`<button data-q="${v}" class="${tierName(s.backgroundQuality) === l ? 'on' : ''}">${l}</button>`)}</div></div></div></div></section>`);
@@ -147,6 +160,8 @@ function sceneTab(box: HTMLElement): void {
     box.querySelectorAll('.bg-tile').forEach((x) => x.classList.toggle('on', x === b));
     void saveNow({ background: b.dataset.bg }).then(() => setTimeout(showRes, 400));
   };
+  const fitSec = box.querySelector<HTMLElement>('#fitSec');
+  if (fitSec) wireLook(fitSec, () => sceneTab(box));
   box.querySelector('#bgFile')!.addEventListener('change', async (e) => {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
@@ -193,6 +208,58 @@ const BUTTONS: [ButtonStyle, string, string][] = [
   ['glass', 'Glas', 'Mattglas, durchscheinend'], ['pixel', 'Pixel', 'Wie die Buttons im Spiel'],
 ];
 
+function imageFitSection(f: ImageFit): Raw {
+  return html`<section class="set-sec" id="fitSec"><h2>Eigenes Bild anpassen</h2><div class="glass rows">
+    ${lookRow('Einpassen', 'Füllen schneidet Ränder ab, Ganz zeigt das ganze Bild, Strecken verzerrt es auf die Fenstergröße.', html`<div class="seg" data-seg-fit="mode">${([['cover', 'Füllen'], ['contain', 'Ganz'], ['stretch', 'Strecken']] as [ImageFit['mode'], string][]).map(([v, l]) => html`<button data-v="${v}" class="${f.mode === v ? 'on' : ''}">${l}</button>`)}</div>`)}
+    ${lookRow('Größe', 'Zoom des Bildes.', lookRange('fit', 'zoom', f.zoom, 50, 300, ' %'))}
+    ${lookRow('Seitlich', 'Bild nach links oder rechts schieben.', lookRange('fit', 'x', f.x, -50, 50, ' %'))}
+    ${lookRow('Höhe', 'Bild nach oben oder unten schieben.', lookRange('fit', 'y', f.y, -50, 50, ' %'))}
+    ${lookRow('Unschärfe', 'Weichzeichnen des Bildes.', lookRange('fit', 'blur', f.blur, 0, 20, ' px'))}
+    ${lookRow('Abdunkeln', 'Damit Text gut lesbar bleibt.', lookRange('fit', 'dim', f.dim, 0, 80, ' %'))}
+    ${lookRow('Langsame Bewegung', 'Das Bild driftet leicht (Ken-Burns-Effekt).', lookSwitch('fit', 'motion', f.motion))}
+    ${lookRow('Zurücksetzen', 'Position und Größe auf Standard.', html`<button class="btn sm" id="fitReset">${tr('set.reset')}</button>`)}
+  </div></section>`;
+}
+
+/** Live handlers for the [data-look] / [data-fit] / [data-tc] controls in a tab. */
+function wireLook(box: HTMLElement, rerender: () => void): void {
+  box.addEventListener('input', (e) => {
+    const i = e.target as HTMLInputElement;
+    const unit = (v: number, a: string) => `${Math.round(v)}${a === 'fit' && i.dataset.fit === 'blur' ? ' px' : ' %'}`;
+    if (i.dataset.look && i.type === 'range') { lookLive({ [i.dataset.look]: Number(i.value) } as Partial<LookSettings>); const o = box.querySelector(`[data-out-look="${i.dataset.look}"]`); if (o) o.textContent = unit(Number(i.value), 'look').replace(' %', i.dataset.look === 'radius' ? ' px' : ' %'); }
+    if (i.dataset.fit && i.type === 'range') { fitLive({ [i.dataset.fit]: Number(i.value) } as Partial<ImageFit>); const o = box.querySelector(`[data-out-fit="${i.dataset.fit}"]`); if (o) o.textContent = unit(Number(i.value), 'fit'); }
+    if (i.dataset.tc) { const c = [...state.settings.look.titleColors]; c[Number(i.dataset.tc)] = i.value; lookLive({ titleColors: c }); }
+  });
+  box.addEventListener('change', (e) => {
+    const i = e.target as HTMLInputElement;
+    if (i.type !== 'checkbox') return;
+    if (i.dataset.look) lookLive({ [i.dataset.look]: i.checked } as Partial<LookSettings>);
+    if (i.dataset.fit) fitLive({ [i.dataset.fit]: i.checked } as Partial<ImageFit>);
+  });
+  box.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
+    if (!b) return;
+    if (b.parentElement?.dataset.segFit) { fitLive({ mode: b.dataset.v as ImageFit['mode'] }); b.parentElement.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); }
+    if (b.id === 'fitReset') { lookLive({ imageFit: { ...DEFAULT_IMAGE_FIT } }); rerender(); }
+    if (b.id === 'lookReset') { lookLive({ ...DEFAULT_LOOK, imageFit: state.settings.look.imageFit }); rerender(); }
+  });
+}
+
+function layoutSection(l: LookSettings): Raw {
+  return html`<section class="set-sec"><h2>Rahmen & Leiste</h2><div class="glass rows">
+      ${lookRow('Ecken', 'Eckig wie NoRisk (0) bis stark abgerundet.', lookRange('look', 'radius', l.radius, 0, 24, ' px'))}
+      ${lookRow('Durchsicht', 'Wie deckend der Launcher über einem animierten Hintergrund ist.', lookRange('look', 'shellAlpha', l.shellAlpha, 20, 100, ' %'))}
+      ${lookRow('Leuchtlinien', 'Linien in der Akzentfarbe am Fensterrand.', lookSwitch('look', 'glowLines', l.glowLines))}
+      ${lookRow('Beschriftung der Leiste', 'Text unter den Icons links.', lookSwitch('look', 'navLabels', l.navLabels))}</div></section>
+    <section class="set-sec"><h2>Titel</h2><div class="glass rows">
+      ${lookRow('Farben der Steine', 'Eine Farbe pro Buchstabe von „LEGO“.', html`<div class="row">${l.titleColors.map((c, i) => html`<input type="color" class="tc-pick" data-tc="${i}" value="${c}" title="${'LEGO'[i]!}">`)}</div>`)}
+      ${lookRow('„Launcher“ anzeigen', 'Das Wort neben den Steinen (in der Akzentfarbe).', lookSwitch('look', 'titleSub', l.titleSub))}</div></section>
+    <section class="set-sec"><h2>Charakter</h2><div class="glass rows">
+      ${lookRow('Größe', 'Größe deines Skins auf der Startseite.', lookRange('look', 'rigScale', l.rigScale, 70, 140, ' %'))}
+      ${lookRow('Namensschild', 'Dein Name über dem Kopf.', lookSwitch('look', 'nametag', l.nametag))}
+      ${lookRow('Alles zurücksetzen', 'Rahmen, Titel und Charakter auf Standard.', html`<button class="btn sm" id="lookReset">${tr('set.reset')}</button>`)}</div></section>`;
+}
+
 function styleTab(box: HTMLElement): void {
   const s = state.settings;
   const tile = (kind: 'ui' | 'head', id: string, label: string, family: string, on: boolean) =>
@@ -201,7 +268,9 @@ function styleTab(box: HTMLElement): void {
     <section class="set-sec"><h2>Text</h2><div class="font-grid">${UI_FONT_LIST.map(([id, l, f]) => tile('ui', id, l, f, s.uiFont === id))}</div></section>
     <section class="set-sec"><h2>Eigene Schrift</h2><div class="glass rows"><div class="setting"><div><b>${s.customFont ? s.customFont.name : 'Keine eigene Schrift'}</b><small>TTF, OTF, WOFF oder WOFF2 bis 3 MB. Danach oben „Eigene Schrift“ für Überschriften oder Text wählen.</small></div>
       <div class="ctl row"><label class="btn">${icon('upload', 'sm')} Schrift hochladen<input type="file" id="fontFile" accept=".ttf,.otf,.woff,.woff2" hidden></label>${s.customFont ? html`<button class="btn danger sm" id="fontDel">${icon('trash', 'sm')}</button>` : ''}</div></div></div></section>
-    <section class="set-sec"><h2>Buttons</h2><div class="btn-styles">${BUTTONS.map(([id, l, d]) => html`<div class="btn-style ${s.buttonStyle === id ? 'on' : ''}" data-style="${id}"><div class="bs-demo btn-${id}"><button class="btn primary" type="button" tabindex="-1">Spielen</button><button class="btn" type="button" tabindex="-1">Profil</button></div><b>${l}</b><small>${d}</small><button class="btn sm ${s.buttonStyle === id ? 'primary' : ''}" data-btnstyle="${id}">${s.buttonStyle === id ? 'Aktiv' : 'Verwenden'}</button></div>`)}</div></section>`);
+    <section class="set-sec"><h2>Buttons</h2><div class="btn-styles">${BUTTONS.map(([id, l, d]) => html`<div class="btn-style ${s.buttonStyle === id ? 'on' : ''}" data-style="${id}"><div class="bs-demo btn-${id}"><button class="btn primary" type="button" tabindex="-1">Spielen</button><button class="btn" type="button" tabindex="-1">Profil</button></div><b>${l}</b><small>${d}</small><button class="btn sm ${s.buttonStyle === id ? 'primary' : ''}" data-btnstyle="${id}">${s.buttonStyle === id ? 'Aktiv' : 'Verwenden'}</button></div>`)}</div></section>
+    <div id="lookBox">${layoutSection(s.look)}</div>`);
+  wireLook(box.querySelector<HTMLElement>('#lookBox')!, () => styleTab(box));
   box.querySelectorAll<HTMLElement>('[data-ff]').forEach((e) => { e.style.fontFamily = e.dataset.ff!; });
   box.onclick = (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
@@ -240,6 +309,7 @@ function effectsTab(box: HTMLElement): void {
       ${slider('speed', 'Animationsgeschwindigkeit', 'Wie schnell sich Hintergrund und Effekte bewegen.', 0.25, 2, 0.05)}
       ${slider('light', 'Lichtintensität', 'Helligkeit von Mond, Laternen, Portalen und Glühen.', 0.2, 1.6, 0.05)}</div></section>
     <section class="set-sec"><h2>Effekte</h2><div class="glass rows">
+      ${toggle('blur', 'Hintergrund weichzeichnen', 'Milchglas hinter Leiste und Panels und Tiefenunschärfe in 3D. Aus = gestochen scharf.')}
       ${toggle('fog', 'Nebel', 'Bodennebel und Tiefen-Dunst in den 3D-Szenen.')}
       ${toggle('glow', 'Glühen (Bloom)', 'Leuchtende Lichter und Neon-Schein. Aus = weniger GPU-Last.')}
       ${toggle('vignette', 'Vignette', 'Abgedunkelte Ränder für mehr Tiefe.')}

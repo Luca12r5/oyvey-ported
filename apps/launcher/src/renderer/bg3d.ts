@@ -635,7 +635,7 @@ export class Bg3D {
     b.lights.forEach(({ l, base }) => { l.intensity = base * c.fx.light; l.userData.k = c.fx.light; });
     this.bloom.enabled = c.fx.glow && c.quality >= 0.3;
     if (this.bokeh) {
-      this.bokeh.enabled = c.fx.fog;
+      this.bokeh.enabled = c.fx.blur;
       (this.bokeh.uniforms as Record<string, { value: number }>).focus!.value = b.cam.distanceTo(b.look) * 0.55;
     }
   }

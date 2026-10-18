@@ -698,7 +698,6 @@ body.crypt {
   --pbg: color-mix(in srgb, var(--surface) 92%, #000);
   --pbg2: color-mix(in srgb, var(--surface) 70%, #000);
   --pix: "Press Start 2P", Silkscreen, monospace;
-  --head: var(--pix);
   --panel: var(--pbg);
   --edge: linear-gradient(var(--line), var(--line));
 }
@@ -1214,3 +1213,20 @@ body.nacht .setting b { font-size: var(--set-fs); letter-spacing: .02em; }
 body.nacht .setting small { font-size: .9rem; line-height: 1.45; color: #b4b4bc; margin-top: 4px; letter-spacing: .01em; }
 body.nacht .setting .btn.sm { font-size: .86rem; }
 body.nacht .lang-tile { font-size: 1.05rem; }
+
+/* Font choice from Designs again at the end so no theme block (crypt, nacht) can override it. */
+body.uif-inter { --font: Inter, "Segoe UI", sans-serif; }
+body.uif-poppins { --font: Poppins, Inter, sans-serif; }
+body.uif-nunito { --font: Nunito, Inter, sans-serif; }
+body.uif-orbitron { --font: Orbitron, Inter, sans-serif; }
+body.uif-mono { --font: "JetBrains Mono", Consolas, monospace; }
+body.uif-pixel { --font: "Pixelify Sans", Silkscreen, monospace; }
+body.uif-custom { --font: LegoCustom, Inter, sans-serif; }
+body.hf-poppins { --head: Poppins, Inter, sans-serif; }
+body.hf-creepster { --head: Creepster, Poppins, sans-serif; }
+body.hf-nosifer { --head: Nosifer, Poppins, sans-serif; }
+body.hf-orbitron { --head: Orbitron, Poppins, sans-serif; }
+body.hf-pixel { --head: "Pixelify Sans", Silkscreen, monospace; }
+body.hf-press { --head: "Press Start 2P", monospace; }
+body.hf-inter { --head: Inter, sans-serif; }
+body.hf-custom { --head: LegoCustom, Poppins, sans-serif; }

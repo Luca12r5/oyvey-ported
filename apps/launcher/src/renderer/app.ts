@@ -12,7 +12,7 @@ import { setLang, t } from './i18n.ts';
 import { playPage } from './pages/play.ts';
 import { setUiSounds } from './nr/lib/sound.ts';
 import { mountShell, setAccent, shellStore, actions, gameStore, initGame, NAV_ICONS } from './nr/mount.tsx';
-import { themeStore } from './nr/store/theme.ts';
+import { themeStore, applyAccentToDOM } from './nr/store/theme.ts';
 import { skinsPage } from './pages/skins.ts';
 import { playSplash } from './splash.ts';
 import { webglAvailable } from './intro3d.ts';
@@ -175,7 +175,13 @@ export function retheme(): void {
   document.body.classList.toggle('reduced-motion', s.reducedMotion);
   document.body.classList.toggle('has-bg', s.background !== 'plain');
   bg ??= new Background(document.getElementById('bg') as HTMLCanvasElement, document.getElementById('bg3d') as HTMLCanvasElement);
-  bg.configure({ id: s.background, quality: s.backgroundQuality, snow: s.snow, still: s.reducedMotion, fx: s.fx, image: s.bgImage });
+  bg.configure({ id: s.background, quality: s.backgroundQuality, snow: s.snow, still: s.reducedMotion, fx: s.fx, image: s.bgImage, imageFit: s.look.imageFit });
+  // Free customisation (Designs → Stil): frame, title, character.
+  const look = s.look;
+  themeStore.set({ borderRadius: look.radius, showNavLabels: look.navLabels, titleColors: look.titleColors, titleSub: look.titleSub, rigScale: look.rigScale / 100, nametag: look.nametag, glowLines: look.glowLines });
+  applyAccentToDOM();
+  document.documentElement.style.setProperty('--shell-alpha', String(look.shellAlpha / 100));
+  document.body.classList.toggle('no-blur', !s.fx.blur);
   // Drop the previous choice's classes before adding the current ones.
   for (const c of [...document.body.classList]) if (/^(surf|stage|uif|hf|btn)-/.test(c)) document.body.classList.remove(c);
   // The NoRisk-style layout is the launcher's layout, not a theme option.
@@ -242,7 +248,7 @@ function renderTitlebar(): void {
   const a = state.auth;
   shellStore.set({
     version: state.info.version, canBack: back.length > 0, canFwd: fwd.length > 0,
-    signedIn: a.signedIn, name: a.signedIn ? a.name ?? '' : '', head: state.head, coins: state.coins,
+    signedIn: a.signedIn, name: a.signedIn ? a.name ?? '' : state.settings.guestName ?? '', head: state.head, coins: state.coins,
     running: gameRunning ? 1 : 0,
   });
 }
@@ -347,7 +353,8 @@ function accountMenu(anchor: HTMLElement): void {
 export async function loadIdentity(): Promise<void> {
   // Signed in: the skin you play with. Guest: the public skin of the name entered on the Skins tab.
   state.skin = state.auth.signedIn || state.settings.guestName ? await api.skin().catch(() => ({ skin: null, variant: 'classic' as const, cape: null })) : { skin: null, variant: 'classic', cape: null };
-  state.head = state.auth.signedIn ? await headFromSkin(state.skin.skin, 64) : '';
+  // Guests who loaded a skin by name see that name and face everywhere too.
+  state.head = state.auth.signedIn || (state.settings.guestName && state.skin.skin) ? await headFromSkin(state.skin.skin, 64) : '';
   state.coins = null;
   if (state.auth.lego.connected) {
     try {

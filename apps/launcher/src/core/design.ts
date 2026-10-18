@@ -12,6 +12,8 @@ export interface DesignFx {
   fog: boolean;
   glow: boolean;
   vignette: boolean;
+  /** Soft-focus (blur) on the background and the frosted-glass panels over it. Off by default. */
+  blur: boolean;
   /** Camera follows the mouse a little (parallax). */
   parallax: boolean;
 }
@@ -33,7 +35,7 @@ export interface DesignPreset {
   stage: StageStyle;
 }
 
-export const DEFAULT_FX: DesignFx = { particles: 0.6, speed: 1, light: 1, fog: true, glow: true, vignette: true, parallax: true };
+export const DEFAULT_FX: DesignFx = { particles: 0.6, speed: 1, light: 1, fog: true, glow: true, vignette: true, blur: false, parallax: true };
 
 const HEX = /^#[0-9a-f]{6}$/i;
 const num = (v: unknown, min: number, max: number, d: number) => {
@@ -51,7 +53,76 @@ export function sanitizeFx(x: unknown): DesignFx {
     fog: bool(o.fog, DEFAULT_FX.fog),
     glow: bool(o.glow, DEFAULT_FX.glow),
     vignette: bool(o.vignette, DEFAULT_FX.vignette),
+    blur: bool(o.blur, DEFAULT_FX.blur),
     parallax: bool(o.parallax, DEFAULT_FX.parallax),
+  };
+}
+
+/** How a custom background image sits in the window. */
+export interface ImageFit {
+  /** 'cover' fills the window, 'contain' shows the whole image, 'stretch' distorts to fit. */
+  mode: 'cover' | 'contain' | 'stretch';
+  /** Zoom in percent (50..300). */
+  zoom: number;
+  /** Offset in percent of the window (-50..50). */
+  x: number;
+  y: number;
+  /** Blur in px (0..20) and darkening in percent (0..80). */
+  blur: number;
+  dim: number;
+  /** Slow drift ("Ken Burns"). */
+  motion: boolean;
+}
+
+/** Free customisation of the launcher frame (Designs → Stil). */
+export interface LookSettings {
+  /** Opacity of the launcher over an animated background, percent (20..100). */
+  shellAlpha: number;
+  /** Corner radius in px (0..24). */
+  radius: number;
+  /** Accent-coloured glow lines on the window edge. */
+  glowLines: boolean;
+  /** Labels under the rail icons. */
+  navLabels: boolean;
+  /** Brick colours of the "LEGO" title (hex). */
+  titleColors: string[];
+  /** Show "LAUNCHER" next to the bricks. */
+  titleSub: boolean;
+  /** Size of the character on the play screen, percent (70..140). */
+  rigScale: number;
+  /** Name tag above the character. */
+  nametag: boolean;
+  imageFit: ImageFit;
+}
+
+export const DEFAULT_IMAGE_FIT: ImageFit = { mode: 'cover', zoom: 100, x: 0, y: 0, blur: 0, dim: 20, motion: true };
+export const DEFAULT_LOOK: LookSettings = {
+  shellAlpha: 55, radius: 0, glowLines: true, navLabels: true, titleColors: ['#d01012', '#f2cd37', '#0055bf', '#e9ecef'], titleSub: true, rigScale: 100, nametag: true, imageFit: DEFAULT_IMAGE_FIT,
+};
+
+export function sanitizeLook(x: unknown): LookSettings {
+  const o = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
+  const f = (o.imageFit && typeof o.imageFit === 'object' ? o.imageFit : {}) as Record<string, unknown>;
+  const d = DEFAULT_LOOK, df = DEFAULT_IMAGE_FIT;
+  const colors = Array.isArray(o.titleColors) ? o.titleColors.filter((c): c is string => typeof c === 'string' && HEX.test(c)).slice(0, 4) : [];
+  return {
+    shellAlpha: num(o.shellAlpha, 20, 100, d.shellAlpha),
+    radius: num(o.radius, 0, 24, d.radius),
+    glowLines: bool(o.glowLines, d.glowLines),
+    navLabels: bool(o.navLabels, d.navLabels),
+    titleColors: colors.length === 4 ? colors : d.titleColors,
+    titleSub: bool(o.titleSub, d.titleSub),
+    rigScale: num(o.rigScale, 70, 140, d.rigScale),
+    nametag: bool(o.nametag, d.nametag),
+    imageFit: {
+      mode: f.mode === 'contain' || f.mode === 'stretch' ? f.mode : 'cover',
+      zoom: num(f.zoom, 50, 300, df.zoom),
+      x: num(f.x, -50, 50, df.x),
+      y: num(f.y, -50, 50, df.y),
+      blur: num(f.blur, 0, 20, df.blur),
+      dim: num(f.dim, 0, 80, df.dim),
+      motion: bool(f.motion, df.motion),
+    },
   };
 }
 
