@@ -2,9 +2,9 @@
 // website, the launcher before login and the in-game client.
 
 import {
-  CATALOG, DAILY_REWARDS, NAME_TAGS, PRODUCTS, QUESTS, RARITY_INFO, SEASONS, THEMES, getItem,
-} from '@lego/shared';
+  CATALOG, DAILY_REWARDS, NAME_TAGS, PRODUCTS, QUESTS, RARITY_INFO, SEASONS, THEMES, getItem, type CapeSpec } from '@lego/shared';
 import type { App, AppCtx } from '../app.ts';
+import { shownCustomCape } from './capes.ts';
 import { badRequest, notFound } from '../http.ts';
 import { obj } from '../security.ts';
 import { canSee, dashUuid, findUser, publicUser, type UserRow } from '../services/users.ts';
@@ -81,7 +81,7 @@ export function registerPublic(app: App): void {
     const b = obj(ctx.body);
     const list = b.uuids;
     if (!Array.isArray(list) || list.length > 100) throw badRequest('invalid_field', 'uuids must be an array of at most 100');
-    const out: Record<string, { name: string; equipped: Record<string, string>; customTag: string | null; emote: { id: string; age: number } | null }> = {};
+    const out: Record<string, { name: string; equipped: Record<string, string>; customTag: string | null; emote: { id: string; age: number } | null; customCape: { id: string; spec: CapeSpec } | null }> = {};
     for (const raw of list) {
       if (typeof raw !== 'string') continue;
       let uuid: string;
@@ -95,7 +95,8 @@ export function registerPublic(app: App): void {
       const equipped = equippedOf(db, u.id);
       for (const [slot, id] of Object.entries(equipped)) if (!getItem(id)) delete equipped[slot];
       const em = app.events.getEmote(u.id);
-      out[uuid] = { name: u.mc_name, equipped, customTag: u.custom_tag_text, emote: em ? { id: em.id, age: Date.now() - em.at } : null };
+      // A designed cape travels as validated design data; every client draws it itself.
+      out[uuid] = { name: u.mc_name, equipped, customTag: u.custom_tag_text, emote: em ? { id: em.id, age: Date.now() - em.at } : null, customCape: shownCustomCape(db, u.id, equipped) };
     }
     return { players: out };
   }, { auth: 'none', rate: ['lookup', 120] });

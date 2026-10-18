@@ -6,6 +6,7 @@ final class Models {
 
    static void registerAll() {
       Cos.cape("lego", "Lego-Umhang", Cos.Rarity.RARE);
+      CapeSpecs.registerAll();
       Cos.cape("galaxy", "Galaxie", Cos.Rarity.EPIC);
       Cos.cape("flames", "Flammen", Cos.Rarity.RARE);
       Cos.cape("ice", "Eiskristall", Cos.Rarity.RARE);

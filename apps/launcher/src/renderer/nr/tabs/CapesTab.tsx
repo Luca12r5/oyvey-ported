@@ -24,6 +24,7 @@ export interface CapesTabProps {
   onClick: (id: string | null) => void;
   onFav: (id: string) => void;
   onTemplate: () => void;
+  onEditor: () => void;
 }
 
 const W = 120;
@@ -83,7 +84,7 @@ export function CapesTab(p: CapesTabProps) {
             <div className="flex-1">{p.tab !== 'vanilla' && <SearchWithFilters placeholder="Capes durchsuchen …" searchValue={q} onSearchChange={setQ} />}</div>
             <ActionButtons actions={[
               { id: 'tpl', label: 'TEMPLATE', icon: 'solar:download-minimalistic-bold', tooltip: '64×32-Vorlage herunterladen', onClick: p.onTemplate },
-              { id: 'up', label: 'UPLOAD', icon: 'solar:upload-bold', tooltip: 'Eigene Capes brauchen eine Moderation auf dem LEGO-Server – kommt später.', disabled: true, onClick: () => {} },
+              { id: 'editor', label: 'EIGENES CAPE', icon: 'solar:pen-bold', tooltip: 'Eigenes Cape gestalten – mit Symbolen, Text und KI', onClick: p.onEditor },
             ]} />
           </div>
         </div>

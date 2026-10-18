@@ -142,6 +142,20 @@ if (shots) await win.screenshot({ path: join(shots, 'launcher-profile-mods.png')
 await page('mods', 'Modpacks');
 await page('skins', 'Add New Skin');
 await page('capes', 'No Cape');
+// Cape editor: symbols change the cape, the offline designer builds one from a description.
+await win.click('#editor');
+await win.waitForSelector('#capeEditor');
+const capeBefore = await win.getAttribute('#capeFront', 'src');
+await win.click('[data-sym=star]');
+await win.waitForTimeout(250);
+if (capeBefore === (await win.getAttribute('#capeFront', 'src'))) problems.push('adding a symbol did not change the cape');
+await win.fill('#capePrompt', 'lila Galaxie mit goldener Krone und "KING"');
+await win.click('#capeAi');
+await win.waitForSelector('#capeNote');
+if (!(await win.locator('[data-symsel]').filter({ hasText: 'Krone' }).count())) problems.push('cape designer did not add the crown');
+await win.waitForTimeout(600);
+if (shots) await win.screenshot({ path: join(shots, 'launcher-cape-editor.png') });
+await win.click('#capeEditor [aria-label="Schließen"]');
 await page('cosmetics', 'Sammlung');
 await page('shop', 'Shop');
 await page('friends', 'Alex');

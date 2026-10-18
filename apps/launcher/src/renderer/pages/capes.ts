@@ -3,9 +3,10 @@
 // LEGO capes come from the catalog (equip/buy through the LEGO server); Vanilla
 // shows the account's official Minecraft cape.
 
-import { CATALOG, RARITY_INFO } from '@lego/shared';
+import { CATALOG, CUSTOM_CAPE_ID, RARITY_INFO, capeFromPrompt, type CapeSpec } from '@lego/shared';
 import { go, onLeave, state } from '../app.ts';
-import { renderCapes } from '../nr/mount.tsx';
+import { openCapeEditor, renderCapes } from '../nr/mount.tsx';
+import { capeFrontUrl, loadLocalCape, presetSpec, saveLocalCape } from '../capeart.ts';
 import { errorToast, lego, toast } from '../ui.ts';
 import { capeFront } from '../itemart.ts';
 
@@ -53,10 +54,24 @@ function template(): void {
 }
 
 export async function capesPage(el: HTMLElement): Promise<void> {
-  const capes = CATALOG.filter((i) => i.slot === 'cape');
+  // Own cape and the modern capes first, then the classic ones.
+  const rank = (id: string) => (id === CUSTOM_CAPE_ID ? 0 : id.startsWith('cape_m_') ? 1 : 2);
+  const capes = CATALOG.filter((i) => i.slot === 'cape').sort((a, b) => rank(a.id) - rank(b.id));
   let inv: { owned: string[]; equipped: Record<string, string> } = { owned: [], equipped: {} };
   if (state.auth.lego.connected) inv = await lego<typeof inv>('GET', '/api/inventory').catch(() => inv);
   const vanillaUrl = state.skin.cape ? await vanillaFront(state.skin.cape) : '';
+  // The own designed cape: from the LEGO server when connected, else the local copy.
+  let own: CapeSpec | null = loadLocalCape();
+  let aiOnServer = false;
+  if (state.auth.lego.connected) {
+    const r = await lego<{ cape: { spec: CapeSpec } | null; ai: boolean }>('GET', '/api/me/cape-spec').catch(() => null);
+    if (r?.cape) own = r.cape.spec;
+    aiOnServer = !!r?.ai;
+  }
+  const art = (id: string, name: string) => {
+    const spec = id === CUSTOM_CAPE_ID ? own : presetSpec(id);
+    return spec ? capeFrontUrl(spec) : capeFront(id, name).__raw;
+  };
   let unmount: (() => void) | null = null;
   const draw = () => {
     const f = favs();
@@ -67,18 +82,52 @@ export async function capesPage(el: HTMLElement): Promise<void> {
       capes: list.map((c) => {
         const r = RARITY_INFO[c.rarity];
         const owned = inv.owned.includes(c.id);
-        return { id: c.id, name: c.name, art: capeFront(c.id, c.name).__raw, owned, equipped: eq === c.id, fav: f.has(c.id), sub: eq === c.id ? 'Angelegt' : owned ? r.label.de : c.price ? `${c.price} Coins` : r.label.de, subColor: r.color };
+        return { id: c.id, name: c.name, art: art(c.id, c.name), owned, equipped: eq === c.id, fav: f.has(c.id), sub: eq === c.id ? 'Angelegt' : owned ? r.label.de : c.price ? `${c.price} Coins` : r.label.de, subColor: r.color };
       }),
       noneEquipped: !eq,
       vanilla: { url: vanillaUrl || null, signedIn: state.auth.signedIn },
       emptyText: tab === 'fav' ? 'Noch keine Favoriten – tippe auf das Herz.' : tab === 'mine' ? (state.auth.lego.connected ? 'Du besitzt noch keine LEGO-Capes.' : 'Verbinde dich mit dem LEGO-Server, um deine Capes zu sehen.') : 'Keine Capes gefunden.',
       onTab: (t) => { tab = t; draw(); },
       onTemplate: template,
+      onEditor: openEditor,
       onFav: (id) => { const s = favs(); if (s.has(id)) s.delete(id); else s.add(id); saveFavs(s); draw(); },
       onClick: (id) => void equip(id),
     });
   };
+  const editor = () => openCapeEditor({
+    initial: own,
+    skin: state.skin.skin,
+    variant: state.skin.variant,
+    online: state.auth.lego.connected,
+    onAi: async (prompt, seed) => {
+      // Server AI when configured (the key stays on the server); otherwise the offline generator.
+      if (aiOnServer && seed === 1) {
+        try {
+          const r = await lego<{ spec: CapeSpec; left: number }>('POST', '/api/capes/ai', { prompt });
+          return { spec: r.spec, source: 'server' as const, left: r.left };
+        } catch (err) { errorToast(err); }
+      }
+      return { spec: capeFromPrompt(prompt, seed), source: 'offline' as const };
+    },
+    onSave: async (spec) => {
+      own = spec;
+      saveLocalCape(spec);
+      if (state.auth.lego.connected) {
+        try {
+          await lego('PUT', '/api/me/cape-spec', { spec });
+          inv.equipped = (await lego<{ equipped: Record<string, string> }>('PUT', '/api/equip', { slot: 'cape', itemId: CUSTOM_CAPE_ID })).equipped;
+          if (!inv.owned.includes(CUSTOM_CAPE_ID)) inv.owned.push(CUSTOM_CAPE_ID);
+          toast('Eigenes Cape gespeichert und angelegt – sichtbar im LEGO Client', 'ok');
+        } catch (err) { errorToast(err); }
+      } else toast('Cape lokal gespeichert. Mit dem LEGO-Server verbinden, damit andere es sehen.', 'ok');
+      closeEditor?.();
+      draw();
+    },
+  });
+  let closeEditor: (() => void) | null = null;
+  const openEditor = () => { closeEditor = editor(); };
   const equip = async (id: string | null) => {
+    if (id === CUSTOM_CAPE_ID && !own) return openEditor();
     if (!state.auth.lego.connected) return toast('Zum Anlegen von Capes mit dem LEGO-Server verbinden.');
     try {
       if (id === null) {
@@ -93,5 +142,5 @@ export async function capesPage(el: HTMLElement): Promise<void> {
     } catch (err) { errorToast(err); }
   };
   draw();
-  onLeave(() => unmount?.());
+  onLeave(() => { unmount?.(); closeEditor?.(); });
 }

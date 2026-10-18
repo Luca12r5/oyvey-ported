@@ -8,6 +8,7 @@ import { ProfilesTab, type ProfilesTabProps } from './tabs/ProfilesTab.tsx';
 import { ModsTab, type ModsTabProps } from './tabs/ModsTab.tsx';
 import { SkinsTab, type SkinsTabProps } from './tabs/SkinsTab.tsx';
 import { CapesTab, type CapesTabProps } from './tabs/CapesTab.tsx';
+import { CapeEditor, type CapeEditorProps } from './capes/CapeEditor.tsx';
 export { modsStore } from './tabs/ModsTab.tsx';
 import { applyAccentToDOM, accentFrom, themeStore } from './store/theme.ts';
 
@@ -62,4 +63,14 @@ export function renderSkins(el: HTMLElement, props: SkinsTabProps): () => void {
 
 export function renderCapes(el: HTMLElement, props: CapesTabProps): () => void {
   return renderInto(el, <CapesTab {...props} />);
+}
+
+/** Opens the cape editor over the launcher; returns a close function. */
+export function openCapeEditor(props: Omit<CapeEditorProps, 'onClose'> & { onClose?: () => void }): () => void {
+  const host = document.createElement('div');
+  document.body.append(host);
+  const root = createRoot(host);
+  const close = () => { root.unmount(); host.remove(); props.onClose?.(); };
+  root.render(<CapeEditor {...props} onClose={close} />);
+  return close;
 }

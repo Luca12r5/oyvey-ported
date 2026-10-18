@@ -17,6 +17,9 @@ export interface Config {
   trustProxy: boolean;
   stripeSecretKey: string | null;
   stripeWebhookSecret: string | null;
+  /** Claude API key for AI cape designs (optional; without it the launcher designs capes offline). */
+  anthropicApiKey: string | null;
+  capeAiModel: string;
   websiteDir: string;
   maintenance: boolean;
   /** Published LEGO client build the launcher installs (all optional). */
@@ -40,6 +43,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     trustProxy: bool(env.LEGO_TRUST_PROXY, false),
     stripeSecretKey: env.STRIPE_SECRET_KEY || null,
     stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET || null,
+    anthropicApiKey: env.ANTHROPIC_API_KEY || null,
+    capeAiModel: env.LEGO_CAPE_AI_MODEL || 'claude-opus-5-5',
     websiteDir: env.LEGO_WEBSITE_DIR ?? join(root, 'website', 'public'),
     maintenance: bool(env.LEGO_MAINTENANCE, false),
     clientRelease: env.LEGO_CLIENT_URL

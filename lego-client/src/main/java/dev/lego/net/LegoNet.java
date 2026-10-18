@@ -52,10 +52,18 @@ public final class LegoNet extends Module {
    private long lastRequest = 0L;
    private volatile String lastError = null;
 
-   public record Entry(Map<Cos.Slot, String> items, String nameTag, String customTag, long fetchedAt, String emote, long emoteStart) {
+   /** customCape: texture name of a cape the player designed in the launcher (drawn from design data), or null. */
+   public record Entry(Map<Cos.Slot, String> items, String nameTag, String customTag, long fetchedAt, String emote, long emoteStart, String customCape) {
       public Entry(Map<Cos.Slot, String> items, String nameTag, String customTag, long fetchedAt) {
-         this(items, nameTag, customTag, fetchedAt, null, 0L);
+         this(items, nameTag, customTag, fetchedAt, null, 0L, null);
       }
+   }
+
+   /** Texture of the local player's own designed cape (fetched like everyone else's), or null. */
+   public static String ownCustomCape() {
+      Player self = Mc.player();
+      Entry e = self == null ? null : get(self.getUUID());
+      return e == null ? null : e.customCape();
    }
 
    /** Emote another LEGO player is playing right now (id + local start time), or null. */
@@ -134,7 +142,6 @@ public final class LegoNet extends Module {
       if (now - this.lastRequest < MIN_INTERVAL_MS) return;
       List<String> wanted = new ArrayList<>();
       for (AbstractClientPlayer p : level.players()) {
-         if (p == self) continue;
          UUID id = p.getUUID();
          // Offline-mode servers give version-3 (name based) UUIDs that never match Microsoft accounts.
          if (id.version() != 4 || IN_FLIGHT.contains(id)) continue;
@@ -201,7 +208,9 @@ public final class LegoNet extends Module {
       String emote = em == null ? null : Json.str(em, "id", null);
       long age = em == null ? 0L : Json.num(em, "age", 0L);
       if (emote != null && !emote.matches("[a-z0-9_]{1,40}")) emote = null;
-      return new Entry(Map.copyOf(items), tag, custom, t, emote, t - age);
+      Map<String, Object> cc = Json.obj(player, "customCape");
+      String cape = cc == null ? null : dev.lego.cosmetic.CapeSpecs.remember(Json.str(cc, "id", null), Json.obj(cc, "spec"));
+      return new Entry(Map.copyOf(items), tag, custom, t, emote, t - age, cape);
    }
 
    /** Drops cached entries for players that left (called on world change). */

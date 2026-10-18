@@ -1,6 +1,7 @@
 // The purchasable/unlockable catalog: client 3D cosmetics + name tag styles.
 
-import { CLIENT_COSMETICS, type CosmeticSlot } from './client-cosmetics.ts';
+import { CLIENT_COSMETICS, type ClientCosmeticSeed, type CosmeticSlot } from './client-cosmetics.ts';
+import { CAPE_PRESETS } from './cape.ts';
 import { NAME_TAGS, type UnlockMethod } from './nametags.ts';
 import { RARITY_INFO, type Rarity } from './rarity.ts';
 
@@ -26,8 +27,15 @@ export interface CatalogItem {
  */
 export const FREE_RARITIES: readonly Rarity[] = ['common', 'rare'];
 
+/** Modern capes drawn from specs (cape_m_*) and the slot for the player's own designed cape. */
+export const CUSTOM_CAPE_ID = 'cape_custom';
+const SPEC_CAPES: ClientCosmeticSeed[] = [
+  ...Object.entries(CAPE_PRESETS).map(([id, p], i): ClientCosmeticSeed => [`cape_${id}`, p.name, 'cape', i % 3 === 0 ? 'epic' : 'rare']),
+  [CUSTOM_CAPE_ID, 'Eigenes Cape', 'cape', 'common'],
+];
+
 function cosmeticItems(): CatalogItem[] {
-  return CLIENT_COSMETICS.map(([id, name, slot, rarity]) => {
+  return [...CLIENT_COSMETICS, ...SPEC_CAPES].map(([id, name, slot, rarity]) => {
     const free = FREE_RARITIES.includes(rarity);
     return {
       id,

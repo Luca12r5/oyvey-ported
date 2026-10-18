@@ -313,7 +313,11 @@ public final class CTex {
                return Tex2.argb(0, var8);
             });
          default:
-            if (var0.startsWith("cape_")) {
+            if (var0.startsWith("capespec_")) {
+               return CapeSpecs.paint("spec_" + var0.substring(9));
+            } else if (var0.startsWith("cape_") && CapeSpecs.isPreset(var0.substring(5))) {
+               return CapeSpecs.paint(var0.substring(5));
+            } else if (var0.startsWith("cape_")) {
                return Capes.paint(var0.substring(5));
             } else {
                if (var0.startsWith("c3_") || var0.equals("@skin")) {

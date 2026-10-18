@@ -228,3 +228,36 @@ test('LEGO Coins for playing: per game, wins, daily cap, play time', async (t) =
   assert.equal(awardPlaytimeCoins(h.app.db, c.id), 10, 'two full 15-minute blocks');
   assert.equal(awardPlaytimeCoins(h.app.db, c.id), 0, 'never paid twice');
 });
+
+test('custom capes: validated spec storage, shown to others only while equipped, AI with daily limit', async (t) => {
+  const prompts: string[] = [];
+  const h = await start({}, async (p: string) => { prompts.push(p); return { bg: { type: 'galaxy', colors: ['#000000', '#111111', '#be185d'], angle: 0 }, symbols: [{ id: 'crown', x: 0.5, y: 0.4, size: 0.6, rot: 0, color: '#facc15', glow: true }, { id: 'evil' }], border: { width: 2, color: '#facc15' }, text: null, shine: true } as any; });
+  t.after(() => h.close());
+  const c = await login(h, 'Capey');
+  assert.equal((await c.call('GET', '/api/me/cape-spec')).body.cape, null);
+  const saved = await c.call('PUT', '/api/me/cape-spec', { spec: { bg: { type: 'solid', colors: ['#ff0000', '#00ff00'] }, symbols: [{ id: 'star', size: 5 }], text: { value: '<b>hi</b>' } } });
+  assert.equal(saved.status, 200);
+  assert.equal(saved.body.cape.spec.symbols[0].size, 1);
+  assert.equal(saved.body.cape.spec.text.value, 'BHIB');
+  const lookup = async () => (await call(h, 'POST', '/api/public/cosmetics/lookup', { uuids: [c.uuid] })).body.players[c.uuid];
+  assert.equal((await lookup()).customCape, null, 'not shown until equipped');
+  assert.equal((await c.call('PUT', '/api/equip', { slot: 'cape', itemId: 'cape_custom' })).status, 200);
+  const shown = await lookup();
+  assert.equal(shown.equipped.cape, 'cape_custom');
+  assert.equal(shown.customCape.id, saved.body.cape.id);
+  const ai = await c.call('POST', '/api/capes/ai', { prompt: 'galaxy <script> with a crown' });
+  assert.equal(ai.status, 200);
+  assert.equal(ai.body.spec.bg.type, 'galaxy');
+  assert.deepEqual(ai.body.spec.symbols.map((s: any) => s.id), ['crown'], 'unknown symbols are dropped');
+  assert.ok(!prompts[0]!.includes('<'), 'prompt is cleaned');
+  for (let i = 0; i < 9; i++) await c.call('POST', '/api/capes/ai', { prompt: `cape number ${i}` });
+  assert.equal((await c.call('POST', '/api/capes/ai', { prompt: 'one more' })).status, 429);
+});
+
+test('AI cape design is unavailable without a key', async (t) => {
+  const h = await start({}, null);
+  t.after(() => h.close());
+  const c = await login(h, 'NoKey');
+  assert.equal((await c.call('GET', '/api/me/cape-spec')).body.ai, false);
+  assert.equal((await c.call('POST', '/api/capes/ai', { prompt: 'blue bolt' })).status, 503);
+});
