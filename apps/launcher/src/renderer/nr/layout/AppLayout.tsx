@@ -66,6 +66,7 @@ function BorderGlowEffects({ accentColor }: { accentColor: string }) {
 
 function HeaderBar() {
   const accentColor = useThemeStore((s) => s.accentColor);
+  const titleColors = useThemeStore((s) => s.titleColors);
   const c = rgbOf(accentColor.value);
   return (
     <header
@@ -75,9 +76,9 @@ function HeaderBar() {
       <div className="flex items-center gap-4 min-w-0">
         <NavigationHistory />
         <div className="flex flex-col items-start min-w-0">
-          <h1 className="font-smallcaps text-2xl tracking-wider font-bold text-shadow m-0 whitespace-nowrap flex items-center gap-2" aria-label="LEGO Launcher">
-            <LegoText text="LEGO" colors={['red', 'yellow', 'blue', 'white']} height={26} />
-            <span>Launcher</span>
+          <h1 className="lx-title m-0 whitespace-nowrap flex items-end gap-2" aria-label="LEGO Launcher">
+            <LegoText text="LEGO" colors={titleColors} height={30} />
+            <LegoText text="LAUNCHER" colors={[accentColor.value]} height={17} className="lx-title-sub" />
           </h1>
           <HeaderInfoCarousel />
         </div>

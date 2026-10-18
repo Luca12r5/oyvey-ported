@@ -8,7 +8,7 @@ const SLOTS: [string, string][] = [['', 'Alle'], ['cape', 'Capes'], ['wings', 'F
 const UNLOCK: Record<string, string> = { default: 'Kostenlos', shop: 'Shop', battlepass: 'Battle Pass', achievement: 'Erfolg', event: 'Event', staff: 'Team' };
 
 export function rarityColor(r: Rarity): string {
-  return state.settings.rarityColors[r] ?? RARITY_INFO[r].color;
+  return RARITY_INFO[r].color;
 }
 
 export function tagHtml(style: NameTagStyle, text: string): Raw {

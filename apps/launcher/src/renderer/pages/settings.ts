@@ -2,7 +2,6 @@
 // select / slider), accounts, rarities and about. Look & feel (themes,
 // backgrounds, effects, presets) lives in the Designs page.
 
-import { RARITY_INFO, type Rarity } from '@lego/shared';
 import { go, loadIdentity, retheme, state } from '../app.ts';
 import { api, confirm, errorToast, html, mount, toast, type Raw } from '../ui.ts';
 import { designsPage } from './designs.ts';
@@ -15,27 +14,25 @@ import { sanitizeLanguage } from '../../core/design.ts';
 import type { Settings } from '../../core/settings.ts';
 import { signInFlow } from './account.ts';
 
-type Section = 'general' | 'language' | 'appearance' | 'designs' | 'animations' | 'game' | 'accounts' | 'rarity' | 'advanced' | 'about';
+type Section = 'general' | 'language' | 'designs' | 'animations' | 'game' | 'accounts' | 'advanced' | 'about';
 const SECTIONS: [Section, string, () => string][] = [
   ['general', 'sliders', () => t('set.general')],
   ['language', 'globe', () => t('set.language')],
-  ['appearance', 'palette', () => t('set.appearance')],
   ['designs', 'brush', () => t('nav.designs')],
-  ['animations', 'pumpkin', () => (state.settings.language === 'en' ? 'Animations' : 'Animationen')],
+  ['animations', 'pumpkin', () => t('set.anim')],
   ['game', 'gamepad', () => t('set.game')],
   ['accounts', 'users', () => t('set.accounts')],
-  ['rarity', 'cosmetics', () => t('set.rarity')],
   ['advanced', 'terminal', () => t('set.advanced')],
   ['about', 'info', () => t('set.about')],
 ];
 /** Sections made of searchable rows. */
-const ROW_SECTIONS: Section[] = ['general', 'appearance', 'animations', 'game', 'advanced'];
+const ROW_SECTIONS: Section[] = ['general', 'animations', 'game', 'advanced'];
 
 function page(box: HTMLElement): HTMLElement {
   return box.closest<HTMLElement>('.view-enter') ?? (box.parentElement as HTMLElement);
 }
 
-const TRANSITION_NAMES: [Settings['transition'], string][] = [['slide', 'Slide'], ['fade', 'Fade'], ['zoom', 'Zoom'], ['glitch', 'Glitch'], ['pumpkin', 'Kürbis'], ['none', 'Aus']];
+const TRANSITION_NAMES: [Settings['transition'], () => string][] = [['lego', () => t('set.tr.lego')], ['slide', () => 'Slide'], ['fade', () => 'Fade'], ['zoom', () => 'Zoom'], ['glitch', () => 'Glitch'], ['pumpkin', () => t('set.tr.pumpkin')], ['none', () => t('set.tr.none')]];
 
 async function save(patch: Partial<Settings>): Promise<void> {
   try {
@@ -79,7 +76,6 @@ export async function settingsPage(el: HTMLElement, section?: Section | string):
   else if (sec === 'designs') { box.onclick = null; box.onchange = null; await designsPage(box); }
   else if (sec === 'language') languageTab(box);
   else if (sec === 'accounts') await accountsTab(box);
-  else if (sec === 'rarity') rarityTab(box);
   else await aboutTab(box);
 }
 
@@ -88,20 +84,15 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
   const s = state.settings;
   const parts: Record<string, Raw> = {
     general: html`
-      ${row(t('set.language'), LANGS.find(([c]) => c === s.language)?.[1] ?? s.customLanguage?.name ?? s.language, html`<button class="btn sm" id="toLang">${{ __raw: FLAGS[s.language] ?? '' }} Ändern</button>`)}
+      ${row(t('set.clicks'), t('set.clicks.d'), sw('uiSounds', s.uiSounds !== false))}
+      ${row(t('set.closeOnLaunch'), t('set.closeOnLaunch.d'), sw('closeOnLaunch', s.closeOnLaunch))}
+      ${row(t('set.scale'), `${t('set.scale.d')} (${Math.round(s.uiScale * 100)} %)`, html`<input type="range" data-key="uiScale" min="0.75" max="2" step="0.05" value="${s.uiScale}">`)}
+      ${row(t('set.updates'), t('set.updates.d'), html`<select data-key="autoUpdate" class="compact"><option value="ask" ${s.autoUpdate === 'ask' ? 'selected' : ''}>${t('set.upd.ask')}</option><option value="auto" ${s.autoUpdate === 'auto' ? 'selected' : ''}>${t('set.upd.auto')}</option><option value="off" ${s.autoUpdate === 'off' ? 'selected' : ''}>${t('set.upd.off')}</option></select>`)}`,
+    animations: html`
+      ${row(t('set.transition'), t('set.transition.d'), html`<div class="seg" data-seg="transition">${TRANSITION_NAMES.map(([v, l]) => html`<button data-v="${v}" class="${s.transition === v ? 'on' : ''}">${l()}</button>`)}</div>`)}
       ${row(t('set.intro'), t('set.intro.d'), html`<div class="row"><button class="btn sm" id="introPlay">${icon('play', 'sm')} ${t('set.introPlay')}</button>${sw('introEnabled', s.introEnabled)}</div>`)}
       ${row(t('set.introSound'), t('set.introSound.d'), sw('introSound', s.introSound))}
-      ${row('Klick-Geräusche', 'Leises LEGO-Klacken, wenn du auf Steine (Knöpfe) drückst.', sw('uiSounds', s.uiSounds !== false))}
-      ${row(t('set.closeOnLaunch'), t('set.closeOnLaunch.d'), sw('closeOnLaunch', s.closeOnLaunch))}
-      ${row(t('set.updates'), t('set.updates.d'), html`<select data-key="autoUpdate" class="compact"><option value="ask" ${s.autoUpdate === 'ask' ? 'selected' : ''}>${t('set.upd.ask')}</option><option value="auto" ${s.autoUpdate === 'auto' ? 'selected' : ''}>${t('set.upd.auto')}</option><option value="off" ${s.autoUpdate === 'off' ? 'selected' : ''}>${t('set.upd.off')}</option></select>`)}`,
-    appearance: html`
-      ${row(t('set.designsMoved'), t('set.designsMoved.d'), html`<button class="btn sm primary" id="toDesigns">${icon('brush', 'sm')} ${t('nav.designs')}</button>`)}
-      ${row(t('set.scale'), `${t('set.scale.d')} (${Math.round(s.uiScale * 100)} %)`, html`<input type="range" data-key="uiScale" min="0.75" max="2" step="0.05" value="${s.uiScale}">`)}
-      ${row(t('set.motion'), t('set.motion.d'), sw('reducedMotion', s.reducedMotion))}`,
-    animations: html`
-      ${row('Seitenübergang', 'Animation beim Wechseln zwischen den Seiten.', html`<div class="seg" data-seg="transition">${TRANSITION_NAMES.map(([v, l]) => html`<button data-v="${v}" class="${s.transition === v ? 'on' : ''}">${l}</button>`)}</div>`)}
-      ${row(t('set.intro'), t('set.intro.d'), html`<div class="row"><button class="btn sm" id="introPlay">${icon('play', 'sm')} ${t('set.introPlay')}</button>${sw('introEnabled', s.introEnabled)}</div>`)}
-      ${row('Jumpscares', 'Selten und zufällig springt etwas Gruseliges ins Bild (mit Ton). Nie beim Anmelden, Installieren oder Spielstart. Nichts für schwache Nerven!', html`<div class="row"><button class="btn sm" id="scareTest">Vorschau</button>${sw('jumpscares', s.jumpscares)}</div>`)}
+      ${row(t('set.jumpscares'), t('set.jumpscares.d'), html`<div class="row"><button class="btn sm" id="scareTest">${t('set.preview')}</button>${sw('jumpscares', s.jumpscares)}</div>`)}
       ${row(t('set.motion'), t('set.motion.d'), sw('reducedMotion', s.reducedMotion))}`,
     game: html`
       ${row(t('set.autoConsole'), t('set.autoConsole.d'), sw('autoConsole', s.autoConsole))}
@@ -113,7 +104,7 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
       ${row(t('set.gameDir'), `${t('set.gameDir.d')} ${state.info.gameDir}`, html`<button class="btn sm" id="game">${icon('folder', 'sm')} ${t('set.open')}</button>`)}
       ${row(t('set.diag'), t('set.diag.d'), html`<button class="btn sm" id="diag">${t('set.copy')}</button>`)}`,
   };
-  const titles: Record<string, string> = { general: t('set.general'), appearance: t('set.appearance'), animations: state.settings.language === 'en' ? 'Animations' : 'Animationen', game: t('set.game'), advanced: t('set.advanced') };
+  const titles: Record<string, string> = { general: t('set.general'), animations: t('set.anim'), game: t('set.game'), advanced: t('set.advanced') };
   const list = only ? [only] : ROW_SECTIONS;
   mount(box, html`${list.map((id) => html`<section class="set-sec" data-sec="${id}"><h2>${titles[id]}</h2><div class="glass rows">${parts[id]!}</div></section>`)}`);
   if (q) {
@@ -136,8 +127,6 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
   box.onclick = async (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!b) return;
-    if (b.id === 'toDesigns') return void settingsPage(page(box), 'designs');
-    if (b.id === 'toLang') return void settingsPage(page(box), 'language');
     if (b.parentElement?.dataset.seg === 'transition') { await save({ transition: b.dataset.v as Settings['transition'] }); rerender(); toast(t('set.saved'), 'ok'); return; }
     if (b.parentElement?.dataset.seg === 'language') { await save({ language: b.dataset.v === 'en' ? 'en' : b.dataset.v === 'custom' ? 'custom' : 'de' }); return void settingsPage(page(box), only ?? 'general'); }
     if (b.id === 'game') return void api.openFolder('game');
@@ -246,20 +235,6 @@ function languageTab(box: HTMLElement): void {
       void settingsPage(page(box), 'language');
     } catch (err) { errorToast(err); }
   });
-}
-
-function rarityTab(box: HTMLElement): void {
-  const keys = Object.keys(RARITY_INFO) as Rarity[];
-  mount(box, html`<form class="card" id="f"><p class="muted">Farben der Seltenheitsstufen im Launcher (Barrierefreiheit, z. B. bei Farbsehschwäche).</p>
-    <div class="grid g3">${keys.map((k) => html`<div><label>${RARITY_INFO[k].label.de}</label><input type="color" name="${k}" value="${state.settings.rarityColors[k] ?? RARITY_INFO[k].color}"></div>`)}</div>
-    <div class="row gap"><button class="btn primary">Speichern</button><button type="button" class="btn" id="reset">Standard</button></div></form>`);
-  box.querySelector('#f')!.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const fd = new FormData(e.target as HTMLFormElement);
-    state.settings = await api.setSettings({ rarityColors: Object.fromEntries(keys.map((k) => [k, String(fd.get(k))])) });
-    toast('Gespeichert', 'ok');
-  });
-  box.querySelector('#reset')!.addEventListener('click', async () => { state.settings = await api.setSettings({ rarityColors: {} }); rarityTab(box); });
 }
 
 async function aboutTab(box: HTMLElement): Promise<void> {

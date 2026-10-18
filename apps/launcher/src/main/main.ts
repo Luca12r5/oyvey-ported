@@ -534,7 +534,7 @@ function registerIpc(): void {
   ipcMain.handle('settings:get', () => settings);
   ipcMain.handle('settings:set', async (_e, patch: Partial<Settings>) => {
     const allowed: (keyof Settings)[] = [
-      'themeId', 'customThemes', 'language', 'backendUrl', 'selectedProfile', 'closeOnLaunch', 'reducedMotion', 'uiScale', 'autoUpdate', 'rarityColors',
+      'themeId', 'customThemes', 'language', 'backendUrl', 'selectedProfile', 'closeOnLaunch', 'reducedMotion', 'uiScale', 'autoUpdate',
       'accentColor', 'background', 'backgroundQuality', 'snow', 'showSnapshots', 'showHistorical', 'curseforgeKey', 'msClientId',
       'introEnabled', 'introSound', 'uiSounds', 'autoConsole', 'fx', 'surface', 'stage', 'designPresets', 'bgImage', 'guest', 'uiFont', 'headFont', 'customFont', 'buttonStyle', 'customLanguage', 'transition', 'jumpscares', 'skinLibrary', 'guestName',
     ];

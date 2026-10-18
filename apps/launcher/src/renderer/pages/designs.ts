@@ -248,7 +248,6 @@ function effectsTab(box: HTMLElement): void {
     <section class="set-sec"><h2>Oberfläche & Charakter</h2><div class="glass rows">
       <div class="setting"><div><b>Oberflächenstil</b><small>Glas (durchscheinend), Massiv (ruhig, schnell) oder Neon (leuchtende Kanten).</small></div><div class="ctl">${seg('surface', [['glass', 'Glas'], ['solid', 'Massiv'], ['neon', 'Neon']])}</div></div>
       <div class="setting"><div><b>Charakter-Bühne</b><small>Portal-Ringe und Gitterboden hinter deinem Charakter oder eine schlichte Bühne.</small></div><div class="ctl">${seg('stage', [['portal', 'Portal'], ['plain', 'Schlicht']])}</div></div>
-      <div class="setting"><div><b>${tr('set.motion')}</b><small>${tr('set.motion.d')}</small></div><div class="ctl"><label class="switch"><input type="checkbox" id="reduced" ${s.reducedMotion ? 'checked' : ''}><i></i></label></div></div>
       <div class="setting"><div><b>Zurücksetzen</b><small>Alle Effekte auf die Standardwerte.</small></div><div class="ctl"><button class="btn sm" id="fxReset">${tr('set.reset')}</button></div></div></div></section>`);
   box.oninput = (e) => {
     const i = e.target as HTMLInputElement;
@@ -262,7 +261,6 @@ function effectsTab(box: HTMLElement): void {
     const key = i.dataset.fx as keyof DesignFx | undefined;
     if (key && i.type === 'checkbox') live({ fx: { ...state.settings.fx, [key]: i.checked } });
     if (i.id === 'snow') live({ snow: i.checked });
-    if (i.id === 'reduced') live({ reducedMotion: i.checked });
   };
   box.onclick = (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');

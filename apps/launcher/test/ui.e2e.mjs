@@ -151,10 +151,12 @@ await page('feedback', 'Neuer Beitrag');
 await page('account', 'LegoDev');
 await page('dev', 'Entwickler-Dashboard');
 await page('settings', 'Einstellungen');
-await win.fill('#sq', 'sprache');
+await win.fill('#sq', 'geräusch');
 await win.waitForTimeout(200);
 const found = await win.locator('.setting:not([hidden])').count();
-if (found !== 1) problems.push(`settings search for "sprache" shows ${found} rows`);
+if (found !== 1) problems.push(`settings search for "geräusch" shows ${found} rows`);
+if (await win.locator('[data-tab=rarity], [data-tab=appearance]').count()) problems.push('removed settings tabs are still there');
+if ((await win.locator('#introPlay').count()) > 1) problems.push('intro option appears twice');
 await win.fill('#sq', '');
 // Designs studio: accent override, 3D scene, effects, presets.
 await page('designs', 'Designs');
@@ -163,6 +165,25 @@ await win.click('[data-accent="#ec4899"]');
 await win.waitForTimeout(400);
 const accent = await win.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
 if (accent !== '#ec4899') problems.push(`accent override not applied: ${accent}`);
+// Nothing may stay blue with a pink accent (window edge, rail, panels, switches, buttons).
+const blue = await win.evaluate(() => {
+  const rgb = (v) => {
+    const n = (v.match(/[\d.]+/g) ?? []).map(Number);
+    if (v.startsWith('color(')) return n.slice(0, 3).map((x) => x * 255);
+    return n.slice(0, 3);
+  };
+  const isBlue = (v) => { if (!v || v === 'transparent' || v.startsWith('rgba(0, 0, 0, 0')) return false; const [r, g, b] = rgb(v); return b > r + 40 && b > g; };
+  const out = [];
+  const els = ['.nr-launcher', '#sidebar', '.nr-titlebar', '.set-body .rows', '.switch i', '.btn', '.set-nav nav button', '.set-nav .searchbar'];
+  for (const sel of els) for (const el of [...document.querySelectorAll(sel)].slice(0, 6)) {
+    const cs = getComputedStyle(el);
+    for (const p of ['background-color', 'border-left-color', 'border-top-color', 'border-bottom-color']) if (isBlue(cs.getPropertyValue(p))) out.push(`${sel} ${p} ${cs.getPropertyValue(p)}`);
+  }
+  if (isBlue(getComputedStyle(document.body).backgroundColor)) out.push(`body ${getComputedStyle(document.body).backgroundColor}`);
+  return out;
+});
+if (blue.length) problems.push(`blue left with a pink accent: ${blue.slice(0, 5).join('; ')}`);
+if (shots) await win.screenshot({ path: join(shots, 'launcher-pink.png') });
 await win.click('[data-accent=""]');
 await win.waitForTimeout(300);
 await win.click('[data-tab=scene]');

@@ -4,6 +4,8 @@ import { packFor } from './lang.ts';
 // translated stay German; keys missing in English fall back to German.
 
 const de = {
+  'set.clicks': 'Klick-Geräusche', 'set.clicks.d': 'Leises LEGO-Klacken, wenn du auf Knöpfe drückst.', 'set.anim': 'Animationen', 'set.transition': 'Seitenübergang', 'set.transition.d': 'Animation beim Wechseln zwischen den Seiten.',
+  'set.tr.lego': 'Bauen', 'set.tr.pumpkin': 'Kürbis', 'set.tr.none': 'Aus', 'set.jumpscares': 'Jumpscares', 'set.jumpscares.d': 'Selten und zufällig springt etwas Gruseliges ins Bild (mit Ton). Nie beim Anmelden, Installieren oder Spielstart.', 'set.preview': 'Vorschau',
   'set.designsMoved': 'Designs & Hintergründe', 'set.designsMoved.d': 'Farben, Themes, 3D-Szenen, Effekte und Presets findest du jetzt im Bereich Designs.',
   'set.autoConsole': 'Konsole beim Spielstart öffnen', 'set.autoConsole.d': 'Zeigt Startmeldungen, Warnungen und Fehler mit Zeitstempel, sobald das Spiel startet.',
   'intro.skip': 'Überspringen', 'set.intro': 'Startanimation', 'set.intro.d': 'Filmische 3D-Animation beim Start des Launchers (Klick oder Esc überspringt).', 'set.introSound': 'Ton der Startanimation', 'set.introSound.d': 'Synthetische Klänge während der Startanimation.', 'set.introPlay': 'Jetzt abspielen',
@@ -46,6 +48,8 @@ const de = {
 type Key = keyof typeof de;
 
 const en: Partial<Record<Key, string>> = {
+  'set.clicks': 'Click sounds', 'set.clicks.d': 'A soft LEGO click when you press buttons.', 'set.anim': 'Animations', 'set.transition': 'Page transition', 'set.transition.d': 'Animation when switching between pages.',
+  'set.tr.lego': 'Build', 'set.tr.pumpkin': 'Pumpkin', 'set.tr.none': 'Off', 'set.jumpscares': 'Jumpscares', 'set.jumpscares.d': 'Rarely and at random something spooky jumps onto the screen (with sound). Never while signing in, installing or launching.', 'set.preview': 'Preview',
   'set.designsMoved': 'Designs & backgrounds', 'set.designsMoved.d': 'Colours, themes, 3D scenes, effects and presets are now in the Designs area.',
   'set.autoConsole': 'Open console on game start', 'set.autoConsole.d': 'Shows start messages, warnings and errors with timestamps as soon as the game starts.',
   'intro.skip': 'Skip', 'set.intro': 'Start animation', 'set.intro.d': 'Cinematic 3D animation when the launcher starts (click or Esc skips).', 'set.introSound': 'Start animation sound', 'set.introSound.d': 'Synthesised sounds during the start animation.', 'set.introPlay': 'Play now',

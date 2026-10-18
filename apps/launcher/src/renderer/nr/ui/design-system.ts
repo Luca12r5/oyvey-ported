@@ -62,12 +62,8 @@ export const getVariantColors = (variant: ComponentVariant, accentColor: AccentC
         text: "#fee2e2"
       };
     case "info":
-      return {
-        main: "#3b82f6",
-        light: "#60a5fa",
-        dark: "#2563eb",
-        text: "#dbeafe"
-      };
+      // Follows the chosen accent instead of a fixed blue.
+      return { main: accentColor.value, light: accentColor.light, dark: accentColor.dark, text: "#ffffff" };
     case "success":
       return {
         main: "#10b981",

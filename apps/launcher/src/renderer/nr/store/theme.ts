@@ -27,8 +27,25 @@ const lighten = (hex: string, amount: number) => {
 
 export const DEFAULT_ACCENT = '#4f8eff';
 
-export function accentFrom(hex: string | null | undefined): AccentColor {
-  const value = hex && hexToRgb(hex) ? hex.toLowerCase() : DEFAULT_ACCENT;
+/** Any CSS colour (#rgb, #rrggbb, rgb(), names) as #rrggbb; null if it is not a colour. */
+export function toHex(color: string | null | undefined): string | null {
+  const v = color?.trim();
+  if (!v) return null;
+  if (/^#[0-9a-f]{6}$/i.test(v)) return v.toLowerCase();
+  const short = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(v);
+  if (short) return `#${short[1]}${short[1]}${short[2]}${short[2]}${short[3]}${short[3]}`.toLowerCase();
+  const rgb = /^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/i.exec(v);
+  if (rgb) return rgbToHex(+rgb[1]!, +rgb[2]!, +rgb[3]!);
+  if (typeof document === 'undefined') return null;
+  const ctx = document.createElement('canvas').getContext('2d');
+  if (!ctx) return null;
+  ctx.fillStyle = '#000001';
+  ctx.fillStyle = v;
+  return ctx.fillStyle === '#000001' ? null : toHex(ctx.fillStyle);
+}
+
+export function accentFrom(color: string | null | undefined): AccentColor {
+  const value = toHex(color) ?? DEFAULT_ACCENT;
   if (value === DEFAULT_ACCENT) return { name: 'Blue', value, hoverValue: '#3a7aff', shadowValue: 'rgba(79, 142, 255, 0.5)', light: '#60a5fa', dark: '#2563eb' };
   const c = hexToRgb(value)!;
   return { name: 'Custom', value, hoverValue: darken(value, 0.1), shadowValue: `rgba(${c.r}, ${c.g}, ${c.b}, 0.5)`, light: lighten(value, 0.2), dark: darken(value, 0.2) };
@@ -39,9 +56,11 @@ export interface ThemeState {
   showNavLabels: boolean;
   borderRadius: number;
   isBackgroundAnimationEnabled: boolean;
+  /** Brick colours of the "LEGO" title (Designs → Stil). */
+  titleColors: string[];
 }
 
-export const themeStore = createStore<ThemeState>({ accentColor: accentFrom(null), showNavLabels: true, borderRadius: 0, isBackgroundAnimationEnabled: true });
+export const themeStore = createStore<ThemeState>({ accentColor: accentFrom(null), showNavLabels: true, borderRadius: 0, isBackgroundAnimationEnabled: true, titleColors: ['red', 'yellow', 'blue', 'white'] });
 
 /** Same CSS variables the NoRisk launcher writes (scrollbars, glows). */
 export function applyAccentToDOM(): void {

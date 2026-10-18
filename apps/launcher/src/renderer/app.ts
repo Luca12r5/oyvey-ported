@@ -12,6 +12,7 @@ import { setLang, t } from './i18n.ts';
 import { playPage } from './pages/play.ts';
 import { setUiSounds } from './nr/lib/sound.ts';
 import { mountShell, setAccent, shellStore, actions, gameStore, initGame, NAV_ICONS } from './nr/mount.tsx';
+import { themeStore } from './nr/store/theme.ts';
 import { skinsPage } from './pages/skins.ts';
 import { playSplash } from './splash.ts';
 import { webglAvailable } from './intro3d.ts';
@@ -164,6 +165,12 @@ export function retheme(): void {
   if (s.accentColor) document.documentElement.style.setProperty('--accent', s.accentColor);
   // The NoRisk-style UI follows the theme accent unless the user picked one.
   setAccent(s.accentColor || getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
+  // Nacht tints its background from the accent like the NoRisk launcher (accent × 0.1), so a pink accent gives a dark pink, not navy.
+  if (s.themeId === 'nacht') {
+    const c = themeStore.get().accentColor.value;
+    const ch = (i: number) => Math.min(Math.floor(parseInt(c.slice(i, i + 2), 16) * 0.1), 30).toString(16).padStart(2, '0');
+    document.documentElement.style.setProperty('--bg', `#${ch(1)}${ch(3)}${ch(5)}`);
+  }
   setUiSounds(s.uiSounds !== false && !state.info?.e2e);
   document.body.classList.toggle('reduced-motion', s.reducedMotion);
   document.body.classList.toggle('has-bg', s.background !== 'plain');

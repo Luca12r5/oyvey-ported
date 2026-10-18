@@ -61,7 +61,6 @@ export interface Settings {
   reducedMotion: boolean;
   uiScale: number;
   autoUpdate: 'ask' | 'auto' | 'off';
-  rarityColors: Record<string, string>;
   /** Overrides the theme accent (null = theme colour). */
   accentColor: string | null;
   /** Animated launcher background id and quality 0..1. */
@@ -159,7 +158,7 @@ export function defaultSettings(): Settings {
     settingsVersion: SETTINGS_VERSION,
     themeId: 'nacht', customThemes: [], language: 'de', backendUrl: 'https://api.lego-launcher.example',
     selectedProfile: DEFAULT_PROFILE.id, profiles: [{ ...DEFAULT_PROFILE, createdAt: Date.now() }],
-    closeOnLaunch: false, reducedMotion: false, uiScale: 1, autoUpdate: 'ask', rarityColors: {},
+    closeOnLaunch: false, reducedMotion: false, uiScale: 1, autoUpdate: 'ask',
     accentColor: null, background: 'plain', backgroundQuality: 0.6, snow: false, showSnapshots: false, showHistorical: false, curseforgeKey: '', msClientId: '',
     introEnabled: false, introSound: true, uiSounds: true, autoConsole: true,
     fx: { ...DEFAULT_FX }, surface: 'glass', stage: 'portal', designPresets: [], bgImage: '', guest: false,

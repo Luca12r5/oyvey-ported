@@ -1,18 +1,22 @@
 /* Styles of the React UI ported from the NoRisk Client launcher (GPL-3.0):
  * styles/globals.css, scoped to `.nr` so the launcher's other pages keep theirs.
- * Fonts: free replacements for NoRisk's own (SmallCaps/MinecraftTen are not shipped). */
+ * Fonts: whatever Designs → Stil picks (body.hf-* / body.uif-*); Pixelify Sans by default
+ * as the free replacement for NoRisk's own (SmallCaps/MinecraftTen are not shipped). */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-smallcaps: "Pixelify Sans", "Silkscreen", monospace;
-  --font-minecraft: "Pixelify Sans", "Silkscreen", sans-serif;
   --border-radius: 0px;
   --nr-accent: #4f8eff;
   --accent-hover: #3a7aff;
   --accent-shadow: rgba(79, 142, 255, 0.5);
   --accent-rgb: 79, 142, 255;
+}
+
+body {
+  --font-smallcaps: var(--head, "Pixelify Sans"), "Silkscreen", monospace;
+  --font-minecraft: var(--font, "Pixelify Sans"), "Silkscreen", sans-serif;
 }
 
 /* Scoped subset of Tailwind's preflight. :where() keeps it below every utility
@@ -146,7 +150,11 @@ body.nacht.crypt .bg-canvas { filter: none; }
 /* "LEGO" title built from bricks: they snap in one by one. */
 .lx-legotext { display: block; overflow: visible; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
 @keyframes lx-snap { 0% { opacity: 0; transform: translateY(-14px); } 80% { opacity: 1; transform: translateY(1px); } 100% { transform: none; } }
-.lx-build .lx-brick-cell, .lx-legotext:hover .lx-brick-cell { animation: lx-snap .35s cubic-bezier(.3,1.5,.5,1) both; }
+.lx-build .lx-brick-cell { animation: lx-snap .35s cubic-bezier(.3,1.5,.5,1) both; }
+@keyframes lx-sweep { from { transform: translateX(0); } to { transform: translateX(150%); } }
+.lx-sweep { opacity: 0; transform-box: view-box; }
+.lx-title:hover .lx-sweep { opacity: 1; animation: lx-sweep .9s ease-out; }
+.lx-title-sub { margin-bottom: 1px; }
 
 /* Page transitions ("Bauen"): one per page. */
 @keyframes lx-page-build { 0% { opacity: 0; transform: translateY(40px) scale(.94); } 70% { opacity: 1; transform: translateY(-4px) scale(1.01); } 100% { transform: none; } }
@@ -163,4 +171,4 @@ body.nacht.crypt .bg-canvas { filter: none; }
 #view[data-page="skins"] .view-enter.tr-lego { animation: lx-page-spin .5s cubic-bezier(.2,.9,.3,1) both; }
 #view[data-page="capes"] .view-enter.tr-lego { animation: lx-page-flip .5s cubic-bezier(.2,.9,.3,1) both; }
 #view[data-page="settings"] .view-enter.tr-lego { animation: lx-page-left .4s cubic-bezier(.2,.9,.3,1) both; }
-body.reduced-motion .lx-build .lx-brick-cell, body.reduced-motion #view .view-enter.tr-lego { animation: none !important; }
+body.reduced-motion .lx-build .lx-brick-cell, body.reduced-motion .lx-sweep, body.reduced-motion #view .view-enter.tr-lego { animation: none !important; }
