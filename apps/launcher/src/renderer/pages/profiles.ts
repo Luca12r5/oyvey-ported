@@ -2,89 +2,53 @@
 // mod loader, and imports (modpack files, other launchers, folders).
 
 import { groupVersions } from '../../core/versions.ts';
-import { go, state } from '../app.ts';
-import { api, confirm, dialog, errorToast, fmtDate, html, mount, toast } from '../ui.ts';
+import { go, onLeave, state } from '../app.ts';
+import { renderProfiles } from '../nr/mount.tsx';
+import { api, confirm, dialog, errorToast, html, mount, toast } from '../ui.ts';
 import { icon, pixel, PIXEL_ICONS } from '../icons.ts';
 import { t } from '../i18n.ts';
 import { LEGO_CLIENT_GAME_VERSION, LOADER_TYPES, loaderSupports, type GameProfile, type LoaderType } from '../../core/settings.ts';
 import type { FoundInstance } from '../../core/importers.ts';
-import { profileLine, takeNewProfileRequest } from './play.ts';
+import { takeNewProfileRequest } from './play.ts';
 import { openModsFor } from './mods.ts';
 
 const LOADER_LABEL: Record<LoaderType, string> = { fabric: 'Fabric', quilt: 'Quilt', forge: 'Forge', neoforge: 'NeoForge' };
 
-type ProfFilter = 'all' | 'lego' | 'modded' | 'vanilla';
-let pf: ProfFilter = 'all';
-let psort: 'played' | 'name' | 'version' = 'played';
-let pq = '';
-
-function ago(ms: number | null): string {
-  if (!ms) return t('prof.never');
-  const m = Math.max(1, Math.round((Date.now() - ms) / 60000));
-  if (m < 60) return `vor ${m} Min.`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `vor ${h} Std.`;
-  const d = Math.round(h / 24);
-  return d < 7 ? `vor ${d} T.` : d < 60 ? `vor ${Math.round(d / 7)} Wo.` : fmtDate(ms);
-}
+let unmountList: (() => void) | null = null;
 
 export async function profilesPage(el: HTMLElement): Promise<void> {
+  unmountList?.();
+  unmountList = null;
   if (takeNewProfileRequest()) return editor(el, null);
   const s = state.settings;
-  const FILTERS: [ProfFilter, string][] = [['all', 'All'], ['lego', 'LEGO'], ['modded', 'Modded'], ['vanilla', 'Vanilla']];
-  const SORTS: Record<typeof psort, string> = { played: 'Zuletzt gespielt', name: 'Name', version: 'Version' };
-  mount(el, html`<div class="tabs" id="pf">${FILTERS.map(([id, l]) => html`<button data-f="${id}" class="${pf === id ? 'active' : ''}">${l}</button>`)}</div>
-    <div class="prof-bar">
-      <div class="searchbar">${icon('search', 'sm')}<input id="pq" placeholder="Search profiles…" value="${pq}" autocomplete="off"><span class="sb-sep"></span><button class="sb-ic" id="srtPlayed" title="Zuletzt gespielt">${icon('refresh', 'sm')}</button><span class="sb-sep"></span><button class="sb-ic" id="srtVer" title="Nach Version">${icon('gamepad', 'sm')}</button></div>
-      <button class="icon-btn sq" id="srt" title="Sortieren: ${SORTS[psort]}">${icon('sliders', 'sm')}</button>
-      <span class="grow"></span>
-      <button class="btn" id="import">${icon('import', 'sm')} ${t('prof.import').toUpperCase()}</button>
-      <button class="btn" id="new">${icon('plus', 'sm')} CREATE</button>
-    </div>
-    <div class="page-sep"></div>
-    <div class="prof-list" id="plist"></div>`);
-  const list = el.querySelector<HTMLElement>('#plist')!;
-  const draw = () => {
-    const q = pq.trim().toLowerCase();
-    const rows = s.profiles
-      .filter((p) => pf === 'all' || (pf === 'lego' ? p.legoClient : pf === 'modded' ? !!p.loaderType && !p.legoClient : !p.loaderType))
-      .filter((p) => !q || p.name.toLowerCase().includes(q) || p.gameVersion.includes(q))
-      .sort((a, b) => (psort === 'name' ? a.name.localeCompare(b.name) : psort === 'version' ? b.gameVersion.localeCompare(a.gameVersion, undefined, { numeric: true }) : (b.lastPlayed ?? b.createdAt) - (a.lastPlayed ?? a.createdAt)));
-    mount(list, rows.length ? html`${rows.map((p) => html`<article class="prof-row ${p.id === s.selectedProfile ? 'active' : ''}">
-      <div class="pr-icon">${pixel(p.icon, 'lg')}</div>
-      <div class="pr-body"><div class="pr-name">${p.name}</div>
-        <div class="pr-meta"><span>${pixel('grass', 'xs')} ${p.gameVersion}</span><i>|</i><span>${icon('package', 'xs')} ${p.loaderType ? `${LOADER_LABEL[p.loaderType]}${p.loader ? ` ${p.loader}` : ''}` : 'Vanilla'}</span><i>|</i><span>${ago(p.lastPlayed)}</span>${p.legoClient ? html`<i>|</i><span class="pr-lego">LEGO Client</span>` : ''}</div></div>
-      <div class="pr-actions">
-        <button class="btn sm" data-play="${p.id}">${icon('play', 'sm')} PLAY</button>
-        <button class="btn sm" data-mods="${p.id}">${icon('package', 'sm')} MODS</button>
-        <button class="icon-btn sq" data-folder="${p.id}" title="${t('mods.folder')}">${icon('folder', 'sm')}</button>
-        <button class="icon-btn sq" data-edit="${p.id}" title="${t('prof.edit')}">${icon('settings', 'sm')}</button>
-        ${s.profiles.length > 1 ? html`<button class="icon-btn sq danger" data-del="${p.id}" title="${t('prof.delete')}">${icon('trash', 'sm')}</button>` : ''}
-      </div></article>`)}` : html`<div class="empty">Keine Profile gefunden.</div>`);
-  };
-  draw();
-  el.querySelector('#pq')!.addEventListener('input', (e) => { pq = (e.target as HTMLInputElement).value; draw(); });
-  el.onclick = async (e) => {
-    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
-    if (!b) return;
-    const d = b.dataset;
-    try {
-      if (d.f) { pf = d.f as ProfFilter; return await profilesPage(el); }
-      if (b.id === 'srtPlayed') { psort = 'played'; return draw(); }
-      if (b.id === 'srtVer') { psort = 'version'; return draw(); }
-      if (b.id === 'srt') { psort = psort === 'played' ? 'name' : psort === 'name' ? 'version' : 'played'; toast(`Sortierung: ${SORTS[psort]}`); return draw(); }
-      if (b.id === 'new') return await editor(el, null);
-      if (b.id === 'import') return importDialog(el);
-      if (d.edit) return await editor(el, s.profiles.find((p) => p.id === d.edit)!);
-      if (d.play) { state.settings = await api.setSettings({ selectedProfile: d.play }); return void go('play'); }
-      if (d.mods) { el.onclick = null; openModsFor(d.mods); return void go('mods'); }
-      if (d.folder) return await api.openFolder('game', d.folder);
-      if (d.del && await confirm('Profil löschen?', 'Das Profil wird aus der Liste entfernt. Der Spielordner bleibt auf der Festplatte erhalten.', t('prof.delete'), true)) {
-        state.settings = await api.deleteProfile(d.del);
-        return await profilesPage(el);
-      }
-    } catch (err) { errorToast(err); }
-  };
+  const leave = (fn: () => unknown) => { unmountList?.(); unmountList = null; return fn(); };
+  const run = (fn: () => Promise<unknown>) => { fn().catch(errorToast); };
+  unmountList = renderProfiles(el, {
+    profiles: s.profiles,
+    selectedId: s.selectedProfile,
+    onCreate: () => leave(() => editor(el, null)),
+    onImport: () => importDialog(el),
+    onEdit: (p) => leave(() => editor(el, p)),
+    onMods: (p) => leave(() => { openModsFor(p.id); void go('mods'); }),
+    onOpenFolder: (p) => run(() => api.openFolder('game', p.id)),
+    onSelect: (p) => run(async () => { state.settings = await api.setSettings({ selectedProfile: p.id }); }),
+    onExport: (p) => run(async () => { const r = await api.exportToOfficial(p.id, null); toast(`Im offiziellen Launcher als „${r.name}“ angelegt`, 'ok'); }),
+    onDuplicate: (p) => run(async () => {
+      const copy: GameProfile = { ...p, id: crypto.randomUUID(), name: `${p.name} (Kopie)`, createdAt: Date.now(), lastPlayed: null, gameDir: null };
+      const r = await api.saveProfile(copy);
+      if (!r.ok) throw new Error(r.errors.join(', '));
+      state.settings = r.settings;
+      toast('Profil dupliziert', 'ok');
+      await profilesPage(el);
+    }),
+    onDelete: (p) => run(async () => {
+      if (state.settings.profiles.length <= 1) { toast('Das letzte Profil kann nicht gelöscht werden.', 'error'); return; }
+      if (!await confirm('Profil löschen?', 'Das Profil wird aus der Liste entfernt. Der Spielordner bleibt auf der Festplatte erhalten.', t('prof.delete'), true)) return;
+      state.settings = await api.deleteProfile(p.id);
+      await profilesPage(el);
+    }),
+  });
+  onLeave(() => { unmountList?.(); unmountList = null; });
 }
 
 type Version = { id: string; type: string; releaseTime: string };

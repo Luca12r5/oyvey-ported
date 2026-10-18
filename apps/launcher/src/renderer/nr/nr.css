@@ -109,3 +109,9 @@ body.is-fullscreen .nr-drag { -webkit-app-region: no-drag; }
 .menu { border-radius: 0 !important; border: 2px solid rgba(var(--accent-rgb), .5) !important; border-bottom-width: 4px !important; background: rgba(8, 14, 25, .94) !important; backdrop-filter: blur(16px); font-family: var(--font-smallcaps); letter-spacing: .04em; }
 .menu .menu-h { font-family: var(--font-smallcaps); font-variant-caps: small-caps; }
 .menu .menu-i:hover, .menu .menu-i.on { background: rgba(var(--accent-rgb), .22) !important; }
+
+/* The launcher's themed input box (body.nacht input …) must not apply to the
+   React UI, where the visible box is the wrapper (NoRisk search bars). */
+.nr input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]) { background: transparent !important; border: 0 !important; padding: 0 !important; box-shadow: none !important; border-radius: 0 !important; font-family: var(--font-minecraft) !important; }
+:where(.nr) input { width: auto; }
+.nr-cape-art svg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }

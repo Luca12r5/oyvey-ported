@@ -1,10 +1,9 @@
 // Skins tab: the account's real Minecraft skin in 3D (zoom, rotate, poses),
 // upload a new one through the official API, and a local skin library.
 
-import { loadIdentity, state } from '../app.ts';
-import { api, confirm, dialog, errorToast, html, mount, toast, type Raw } from '../ui.ts';
-import { icon } from '../icons.ts';
-import { skinPoster } from '../avatar.ts';
+import { loadIdentity, onLeave, state } from '../app.ts';
+import { renderSkins } from '../nr/mount.tsx';
+import { api, confirm, dialog, errorToast, html, toast, type Raw } from '../ui.ts';
 import type { SkinEntry } from '../../core/design.ts';
 
 
@@ -24,44 +23,30 @@ function readPng(file: File): Promise<string> {
   });
 }
 
-let sq = '';
-
-/** Skins: grid of the skin library like the NoRisk launcher (posed 3D figures). Click = use in Minecraft. */
-export async function skinsPage(el: HTMLElement): Promise<void> {
-  const signed = state.auth.signedIn;
+/** Skins: the NoRisk-launcher skins grid (React, nr/tabs/SkinsTab.tsx). Click = use in Minecraft. */
+export function skinsPage(el: HTMLElement): void {
   const lib = (): SkinEntry[] => state.settings.skinLibrary ?? [];
-  mount(el, html`<div class="skins-head">
-      <div class="searchbar">${icon('search', 'sm')}<input id="sq" placeholder="Search skins…" value="${sq}" autocomplete="off"></div>
-      <span class="grow"></span>
-      <button class="btn" id="add">${icon('plus', 'sm')} ADD SKIN</button>
-      <input type="file" id="file" accept="image/png" hidden>
-    </div>
-    <div class="page-sep"></div>
-    ${signed ? '' : html`<div class="guest-skin"><span class="small muted">Als Gast: Minecraft-Namen eintragen, um deinen Skin zu sehen (nur Anzeige).</span><input id="gname" class="compact" maxlength="16" placeholder="z. B. LegoCpvp" value="${state.settings.guestName}"><button class="btn sm" id="gload">Laden</button></div>`}
-    <div class="skin-grid" id="grid"></div>`);
-  const grid = el.querySelector<HTMLElement>('#grid')!;
-  const current = state.skin.skin;
-  const draw = async () => {
-    const q = sq.trim().toLowerCase();
-    const items = lib().filter((s) => !q || s.name.toLowerCase().includes(q));
-    mount(grid, html`<label class="skin-card add" id="addCard"><div class="sc-fig ghost"><img id="ghostImg" alt=""><span class="sc-plus">${icon('plus')}</span></div><div class="sc-name">Add New Skin</div><div class="sc-sub">${icon('upload', 'xs')} Upload or import a skin</div></label>
-      ${current && !lib().some((s) => s.data === current) ? html`<div class="skin-card active" data-cur="1"><div class="sc-fig"><img data-poster="cur" alt=""></div><div class="sc-name">${state.auth.name ?? 'Aktiver Skin'}</div><div class="sc-sub">${icon('check', 'xs')} Aktiv in Minecraft</div>
-        <div class="sc-tools"><button class="icon-btn sq" data-keep="1" title="In Bibliothek speichern">${icon('plus', 'sm')}</button></div></div>` : ''}
-      ${items.map((s) => html`<div class="skin-card ${s.data === current ? 'active' : ''}" data-id="${s.id}"><div class="sc-fig"><img data-poster="${s.id}" alt=""></div>
-        <div class="sc-name" title="${s.name}">${s.name}</div><div class="sc-sub">${icon('skins', 'xs')} ${s.variant === 'slim' ? 'Slim' : 'Classic'}${s.data === current ? ' · aktiv' : ''}</div>
-        <div class="sc-tools"><button class="icon-btn sq" data-edit="${s.id}" title="Umbenennen / Modell">${icon('brush', 'sm')}</button><button class="icon-btn sq" data-del="${s.id}" title="Löschen">${icon('trash', 'sm')}</button></div></div>`)}`);
-    const ghost = await skinPoster(null, 'classic').catch(() => '');
-    const gi = grid.querySelector<HTMLImageElement>('#ghostImg');
-    if (gi && ghost) gi.src = ghost;
-    if (current) { const img = grid.querySelector<HTMLImageElement>('[data-poster="cur"]'); if (img) img.src = await skinPoster(current, state.skin.variant).catch(() => ''); }
-    for (const s of items) {
-      const img = grid.querySelector<HTMLImageElement>(`[data-poster="${s.id}"]`);
-      if (img) img.src = await skinPoster(s.data, s.variant).catch(() => '');
-    }
+  let unmount: (() => void) | null = null;
+  const file = document.createElement('input');
+  file.type = 'file';
+  file.accept = 'image/png';
+  const rerender = () => {
+    unmount = renderSkins(el, {
+      signedIn: state.auth.signedIn,
+      accountName: state.auth.name ?? '',
+      library: lib(),
+      current: { skin: state.skin.skin, variant: state.skin.variant },
+      guestName: state.settings.guestName,
+      onAdd: () => file.click(),
+      onDropFile: (f) => void take(f),
+      onApply: (s) => void apply(s),
+      onEdit: (s) => void edit(s),
+      onDelete: (s) => void (async () => { if (await confirm('Skin löschen?', 'Der Skin wird aus deiner Bibliothek entfernt.', 'Löschen', true)) await saveLib(lib().filter((x) => x.id !== s.id)); })(),
+      onKeepCurrent: () => { if (state.skin.skin) void saveLib([...lib(), { id: `s-${Date.now().toString(36)}`, name: state.auth.name ?? 'Mein Skin', data: state.skin.skin, variant: state.skin.variant }]); },
+      onGuestName: (name) => void guestName(name),
+    });
   };
-  void draw();
-  const saveLib = async (items: SkinEntry[]) => { state.settings = await api.setSettings({ skinLibrary: items.slice(-40) }); void draw(); };
-  const file = el.querySelector<HTMLInputElement>('#file')!;
+  const saveLib = async (items: SkinEntry[]) => { state.settings = await api.setSettings({ skinLibrary: items.slice(-40) }); rerender(); };
   const take = async (f: File | undefined) => {
     if (!f) return;
     try {
@@ -74,49 +59,34 @@ export async function skinsPage(el: HTMLElement): Promise<void> {
     } catch (e) { errorToast(e); }
   };
   file.addEventListener('change', () => { void take(file.files?.[0]); file.value = ''; });
-  el.querySelector('#add')!.addEventListener('click', () => file.click());
-  el.querySelector('#sq')!.addEventListener('input', (e) => { sq = (e.target as HTMLInputElement).value; void draw(); });
-  grid.addEventListener('dragover', (e) => e.preventDefault());
-  grid.addEventListener('drop', (e) => { e.preventDefault(); void take(e.dataTransfer?.files[0]); });
-  el.querySelector('#gload')?.addEventListener('click', async () => {
-    const name = el.querySelector<HTMLInputElement>('#gname')!.value.trim();
-    if (name && !/^[A-Za-z0-9_]{3,16}$/.test(name)) return toast('Minecraft-Namen haben 3–16 Zeichen (Buchstaben, Zahlen, _).', 'error');
-    state.settings = await api.setSettings({ guestName: name });
-    await loadIdentity();
-    if (name && !state.skin.skin) return toast('Diesen Namen gibt es nicht oder Mojang ist gerade nicht erreichbar.', 'error');
-    void skinsPage(el);
-  });
-  grid.addEventListener('click', async (e) => {
-    const t = e.target as HTMLElement;
-    if (t.closest('#addCard')) { e.preventDefault(); return file.click(); }
-    const del = t.closest<HTMLElement>('[data-del]');
-    if (del) { if (await confirm('Skin löschen?', 'Der Skin wird aus deiner Bibliothek entfernt.', 'Löschen', true)) await saveLib(lib().filter((s) => s.id !== del.dataset.del)); return; }
-    if (t.closest('[data-keep]') && current) { await saveLib([...lib(), { id: `s-${Date.now().toString(36)}`, name: state.auth.name ?? 'Mein Skin', data: current, variant: state.skin.variant }]); return; }
-    const ed = t.closest<HTMLElement>('[data-edit]');
-    if (ed) {
-      const s = lib().find((x) => x.id === ed.dataset.edit);
-      if (!s) return;
-      const name = await form<string>('Skin bearbeiten', html`<label class="field"><span>Name</span><input id="dn" maxlength="40" value="${s.name}"></label>
-        <div class="seg" id="dv"><button type="button" data-v="classic" class="${s.variant === 'classic' ? 'on' : ''}">Classic</button><button type="button" data-v="slim" class="${s.variant === 'slim' ? 'on' : ''}">Slim</button></div>`, (box) => {
-        let v = s.variant;
-        box.querySelector('#dv')!.addEventListener('click', (ev) => { const b = (ev.target as HTMLElement).closest<HTMLButtonElement>('[data-v]'); if (b) { v = b.dataset.v as 'classic' | 'slim'; box.querySelectorAll('#dv button').forEach((x) => x.classList.toggle('on', x === b)); } });
-        return () => { s.variant = v; return (box.querySelector<HTMLInputElement>('#dn')!.value.trim() || s.name).slice(0, 40); };
-      });
-      if (name) await saveLib(lib().map((x) => (x.id === s.id ? { ...x, name, variant: s.variant } : x)));
-      return;
-    }
-    const card = t.closest<HTMLElement>('[data-id]');
-    const s = card && lib().find((x) => x.id === card.dataset.id);
-    if (!s) return;
-    if (!signed) return toast('Zum Übernehmen in Minecraft bitte anmelden.');
+  const edit = async (s: SkinEntry) => {
+    const name = await form<string>('Skin bearbeiten', html`<label class="field"><span>Name</span><input id="dn" maxlength="40" value="${s.name}"></label>
+      <div class="seg" id="dv"><button type="button" data-v="classic" class="${s.variant === 'classic' ? 'on' : ''}">Classic</button><button type="button" data-v="slim" class="${s.variant === 'slim' ? 'on' : ''}">Slim</button></div>`, (box) => {
+      let v = s.variant;
+      box.querySelector('#dv')!.addEventListener('click', (ev) => { const b = (ev.target as HTMLElement).closest<HTMLButtonElement>('[data-v]'); if (b) { v = b.dataset.v as 'classic' | 'slim'; box.querySelectorAll('#dv button').forEach((x) => x.classList.toggle('on', x === b)); } });
+      return () => { s = { ...s, variant: v }; return (box.querySelector<HTMLInputElement>('#dn')!.value.trim() || s.name).slice(0, 40); };
+    });
+    if (name) await saveLib(lib().map((x) => (x.id === s.id ? { ...x, name, variant: s.variant } : x)));
+  };
+  const apply = async (s: SkinEntry) => {
+    if (!state.auth.signedIn) return toast('Zum Übernehmen in Minecraft bitte anmelden.');
     if (!(await confirm('Skin übernehmen?', `„${s.name}“ wird dein Skin in Minecraft.`, 'Übernehmen'))) return;
     try {
       state.skin = await api.uploadSkin(s.data, s.variant);
       await loadIdentity();
       toast('Skin in Minecraft geändert', 'ok');
-      void skinsPage(el);
+      rerender();
     } catch (err) { errorToast(err); }
-  });
+  };
+  const guestName = async (name: string) => {
+    if (name && !/^[A-Za-z0-9_]{3,16}$/.test(name)) return toast('Minecraft-Namen haben 3–16 Zeichen (Buchstaben, Zahlen, _).', 'error');
+    state.settings = await api.setSettings({ guestName: name });
+    await loadIdentity();
+    if (name && !state.skin.skin) return toast('Diesen Namen gibt es nicht oder Mojang ist gerade nicht erreichbar.', 'error');
+    rerender();
+  };
+  rerender();
+  onLeave(() => unmount?.());
 }
 
 function askVariant(): Promise<'classic' | 'slim'> {

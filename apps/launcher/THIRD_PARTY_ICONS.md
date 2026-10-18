@@ -1,6 +1,6 @@
 # Third-party icon artwork
 
-The launcher bundles 25 icons from the sets below. The artwork is redistributed
+The launcher bundles 58 icons from the sets below. The artwork is redistributed
 unmodified; only the icons actually used are included, extracted from the `@iconify-json/*`
 packages by `tools/gen-icons.mjs`.
 
@@ -8,7 +8,7 @@ GENERATED — the launcher build refreshes it.
 
 ## Solar (`solar`)
 
-- 20 icons used of 7401
+- 53 icons used of 7401
 - Author: [480 Design](https://www.figma.com/community/file/1166831539721848736)
 - Licence: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (`CC-BY-4.0`)
 

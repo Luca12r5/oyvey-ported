@@ -141,7 +141,7 @@ await win.waitForTimeout(400);
 if (shots) await win.screenshot({ path: join(shots, 'launcher-profile-editor.png') });
 // A profile's MODS button opens the Mods page on that profile's installed files.
 await page('profiles', 'LEGO Client');
-await win.locator('[data-mods]').first().click();
+await win.locator('.nr-prof-row [data-action=mods]').first().click();
 await win.waitForTimeout(800);
 if (!(await win.locator('#tabs [data-tab=installed].active').count())) problems.push('profile mods view did not open');
 if (shots) await win.screenshot({ path: join(shots, 'launcher-profile-mods.png') });
