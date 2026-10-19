@@ -10,13 +10,15 @@ ENV NODE_ENV=production \
     LEGO_DATA_DIR=/data \
     LEGO_TRUST_PROXY=1 \
     LEGO_SECURE_COOKIES=1
-# No npm install needed: the backend only uses Node built-ins and the shared package.
+# The backend uses Node built-ins and the shared package; the Claude SDK is only
+# needed for the optional AI features (ANTHROPIC_API_KEY) and is loaded on demand.
 COPY packages/shared/package.json packages/shared/package.json
 COPY packages/shared/src packages/shared/src
 COPY apps/backend/package.json apps/backend/package.json
 COPY apps/backend/src apps/backend/src
 COPY apps/website/public apps/website/public
-RUN mkdir -p node_modules/@lego /data \
+RUN npm install --omit=dev --no-save --no-package-lock --no-audit --no-fund @anthropic-ai/sdk@0.135.0 \
+ && mkdir -p node_modules/@lego /data \
  && ln -s ../../packages/shared node_modules/@lego/shared \
  && chown -R node:node /data
 USER node

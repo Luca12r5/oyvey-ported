@@ -2,7 +2,7 @@
 // output). The API key lives only in the server environment (ANTHROPIC_API_KEY);
 // the answer is validated with the same sanitizer as every other spec.
 
-import Anthropic from '@anthropic-ai/sdk';
+import { claudeClient } from './claude.ts';
 import { CAPE_BG_TYPES, CAPE_MAX_SYMBOLS, CAPE_SYMBOLS, CAPE_SYMBOL_IDS, sanitizeCapeSpec, type CapeSpec } from '@lego/shared';
 
 export type CapeAi = (prompt: string) => Promise<CapeSpec>;
@@ -47,8 +47,8 @@ Rules:
 Never put offensive, political or hateful content on a cape.`;
 
 export function claudeCapeAi(apiKey: string, model: string): CapeAi {
-  const client = new Anthropic({ apiKey, maxRetries: 1, timeout: 60_000 });
   return async (prompt) => {
+    const client = await claudeClient(apiKey);
     const res = await client.beta.messages.create({
       model,
       max_tokens: 4000,
