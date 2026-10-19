@@ -128,7 +128,7 @@ export function migrateProfile(p: Partial<GameProfile> & { loader?: string | nul
   } as GameProfile;
 }
 
-export const SETTINGS_VERSION = 10;
+export const SETTINGS_VERSION = 11;
 
 /** Settings saved by older launcher versions: adopt the new default look once. */
 export function migrateSettings(s: Partial<Settings>): Partial<Settings> {
@@ -152,6 +152,8 @@ export function migrateSettings(s: Partial<Settings>): Partial<Settings> {
   if (v < 9 && (s.themeId === 'spotify' || v < 8)) s = { ...s, themeId: 'graphit', accentColor: null };
   // v10: colours and fonts like the NoRisk launcher again (night blue #4f8eff, square, pixel type).
   if (v < 10) s = { ...s, themeId: 'nacht', accentColor: null, background: 'plain', uiFont: 'pixel', headFont: 'pixel', buttonStyle: 'crypt', introEnabled: false };
+  // v11: rounder, more modern corners by default (Designs → Stil can set 0 again).
+  if (v < 11) s = { ...s, look: { ...(s.look ?? DEFAULT_LOOK), radius: 12 } };
   return { ...s, settingsVersion: SETTINGS_VERSION };
 }
 

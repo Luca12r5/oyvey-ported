@@ -52,7 +52,7 @@ export function VerticalNavbar({ className, items, activeItem, onItemClick, onLo
       ref={(el) => { buttonRefs.current[item.id] = el; }}
     >
       <NavButton
-        icon={<Icon icon={item.icon} className="w-8 h-8" />}
+        icon={<Icon icon={item.icon} className="w-[30px] h-[30px]" />}
         label={!item.isAction && showNavLabels ? item.label : undefined}
         isActive={active === item.id}
         onClick={() => handleItemClick(item.id, item.isAction)}
@@ -70,7 +70,7 @@ export function VerticalNavbar({ className, items, activeItem, onItemClick, onLo
     <>
       <nav
         id="sidebar"
-        className={cn('nr flex flex-col items-center py-6 w-24 backdrop-blur-lg', className)}
+        className={cn('nr flex flex-col items-center py-6 w-[116px] backdrop-blur-lg', className)}
         style={{
           backgroundColor: `rgba(${parseInt(accentColor.value.slice(1, 3), 16)}, ${parseInt(accentColor.value.slice(3, 5), 16)}, ${parseInt(accentColor.value.slice(5, 7), 16)}, 0.4)`,
           borderRight: `2px solid ${accentColor.value}60`,
@@ -79,10 +79,10 @@ export function VerticalNavbar({ className, items, activeItem, onItemClick, onLo
         }}
         aria-label="Navigation"
       >
-        <div className="mb-12">
+        <div className="mb-10">
           <Logo size="sm" onClick={onLogoClick} />
         </div>
-        <div className="flex-1 flex flex-col items-center space-y-4 min-h-[300px]">{main.map(renderItem)}</div>
+        <div className="flex-1 flex flex-col items-center space-y-3 min-h-[300px]">{main.map(renderItem)}</div>
         {bottom.length > 0 && <div className="flex flex-col items-center space-y-4 mt-4">{bottom.map((it, i) => renderItem(it, main.length + i))}</div>}
       </nav>
       {showTooltip &&

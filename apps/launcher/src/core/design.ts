@@ -97,7 +97,7 @@ export interface LookSettings {
 
 export const DEFAULT_IMAGE_FIT: ImageFit = { mode: 'cover', zoom: 100, x: 0, y: 0, blur: 0, dim: 20, motion: true };
 export const DEFAULT_LOOK: LookSettings = {
-  shellAlpha: 55, radius: 0, glowLines: true, navLabels: true, titleColors: ['#d01012', '#f2cd37', '#0055bf', '#e9ecef'], titleSub: true, rigScale: 100, nametag: true, imageFit: DEFAULT_IMAGE_FIT,
+  shellAlpha: 55, radius: 12, glowLines: true, navLabels: true, titleColors: ['#d01012', '#f2cd37', '#0055bf', '#e9ecef'], titleSub: true, rigScale: 100, nametag: true, imageFit: DEFAULT_IMAGE_FIT,
 };
 
 export function sanitizeLook(x: unknown): LookSettings {

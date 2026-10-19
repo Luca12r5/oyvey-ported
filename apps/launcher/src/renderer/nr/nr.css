@@ -184,3 +184,48 @@ body.reduced-motion .lx-build .lx-brick-cell, body.reduced-motion .lx-sweep, bod
 body .item .thumb[data-c3d] { position: relative; overflow: hidden; height: 170px; }
 .item .thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 @media (max-width: 1100px) { .cos-layout { grid-template-columns: minmax(0, 1fr); } .cos-try { display: none; } }
+
+/* ================= Round 10: readable, round, modern, a bit more LEGO ================= */
+/* Readability: dim helper text was too faint on dark panels. */
+.nr .text-white\/40 { color: rgba(255,255,255,.62) !important; }
+.nr .text-white\/50 { color: rgba(255,255,255,.7) !important; }
+.nr .text-white\/60 { color: rgba(255,255,255,.78) !important; }
+.nr .text-white\/70 { color: rgba(255,255,255,.86) !important; }
+.nr, .nr-launcher { text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+.nr .text-xs { font-size: .8rem !important; }
+body.nacht { --muted: #c4c4cc; }
+body.nacht small, body.nacht .muted, body.nacht .small { color: #c4c4cc; }
+
+/* Rounder everywhere (radius from Designs → Stil, default 12). */
+body.nacht .btn, body.nacht .icon-btn, body.nacht .tabs button, body.nacht .seg button, body.nacht .tag, body.nacht .badge,
+body.nacht input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]), body.nacht select, body.nacht textarea, body.nacht .searchbar,
+body.nacht .set-nav nav button, body.nacht .menu-i, body.nacht .toast, body.nacht .lang-tile { border-radius: calc(var(--border-radius) * .75) !important; }
+body.nacht .card, body.nacht .glass, body.nacht .rows, body.nacht .item, body.nacht .gate, body.nacht .drawer, body.nacht dialog, body.nacht .menu,
+body.nacht .item .thumb, body.nacht .cos-try, body.nacht .set-sec .rows { border-radius: var(--border-radius) !important; }
+body.nacht .rows { overflow: hidden; }
+.nr .nr-navbtn { border-radius: calc(var(--border-radius) * .9) !important; }
+
+/* A little LEGO: very soft stud grid on panels and the rail. */
+:root { --lx-stud: radial-gradient(circle at 50% 50%, rgba(255,255,255,.045) 0 2.6px, rgba(0,0,0,.14) 2.8px 3.4px, transparent 3.6px); }
+#sidebar, body.nacht .glass, body.nacht .card, body.nacht .rows { background-image: var(--lx-stud); background-size: 18px 18px; }
+
+/* PLAY: alive in the accent colour instead of black. */
+@keyframes lx-play-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), .45), 0 10px 30px rgba(var(--accent-rgb), .35); } 50% { box-shadow: 0 0 0 8px rgba(var(--accent-rgb), 0), 0 14px 40px rgba(var(--accent-rgb), .5); } }
+@keyframes lx-play-sheen { 0%, 60% { transform: translateX(-130%) skewX(-18deg); } 100% { transform: translateX(260%) skewX(-18deg); } }
+.nr-play-group { border-radius: var(--border-radius); animation: lx-play-pulse 2.6s ease-in-out infinite; transition: transform .2s cubic-bezier(.3,1.5,.5,1); }
+.nr-play-group:hover { transform: translateY(-3px) scale(1.02); }
+.nr-play-group > button { background: linear-gradient(180deg, color-mix(in srgb, var(--nr-accent) 88%, #fff), var(--nr-accent) 45%, color-mix(in srgb, var(--nr-accent) 72%, #000)) !important; border-color: color-mix(in srgb, var(--nr-accent) 60%, #fff) !important; border-bottom-color: color-mix(in srgb, var(--nr-accent) 55%, #000) !important; color: #fff !important; text-shadow: 0 2px 4px rgba(0,0,0,.45); overflow: hidden; position: relative; }
+.nr-play-group > button:first-child { border-radius: var(--border-radius) 0 0 var(--border-radius) !important; }
+.nr-play-group > button:last-child { border-radius: 0 var(--border-radius) var(--border-radius) 0 !important; background: linear-gradient(180deg, color-mix(in srgb, var(--nr-accent) 70%, #000), color-mix(in srgb, var(--nr-accent) 55%, #000)) !important; }
+.nr-play-group > button:first-child::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 35%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent); animation: lx-play-sheen 3.4s ease-in-out infinite; pointer-events: none; }
+.nr-play-group > button:first-child::before { content: ""; position: absolute; left: 14%; right: 14%; top: 6px; height: 7px; background: radial-gradient(ellipse 7px 3.5px at 50% 50%, rgba(255,255,255,.28) 0 70%, transparent 75%) 0 0 / 26px 7px repeat-x; pointer-events: none; }
+body.reduced-motion .nr-play-group, body.reduced-motion .nr-play-group > button::after { animation: none !important; }
+
+/* Name tag: bigger pill above the head. */
+.nr-nametag { border-radius: 999px; padding: 4px 14px !important; background: rgba(0,0,0,.55) !important; border: 2px solid rgba(var(--accent-rgb), .7); box-shadow: 0 4px 14px rgba(0,0,0,.45); text-shadow: 0 1px 2px #000; }
+
+/* Title: LEGO logo tile + clean heavy word, fits the launcher. */
+.lx-logo-tile { display: inline-flex; align-items: center; padding: 7px 10px 5px; border-radius: 10px; background: linear-gradient(180deg, #ff2b1c, #d01012 55%, #a50c0e); box-shadow: inset 0 0 0 2px #ffd500, inset 0 0 0 4px #1a1a1a, 0 4px 14px rgba(208,16,18,.45), inset 0 2px 0 6px rgba(255,255,255,.05); transform: rotate(-3deg); transition: transform .3s cubic-bezier(.3,1.6,.5,1); }
+.lx-title:hover .lx-logo-tile { transform: rotate(0deg) scale(1.05); }
+.lx-title-word { font-family: Poppins, Inter, sans-serif; font-weight: 800; font-size: 1.45rem; letter-spacing: .02em; text-transform: uppercase; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.6); background: linear-gradient(90deg, #fff, color-mix(in srgb, var(--nr-accent) 55%, #fff)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; position: relative; padding-bottom: 2px; }
+.lx-title-word::after { content: ""; position: absolute; left: 0; right: 30%; bottom: -2px; height: 3px; border-radius: 3px; background: var(--nr-accent); box-shadow: 0 0 10px rgba(var(--accent-rgb), .8); }

@@ -78,9 +78,10 @@ function HeaderBar() {
       <div className="flex items-center gap-4 min-w-0">
         <NavigationHistory />
         <div className="flex flex-col items-start min-w-0">
-          <h1 className="lx-title m-0 whitespace-nowrap flex items-end gap-2" aria-label="LEGO Launcher">
-            <LegoText text="LEGO" colors={titleColors} height={30} />
-            {titleSub && <LegoText text="LAUNCHER" colors={[accentColor.value]} height={17} className="lx-title-sub" />}
+          <h1 className="lx-title m-0 whitespace-nowrap flex items-center gap-3" aria-label="LEGO Launcher">
+            {/* LEGO logo tile: red rounded badge with a yellow rim, the letters built from bricks. */}
+            <span className="lx-logo-tile"><LegoText text="LEGO" colors={titleColors} height={24} /></span>
+            {titleSub && <span className="lx-title-word">Launcher</span>}
           </h1>
           <HeaderInfoCarousel />
         </div>

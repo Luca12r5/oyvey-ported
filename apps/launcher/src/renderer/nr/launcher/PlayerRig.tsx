@@ -59,7 +59,7 @@ export function PlayerRig({ playerName, skin, variant, cape, animated, reducedMo
       if (t - last < 80) return;
       last = t;
       const top = avatarRef.current?.headTop();
-      if (tagRef.current) tagRef.current.style.top = top == null ? '0px' : `calc(${(top * 100).toFixed(2)}% - ${Math.round(34 * Math.min(1.6, k))}px)`;
+      if (tagRef.current) tagRef.current.style.top = top == null ? '0px' : `calc(${(top * 100).toFixed(2)}% - ${Math.round(52 * Math.min(1.6, k))}px)`;
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
@@ -68,7 +68,7 @@ export function PlayerRig({ playerName, skin, variant, cape, animated, reducedMo
   return (
     <div className="relative flex-shrink-0" style={{ width: `${Math.round(height * 0.62)}px`, height: `${Math.round(height)}px` }}>
       {showTag && (
-        <div ref={tagRef} className="nr-nametag absolute left-1/2 -translate-x-1/2 z-20 px-2 py-0.5 bg-black/40 text-white font-minecraft whitespace-nowrap pointer-events-none" style={{ top: 0, fontSize: `${Math.round(16 * Math.min(1.6, k))}px` }}>
+        <div ref={tagRef} className="nr-nametag absolute left-1/2 -translate-x-1/2 z-20 px-2 py-0.5 bg-black/40 text-white font-minecraft whitespace-nowrap pointer-events-none" style={{ top: 0, fontSize: `${Math.max(18, Math.min(30, Math.round(20 * k)))}px` }}>
           {playerName}
         </div>
       )}
