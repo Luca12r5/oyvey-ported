@@ -261,3 +261,20 @@ test('AI cape design is unavailable without a key', async (t) => {
   assert.equal((await c.call('GET', '/api/me/cape-spec')).body.ai, false);
   assert.equal((await c.call('POST', '/api/capes/ai', { prompt: 'blue bolt' })).status, 503);
 });
+
+test('photo to skin: validates the image, sanitises the AI answer, shares the daily budget', async (t) => {
+  const seen: string[] = [];
+  const h = await start({}, null, async (img) => { seen.push(img.mediaType); return { skin: '#c68642', hairStyle: 'weird', top: { kind: 'jacket', color: '#ff0000' } } as any; });
+  t.after(() => h.close());
+  const c = await login(h, 'Photo');
+  const png = 'data:image/png;base64,' + 'iVBORw0KGgo'.repeat(4);
+  assert.equal((await c.call('POST', '/api/skins/from-photo', { image: 'data:text/html;base64,PGI+' })).status, 400);
+  const r = await c.call('POST', '/api/skins/from-photo', { image: png });
+  assert.equal(r.status, 200);
+  assert.equal(r.body.spec.skin, '#c68642');
+  assert.equal(r.body.spec.hairStyle, 'short', 'unknown values fall back');
+  assert.equal(r.body.spec.top.kind, 'jacket');
+  assert.deepEqual(seen, ['image/png']);
+  for (let i = 0; i < 9; i++) await c.call('POST', '/api/skins/from-photo', { image: png });
+  assert.equal((await c.call('POST', '/api/skins/from-photo', { image: png })).status, 429);
+});

@@ -2,7 +2,7 @@
 // the optional AI designer. Specs are validated with the shared sanitizer, so
 // everything stored or sent to other clients is safe to render.
 
-import { CUSTOM_CAPE_ID, capeSpecId, sanitizeCapeSpec, type CapeSpec } from '@lego/shared';
+import { CUSTOM_CAPE_ID, capeSpecId, sanitizeCapeSpec, sanitizeSkinSpec, type CapeSpec } from '@lego/shared';
 import type { App, AppCtx } from '../app.ts';
 import { requireUser } from '../app.ts';
 import type { Db } from '../db.ts';
@@ -50,10 +50,7 @@ export function registerCapes(app: App): void {
     const u = requireUser(ctx);
     if (!app.capeAi) throw new HttpError(503, 'ai_unavailable', 'AI cape design is not configured on this server');
     const prompt = cleanPrompt(str(obj(ctx.body), 'prompt', 2, 300));
-    const day = new Date().toISOString().slice(0, 10);
-    const used = db.get<{ count: number }>('SELECT count FROM cape_ai_usage WHERE user_id = :u AND day = :d', { u: u.id, d: day })?.count ?? 0;
-    if (used >= CAPE_AI_PER_DAY) throw new HttpError(429, 'daily_limit', `At most ${CAPE_AI_PER_DAY} AI designs per day`);
-    db.run('INSERT INTO cape_ai_usage(user_id, day, count) VALUES (:u, :d, 1) ON CONFLICT(user_id, day) DO UPDATE SET count = count + 1', { u: u.id, d: day });
+    const used = useAiBudget(db, u.id);
     try {
       const spec = sanitizeCapeSpec(await app.capeAi(prompt));
       return { spec, left: CAPE_AI_PER_DAY - used - 1 };
@@ -61,6 +58,30 @@ export function registerCapes(app: App): void {
       throw new HttpError(502, 'ai_failed', 'The AI could not design this cape, try another description');
     }
   }, { rate: ['capeai', 6] });
+
+  // Photo → skin description (the photo is not stored). Shares the daily AI budget with capes.
+  r.post('/api/skins/from-photo', async (ctx: AppCtx) => {
+    const u = requireUser(ctx);
+    if (!app.skinAi) throw new HttpError(503, 'ai_unavailable', 'AI skin design is not configured on this server');
+    const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(str(obj(ctx.body), 'image', 20, 2_800_000));
+    if (!m) throw new HttpError(400, 'invalid_image', 'Send a JPEG, PNG or WebP image as data URL (max. 2 MB)');
+    useAiBudget(db, u.id);
+    try {
+      const spec = await app.skinAi({ mediaType: m[1] as 'image/jpeg' | 'image/png' | 'image/webp', base64: m[2]! });
+      return { spec: sanitizeSkinSpec(spec) };
+    } catch {
+      throw new HttpError(502, 'ai_failed', 'The AI could not read this photo, try another one');
+    }
+  }, { rate: ['skinai', 6], bodyLimit: 3_000_000 });
+}
+
+/** Counts one AI design against the daily budget (capes and skins together). */
+function useAiBudget(db: Db, userId: string): number {
+  const day = new Date().toISOString().slice(0, 10);
+  const used = db.get<{ count: number }>('SELECT count FROM cape_ai_usage WHERE user_id = :u AND day = :d', { u: userId, d: day })?.count ?? 0;
+  if (used >= CAPE_AI_PER_DAY) throw new HttpError(429, 'daily_limit', `At most ${CAPE_AI_PER_DAY} AI designs per day`);
+  db.run('INSERT INTO cape_ai_usage(user_id, day, count) VALUES (:u, :d, 1) ON CONFLICT(user_id, day) DO UPDATE SET count = count + 1', { u: userId, d: day });
+  return used;
 }
 
 /** Plain text only, no markup or control characters; text meant for the cape is cleaned again later. */

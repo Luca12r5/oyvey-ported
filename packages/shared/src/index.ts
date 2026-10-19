@@ -9,3 +9,4 @@ export * from './permissions.ts';
 export * from './feedback.ts';
 export * from './design.ts';
 export * from './cape.ts';
+export * from './skin-gen.ts';

@@ -15,6 +15,7 @@ import { registerSocial } from './routes/social.ts';
 import { registerCosmetics } from './routes/cosmetics.ts';
 import { registerCapes } from './routes/capes.ts';
 import { claudeCapeAi, type CapeAi } from './services/capeai.ts';
+import { claudeSkinAi, type SkinAi } from './services/skinai.ts';
 import { registerProgression } from './routes/progression.ts';
 import { registerFeedback } from './routes/feedback.ts';
 import { registerAdmin } from './routes/admin.ts';
@@ -43,6 +44,8 @@ export interface App {
   fetch: typeof fetch;
   /** AI cape designer, or null when no API key is configured (injected in tests). */
   capeAi: CapeAi | null;
+  /** Photo → skin designer, or null without an API key (injected in tests). */
+  skinAi: SkinAi | null;
   handle(req: IncomingMessage, res: ServerResponse): Promise<void>;
 }
 
@@ -89,7 +92,7 @@ interface SessionRow {
   banned_until: number | null;
 }
 
-export function createApp(config: Config, opts: { db?: Db; fetch?: typeof fetch; capeAi?: CapeAi | null } = {}): App {
+export function createApp(config: Config, opts: { db?: Db; fetch?: typeof fetch; capeAi?: CapeAi | null; skinAi?: SkinAi | null } = {}): App {
   const db = opts.db ?? new Db(join(config.dataDir, 'lego.sqlite'));
   db.migrate();
   const router = new Router<AuthUser>();
@@ -101,6 +104,7 @@ export function createApp(config: Config, opts: { db?: Db; fetch?: typeof fetch;
     events: new EventHub(),
     fetch: opts.fetch ?? fetch,
     capeAi: opts.capeAi !== undefined ? opts.capeAi : config.anthropicApiKey ? claudeCapeAi(config.anthropicApiKey, config.capeAiModel) : null,
+    skinAi: opts.skinAi !== undefined ? opts.skinAi : config.anthropicApiKey ? claudeSkinAi(config.anthropicApiKey, config.capeAiModel) : null,
     async handle(req, res) {
       const ip = clientIp(req, config.trustProxy);
       await router.handle(req, res, ip, (ctx) => !ctx.path.startsWith('/api/') && serveStatic(config.websiteDir, ctx));

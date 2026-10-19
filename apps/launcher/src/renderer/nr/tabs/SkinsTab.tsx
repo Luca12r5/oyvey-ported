@@ -1,22 +1,22 @@
 // Ported from the NoRisk Client launcher (GPL-3.0): components/tabs/SkinsTab.tsx
 // (SkinPreview, AddSkinCard, layout). Previews are rendered by the LEGO launcher's
 // skinview3d poster renderer; the skin library and upload logic live in pages/skins.ts.
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useState, type CSSProperties } from 'react';
 import { Icon } from '../lib/iconify.tsx';
 import { SearchWithFilters } from '../ui/SearchWithFilters.tsx';
 import { Button } from '../ui/buttons/Button.tsx';
 import { useThemeStore } from '../store/theme.ts';
-import { skinPoster } from '../../avatar.ts';
+import { skinSprite, SPRITE_FRAMES } from '../../avatar.ts';
 import type { SkinEntry } from '../../../core/design.ts';
 
 const PREVIEW_WIDTH = 176;
 const PREVIEW_HEIGHT = 280;
 
-function usePoster(data: string | null, variant: 'classic' | 'slim'): string | null {
+function useSprite(data: string | null, variant: 'classic' | 'slim'): string | null {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     let off = false;
-    skinPoster(data, variant, PREVIEW_WIDTH, PREVIEW_HEIGHT).then((u) => { if (!off) setUrl(u); }).catch(() => { if (!off) setUrl(''); });
+    skinSprite(data, variant, PREVIEW_WIDTH, PREVIEW_HEIGHT).then((u) => { if (!off) setUrl(u); }).catch(() => { if (!off) setUrl(''); });
     return () => { off = true; };
   }, [data, variant]);
   return url;
@@ -27,7 +27,7 @@ const SkinPreview = memo(function SkinPreview({ skin, isApplied, onClick, onEdit
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const accentColor = useThemeStore((s) => s.accentColor);
-  const url = usePoster(skin.data, skin.variant);
+  const url = useSprite(skin.data, skin.variant);
   return (
     <div
       data-id={skin.id}
@@ -57,7 +57,7 @@ const SkinPreview = memo(function SkinPreview({ skin, isApplied, onClick, onEdit
       <div className="flex flex-col items-center gap-3 relative z-10 w-full">
         <div className="relative flex-shrink-0 rounded-lg flex items-center justify-center overflow-hidden border border-transparent" style={{ width: `${PREVIEW_WIDTH}px`, height: `${PREVIEW_HEIGHT}px` }}>
           {url === null ? <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: accentColor.value, borderTopColor: 'transparent' }} />
-            : url ? <img src={url} alt="" className="w-full h-full object-contain" style={{ filter: 'drop-shadow(3px 6px 4px rgba(0,0,0,0.6))' }} /> : <Icon icon="solar:emoji-funny-circle-bold" className="w-16 h-16 text-white/30" />}
+            : url ? <div className="nr-skin-anim w-full h-full" style={{ backgroundImage: `url(${url})`, ['--frames' as string]: SPRITE_FRAMES } as CSSProperties} /> : <Icon icon="solar:emoji-funny-circle-bold" className="w-16 h-16 text-white/30" />}
         </div>
         <div className="flex-grow min-w-0 w-full text-center">
           <h3 className="font-minecraft text-white text-base whitespace-nowrap overflow-hidden text-ellipsis max-w-full normal-case mb-1" title={skin.name}>{skin.name}</h3>
@@ -98,6 +98,7 @@ export interface SkinsTabProps {
   current: { skin: string | null; variant: 'classic' | 'slim' };
   guestName: string;
   onAdd: () => void;
+  onPhoto: () => void;
   onDropFile: (f: File) => void;
   onApply: (s: SkinEntry) => void;
   onEdit: (s: SkinEntry) => void;
@@ -120,6 +121,7 @@ export function SkinsTab(p: SkinsTabProps) {
           <div className="flex items-center gap-4">
             <div className="flex-1"><SearchWithFilters placeholder="Skins durchsuchen …" searchValue={search} onSearchChange={setSearch} /></div>
             <div className="flex items-center gap-3">
+              <Button id="photoSkin" variant="flat" size="sm" icon={<Icon icon="solar:palette-bold" className="w-5 h-5" />} onClick={p.onPhoto}>AUS FOTO (KI)</Button>
               <Button id="add" variant="flat" size="sm" icon={<Icon icon="solar:add-circle-bold" className="w-5 h-5" />} onClick={p.onAdd}>ADD SKIN</Button>
             </div>
           </div>

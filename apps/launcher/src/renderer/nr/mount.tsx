@@ -9,6 +9,7 @@ import { ModsTab, type ModsTabProps } from './tabs/ModsTab.tsx';
 import { SkinsTab, type SkinsTabProps } from './tabs/SkinsTab.tsx';
 import { CapesTab, type CapesTabProps } from './tabs/CapesTab.tsx';
 import { CapeEditor, type CapeEditorProps } from './capes/CapeEditor.tsx';
+import { SkinDialog, type SkinDialogProps } from './skins/SkinDialog.tsx';
 export { modsStore } from './tabs/ModsTab.tsx';
 import { applyAccentToDOM, accentFrom, themeStore } from './store/theme.ts';
 
@@ -72,5 +73,15 @@ export function openCapeEditor(props: Omit<CapeEditorProps, 'onClose'> & { onClo
   const root = createRoot(host);
   const close = () => { root.unmount(); host.remove(); props.onClose?.(); };
   root.render(<CapeEditor {...props} onClose={close} />);
+  return close;
+}
+
+/** Opens the 3D skin preview dialog; returns a close function. */
+export function openSkinDialog(props: Omit<SkinDialogProps, 'onClose'> & { onClose?: () => void }): () => void {
+  const host = document.createElement('div');
+  document.body.append(host);
+  const root = createRoot(host);
+  const close = () => { root.unmount(); host.remove(); props.onClose?.(); };
+  root.render(<SkinDialog {...props} onClose={close} />);
   return close;
 }

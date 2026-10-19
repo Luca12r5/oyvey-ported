@@ -149,6 +149,20 @@ if (!(await win.locator('#tabs [data-tab=installed].active').count())) problems.
 if (shots) await win.screenshot({ path: join(shots, 'launcher-profile-mods.png') });
 await page('mods', 'Modpacks');
 await page('skins', 'Add New Skin');
+// Photo → skin (offline designer here, no AI key): 3D dialog, adjust, save into the library.
+const skinCards = await win.locator('.nr-skin-card').count();
+const [chooser] = await Promise.all([win.waitForEvent('filechooser'), win.click('#photoSkin')]);
+await chooser.setFiles(new URL('../src/renderer/assets/minifig.png', import.meta.url).pathname);
+await win.waitForSelector('#skinDialog #skinSpec', { timeout: 10000 }).catch(() => problems.push('photo skin dialog did not open'));
+await win.locator('#skinSpec select').first().selectOption('long').catch(() => {});
+await win.waitForTimeout(1200);
+if (shots) await win.screenshot({ path: join(shots, 'launcher-skin-photo.png') });
+await win.click('#skinSave');
+await win.waitForSelector('#skinDialog', { state: 'detached', timeout: 8000 }).catch(() => problems.push('skin dialog did not close after saving'));
+await win.waitForTimeout(1500);
+if ((await win.locator('.nr-skin-card').count()) <= skinCards) problems.push('saved photo skin is not in the library');
+if (!(await win.locator('.nr-skin-anim').count())) problems.push('library skins are not animated');
+if (shots) await win.screenshot({ path: join(shots, 'launcher-skins.png') });
 await page('capes', 'No Cape');
 // Cape editor: symbols change the cape, the offline designer builds one from a description.
 await win.click('#editor');

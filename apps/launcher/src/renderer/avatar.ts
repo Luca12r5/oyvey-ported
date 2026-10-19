@@ -346,6 +346,51 @@ export async function skinPoster(skin: string | null, variant: 'classic' | 'slim
   return url;
 }
 
+export const SPRITE_FRAMES = 12;
+const spriteCache = new Map<string, string>();
+let spriteQueue: Promise<unknown> = Promise.resolve();
+/**
+ * Animated skin card: a strip of walking frames (slowly turning) rendered by the
+ * shared offscreen viewer; the card plays it with CSS steps(), so a whole
+ * library animates with a single WebGL context.
+ */
+export function skinSprite(skin: string | null, variant: 'classic' | 'slim', w = 176, h = 280): Promise<string> {
+  const key = `${variant}|${w}x${h}|${skin ?? ''}`;
+  const hit = spriteCache.get(key);
+  if (hit) return Promise.resolve(hit);
+  const job = spriteQueue.then(async () => {
+    await skinPoster(skin, variant, w, h);
+    const v = posterViewer;
+    if (!v) return '';
+    const p = v.playerObject.skin;
+    const cw = v.canvas.width, ch = v.canvas.height;
+    const strip = document.createElement('canvas');
+    strip.width = cw * SPRITE_FRAMES;
+    strip.height = ch;
+    const g = strip.getContext('2d')!;
+    for (let i = 0; i < SPRITE_FRAMES; i++) {
+      const t = (i / SPRITE_FRAMES) * Math.PI * 2;
+      const sw = Math.sin(t) * 0.55;
+      v.playerWrapper.rotation.y = 0.45 + Math.sin(t) * 0.22;
+      p.rightArm.rotation.set(sw, 0, 0.06);
+      p.leftArm.rotation.set(-sw, 0, -0.06);
+      p.rightLeg.rotation.set(-sw * 0.9, 0, 0.02);
+      p.leftLeg.rotation.set(sw * 0.9, 0, -0.02);
+      p.head.rotation.set(Math.sin(t * 2) * 0.04, Math.sin(t) * 0.2, 0);
+      v.playerObject.position.y = Math.abs(Math.cos(t)) * 0.5;
+      v.render();
+      g.drawImage(v.canvas, i * cw, 0);
+    }
+    v.playerObject.position.y = 0;
+    const url = strip.toDataURL('image/png');
+    spriteCache.set(key, url);
+    if (spriteCache.size > 60) spriteCache.delete(spriteCache.keys().next().value!);
+    return url;
+  });
+  spriteQueue = job.catch(() => '');
+  return job.catch(() => '');
+}
+
 /**
  * Accent colour from a skin, like the Spotify HUD takes its colour from the
  * cover: average hue of the saturated pixels, pushed to a bright, readable tone.

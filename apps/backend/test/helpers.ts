@@ -10,6 +10,7 @@ import { createApp, type App } from '../src/app.ts';
 import { loadConfig } from '../src/config.ts';
 import { Db } from '../src/db.ts';
 import type { CapeAi } from '../src/services/capeai.ts';
+import type { SkinAi } from '../src/services/skinai.ts';
 
 export interface Harness {
   app: App;
@@ -19,7 +20,7 @@ export interface Harness {
   close(): Promise<void>;
 }
 
-export async function start(env: Record<string, string> = {}, capeAi?: CapeAi | null): Promise<Harness> {
+export async function start(env: Record<string, string> = {}, capeAi?: CapeAi | null, skinAi?: SkinAi | null): Promise<Harness> {
   const dataDir = mkdtempSync(join(tmpdir(), 'lego-test-'));
   const config = loadConfig({
     LEGO_DATA_DIR: dataDir, LEGO_SECURE_COOKIES: '0', LEGO_PUBLIC_ORIGIN: 'http://lego.test',
@@ -35,7 +36,7 @@ export async function start(env: Record<string, string> = {}, capeAi?: CapeAi | 
     }
     throw new Error(`unexpected fetch ${url}`);
   }) as typeof fetch;
-  const app = createApp(config, { db: new Db(':memory:'), fetch: fakeFetch, capeAi: capeAi === undefined ? null : capeAi });
+  const app = createApp(config, { db: new Db(':memory:'), fetch: fakeFetch, capeAi: capeAi === undefined ? null : capeAi, skinAi: skinAi === undefined ? null : skinAi });
   const server: Server = createServer((req, res) => void app.handle(req, res));
   await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
   const addr = server.address();
