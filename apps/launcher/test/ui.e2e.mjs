@@ -315,6 +315,22 @@ await win.waitForSelector('#vrStatus:not(:has(.spinner))', { timeout: 10_000 }).
 await win.click('#vrPreview');
 await win.waitForSelector('.vr-root');
 await win.waitForFunction(() => Number(document.querySelector('.vr-root')?.dataset.t) >= 4, null, { timeout: 120_000, polling: 200 }).catch(() => problems.push('VR lobby did not run'));
+// Headset-style desktop: key hints, dock; the dock's browser button closes and reopens the window.
+if (!(await win.isVisible('.vr-keys'))) problems.push('VR key hints missing');
+const vrClick = async () => {
+  const pos = await win.waitForFunction(() => document.querySelector('.vr-root')?.dataset.compass, null, { timeout: 20_000 }).then((h) => h.jsonValue()).catch(() => null);
+  if (!pos) { problems.push('VR dock not on screen'); return; }
+  const [x, y] = pos.split(',').map(Number);
+  await win.mouse.move(x, y);
+  await win.mouse.down();
+  await win.mouse.up();
+};
+await win.waitForFunction(() => document.querySelector('.vr-root')?.dataset.browser === '1', null, { timeout: 20_000 }).catch(() => problems.push('VR browser window not shown'));
+await vrClick();
+await win.waitForFunction(() => document.querySelector('.vr-root')?.dataset.browser === '0', null, { timeout: 20_000 }).catch(() => problems.push('VR dock did not close the browser'));
+await vrClick();
+await win.waitForFunction(() => document.querySelector('.vr-root')?.dataset.browser === '1', null, { timeout: 20_000 }).catch(() => problems.push('VR dock did not reopen the browser'));
+await win.waitForTimeout(1500);
 if (shots) await win.screenshot({ path: join(shots, 'launcher-vr-lobby.png') });
 await win.keyboard.press('Escape');
 await win.waitForSelector('.vr-root', { state: 'detached', timeout: 8000 }).catch(() => problems.push('VR did not close on Esc'));

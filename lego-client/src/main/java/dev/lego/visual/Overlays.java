@@ -482,52 +482,196 @@ public final class Overlays {
       }
    }
 
-   /** "VR look": the picture seen through two headset lenses (black frame with a nose bridge, soft lens edge, faint glass glare). Keyboard + mouse as usual. */
+   /**
+    * "VR look": your world at the current spot as seen in a headset's home view -
+    * a rounded dock at the bottom (time, connection, fps · ms, name, coordinates,
+    * heading), key hints top left that light up (WASD, LMB, RMB), two dark hands
+    * in the lower corners with a pointer ray to the crosshair. The lens frame is
+    * optional. Keyboard + mouse as usual.
+    */
    public static final class VrLook extends Module {
-      final Setting.Num edge = this.add(new Setting.Num("Linsen-Rand", 0.0, 100.0, 5.0, 60.0, "%"));
-      final Setting.Bool glare = this.add(new Setting.Bool("Glas-Reflex", true));
+      final Setting.Num edge = this.add(new Setting.Num("Linsen-Rand", 0.0, 100.0, 5.0, 0.0, "%"));
+      final Setting.Bool dock = this.add(new Setting.Bool("Dock-Leiste", true));
+      final Setting.Bool keys = this.add(new Setting.Bool("Tasten-Hinweise", true));
+      final Setting.Bool hands = this.add(new Setting.Bool("Hände mit Strahl", true));
       final Setting.Bool breathe = this.add(new Setting.Bool("Atmen", true));
+      private long shownAt;
+      private final float[] lit = new float[6];
+      private long lastNs;
 
       VrLook() {
-         super("vrlook", "VR-Look", "Sieht aus wie durch eine VR-Brille - Linsen, Nasenbrücke, Glas-Reflex", Category.VISUALS);
+         super("vrlook", "VR-Look", "Wie in einer VR-Brille - Dock-Leiste, Tasten-Hinweise, Hände mit Strahl", Category.VISUALS);
          this.icon("vignette");
          this.fresh();
       }
 
-      void draw(int w, int h) {
-         Gx.Img lens = Gx.painted("vrlook-lens", 1024, 512, g -> {
-            g.setColor(Color.BLACK);
-            g.fillRect(0, 0, 1024, 512);
-            g.setComposite(java.awt.AlphaComposite.Clear);
-            // Two overlapping round lenses, a little narrower at the nose.
-            g.fill(new java.awt.geom.Ellipse2D.Float(40.0F, 20.0F, 500.0F, 472.0F));
-            g.fill(new java.awt.geom.Ellipse2D.Float(484.0F, 20.0F, 500.0F, 472.0F));
-            g.setComposite(java.awt.AlphaComposite.SrcOver);
-            // Nose bridge.
-            Double nose = new Double();
-            nose.moveTo(462.0, 512.0);
-            nose.curveTo(470.0, 400.0, 554.0, 400.0, 562.0, 512.0);
-            nose.closePath();
-            g.fill(nose);
-            // Soft inner edge of each lens.
-            for (float cx : new float[]{290.0F, 734.0F}) {
-               g.setPaint(new RadialGradientPaint(new Float(cx, 256.0F), 250.0F, new float[]{0.0F, 0.82F, 1.0F}, new Color[]{new Color(0, 0, 0, 0), new Color(0, 0, 0, 0), new Color(0, 0, 0, 200)}, CycleMethod.NO_CYCLE));
-               g.fill(new java.awt.geom.Ellipse2D.Float(cx - 250.0F, 20.0F, 500.0F, 472.0F));
+      @Override
+      public void onEnable() {
+         this.shownAt = System.currentTimeMillis();
+      }
+
+      private static Gx.Img handImg(boolean right) {
+         return Gx.painted(right ? "vrlook-hand-r" : "vrlook-hand-l", 256, 256, g -> {
+            if (!right) {
+               g.translate(256, 0);
+               g.scale(-1, 1);
             }
+            g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+            // Pointing glove: wrist bottom right, index finger toward the top left.
+            g.rotate(-0.62, 150, 170);
+            Color base = new Color(32, 34, 41), lite = new Color(62, 65, 76);
+            g.setPaint(new GradientPaint(110.0F, 120.0F, lite, 170.0F, 230.0F, base));
+            g.fill(new java.awt.geom.RoundRectangle2D.Float(118.0F, 176.0F, 66.0F, 80.0F, 26.0F, 26.0F)); // cuff
+            g.fill(new java.awt.geom.RoundRectangle2D.Float(104.0F, 112.0F, 92.0F, 84.0F, 38.0F, 38.0F)); // palm
+            g.fill(new java.awt.geom.RoundRectangle2D.Float(110.0F, 28.0F, 24.0F, 100.0F, 24.0F, 24.0F)); // index
+            for (int i = 0; i < 3; i++) {
+               g.fill(new java.awt.geom.RoundRectangle2D.Float(134.0F + i * 21.0F, 98.0F + i * 4.0F, 22.0F, 42.0F, 22.0F, 22.0F)); // curled fingers
+            }
+            g.fill(new java.awt.geom.RoundRectangle2D.Float(78.0F, 128.0F, 44.0F, 22.0F, 22.0F, 22.0F)); // thumb
+            g.setColor(new Color(255, 255, 255, 34));
+            g.setStroke(new BasicStroke(3.0F));
+            g.draw(new java.awt.geom.RoundRectangle2D.Float(110.0F, 28.0F, 24.0F, 100.0F, 24.0F, 24.0F));
+            g.draw(new java.awt.geom.RoundRectangle2D.Float(104.0F, 112.0F, 92.0F, 84.0F, 38.0F, 38.0F));
          });
-         Gx.Img shine = Gx.painted("vrlook-glare", 256, 256, g -> {
-            g.setPaint(new GradientPaint(0.0F, 0.0F, new Color(255, 255, 255, 40), 160.0F, 160.0F, new Color(255, 255, 255, 0)));
-            g.fillRect(0, 0, 256, 256);
-         });
+      }
+
+      void draw(int w, int h) {
+         int s = Gx.S;
+         long now = System.currentTimeMillis();
+         float in = Ease.outCubic(Ease.clamp((now - this.shownAt) / 600.0F));
+         long ns = System.nanoTime();
+         float dt = this.lastNs == 0L ? 0.016F : Math.min(0.1F, (ns - this.lastNs) / 1.0E9F);
+         this.lastNs = ns;
          float a = this.edge.getF() / 100.0F;
-         float br = this.breathe.get() ? (float)Math.sin(System.currentTimeMillis() / 1000.0 * 1.3) * 0.006F : 0.0F;
-         int ow = Math.round(w * (1.06F + br)), oh = Math.round(h * (1.06F + br));
-         if (lens != null && a > 0.0F) {
-            Gx.image(lens, (w - ow) / 2, (h - oh) / 2, ow, oh, Gx.withAlpha(-1, a));
+         if (a > 0.0F) {
+            Gx.Img lens = Gx.painted("vrlook-lens", 1024, 512, g -> {
+               g.setColor(Color.BLACK);
+               g.fillRect(0, 0, 1024, 512);
+               g.setComposite(java.awt.AlphaComposite.Clear);
+               g.fill(new java.awt.geom.Ellipse2D.Float(40.0F, 20.0F, 500.0F, 472.0F));
+               g.fill(new java.awt.geom.Ellipse2D.Float(484.0F, 20.0F, 500.0F, 472.0F));
+               g.setComposite(java.awt.AlphaComposite.SrcOver);
+               Double nose = new Double();
+               nose.moveTo(462.0, 512.0);
+               nose.curveTo(470.0, 400.0, 554.0, 400.0, 562.0, 512.0);
+               nose.closePath();
+               g.fill(nose);
+               for (float cx : new float[]{290.0F, 734.0F}) {
+                  g.setPaint(new RadialGradientPaint(new Float(cx, 256.0F), 250.0F, new float[]{0.0F, 0.82F, 1.0F}, new Color[]{new Color(0, 0, 0, 0), new Color(0, 0, 0, 0), new Color(0, 0, 0, 200)}, CycleMethod.NO_CYCLE));
+                  g.fill(new java.awt.geom.Ellipse2D.Float(cx - 250.0F, 20.0F, 500.0F, 472.0F));
+               }
+            });
+            float br = this.breathe.get() ? (float)Math.sin(now / 1000.0 * 1.3) * 0.006F : 0.0F;
+            int ow = Math.round(w * (1.06F + br)), oh = Math.round(h * (1.06F + br));
+            if (lens != null) {
+               Gx.image(lens, (w - ow) / 2, (h - oh) / 2, ow, oh, Gx.withAlpha(-1, a));
+            }
          }
-         if (shine != null && this.glare.get()) {
-            Gx.image(shine, Math.round(w * 0.12F), Math.round(h * 0.08F), Math.round(w * 0.25F), Math.round(h * 0.35F), -1);
-            Gx.image(shine, Math.round(w * 0.56F), Math.round(h * 0.08F), Math.round(w * 0.25F), Math.round(h * 0.35F), -1);
+         LocalPlayer p = Mc.player();
+         if (p == null) {
+            return;
+         }
+         float bob = this.breathe.get() ? (float)Math.sin(now / 1000.0 * 1.6) * 2.0F * s : 0.0F;
+         // Hands with rays to the crosshair (drawn first so the dock sits on top).
+         if (this.hands.get()) {
+            int hs = Math.round(Math.min(w, h) * 0.3F);
+            int cx = w / 2, cy = h / 2;
+            Gx.Img hr = handImg(true), hl = handImg(false);
+            int ry = Math.round(h - hs * 0.78F + (1.0F - in) * hs + bob);
+            int rxR = Math.round(w - hs * 1.05F), rxL = Math.round(hs * 0.05F);
+            // index fingertip in the painted image (after the rotation) ≈ (0.30, 0.16)
+            float tipRx = rxR + hs * 0.30F, tipRy = ry + hs * 0.16F;
+            float tipLx = rxL + hs * 0.70F, tipLy = ry + hs * 0.16F;
+            int accent = 0xFF6EA8FF;
+            ray(tipRx, tipRy, cx, cy, Gx.withAlpha(accent, 0.75F * in), s);
+            ray(tipLx, tipLy, tipLx + (cx - tipLx) * 0.35F, tipLy + (cy - tipLy) * 0.35F - h * 0.05F, Gx.withAlpha(accent, 0.3F * in), s);
+            Gx.glow(cx, cy, 7 * s, Gx.withAlpha(accent, 0.6F * in));
+            Gx.circle(cx, cy, Math.max(2, 2 * s), Gx.withAlpha(-1, in));
+            if (hr != null) {
+               Gx.image(hr, rxR, ry, hs, hs, -1);
+            }
+            if (hl != null) {
+               Gx.image(hl, rxL, ry, hs, hs, -1);
+            }
+         }
+         if (this.keys.get()) {
+            net.minecraft.client.Options o = Mc.mc().options;
+            boolean[] down = {Mc.pressed(o.keyUp), Mc.pressed(o.keyLeft), Mc.pressed(o.keyDown), Mc.pressed(o.keyRight), Mc.pressed(o.keyAttack), Mc.pressed(o.keyUse)};
+            for (int i = 0; i < 6; i++) {
+               this.lit[i] += ((down[i] ? 1.0F : 0.0F) - this.lit[i]) * Math.min(1.0F, dt * 18.0F);
+            }
+            int k = 13 * s, gap = 3 * s, x0 = 10 * s, y0 = 10 * s;
+            int pw = 3 * k + 4 * gap, ph = 3 * k + 4 * gap + 9 * s;
+            Gx.pushAlpha(in);
+            Gx.shadow(x0, y0, pw, ph, 8 * s, 6 * s, 0.25F);
+            Gx.rect(x0, y0, pw, ph, 8 * s, 0xA018191F);
+            key(x0 + gap + (k + gap), y0 + gap, k, k, "W", this.lit[0], s);
+            key(x0 + gap, y0 + gap * 2 + k, k, k, "A", this.lit[1], s);
+            key(x0 + gap + (k + gap), y0 + gap * 2 + k, k, k, "S", this.lit[2], s);
+            key(x0 + gap + 2 * (k + gap), y0 + gap * 2 + k, k, k, "D", this.lit[3], s);
+            int mw = (3 * k + gap) / 2;
+            key(x0 + gap, y0 + gap * 3 + 2 * k, mw, k, "LMB", this.lit[4], s);
+            key(x0 + gap * 2 + mw, y0 + gap * 3 + 2 * k, mw, k, "RMB", this.lit[5], s);
+            Gx.text("E Inventar · Esc Menü", x0 + gap, y0 + gap * 3 + 3 * k + 2 * s, 5.0F * s, 2, 0xD0FFFFFF);
+            Gx.popAlpha();
+         }
+         if (this.dock.get()) {
+            String time = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+            int fps = Mc.fps();
+            int ping = Mc.ping();
+            String perf = fps + " fps · " + (ping >= 0 ? ping + " ms" : "lokal");
+            String name = Mc.name(p);
+            String pos = String.format(Locale.ROOT, "%d / %d / %d", (int)Math.floor(Mc.x(p)), (int)Math.floor(Mc.y(p)), (int)Math.floor(Mc.z(p)));
+            float yaw = ((Mc.yaw(p) % 360.0F) + 360.0F) % 360.0F;
+            String[] dirs = {"S", "SW", "W", "NW", "N", "NO", "O", "SO"};
+            String dir = dirs[Math.round(yaw / 45.0F) & 7];
+            float fs = 6.5F * s, fsSmall = 5.5F * s;
+            int pad = 10 * s, ic = 9 * s, sep = 9 * s;
+            float wTime = Gx.width(time, fs, 3), wPerf = Gx.width(perf, fsSmall, 2), wName = Gx.width(name, fs, 3), wPos = Gx.width(pos, fsSmall, 2), wDir = Gx.width(dir, fs, 3);
+            int dw = Math.round(pad * 2 + wTime + sep + ic + 4 * s + wPerf + sep * 2 + ic + 4 * s + wName + sep * 2 + ic + 4 * s + wPos + sep + ic + 4 * s + wDir);
+            int dh = 22 * s;
+            int dx = (w - dw) / 2;
+            int dy = Math.round(h - dh - 10 * s + (1.0F - in) * (dh + 14 * s));
+            Gx.shadow(dx, dy, dw, dh, dh / 2, 8 * s, 0.35F);
+            Gx.rect(dx, dy, dw, dh, dh / 2, 0xF01E1F26);
+            Gx.outline(dx, dy, dw, dh, dh / 2, Math.max(1, s / 2), 0x22FFFFFF);
+            float x = dx + pad, my = dy + dh / 2.0F;
+            x += Gx.textMid(time, x, my, fs, 3, -1) + sep;
+            Gx.icon("wifi", x + ic / 2.0F, my, ic, ping >= 0 && ping < 150 ? -1 : 0xFFFFC266);
+            x += ic + 4 * s;
+            x += Gx.textMid(perf, x, my, fsSmall, 2, 0xFFB8BCC8) + sep;
+            Gx.fill(Math.round(x), Math.round(my - 6 * s), Math.max(1, s / 2), 12 * s, 0x30FFFFFF);
+            x += sep;
+            Gx.icon("user", x + ic / 2.0F, my, ic, -1);
+            x += ic + 4 * s;
+            x += Gx.textMid(name, x, my, fs, 3, -1) + sep;
+            Gx.fill(Math.round(x), Math.round(my - 6 * s), Math.max(1, s / 2), 12 * s, 0x30FFFFFF);
+            x += sep;
+            Gx.icon("map-pin", x + ic / 2.0F, my, ic, -1);
+            x += ic + 4 * s;
+            x += Gx.textMid(pos, x, my, fsSmall, 2, 0xFFB8BCC8) + sep;
+            Gx.icon("compass", x + ic / 2.0F, my, ic, -1);
+            x += ic + 4 * s;
+            Gx.textMid(dir, x, my, fs, 3, -1);
+         }
+      }
+
+      private static void key(int x, int y, int kw, int kh, String label, float lit, int s) {
+         int bg = Gx.mix(0x24FFFFFF, 0xFF6EA8FF, lit);
+         int off = Math.round(lit * s);
+         Gx.rect(x, y + off, kw, kh, 3 * s, bg);
+         Gx.outline(x, y + off, kw, kh, 3 * s, Math.max(1, s / 2), 0x40FFFFFF);
+         Gx.textCenter(label, x + kw / 2.0F, y + off + kh / 2.0F, (label.length() > 1 ? 4.5F : 6.0F) * s, 3, -1);
+      }
+
+      /** A dotted light ray between two screen points. */
+      private static void ray(float x0, float y0, float x1, float y1, int color, int s) {
+         float len = (float)Math.hypot(x1 - x0, y1 - y0);
+         int n = Math.max(2, Math.round(len / (3.0F * s)));
+         int r = Math.max(1, Math.round(s * 0.7F));
+         for (int i = 0; i <= n; i++) {
+            float t = (float)i / n;
+            Gx.circle(Math.round(x0 + (x1 - x0) * t), Math.round(y0 + (y1 - y0) * t), r, color);
          }
       }
    }

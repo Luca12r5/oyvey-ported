@@ -920,7 +920,7 @@ body.crypt .grid-floor .gf-ceil { bottom: auto; top: 0; transform-origin: 50% 0;
 .vr-lens { position: absolute; inset: 0; pointer-events: none; z-index: 3; opacity: 0; background: #000; --open: 0; --fogged: 1; }
 .vr-lens.opening { -webkit-mask-image: radial-gradient(circle at 31% 50%, transparent calc(var(--open) * 75vmax), #000 calc(var(--open) * 75vmax + 2px)), radial-gradient(circle at 69% 50%, transparent calc(var(--open) * 75vmax), #000 calc(var(--open) * 75vmax + 2px)); -webkit-mask-composite: source-in; mask-composite: intersect; }
 .vr-fog { position: absolute; inset: 0; pointer-events: none; z-index: 3; opacity: 0; background: radial-gradient(ellipse at 50% 50%, rgba(225,228,236,.6), rgba(205,210,220,.3) 60%, transparent 88%); backdrop-filter: blur(8px); }
-.vr-root.visual::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2; background: radial-gradient(ellipse 58% 70% at 50% 50%, transparent 72%, rgba(0,0,0,.55) 88%, #000 100%); box-shadow: inset 0 0 0 1px rgba(255,255,255,.04); }
+.vr-root.visual::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2; background: radial-gradient(ellipse 75% 80% at 50% 50%, transparent 78%, rgba(0,0,0,.22) 100%); }
 .vr-cross { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: rgba(255,255,255,.75); box-shadow: 0 0 0 2px rgba(0,0,0,.35); pointer-events: none; z-index: 4; opacity: 0; transition: transform .12s, background .12s; }
 .vr-root.visual .vr-cross { opacity: 1; }
 .vr-cross.hot { transform: scale(1.6); background: #ffb050; }
@@ -1230,3 +1230,16 @@ body.hf-pixel { --head: "Pixelify Sans", Silkscreen, monospace; }
 body.hf-press { --head: "Press Start 2P", monospace; }
 body.hf-inter { --head: Inter, sans-serif; }
 body.hf-custom { --head: LegoCustom, Poppins, sans-serif; }
+
+/* Visual VR (round 10): key hints top left, exit top right. */
+.vr-root .vr-hud { position: absolute; inset: 0; display: block; pointer-events: none; }
+.vr-root .vr-hud > .intro-btn { position: absolute; top: 18px; right: 20px; border-radius: 999px; padding: 8px 16px; font-size: .8rem; background: rgba(24,25,31,.82); color: #fff; border: 1px solid rgba(255,255,255,.18); backdrop-filter: blur(8px); }
+.vr-root .vr-hud > .vr-help { position: absolute; left: 20px; bottom: 18px; border-radius: 999px; }
+.vr-keys { position: absolute; top: 18px; left: 20px; display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 16px; background: rgba(24,25,31,.62); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(8px); animation: vrKeysIn .6s 3.4s both cubic-bezier(.2,.9,.3,1.2); }
+.vr-keys .r { display: grid; grid-template-columns: repeat(3, 38px); gap: 6px; }
+.vr-keys .r.m { grid-template-columns: repeat(2, 57px); }
+.vr-keys kbd { display: grid; place-items: center; height: 36px; border-radius: 9px; font: 700 .82rem Poppins, Inter, sans-serif; color: #fff; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22); border-bottom-width: 3px; transition: transform .08s, background .08s; }
+.vr-keys kbd.on { background: var(--accent); border-color: color-mix(in srgb, var(--accent) 60%, #000); transform: translateY(2px); }
+.vr-keys .hint { margin-top: 2px; font: 500 .72rem Poppins, Inter, sans-serif; color: #e4e6ee; }
+@keyframes vrKeysIn { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .vr-keys { animation: none; } }

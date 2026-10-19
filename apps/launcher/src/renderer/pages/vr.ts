@@ -14,7 +14,7 @@ export async function vrPage(el: HTMLElement): Promise<void> {
       <section class="panel vr-mode">
         <div class="panel-h">${icon('vr', 'sm')}<span>Visueller VR-Modus</span></div>
         <div class="vr-mode-b">
-          <p>Sieht aus wie in einer VR-Brille – Linsen, eigene Arme, Lagerfeuer-Lobby mit Browser und Click GUI. Gesteuert mit Tastatur und Maus, läuft auf jedem PC.</p>
+          <p>Wie in einer VR-Brille: ein sonniges Minecraft-Tal, ein schwebendes Browser-Fenster, eine Dock-Leiste mit Uhr und Apps, Hände mit Zeigestrahl. Gesteuert mit Tastatur und Maus, läuft auf jedem PC.</p>
           <ul class="keys small"><li><kbd>W A S D</kbd> laufen · <kbd>Shift</kbd> rennen · <kbd>Leertaste</kbd> springen</li><li><kbd>Linksklick</kbd> bedienen · <kbd>Rechtsklick halten</kbd> greifen · <kbd>Mausrad</kbd> näher/weiter</li><li><kbd>E</kbd> Menü · <kbd>Esc</kbd> verlassen</li></ul>
           <button class="btn primary" id="vrPreview">${icon('play', 'sm')} Visuell starten</button>
         </div>
@@ -33,7 +33,7 @@ export async function vrPage(el: HTMLElement): Promise<void> {
       <div class="vr-mc-grid">
         <div>
           <h3>VR-Look (LEGO Client)</h3>
-          <p class="small muted">Im Spiel als Modul „VR-Look“ (Click GUI → Visuals): Bild wie durch zwei Brillenlinsen mit Nasenbrücke, Glas-Reflex und leichtem Atmen. Normale Steuerung mit Tastatur und Maus.</p>
+          <p class="small muted">Im Spiel als Modul „VR-Look“ (Click GUI → Visuals): deine Welt am aktuellen Ort wie in einer Brille, mit Dock-Leiste (Uhr, FPS, Ping, Kopf, Koordinaten), Tasten-Hinweisen und Händen. Linsen-Rand optional. Normale Steuerung mit Tastatur und Maus.</p>
         </div>
         <div>
           <h3>Echtes VR (Vivecraft)</h3>

@@ -4,11 +4,15 @@
 
 import * as THREE from 'three';
 import { NOCTURNE } from '@lego/shared';
+import { drawIcon, type VrIcon } from './icons.ts';
 
 export interface Region { id: string; x: number; y: number; w: number; h: number; onClick?: () => void; onPointer?: (kind: PointerKind, px: number, py: number) => void }
 export type PointerKind = 'move' | 'down' | 'up' | 'wheel';
 
 export interface Pal { accent: string; accent2: string; text: string; muted: string; bg: string }
+
+/** UI sounds for every panel (set by the lobby). */
+export const panelSounds: { hover?: () => void; click?: () => void } = {};
 
 export class Panel {
   readonly canvas = document.createElement('canvas');
@@ -37,9 +41,17 @@ export class Panel {
     const h = (widthM * pxH) / pxW;
     this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(widthM, h), new THREE.MeshBasicMaterial({ map: this.texture, transparent: true, toneMapped: false, side: THREE.DoubleSide }));
     this.mesh.userData.panel = this;
-    // Glowing frame behind the panel for depth.
-    const frame = new THREE.Mesh(new THREE.PlaneGeometry(widthM + 0.04, h + 0.04), new THREE.MeshBasicMaterial({ color: new THREE.Color(pal.accent2).multiplyScalar(0.9), transparent: true, opacity: 0.35, toneMapped: false }));
-    frame.position.z = -0.006;
+    // Soft shadow behind the panel for depth (a rounded dark plate, slightly larger).
+    const sc = document.createElement('canvas');
+    sc.width = 128; sc.height = Math.max(16, Math.round((128 * pxH) / pxW));
+    const sg = sc.getContext('2d')!;
+    sg.filter = 'blur(6px)';
+    sg.fillStyle = 'rgba(0,0,0,.55)';
+    round(sg, 8, 8, sc.width - 16, sc.height - 16, 10);
+    sg.fill();
+    const shadowTex = new THREE.CanvasTexture(sc);
+    const frame = new THREE.Mesh(new THREE.PlaneGeometry(widthM * 1.08, h + widthM * 0.08), new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false, toneMapped: false }));
+    frame.position.set(0, -0.012, -0.01);
     this.group.add(frame, this.mesh);
     this.redraw();
   }
@@ -71,14 +83,14 @@ export class Panel {
     r?.onPointer?.(kind, px - r.x, py - r.y);
     if (kind === 'move') {
       const id = r?.onClick ? r.id : null;
-      if (id !== this.hover) { this.hover = id; this.redraw(); }
+      if (id !== this.hover) { this.hover = id; if (id) panelSounds.hover?.(); this.redraw(); }
     } else if (kind === 'down') {
       this.pressed = r?.id ?? null;
       this.redraw();
     } else if (kind === 'up') {
       const was = this.pressed;
       this.pressed = null;
-      if (r && r.id === was) r.onClick?.();
+      if (r && r.id === was && r.onClick) { panelSounds.click?.(); r.onClick(); }
       this.redraw();
     }
   }
@@ -88,18 +100,20 @@ export class Panel {
   bg(title?: string): void {
     const { ctx: c, canvas } = this;
     const g = c.createLinearGradient(0, 0, 0, canvas.height);
-    g.addColorStop(0, 'rgba(26,18,40,.94)');
-    g.addColorStop(1, 'rgba(9,7,14,.94)');
-    round(c, 0, 0, canvas.width, canvas.height, 36);
+    g.addColorStop(0, 'rgba(34,36,44,.97)');
+    g.addColorStop(1, 'rgba(22,23,29,.97)');
+    round(c, 0, 0, canvas.width, canvas.height, 40);
     c.fillStyle = g;
     c.fill();
-    c.lineWidth = 3;
-    const e = c.createLinearGradient(0, 0, canvas.width, canvas.height);
-    e.addColorStop(0, this.pal.accent2);
-    e.addColorStop(1, this.pal.accent);
-    c.strokeStyle = e;
+    c.lineWidth = 2;
+    c.strokeStyle = 'rgba(255,255,255,.12)';
     c.stroke();
-    if (title) this.text(title, 40, 64, { size: 40, weight: 700, font: 'Poppins' });
+    if (title) {
+      this.text(title, 40, 64, { size: 40, weight: 700, font: 'Poppins' });
+      c.fillStyle = this.pal.accent;
+      round(c, 40, 92, 64, 5, 3);
+      c.fill();
+    }
   }
 
   text(s: string, x: number, y: number, o: { size?: number; weight?: number; color?: string; align?: CanvasTextAlign; font?: string; max?: number } = {}): void {
@@ -129,6 +143,22 @@ export class Panel {
     this.regions.push({ id, x, y, w, h, onClick });
   }
 
+  /** Round icon button (dock, window bar); `dot` marks an open app. */
+  iconBtn(id: string, x: number, y: number, size: number, ic: VrIcon, onClick: () => void, o: { active?: boolean; dot?: boolean; color?: string } = {}): void {
+    const c = this.ctx;
+    const hot = this.hover === id, down = this.pressed === id;
+    const r = size / 2, cx = x + r, cy = y + r + (down ? 2 : 0);
+    if (hot || o.active) {
+      c.beginPath();
+      c.arc(cx, cy, r * (hot ? 1 : 0.94), 0, Math.PI * 2);
+      c.fillStyle = o.active ? this.pal.accent : 'rgba(255,255,255,.16)';
+      c.fill();
+    }
+    drawIcon(c, ic, cx, cy, size * 0.5, o.color ?? (o.active ? '#fff' : this.pal.text));
+    if (o.dot) { c.beginPath(); c.arc(cx, y + size + 10, 4, 0, Math.PI * 2); c.fillStyle = this.pal.text; c.fill(); }
+    this.regions.push({ id, x, y, w: size, h: size, onClick });
+  }
+
   toggle(id: string, x: number, y: number, w: number, label: string, on: boolean, onClick: () => void, sub?: string): void {
     const c = this.ctx;
     const h = 74;
@@ -151,7 +181,7 @@ export class Panel {
 
   dispose(): void {
     this.texture.dispose();
-    this.group.traverse((o) => { const m = o as THREE.Mesh; m.geometry?.dispose(); (m.material as THREE.Material | undefined)?.dispose(); });
+    this.group.traverse((o) => { const m = o as THREE.Mesh; m.geometry?.dispose(); (m.material as THREE.MeshBasicMaterial | undefined)?.map?.dispose(); (m.material as THREE.Material | undefined)?.dispose(); });
   }
 }
 

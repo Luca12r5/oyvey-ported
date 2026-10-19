@@ -1,23 +1,24 @@
 // VR mode. Two ways in:
 //  • real VR (WebXR immersive-vr) with a headset/OpenXR runtime: controllers
 //    or tracked hands, stick locomotion, snap turn, teleport;
-//  • visual VR on the desktop: the same world through "lenses", walked with
-//    WASD + mouse (pointer lock), Space to jump, E for the menu.
-// The lobby is a night clearing lit by a campfire and lanterns (PBR materials,
-// shadows, fog). Your arms use your own Minecraft skin. Panels (click GUI,
-// browser, keyboard) and props (LEGO bricks, pumpkins) can be grabbed, moved,
-// pulled closer, pushed away, scaled and thrown. Panel layout is remembered.
+//  • visual VR on the desktop: walked with WASD + mouse (pointer lock), Space
+//    to jump, E for the menu; two dark hands with pointer rays in view.
+// The lobby is a sunny Minecraft-style valley (vr/world.ts) with a floating
+// browser window, a dock (time, fps, apps) and the click GUI. Panels and props
+// (LEGO bricks) can be grabbed, moved, pulled closer, pushed away, scaled and
+// thrown. Panel layout is remembered. In XR your arms use your own skin.
 
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { XRHandModelFactory } from 'three/examples/jsm/webxr/XRHandModelFactory.js';
 import { api, errorToast, toast } from '../ui.ts';
 import { retheme, state } from '../app.ts';
-import { dotTexture, pumpkin } from '../intro3d.ts';
-import { batFlock, forestInstances, moon, stoneMat, tombstone, wisps, type Ctx } from '../bg3d.ts';
-import { brickGeometry, rockTexture, woodTexture } from '../introcave.ts';
-import { DEFAULT_SKIN } from '../avatar.ts';
-import { Panel, palette, round, type Pal } from './panel.ts';
+import { brickGeometry } from '../introcave.ts';
+import { DEFAULT_SKIN, headFromSkin } from '../avatar.ts';
+import { Panel, palette, panelSounds, round, type Pal } from './panel.ts';
+import { buildWorld } from './world.ts';
+import { aimRay, makeHands } from './hands.ts';
+import { makeSfx } from './sfx.ts';
 import type { Settings } from '../../core/settings.ts';
 import type { VrbState } from '../../ipc-types.ts';
 
@@ -115,20 +116,46 @@ function headsetModel(): THREE.Group {
   return g;
 }
 
-// ---- sound -------------------------------------------------------------------------
-
-function crackleBuffer(ctx: BaseAudioContext): AudioBuffer {
-  const len = ctx.sampleRate * 3;
-  const b = ctx.createBuffer(1, len, ctx.sampleRate);
-  const d = b.getChannelData(0);
-  let last = 0;
-  for (let i = 0; i < len; i++) {
-    const w = Math.random() * 2 - 1;
-    last = (last + 0.02 * w) / 1.02;
-    d[i] = last * 2.2 + (Math.random() < 0.0009 ? (Math.random() * 2 - 1) * 0.9 : 0);
-  }
-  return b;
+/** Dark rounded window body with a soft drop shadow (behind the browser). */
+function windowFrame(w: number, h: number, r: number): THREE.Group {
+  const shape = new THREE.Shape();
+  shape.moveTo(-w / 2 + r, -h / 2);
+  shape.lineTo(w / 2 - r, -h / 2); shape.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r);
+  shape.lineTo(w / 2, h / 2 - r); shape.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2);
+  shape.lineTo(-w / 2 + r, h / 2); shape.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r);
+  shape.lineTo(-w / 2, -h / 2 + r); shape.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2);
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.ShapeGeometry(shape, 8), new THREE.MeshBasicMaterial({ color: '#1f2026', toneMapped: false }));
+  const sc = document.createElement('canvas');
+  sc.width = 256; sc.height = Math.round((256 * h) / w);
+  const sg = sc.getContext('2d')!;
+  sg.filter = 'blur(10px)';
+  sg.fillStyle = 'rgba(0,0,0,.5)';
+  sg.beginPath(); sg.roundRect(16, 20, sc.width - 32, sc.height - 32, 18); sg.fill();
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(w * 1.12, h * 1.12), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sc), transparent: true, depthWrite: false, toneMapped: false }));
+  shadow.position.set(0, -0.03, -0.012);
+  g.add(shadow, body);
+  return g;
 }
+
+function drawSearch(c: CanvasRenderingContext2D, x: number, y: number): void {
+  c.save();
+  c.strokeStyle = 'rgba(255,255,255,.6)';
+  c.lineWidth = 3.5;
+  c.beginPath(); c.arc(x - 3, y - 3, 11, 0, Math.PI * 2); c.stroke();
+  c.beginPath(); c.moveTo(x + 5, y + 5); c.lineTo(x + 14, y + 14); c.stroke();
+  c.restore();
+}
+
+const FAVORITES: { name: string; url: string }[] = [
+  { name: 'Google', url: 'https://www.google.com/' },
+  { name: 'Minecraft Wiki', url: 'https://minecraft.wiki/' },
+  { name: 'Modrinth', url: 'https://modrinth.com/' },
+  { name: 'Wikipedia', url: 'https://de.wikipedia.org/' },
+  { name: 'LEGO', url: 'https://www.lego.com/' },
+];
+
+// ---- sound -------------------------------------------------------------------------
 
 function breath(ctx: AudioContext, out: AudioNode, at: number): void {
   const len = ctx.sampleRate;
@@ -158,7 +185,7 @@ function breath(ctx: AudioContext, out: AudioNode, at: number): void {
 export function enterVr(opts: VrOptions): Promise<void> {
   return new Promise((resolveExit) => {
     const pal = palette();
-    const visual = !opts.xr;
+    let visual = !opts.xr;
     const root = document.createElement('div');
     root.className = `vr-root ${visual ? 'visual' : ''}`;
     const canvas = document.createElement('canvas');
@@ -166,13 +193,20 @@ export function enterVr(opts: VrOptions): Promise<void> {
     hud.className = 'vr-hud';
     const help = document.createElement('div');
     help.className = 'vr-help';
-    const helpVisual = 'Klick: Maus fangen · WASD laufen · Shift rennen · Leertaste springen · Linksklick bedienen · Rechtsklick halten: greifen (Mausrad näher/weiter, Shift+Mausrad Größe) · E Menü · Esc Maus frei / verlassen';
-    help.textContent = opts.xr ? 'VR aktiv · Trigger: klicken · Griff: greifen · rechter Stick: näher/weiter oder drehen · linker Stick: laufen · A: teleportieren' : helpVisual;
+    help.textContent = 'VR aktiv · Trigger: klicken · Griff: greifen · rechter Stick: näher/weiter oder drehen · linker Stick: laufen · A: teleportieren';
+    help.hidden = visual;
+    // Key hints like on a headset's desktop view (light up while pressed).
+    const keysEl = document.createElement('div');
+    keysEl.className = 'vr-keys';
+    keysEl.innerHTML = `<div class="r"><span></span><kbd data-k="KeyW">W</kbd><span></span></div><div class="r"><kbd data-k="KeyA">A</kbd><kbd data-k="KeyS">S</kbd><kbd data-k="KeyD">D</kbd></div><div class="r m"><kbd data-k="m0">LMB</kbd><kbd data-k="m2">RMB</kbd></div><div class="hint">E Menü · Shift rennen · Esc verlassen</div>`;
+    keysEl.hidden = !visual;
+    const keyLight = (k: string, on: boolean) => keysEl.querySelector(`[data-k="${k}"]`)?.classList.toggle('on', on);
     const exitBtn = document.createElement('button');
     exitBtn.className = 'intro-btn';
     exitBtn.type = 'button';
     exitBtn.textContent = 'VR verlassen';
     hud.append(help, exitBtn);
+    hud.prepend(keysEl);
     const lens = document.createElement('div');
     lens.className = 'vr-lens';
     const lensFog = document.createElement('div');
@@ -193,117 +227,13 @@ export function enterVr(opts: VrOptions): Promise<void> {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.xr.enabled = opts.xr;
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#05060a');
-    const fog = new THREE.FogExp2('#07080d', 0.9);
-    scene.fog = fog;
-    const camera = new THREE.PerspectiveCamera(visual ? 78 : 70, innerWidth / Math.max(1, innerHeight), 0.03, 300);
+    const camera = new THREE.PerspectiveCamera(visual ? 74 : 70, innerWidth / Math.max(1, innerHeight), 0.03, 300);
     camera.position.set(0, 1.62, 0);
     const rig = new THREE.Group();
     rig.add(camera);
     scene.add(rig);
-    const dot = dotTexture();
-    const rock = rockTexture();
-    const wood = woodTexture();
-
-    // Ground, stone platform, fire, lanterns.
-    const c: Ctx = { scene, camera, density: Math.max(0.3, state.settings.fx.particles), q, pal: { bg: pal.bg, accent: pal.accent, accent2: pal.accent2 }, dot };
-    const groundTex = rock.clone();
-    groundTex.repeat.set(30, 30);
-    groundTex.needsUpdate = true;
-    const ground = new THREE.Mesh(new THREE.CircleGeometry(60, 64), new THREE.MeshStandardMaterial({ map: groundTex, bumpMap: groundTex, bumpScale: 1.4, color: '#3a3430', roughness: 1 }));
-    ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = true;
-    const slabTex = rock.clone();
-    slabTex.repeat.set(4, 4);
-    slabTex.needsUpdate = true;
-    const plat = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.6, 0.14, 64), new THREE.MeshStandardMaterial({ map: slabTex, bumpMap: slabTex, bumpScale: 0.8, color: '#6d665e', roughness: 0.9 }));
-    plat.position.y = -0.06;
-    plat.receiveShadow = true;
-    scene.add(ground, plat);
-    const sm = stoneMat();
-    for (let i = 0; i < 14; i++) {
-      const a = (i / 14) * Math.PI * 2 + 0.2;
-      const r = 8 + (i % 3) * 1.8;
-      const tb = tombstone(sm);
-      tb.position.set(Math.cos(a) * r, 0, Math.sin(a) * r);
-      tb.lookAt(0, 0, 0);
-      tb.traverse((o) => { (o as THREE.Mesh).castShadow = true; (o as THREE.Mesh).receiveShadow = true; });
-      scene.add(tb);
-    }
-    const trees: THREE.Vector3[] = [];
-    const hs: number[] = [];
-    for (let i = 0; i < 26; i++) { const a = (i / 26) * Math.PI * 2; const r = 17 + (i % 4) * 3; trees.push(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r)); hs.push(9 + (i % 5) * 2); }
-    forestInstances(c, trees, hs);
-    moon(c, new THREE.Vector3(-22, 28, -60), 5);
-    const moonLight = new THREE.DirectionalLight('#9fa8ff', 0.55);
-    moonLight.position.set(-14, 22, -18);
-    if (renderer.shadowMap.enabled) {
-      moonLight.castShadow = true;
-      moonLight.shadow.mapSize.set(2048, 2048);
-      Object.assign(moonLight.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 70 });
-      moonLight.shadow.bias = -0.0005;
-    }
-    const hemi = new THREE.HemisphereLight('#2c3354', '#0c0806', 0.35);
-    scene.add(moonLight, hemi);
-    const woodMat = new THREE.MeshStandardMaterial({ map: wood, bumpMap: wood, bumpScale: 0.8, color: '#8a6a4c', roughness: 0.9 });
-    // Campfire in front of the platform.
-    const fire = new THREE.Group();
-    fire.position.set(0, 0, -4.4);
-    for (let i = 0; i < 5; i++) {
-      const log = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.9, 10), woodMat);
-      const a = (i / 5) * Math.PI * 2;
-      log.position.set(Math.cos(a) * 0.18, 0.18, Math.sin(a) * 0.18);
-      log.rotation.set(Math.sin(a) * 0.9, 0, -Math.cos(a) * 0.9);
-      log.castShadow = true;
-      fire.add(log);
-    }
-    for (let i = 0; i < 9; i++) {
-      const st = new THREE.Mesh(new THREE.DodecahedronGeometry(0.13, 0), new THREE.MeshStandardMaterial({ map: rock, color: '#5a544d', roughness: 1 }));
-      const a = (i / 9) * Math.PI * 2;
-      st.position.set(Math.cos(a) * 0.62, 0.06, Math.sin(a) * 0.62);
-      st.scale.y = 0.6;
-      st.receiveShadow = true;
-      fire.add(st);
-    }
-    const flames = [0, 1, 2, 3, 4, 5].map((j) => {
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: dot, color: new THREE.Color(j < 2 ? '#fff0c8' : j < 4 ? '#ffb04a' : '#ff5a12').multiplyScalar(j < 2 ? 2.4 : 1.8), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, toneMapped: false }));
-      fire.add(sp);
-      return sp;
-    });
-    const fireLight = new THREE.PointLight('#ff9a4a', 20, 16, 1.6);
-    fireLight.position.set(0, 0.7, 0);
-    if (renderer.shadowMap.enabled) { fireLight.castShadow = true; fireLight.shadow.mapSize.set(1024, 1024); fireLight.shadow.bias = -0.002; }
-    fire.add(fireLight);
-    scene.add(fire);
-    const EMB = 140;
-    const embPos = new Float32Array(EMB * 3), embLife = new Float32Array(EMB);
-    const embGeo = new THREE.BufferGeometry();
-    embGeo.setAttribute('position', new THREE.BufferAttribute(embPos, 3));
-    fire.add(new THREE.Points(embGeo, new THREE.PointsMaterial({ size: 0.035, map: dot, color: new THREE.Color('#ff8a3a').multiplyScalar(2), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false })));
-    // Lanterns on wooden posts around the platform.
-    const lanterns = [0.6, 2.2, 3.9, 5.4].map((a, i) => {
-      const g = new THREE.Group();
-      g.position.set(Math.cos(a) * 3.9, 0, Math.sin(a) * 3.9);
-      const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.1, 0.12), woodMat);
-      post.position.y = 1.05;
-      post.castShadow = true;
-      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.08), woodMat);
-      arm.position.set(0.2, 2.0, 0);
-      const glass = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.24, 0.16), new THREE.MeshStandardMaterial({ color: '#ffd9a0', emissive: '#ffb050', emissiveIntensity: 1.6, roughness: 0.3, transparent: true, opacity: 0.85 }));
-      glass.position.set(0.4, 1.8, 0);
-      const cap = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.1, 4), new THREE.MeshStandardMaterial({ color: '#2a2622', metalness: 0.6, roughness: 0.5 }));
-      cap.position.set(0.4, 1.97, 0);
-      cap.rotation.y = Math.PI / 4;
-      g.add(post, arm, glass, cap);
-      g.lookAt(0, 0, 0);
-      g.rotateY(Math.PI / 2);
-      const l = i < (q > 0.5 ? 4 : 2) ? new THREE.PointLight('#ffb060', 6, 9, 1.8) : null;
-      if (l) { l.position.set(0.4, 1.75, 0); g.add(l); }
-      scene.add(g);
-      return { glass, light: l, ph: Math.random() * 6 };
-    });
-    const w = wisps(c, 30 + 50 * c.density, { x: 12, y: [0.3, 3], z: [-12, 12] }, ['#a8b5ff', '#ffb46a'], 0.04);
-    const bats = batFlock(c, 5, new THREE.Vector3(0, 11, 0), 12);
+    renderer.toneMappingExposure = 1.0;
+    const world = buildWorld(scene, renderer.shadowMap.enabled);
 
     // ---- sound
     const listener = new THREE.AudioListener();
@@ -311,19 +241,11 @@ export function enterVr(opts: VrOptions): Promise<void> {
     let soundOn = opts.sound;
     listener.setMasterVolume(soundOn ? 0.8 : 0);
     const actx = listener.context;
-    const fireSound = new THREE.PositionalAudio(listener);
-    try {
-      const src = actx.createBufferSource();
-      src.buffer = crackleBuffer(actx);
-      src.loop = true;
-      src.start();
-      fireSound.setNodeSource(src);
-      fireSound.setRefDistance(1.2);
-      fireSound.setRolloffFactor(1.6);
-      fireSound.setVolume(0.8);
-      fire.add(fireSound);
-      breath(actx, listener.getInput(), 0.6);
-    } catch { /* audio unavailable */ }
+    const sfx = makeSfx(actx, listener.getInput());
+    panelSounds.hover = sfx.hover;
+    panelSounds.click = sfx.click;
+    const stopAmbience = sfx.ambience();
+    try { breath(actx, listener.getInput(), 0.6); } catch { /* audio unavailable */ }
 
     // ---- arms (own skin), headset, entry
     const arms = new THREE.Group();
@@ -333,9 +255,11 @@ export function enterVr(opts: VrOptions): Promise<void> {
       try {
         const img = await loadImage(skin ?? DEFAULT_SKIN);
         arms.clear();
-        armR = makeArm(armMaterials(img, true, slim && !!skin), slim && !!skin);
-        armL = makeArm(armMaterials(img, false, slim && !!skin), slim && !!skin);
-        arms.add(armR, armL);
+        if (!visual) {
+          armR = makeArm(armMaterials(img, true, slim && !!skin), slim && !!skin);
+          armL = makeArm(armMaterials(img, false, slim && !!skin), slim && !!skin);
+          arms.add(armR, armL);
+        }
         // XR: a forearm on each controller (hidden while hands are tracked).
         for (const [i, e] of ctls.entries()) {
           if (e.arm) e.grip.remove(e.arm);
@@ -348,8 +272,10 @@ export function enterVr(opts: VrOptions): Promise<void> {
     void loadArms(state.skin.skin, state.skin.variant === 'slim');
     const headset = headsetModel();
     camera.add(headset);
-    const camLight = new THREE.PointLight('#ffd8b0', 0.6, 1.5, 2);
-    camera.add(camLight);
+    const hands = makeHands(pal.accent);
+    if (visual) { camera.add(hands.root); scene.add(hands.rayR, hands.rayL, hands.dot); }
+    let headImg: HTMLImageElement | null = null;
+    void headFromSkin(state.skin.skin, 64).then(loadImage).then((i) => { headImg = i; dock.redraw(); }).catch(() => {});
 
     // ---- panels
     const spatials: Spatial[] = [];
@@ -358,8 +284,9 @@ export function enterVr(opts: VrOptions): Promise<void> {
     const place = (g: THREE.Object3D, yawOffset: number, dist: number, y: number, tilt = 0) => {
       const yaw = camYaw() + yawOffset;
       const h = headPos();
-      g.position.set(h.x + Math.sin(yaw) * -dist, y, h.z + Math.cos(yaw) * -dist);
-      g.lookAt(new THREE.Vector3(h.x, y + tilt, h.z));
+      const gy = rig.position.y + y;
+      g.position.set(h.x + Math.sin(yaw) * -dist, gy, h.z + Math.cos(yaw) * -dist);
+      g.lookAt(new THREE.Vector3(h.x, gy + tilt, h.z));
     };
 
     let tab: 'modules' | 'launcher' | 'lobby' | 'skin' = 'modules';
@@ -376,7 +303,7 @@ export function enterVr(opts: VrOptions): Promise<void> {
       try { state.settings = await api.setSettings(patch); retheme(); } catch (e) { errorToast(e); }
       menu.redraw();
     };
-    const menu = new Panel(900, 1120, 1.0, (pn) => {
+    const menu = new Panel(900, 1120, 0.72, (pn) => {
       pn.bg('LEGO VR');
       const tabs: [typeof tab, string][] = [['modules', 'Module'], ['launcher', 'Launcher'], ['lobby', 'Lobby'], ['skin', 'Skin']];
       tabs.forEach(([id, l], i) => pn.button(`tab-${id}`, 40 + i * 207, 110, 195, 70, l, () => { tab = id; pn.redraw(); }, { active: tab === id }));
@@ -406,14 +333,13 @@ export function enterVr(opts: VrOptions): Promise<void> {
         pn.toggle('glow', x, y, wdt, 'Glühen (Bloom)', s.fx.glow, () => void setSetting({ fx: { ...s.fx, glow: !s.fx.glow } }), 'Leuchtende Lichter im Launcher');
         pn.toggle('fog', x, y + 86, wdt, 'Nebel', s.fx.fog, () => void setSetting({ fx: { ...s.fx, fog: !s.fx.fog } }), 'Bodennebel in den 3D-Hintergründen');
         pn.toggle('intro', x, y + 172, wdt, 'Startanimation', s.introEnabled, () => void setSetting({ introEnabled: !s.introEnabled }));
-        pn.toggle('scare', x, y + 258, wdt, 'Jumpscares', s.jumpscares, () => void setSetting({ jumpscares: !s.jumpscares }), 'Selten, mit Ton – nichts für schwache Nerven');
       } else if (tab === 'lobby') {
-        pn.toggle('sound', x, y, wdt, 'Raumklang', soundOn, () => { soundOn = !soundOn; listener.setMasterVolume(soundOn ? 0.8 : 0); pn.redraw(); }, 'Lagerfeuer und Wind aus ihrer Richtung');
-        pn.toggle('browser', x, y + 86, wdt, 'Browser', browser.root.visible, () => { browser.root.visible = !browser.root.visible; pn.redraw(); });
-        pn.toggle('keyboard', x, y + 172, wdt, 'Tastatur', keyboard.root.visible, () => { keyboard.root.visible = !keyboard.root.visible; pn.redraw(); });
-        pn.toggle('arms', x, y + 258, wdt, 'Arme zeigen', arms.visible, () => { arms.visible = !arms.visible; pn.redraw(); });
+        pn.toggle('sound', x, y, wdt, 'Klang', soundOn, () => setSound(!soundOn), 'Wind, Vögel und Klick-Geräusche');
+        pn.toggle('browser', x, y + 86, wdt, 'Browser', browser.root.visible, () => show(browser, !browser.root.visible));
+        pn.toggle('keyboard', x, y + 172, wdt, 'Tastatur', keyboard.root.visible, () => show(keyboard, !keyboard.root.visible));
+        pn.toggle('arms', x, y + 258, wdt, visual ? 'Hände zeigen' : 'Arme zeigen', visual ? hands.root.visible : arms.visible, () => { if (visual) hands.root.visible = !hands.root.visible; else arms.visible = !arms.visible; pn.redraw(); });
         pn.button('arrange', x, y + 370, wdt, 76, 'Panels neu anordnen', () => { try { localStorage.removeItem(LAYOUT_KEY); } catch { /* storage blocked */ } spatials.forEach((s) => s.home()); });
-        pn.button('props', x, y + 460, wdt, 76, 'Steine & Kürbisse zurücklegen', () => props.forEach((p) => { p.mesh.position.copy(p.home); p.vel.set(0, 0, 0); p.spin.set(0, 0, 0); }));
+        pn.button('props', x, y + 460, wdt, 76, 'Steine zurücklegen', () => props.forEach((p) => { p.mesh.position.copy(p.home); p.vel.set(0, 0, 0); p.spin.set(0, 0, 0); }));
       } else {
         pn.text('Dein Körper in VR', x, y + 20, { size: 26 });
         const lib = state.settings.skinLibrary ?? [];
@@ -427,7 +353,7 @@ export function enterVr(opts: VrOptions): Promise<void> {
       pn.button('reset', 40, 1000, 400, 80, 'Ansicht zurücksetzen', () => resetView());
       pn.button('exit', 460, 1000, 400, 80, 'VR verlassen', () => exit(), { primary: true });
     }, pal);
-    const menuS: Spatial = { name: 'menu', root: menu.group, targets: [menu.mesh], home: () => place(menu.group, 0.65, 1.7, 1.45) };
+    const menuS: Spatial = { name: 'menu', root: menu.group, targets: [menu.mesh], home: () => place(menu.group, 0.72, 1.6, 1.45) };
     spatials.push(menuS);
     scene.add(menu.group);
 
@@ -436,47 +362,55 @@ export function enterVr(opts: VrOptions): Promise<void> {
     let address = '';
     let sugg: { title: string; url: string }[] = [];
     let focus: 'page' | 'address' | null = null;
-    const bw = 1.9;
+    const bw = 1.75;
     const nav = async (action: Parameters<typeof api.vrBrowserNav>[0], text?: string) => {
       try { bstate = await api.vrBrowserNav(action, text); } catch (e) { errorToast(e); }
       bar.redraw();
     };
-    const bar = new Panel(1600, 210, bw, (pn) => {
+    let big = false;
+    // Title bar like a floating headset window: tabs, then back/forward/reload,
+    // the address pill, sound, home, and minimise/fullscreen/close.
+    const bar = new Panel(1600, 196, bw, (pn) => {
       const cx = pn.ctx;
-      round(cx, 0, 0, 1600, 210, 24);
-      cx.fillStyle = 'rgba(12,11,16,.97)';
+      cx.beginPath();
+      cx.roundRect(0, 0, 1600, 196, [34, 34, 0, 0]);
+      cx.fillStyle = '#1f2026';
       cx.fill();
-      // Tabs.
       const tabs = bstate.tabs?.length ? bstate.tabs : [{ title: bstate.title, url: bstate.url }];
       tabs.forEach((tb, i) => {
-        const tx = 16 + i * 330, act = i === (bstate.active ?? 0);
-        round(cx, tx, 12, 320, 64, 14);
-        cx.fillStyle = act ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.04)';
+        const tx = 24 + i * 300, act = i === (bstate.active ?? 0);
+        round(cx, tx, 14, 290, 54, 16);
+        cx.fillStyle = act ? 'rgba(255,255,255,.13)' : 'rgba(255,255,255,.04)';
         cx.fill();
-        pn.text(tb.title || 'Neuer Tab', tx + 20, 44, { size: 24, color: act ? pal.text : pal.muted, max: tabs.length > 1 ? 250 : 290 });
-        pn.regions.push({ id: `tab-${i}`, x: tx, y: 12, w: tabs.length > 1 ? 270 : 320, h: 64, onClick: () => void nav('tab', String(i)) });
-        if (tabs.length > 1 && act) pn.button(`tclose-${i}`, tx + 272, 20, 44, 48, '×', () => void nav('closeTab'), { size: 28 });
+        pn.text(tb.title || 'Neuer Tab', tx + 20, 41, { size: 22, color: act ? pal.text : pal.muted, max: tabs.length > 1 ? 220 : 250 });
+        pn.regions.push({ id: `tab-${i}`, x: tx, y: 14, w: tabs.length > 1 ? 240 : 290, h: 54, onClick: () => void nav('tab', String(i)) });
+        if (tabs.length > 1 && act) pn.iconBtn(`tclose-${i}`, tx + 244, 20, 42, 'close', () => void nav('closeTab'));
       });
-      if (tabs.length < 4) pn.button('newtab', 16 + tabs.length * 330, 14, 64, 60, '+', () => void nav('newTab'), { size: 32 });
-      pn.button('zout', 1380, 14, 64, 60, '−', () => void nav('zoomOut'), { size: 30 });
-      pn.text(`${Math.round((bstate.zoom ?? 1) * 100)}%`, 1480, 44, { size: 22, color: pal.muted, align: 'center' });
-      pn.button('zin', 1520, 14, 64, 60, '+', () => void nav('zoomIn'), { size: 30 });
-      // Navigation row.
-      const y0 = 96;
-      pn.button('back', 16, y0, 86, 92, '◀', () => void nav('back'), { size: 30 });
-      pn.button('fwd', 110, y0, 86, 92, '▶', () => void nav('forward'), { size: 30 });
-      pn.button('reload', 204, y0, 86, 92, '⟳', () => void nav('reload'), { size: 30 });
-      pn.button('home', 298, y0, 86, 92, '⌂', () => void nav('home'), { size: 30 });
-      const ax = 400, aw = 1184;
-      round(cx, ax, y0, aw, 92, 46);
-      cx.fillStyle = focus === 'address' ? 'rgba(255,255,255,.14)' : 'rgba(255,255,255,.07)';
+      if (tabs.length < 4) pn.iconBtn('newtab', 24 + tabs.length * 300, 16, 50, 'expand', () => void nav('newTab'));
+      pn.text(`${Math.round((bstate.zoom ?? 1) * 100)}%`, 1540, 41, { size: 20, color: pal.muted, align: 'center' });
+      const y0 = 86, sz = 84;
+      pn.iconBtn('back', 24, y0, sz, 'back', () => void nav('back'), { color: bstate.canBack ? pal.text : pal.muted });
+      pn.iconBtn('fwd', 116, y0, sz, 'forward', () => void nav('forward'), { color: bstate.canForward ? pal.text : pal.muted });
+      pn.iconBtn('reload', 208, y0, sz, 'reload', () => void nav('reload'));
+      const ax = 312, aw = 820;
+      round(cx, ax, y0 + 4, aw, 76, 38);
+      cx.fillStyle = focus === 'address' ? 'rgba(255,255,255,.16)' : 'rgba(255,255,255,.08)';
       cx.fill();
       if (focus === 'address') { cx.lineWidth = 3; cx.strokeStyle = pal.accent; cx.stroke(); }
+      drawSearch(cx, ax + 40, y0 + 42);
       const shown = focus === 'address' ? `${address}|` : (bstate.url ? bstate.url.replace(/^https:\/\/(www\.)?/, '') : 'Mit Google suchen oder Adresse eingeben');
-      pn.text(shown, ax + 34, y0 + 46, { size: 30, color: focus === 'address' || bstate.url ? pal.text : pal.muted, max: aw - 70 });
-      pn.regions.push({ id: 'addr', x: ax, y: y0, w: aw, h: 92, onClick: () => { focus = 'address'; address = ''; sugg = []; keyboard.root.visible = true; pn.redraw(); kb.redraw(); sp.redraw(); } });
-      if (bstate.loading) { cx.fillStyle = pal.accent; cx.fillRect(0, 204, 1600 * (0.25 + ((performance.now() / 900) % 1) * 0.75), 6); }
+      pn.text(shown, ax + 76, y0 + 42, { size: 28, color: focus === 'address' || bstate.url ? pal.text : pal.muted, max: aw - 110 });
+      pn.regions.push({ id: 'addr', x: ax, y: y0, w: aw, h: 84, onClick: () => { focus = 'address'; address = ''; sugg = []; show(keyboard, true); pn.redraw(); kb.redraw(); sp.redraw(); } });
+      pn.iconBtn('vol', 1150, y0, sz, soundOn ? 'volume' : 'mute', () => setSound(!soundOn));
+      pn.iconBtn('home', 1242, y0, sz, 'home', () => void nav('home'));
+      cx.fillStyle = 'rgba(255,255,255,.12)';
+      cx.fillRect(1340, y0 + 18, 2, 48);
+      pn.iconBtn('min', 1316 + 40, y0, sz, 'minimize', () => show(browser, false));
+      pn.iconBtn('big', 1408 + 40, y0, sz, 'expand', () => { big = !big; browser.root.userData.pop = { t0: performance.now(), from: browser.root.scale.x, to: big ? 1.45 : 1 }; sfx.open(); }, { active: big });
+      pn.iconBtn('close', 1500, y0, sz, 'close', () => show(browser, false));
+      if (bstate.loading) { cx.fillStyle = pal.accent; cx.fillRect(0, 190, 1600 * (0.25 + ((performance.now() / 900) % 1) * 0.75), 6); }
     }, pal);
+    bar.group.children[0]!.visible = false; // the window frame below casts the shadow
     // Suggestions dropdown (from this session's history only).
     const sp = new Panel(1600, 330, bw, (pn) => {
       if (focus !== 'address' || !sugg.length) { pn.ctx.clearRect(0, 0, 1600, 330); return; }
@@ -485,30 +419,22 @@ export function enterVr(opts: VrOptions): Promise<void> {
       pn.ctx.fill();
       sugg.forEach((s, i) => pn.button(`sg-${i}`, 8, 6 + i * 66, 1584, 60, `${s.title} — ${s.url.replace(/^https:\/\/(www\.)?/, '')}`, () => { focus = 'page'; sugg = []; void nav('go', s.url); sp.redraw(); }, { size: 24 }));
     }, pal);
-    // Curved page: a plane bent around the viewer (radius 2.4 m).
+    // Flat page in a rounded window frame.
     const pageH = (bw * BH) / BW;
-    const pageGeo = new THREE.PlaneGeometry(bw, pageH, 48, 1);
-    {
-      const R = 2.4;
-      const pos = pageGeo.attributes.position as THREE.BufferAttribute;
-      for (let i = 0; i < pos.count; i++) {
-        const x = pos.getX(i), a = x / R;
-        pos.setX(i, Math.sin(a) * R);
-        pos.setZ(i, (1 - Math.cos(a)) * R);
-      }
-      pageGeo.computeVertexNormals();
-    }
+    const pageGeo = new THREE.PlaneGeometry(bw, pageH);
     const pageTex = new THREE.Texture();
     pageTex.colorSpace = THREE.SRGBColorSpace;
     pageTex.anisotropy = 8;
     const page = new THREE.Mesh(pageGeo, new THREE.MeshBasicMaterial({ map: pageTex, color: '#1a1820', toneMapped: false, side: THREE.DoubleSide }));
     const browserRoot = new THREE.Group();
-    const barH = (bw * 210) / BW;
-    bar.group.position.y = pageH / 2 + barH / 2 + 0.02;
-    sp.group.position.set(0, pageH / 2 - (bw * 330) / BW / 2 - 0.01, 0.14);
+    const barH = (bw * 196) / BW;
+    bar.group.position.y = pageH / 2 + barH / 2;
+    sp.group.position.set(0, pageH / 2 - (bw * 330) / BW / 2 - 0.01, 0.02);
     sp.group.children[0]!.visible = false; // no frame behind the dropdown
-    browserRoot.add(bar.group, page, sp.group);
-    const browser: Spatial = { name: 'browser', root: browserRoot, targets: [bar.mesh, page, sp.mesh], home: () => place(browserRoot, -0.38, 2.2, 1.7) };
+    const winFrame = windowFrame(bw + 0.03, pageH + barH + 0.03, 0.05);
+    winFrame.position.set(0, barH / 2, -0.004);
+    browserRoot.add(winFrame, bar.group, page, sp.group);
+    const browser: Spatial = { name: 'browser', root: browserRoot, targets: [bar.mesh, page, sp.mesh], home: () => place(browserRoot, -0.12, 2.15, 1.75) };
     spatials.push(browser);
     scene.add(browserRoot);
     let suggTimer = 0;
@@ -538,7 +464,7 @@ export function enterVr(opts: VrOptions): Promise<void> {
         else { api.vrBrowserInput({ type: 'keyDown', keyCode: k }); api.vrBrowserInput({ type: 'keyUp', keyCode: k }); }
       }
     };
-    const kb = new Panel(1100, 470, 1.2, (pn) => {
+    const kb = new Panel(1100, 470, 0.85, (pn) => {
       pn.bg();
       ROWS.forEach((row, ri) => [...row].forEach((ch, ci) => {
         const label = shift ? ch.toUpperCase() : ch;
@@ -550,15 +476,90 @@ export function enterVr(opts: VrOptions): Promise<void> {
       pn.button('bs', 760, 376, 150, 76, '⌫', () => typeKey('Backspace'));
       pn.button('enter', 922, 376, 154, 76, '⏎', () => typeKey('Enter'), { primary: true });
     }, pal);
-    const keyboard: Spatial = { name: 'keyboard', root: kb.group, targets: [kb.mesh], home: () => place(kb.group, -0.3, 1.2, 0.95, 1.2) };
+    const keyboard: Spatial = { name: 'keyboard', root: kb.group, targets: [kb.mesh], home: () => place(kb.group, -0.12, 1.05, 1.0, 1.2) };
     keyboard.root.visible = false;
     spatials.push(keyboard);
     scene.add(kb.group);
 
+    // Opening/closing windows: a short pop with a swoosh.
+    const show = (sp2: Spatial, on: boolean) => {
+      if (sp2.root.visible === on && !sp2.root.userData.closing) return;
+      const base = sp2 === browser && big ? 1.45 : 1;
+      if (on) {
+        if (!sp2.root.visible) sp2.home();
+        sp2.root.visible = true;
+        delete sp2.root.userData.closing;
+        sp2.root.userData.pop = { t0: performance.now(), from: 0.6 * base, to: base };
+        sfx.open();
+      } else {
+        sp2.root.userData.pop = { t0: performance.now(), from: sp2.root.scale.x, to: 0.001 };
+        sp2.root.userData.closing = true;
+        sfx.close();
+      }
+      if (sp2 === keyboard && !on && focus === 'address') { focus = null; bar.redraw(); }
+      menu.redraw(); dock.redraw();
+    };
+    const setSound = (on: boolean) => { soundOn = on; listener.setMasterVolume(on ? 0.8 : 0); menu.redraw(); bar.redraw(); };
+
+    // Favourites: quick links for the browser.
+    const fav = new Panel(620, 560, 0.5, (pn) => {
+      pn.bg('Favoriten');
+      FAVORITES.forEach((f, i) => pn.button(`fav-${i}`, 36, 126 + i * 84, 548, 70, f.name, () => { show(browser, true); void nav('go', f.url); show(favS, false); }));
+    }, pal);
+    const favS: Spatial = { name: 'fav', root: fav.group, targets: [fav.mesh], home: () => place(fav.group, 0.62, 1.5, 1.2) };
+    fav.group.visible = false;
+    spatials.push(favS);
+    scene.add(fav.group);
+
+    // Dock: time, connection, fps · ms, your head, apps.
+    let fps = 60, ms = 16, fpsFrames = 0, fpsAt = performance.now();
+    const DW = 1500, DH = 150;
+    const dock = new Panel(DW, DH, 1.0, (pn) => {
+      const c = pn.ctx;
+      round(c, 0, 0, DW, DH - 18, 66);
+      c.fillStyle = 'rgba(30,31,38,.96)';
+      c.fill();
+      c.lineWidth = 2;
+      c.strokeStyle = 'rgba(255,255,255,.1)';
+      c.stroke();
+      const mid = (DH - 18) / 2;
+      const now = new Date();
+      pn.text(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`, 52, mid, { size: 36, weight: 700 });
+      pn.iconBtn('wifi', 160, mid - 28, 56, 'wifi', () => toast(navigator.onLine ? 'Online' : 'Offline'), { color: navigator.onLine ? pal.text : pal.muted });
+      pn.text(`${fps} fps · ${ms} ms`, 236, mid, { size: 24, color: pal.muted });
+      c.fillStyle = 'rgba(255,255,255,.12)';
+      c.fillRect(430, 34, 2, mid * 2 - 68);
+      // own head
+      const hx = 470, hs = 76;
+      c.save();
+      round(c, hx, mid - hs / 2, hs, hs, 18);
+      c.clip();
+      if (headImg) { c.imageSmoothingEnabled = false; c.drawImage(headImg, hx, mid - hs / 2, hs, hs); } else { c.fillStyle = 'rgba(255,255,255,.1)'; c.fillRect(hx, mid - hs / 2, hs, hs); }
+      c.restore();
+      if (pn.hover === 'me') { round(c, hx - 4, mid - hs / 2 - 4, hs + 8, hs + 8, 22); c.lineWidth = 4; c.strokeStyle = pal.accent; c.stroke(); }
+      pn.regions.push({ id: 'me', x: hx, y: mid - hs / 2, w: hs, h: hs, onClick: () => { tab = 'skin'; show(menuS, true); menu.redraw(); } });
+      const apps: [string, Parameters<typeof pn.iconBtn>[4], () => void, boolean][] = [
+        ['apps', 'grid', () => { const was = tab === 'modules' && menu.group.visible && !menu.group.userData.closing; tab = 'modules'; show(menuS, !was); menu.redraw(); }, menu.group.visible && !menu.group.userData.closing],
+        ['web', 'compass', () => show(browser, !browser.root.visible || !!browser.root.userData.closing), browser.root.visible && !browser.root.userData.closing],
+        ['keys', 'keyboard', () => show(keyboard, !keyboard.root.visible || !!keyboard.root.userData.closing), keyboard.root.visible && !keyboard.root.userData.closing],
+        ['favs', 'star', () => show(favS, !fav.group.visible || !!fav.group.userData.closing), fav.group.visible && !fav.group.userData.closing],
+      ];
+      apps.forEach(([id, ic, fn, open], i) => pn.iconBtn(`d-${id}`, 590 + i * 104, mid - 42, 84, ic, fn, { dot: open }));
+      c.fillStyle = 'rgba(255,255,255,.12)';
+      c.fillRect(1018, 34, 2, mid * 2 - 68);
+      pn.iconBtn('d-recenter', 1050, mid - 42, 84, 'recenter', () => resetView());
+      pn.iconBtn('d-settings', 1154, mid - 42, 84, 'gear', () => { tab = 'lobby'; show(menuS, true); menu.redraw(); });
+      pn.iconBtn('d-exit', 1300, mid - 42, 84, 'power', () => exit(), { color: '#ff8a8a' });
+    }, pal);
+    dock.group.children[0]!.visible = false;
+    const dockS: Spatial = { name: 'dock', root: dock.group, targets: [dock.mesh], home: () => place(dock.group, 0, 1.1, 1.13, 0.5) };
+    spatials.push(dockS);
+    scene.add(dock.group);
+
     // Live frames of the offscreen browser.
     let lastBitmap: ImageBitmap | null = null;
     const offFrame = api.on('vrb-frame', (buf: Uint8Array) => {
-      void createImageBitmap(new Blob([buf as BlobPart], { type: 'image/jpeg' })).then((bmp) => {
+      void createImageBitmap(new Blob([buf as BlobPart], { type: 'image/jpeg' }), { imageOrientation: 'flipY' }).then((bmp) => {
         lastBitmap?.close();
         lastBitmap = bmp;
         pageTex.image = bmp;
@@ -573,7 +574,7 @@ export function enterVr(opts: VrOptions): Promise<void> {
     // ---- grabbable props with simple physics
     const props: Prop[] = [];
     const bGeo = brickGeometry(3);
-    [['#c91a1a', 1.2, -1.6], ['#f2b632', 1.6, -1.2], ['#1e5aa8', -1.4, -1.5], ['#237841', -1.9, -0.9]].forEach(([color, x, z]) => {
+    [['#c91a1a', 1.2, -1.0], ['#f2b632', 1.6, -0.5], ['#1e5aa8', -1.4, -0.8], ['#237841', -1.9, -0.2]].forEach(([color, x, z]) => {
       const m = new THREE.Mesh(bGeo, new THREE.MeshPhysicalMaterial({ color: color as string, roughness: 0.28, clearcoat: 0.6, clearcoatRoughness: 0.3 }));
       m.scale.setScalar(0.32);
       m.position.set(x as number, 0.12, z as number);
@@ -581,16 +582,6 @@ export function enterVr(opts: VrOptions): Promise<void> {
       scene.add(m);
       props.push({ mesh: m, hit: m, vel: new THREE.Vector3(), spin: new THREE.Vector3(), held: false, radius: 0.12, home: m.position.clone() });
     });
-    for (const [x, z] of [[2.2, 0.8], [-2.4, 0.6]] as const) {
-      const pk = pumpkin();
-      pk.scale.setScalar(0.28);
-      pk.position.set(x, 0.26, z);
-      pk.traverse((o) => { (o as THREE.Mesh).castShadow = true; });
-      scene.add(pk);
-      const hitBox = new THREE.Mesh(new THREE.SphereGeometry(1.1, 10, 8), new THREE.MeshBasicMaterial({ visible: false }));
-      pk.add(hitBox);
-      props.push({ mesh: pk, hit: hitBox, vel: new THREE.Vector3(), spin: new THREE.Vector3(), held: false, radius: 0.26, home: pk.position.clone() });
-    }
 
     // Remembered panel layout (positions relative to the play area).
     const saveLayout = () => {
@@ -633,9 +624,9 @@ export function enterVr(opts: VrOptions): Promise<void> {
     const route = (kind: 'move' | 'down' | 'up' | 'wheel', hit: THREE.Intersection | undefined, deltaY = 0, ctrl = false) => {
       const obj = hit?.object as THREE.Mesh | undefined;
       const pnl = obj?.userData.panel as Panel | undefined;
-      for (const s of [menu, bar, kb, sp]) if (s !== pnl) s.pointer('move', null);
+      for (const s of [menu, bar, kb, sp, dock, fav]) if (s !== pnl) s.pointer('move', null);
       if (!hit || !hit.uv) {
-        if (kind === 'down' && obj && propOf(obj)) { const p = propOf(obj)!; p.vel.addScaledVector(ray.ray.direction, 3).add(new THREE.Vector3(0, 1.5, 0)); p.spin.set(Math.random() * 6, Math.random() * 6, 0); }
+        if (kind === 'down' && obj && propOf(obj)) { const p = propOf(obj)!; p.vel.addScaledVector(ray.ray.direction, 3).add(new THREE.Vector3(0, 1.5, 0)); sfx.click(); }
         return false;
       }
       if (obj === page) {
@@ -655,7 +646,7 @@ export function enterVr(opts: VrOptions): Promise<void> {
         else pnl.pointer(kind, hit.uv);
         return true;
       }
-      if (kind === 'down' && obj && propOf(obj)) { const p = propOf(obj)!; p.vel.addScaledVector(ray.ray.direction, 3).add(new THREE.Vector3(0, 1.5, 0)); p.spin.set(Math.random() * 6, Math.random() * 6, 0); return true; }
+      if (kind === 'down' && obj && propOf(obj)) { const p = propOf(obj)!; p.vel.addScaledVector(ray.ray.direction, 3).add(new THREE.Vector3(0, 1.5, 0)); sfx.click(); return true; }
       return false;
     };
 
@@ -668,6 +659,10 @@ export function enterVr(opts: VrOptions): Promise<void> {
     type Grab = { s?: Spatial; p?: Prop; dist: number; lastPos: THREE.Vector3; vel: THREE.Vector3 };
     let grab: Grab | null = null;
     let swing = 0;
+    let pointAmt = 0;
+    let dockFollow = false;
+    let aim: THREE.Intersection | undefined;
+    let pokeAt = 0;
     const locked = () => document.pointerLockElement === canvas;
     const cast = (e?: MouseEvent) => {
       if (locked() || !e) mouse.set(0, 0);
@@ -690,6 +685,8 @@ export function enterVr(opts: VrOptions): Promise<void> {
       grab = null;
     };
     const onDown = (e: MouseEvent) => {
+      keyLight(`m${e.button}`, true);
+      if (e.button === 0) pokeAt = performance.now();
       if (opts.xr || !ready) return;
       if (visual && !locked() && e.button === 0 && !cast(e)) { void canvas.requestPointerLock(); return; }
       const hit = cast(e);
@@ -714,10 +711,12 @@ export function enterVr(opts: VrOptions): Promise<void> {
       if (grab) return; // follows in the frame loop
       const hit = cast(e);
       route('move', hit);
+      aim = hit;
       canvas.style.cursor = locked() ? 'none' : hit ? 'pointer' : 'grab';
       cross.classList.toggle('hot', !!hit);
     };
     const onUp = (e: MouseEvent) => {
+      keyLight(`m${e.button}`, false);
       if (opts.xr) return;
       if (e.button === 2 && grab) { endGrab(); return; }
       if (looking) { looking = false; if (e.button === 2) return; }
@@ -743,11 +742,12 @@ export function enterVr(opts: VrOptions): Promise<void> {
         else if (SPECIAL[e.key]) typeKey(SPECIAL[e.key]!);
         return;
       }
-      if (e.code === 'KeyE') { menu.group.visible = true; place(menu.group, 0, 1.4, headPos().y - 0.1); menu.group.scale.setScalar(1); return; }
+      if (e.code === 'KeyE') { if (menu.group.visible && !menu.group.userData.closing) show(menuS, false); else { show(menuS, true); place(menu.group, 0, 1.3, 1.5); } return; }
       if (e.code === 'Space' && jumpY <= 0.0001) { vy = 4.2; e.preventDefault(); }
       keys.add(e.code);
+      keyLight(e.code, true);
     };
-    const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code);
+    const onKeyUp = (e: KeyboardEvent) => { keys.delete(e.code); keyLight(e.code, false); };
     canvas.addEventListener('mousedown', onDown);
     addEventListener('mousemove', onMove);
     addEventListener('mouseup', onUp);
@@ -833,13 +833,16 @@ export function enterVr(opts: VrOptions): Promise<void> {
             rig.position.x += ((-Math.sin(yaw) * f + Math.cos(yaw) * r) / len) * speed * dt;
             rig.position.z += ((-Math.cos(yaw) * f - Math.sin(yaw) * r) / len) * speed * dt;
             const d = Math.hypot(rig.position.x, rig.position.z);
-            if (d > 14) rig.position.multiplyScalar(14 / d);
+            if (d > 24) { rig.position.x *= 24 / d; rig.position.z *= 24 / d; }
             walkPhase += dt * speed * 2.4;
           }
           vy -= 11 * dt;
           jumpY = Math.max(0, jumpY + vy * dt);
           if (jumpY === 0) vy = Math.max(0, vy);
         }
+        // Walk over the hills: the rig follows the ground under you.
+        const gy = world.heightAt(rig.position.x, rig.position.z);
+        rig.position.y += (gy - rig.position.y) * Math.min(1, dt * 10);
         const bob = Math.sin(walkPhase) * 0.035;
         camera.position.set(Math.cos(walkPhase * 0.5) * 0.02, 1.62 + jumpY + Math.abs(bob), 0);
         camera.rotation.set(pitch, yaw, Math.sin(walkPhase * 0.5) * 0.008, 'YXZ');
@@ -857,7 +860,6 @@ export function enterVr(opts: VrOptions): Promise<void> {
       lensFog.style.opacity = String(et < 2.9 ? 0 : 1 - clamp01((et - 3.1) / 1.8));
       lens.style.opacity = et < 2.9 ? String(black) : open < 1 ? '1' : '0';
       lens.classList.toggle('opening', et >= 2.9);
-      fog.density = leaving ? 0.035 + clamp01(leftFor() / 0.9) * 0.9 : 0.9 - clamp01((et - 2.9) / 1.4) * 0.865;
       if (!ready && et > 3.0) {
         ready = true;
         if (!loadLayout()) spatials.forEach((s) => s.home());
@@ -868,6 +870,17 @@ export function enterVr(opts: VrOptions): Promise<void> {
           const target = (s.root.userData.scale as number | undefined) ?? 1;
           if (a < 1) s.root.scale.setScalar(Math.max(0.001, a * target));
           else if (s.root.userData.scale) { s.root.scale.setScalar(target); delete s.root.userData.scale; }
+        }
+        // Window open/close pop (slight overshoot when opening).
+        const pop = s.root.userData.pop as { t0: number; from: number; to: number } | undefined;
+        if (pop && et > 3.9) {
+          const kk = clamp01((now - pop.t0) / 280);
+          const e2 = pop.to > pop.from ? 1 + 2.2 * (kk - 1) ** 3 + 1.2 * (kk - 1) ** 2 : ease(kk);
+          s.root.scale.setScalar(Math.max(0.001, pop.from + (pop.to - pop.from) * e2));
+          if (kk >= 1) {
+            delete s.root.userData.pop;
+            if (s.root.userData.closing) { s.root.visible = false; delete s.root.userData.closing; s.root.scale.setScalar(pop.from); menu.redraw(); dock.redraw(); }
+          }
         }
       });
 
@@ -887,6 +900,64 @@ export function enterVr(opts: VrOptions): Promise<void> {
           if (grab && !hold) armR.rotation.x += 0.35;
         }
       }
+
+      // Visual VR: gloved hands with rays. Right hand aims where the mouse points.
+      if (visual) {
+        const hold = 1 - clamp01((et - 2.6) / 0.4);
+        const idle = Math.sin(t * 1.6) * 0.006;
+        const poke = Math.max(0, 1 - (now - pokeAt) / 200);
+        pointAmt += ((aim ? 1 : 0) - pointAmt) * Math.min(1, dt * 12);
+        const walk = Math.sin(walkPhase) * 0.012;
+        hands.right.group.position.set(lerp(0.29, 0.085, hold), lerp(-0.29, -0.14 + 0.1 * ease(k), hold) + idle + walk, lerp(-0.5 - poke * 0.04, -0.36, hold));
+        hands.left.group.position.set(lerp(-0.3, -0.085, hold), lerp(-0.3, -0.14 + 0.1 * ease(k), hold) - idle - walk, lerp(-0.5, -0.36, hold));
+        hands.right.pose(pointAmt, poke);
+        hands.left.pose(0.25, 0);
+        // Desired aim point (world): what the mouse hits, else 4 m along the mouse ray.
+        ray.setFromCamera(new THREE.Vector2(locked() ? 0 : mouse.x, locked() ? 0 : mouse.y), camera);
+        const tgt = aim ? aim.point : tmpV.copy(ray.ray.origin).addScaledVector(ray.ray.direction, 4);
+        const hp = hands.right.group.getWorldPosition(tmpS);
+        tmpM.lookAt(hp, tgt, camera.up);
+        tmpQ.setFromRotationMatrix(tmpM);
+        const parentQ = camera.getWorldQuaternion(new THREE.Quaternion()).invert();
+        const want = parentQ.multiply(tmpQ);
+        if (hold > 0) want.slerp(new THREE.Quaternion().setFromEuler(new THREE.Euler(0.9, 0.35, 1.2)), hold);
+        hands.right.group.quaternion.slerp(want, Math.min(1, dt * 14));
+        hands.left.group.quaternion.slerp(hold > 0 ? new THREE.Quaternion().setFromEuler(new THREE.Euler(0.9, -0.35, -1.2)) : new THREE.Quaternion().setFromEuler(new THREE.Euler(0.12, 0.1, 0)), Math.min(1, dt * 8));
+        const showRays = hands.root.visible && hold <= 0 && ready && !leaving;
+        hands.rayR.visible = hands.rayL.visible = showRays;
+        hands.dot.visible = showRays && !!aim;
+        if (showRays) {
+          const tipR = hands.right.tip(new THREE.Vector3());
+          aimRay(hands.rayR, tipR, tgt);
+          const tipL = hands.left.tip(new THREE.Vector3());
+          const dirL = new THREE.Vector3(0, 0, -1).applyQuaternion(hands.left.group.getWorldQuaternion(new THREE.Quaternion()));
+          aimRay(hands.rayL, tipL, tipL.clone().addScaledVector(dirL, 1.4));
+          if (aim) {
+            hands.dot.position.copy(aim.point);
+            (hands.dot.userData.halo as THREE.Mesh).lookAt(headPos());
+            hands.dot.scale.setScalar(1 + poke * 0.6);
+          }
+        }
+      }
+
+      // The dock drifts back below your view when you turn away from it.
+      if (ready && !leaving && dock.group.visible && grab?.s !== dockS) {
+        const h = headPos();
+        const dyaw = Math.atan2(-(dock.group.position.x - h.x), -(dock.group.position.z - h.z));
+        let diff = camYaw() - dyaw;
+        diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+        if (Math.abs(diff) > 1.0) dockFollow = true;
+        if (dockFollow) {
+          const yw = camYaw();
+          const target = new THREE.Vector3(h.x - Math.sin(yw) * 1.1, rig.position.y + 1.13, h.z - Math.cos(yw) * 1.1);
+          dock.group.position.lerp(target, Math.min(1, dt * 4));
+          dock.group.lookAt(h.x, dock.group.position.y + 0.5, h.z);
+          if (dock.group.position.distanceTo(target) < 0.02) { dockFollow = false; saveLayout(); }
+        }
+      }
+      // Dock clock and frame rate.
+      fpsFrames++;
+      if (now - fpsAt > 1000) { fps = Math.round((fpsFrames * 1000) / (now - fpsAt)); ms = Math.round((now - fpsAt) / Math.max(1, fpsFrames)); fpsFrames = 0; fpsAt = now; dock.redraw(); root.dataset.fps = String(fps); }
 
       // Desktop grabbing follows the view ray.
       if (grab && !opts.xr) {
@@ -970,7 +1041,7 @@ export function enterVr(opts: VrOptions): Promise<void> {
         p.mesh.position.addScaledVector(p.vel, dt);
         p.mesh.rotation.x += p.spin.x * dt;
         p.mesh.rotation.y += p.spin.y * dt;
-        const floorY = Math.hypot(p.mesh.position.x, p.mesh.position.z) < 3.4 ? 0.01 : 0;
+        const floorY = world.heightAt(p.mesh.position.x, p.mesh.position.z);
         if (p.mesh.position.y < floorY + p.radius) {
           p.mesh.position.y = floorY + p.radius;
           if (p.vel.y < -0.6) { p.vel.y *= -0.35; p.spin.multiplyScalar(0.6); } else { p.vel.y = 0; p.spin.multiplyScalar(0.85); }
@@ -979,30 +1050,21 @@ export function enterVr(opts: VrOptions): Promise<void> {
           if (p.spin.lengthSq() < 0.01) p.spin.set(0, 0, 0);
         }
         const d = Math.hypot(p.mesh.position.x, p.mesh.position.z);
-        if (d > 15) { p.mesh.position.x *= 15 / d; p.mesh.position.z *= 15 / d; p.vel.x *= -0.4; p.vel.z *= -0.4; }
+        if (d > 30) { p.mesh.position.x *= 30 / d; p.mesh.position.z *= 30 / d; p.vel.x *= -0.4; p.vel.z *= -0.4; }
       }
 
-      // Fire, lanterns, world.
-      const fl = 0.85 + Math.sin(t * 13) * 0.07 + Math.sin(t * 29) * 0.05 + (Math.random() - 0.5) * 0.08;
-      fireLight.intensity = 20 * fl;
-      flames.forEach((s, j) => {
-        const ph = t * (3 + j * 0.7) + j;
-        s.position.set(Math.sin(ph * 1.7) * 0.05, 0.3 + j * 0.09 + Math.sin(ph * 2.3) * 0.04, Math.cos(ph * 1.3) * 0.05);
-        s.scale.setScalar((0.55 - j * 0.05) * (0.85 + Math.sin(ph * 3) * 0.15));
-      });
-      for (let i = 0; i < EMB; i++) {
-        embLife[i]! -= dt;
-        if (embLife[i]! <= 0) { embLife[i] = 1 + Math.random() * 2; embPos.set([(Math.random() - 0.5) * 0.3, 0.3, (Math.random() - 0.5) * 0.3], i * 3); }
-        embPos[i * 3 + 1]! += dt * (0.6 + (i % 5) * 0.12);
-        embPos[i * 3]! += Math.sin(t * 2 + i) * dt * 0.08;
-      }
-      embGeo.attributes.position!.needsUpdate = true;
-      lanterns.forEach((l) => { const f = 0.85 + Math.sin(t * 9 + l.ph) * 0.08 + Math.sin(t * 23 + l.ph) * 0.05; if (l.light) l.light.intensity = 6 * f; (l.glass.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.6 * f; });
-      w(t); bats(t);
+      world.update(t);
       if (bstate.loading) bar.redraw();
 
       renderer.render(scene, camera);
       root.dataset.t = et.toFixed(1);
+      root.dataset.browser = browser.root.visible && !browser.root.userData.closing ? '1' : '0';
+      if (state.info.e2e && ready) {
+        // Screen position of the dock's browser button, for the UI test.
+        const lp = new THREE.Vector3(((590 + 104 + 42) / DW - 0.5) * dock.widthM, (0.5 - (DH - 18) / 2 / DH) * (dock.widthM * DH / DW), 0);
+        const sp3 = dock.mesh.localToWorld(lp).project(camera);
+        root.dataset.compass = `${Math.round((sp3.x + 1) / 2 * innerWidth)},${Math.round((1 - sp3.y) / 2 * innerHeight)}`;
+      }
       if (leaving && leftFor() > 1.0) finish();
     };
     const lerp = (a: number, b: number, k2: number) => a + (b - a) * k2;
@@ -1022,7 +1084,10 @@ export function enterVr(opts: VrOptions): Promise<void> {
         opts.xr = false;
         renderer.xr.enabled = false;
         root.classList.add('visual');
-        help.textContent = helpVisual;
+        visual = true;
+        help.hidden = true;
+        keysEl.hidden = false;
+        if (!hands.root.parent) { camera.add(hands.root); scene.add(hands.rayR, hands.rayL, hands.dot); }
       });
     }
 
@@ -1051,7 +1116,11 @@ export function enterVr(opts: VrOptions): Promise<void> {
       removeEventListener('keydown', onKey, true);
       removeEventListener('keyup', onKeyUp, true);
       removeEventListener('resize', resize);
-      [menu, bar, kb, sp].forEach((x) => x.dispose());
+      [menu, bar, kb, sp, dock, fav].forEach((x) => x.dispose());
+      stopAmbience();
+      panelSounds.hover = panelSounds.click = undefined;
+      world.dispose();
+      hands.dispose();
       scene.traverse((o) => {
         const m = o as THREE.Mesh;
         m.geometry?.dispose();
@@ -1059,9 +1128,6 @@ export function enterVr(opts: VrOptions): Promise<void> {
         mats.forEach((x) => { (x as THREE.MeshBasicMaterial).map?.dispose(); x.dispose(); });
       });
       bGeo.dispose();
-      dot.dispose();
-      rock.dispose();
-      wood.dispose();
       renderer.dispose();
       renderer.forceContextLoss();
       root.remove();
