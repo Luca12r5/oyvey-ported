@@ -1,7 +1,10 @@
 import { pixel } from '../icons.ts';
 import { itemArt } from '../itemart.ts';
 import { CATALOG, NAME_TAGS, RARITY_INFO, tagCharColor, type CatalogItem, type NameTagStyle, type Rarity } from '@lego/shared';
-import { state } from '../app.ts';
+import { onLeave, state } from '../app.ts';
+import { cosmeticPoster } from '../cosmetics3d.ts';
+import { createAvatar, DEFAULT_SKIN, type Avatar } from '../avatar.ts';
+import { capeSheetUrl, presetSpec } from '../capeart.ts';
 import { confirm, errorToast, fmtNum, html, idem, lego, mount, slotIcon, toast, type Raw } from '../ui.ts';
 
 const SLOTS: [string, string][] = [['', 'Alle'], ['cape', 'Capes'], ['wings', 'Flügel'], ['hat', 'Hüte'], ['face', 'Gesicht'], ['back', 'Rücken'], ['aura', 'Auren'], ['pet', 'Pets'], ['vehicle', 'Fahrzeuge'], ['knife', 'Messer'], ['nametag', 'Name Tags']];
@@ -26,7 +29,7 @@ function card(i: CatalogItem, inv: Inv, mode: 'collection' | 'shop'): Raw {
   const tag = i.kind === 'nametag' ? NAME_TAGS.find((t) => t.id === i.id) : undefined;
   const info = RARITY_INFO[i.rarity];
   return html`<div class="item ${info.animatedFrame ? 'anim' : ''}" data-c="${rarityColor(i.rarity)}">
-    <div class="thumb">${tag ? tagHtml(tag, state.auth.name ?? 'Steve') : itemArt(i.id, i.name, i.slot)}</div>
+    <div class="thumb" ${tag ? '' : html`data-c3d="${i.id}" data-slot="${i.slot}" title="3D anprobieren"`}>${tag ? tagHtml(tag, state.auth.name ?? 'Steve') : itemArt(i.id, i.name, i.slot)}</div>
     <div class="row between"><b>${i.name}</b><span class="badge c" data-c="${rarityColor(i.rarity)}">${info.label.de}</span></div>
     <div class="small muted">${UNLOCK[i.unlock] ?? i.unlock}${i.price ? ` · ${fmtNum(i.price)} Coins` : ''}${i.seasonal ? ' · Saisonal' : ''}</div>
     <div class="row">${owned
@@ -45,12 +48,43 @@ async function browser(el: HTMLElement, mode: 'collection' | 'shop'): Promise<vo
     <div class="row gap filterbar"><input id="q" class="grow" placeholder="Suchen…"><select id="rar"><option value="">Alle Seltenheiten</option>${(Object.keys(RARITY_INFO) as Rarity[]).map((r) => html`<option value="${r}">${RARITY_INFO[r].label.de}</option>`)}</select>
       ${mode === 'collection' ? html`<label class="check"><input type="checkbox" id="owned"> Nur im Besitz</label>` : ''}</div>
     <div class="tabs gap" id="slots">${SLOTS.map(([id, l], i) => html`<button data-slot="${id}" class="${i === 0 ? 'active' : ''}">${l}</button>`)}</div>
-    <div class="grid g4" id="items"></div>`);
+    <div class="cos-layout"><div class="grid g4" id="items"></div>
+      <aside class="cos-try glass"><div class="cos-try-stage"><canvas id="tryOn"></canvas></div><b id="tryName">Anprobe</b><small class="muted">Klick auf ein Bild: in 3D am eigenen Skin ansehen. Ziehen dreht die Figur.</small></aside></div>`);
+  // 3D try-on: the own skin wearing the equipped items plus the one clicked.
+  let tryAvatar: Avatar | null = null;
+  try { tryAvatar = createAvatar(el.querySelector<HTMLCanvasElement>('#tryOn')!, state.settings.reducedMotion); } catch { /* no WebGL */ }
+  const worn = () => Object.entries(inv.equipped).filter(([slot]) => slot !== 'cape' && slot !== 'nametag').map(([, id]) => id);
+  const tryOn = (id: string | null, slot?: string) => {
+    if (!tryAvatar) return;
+    const ids = worn().filter((x) => !id || CATALOG.find((c) => c.id === x)?.slot !== slot);
+    if (id && slot !== 'cape') ids.push(id);
+    tryAvatar.wear(ids);
+    const capeSpec = slot === 'cape' && id ? presetSpec(id) : null;
+    void tryAvatar.setSkin(state.skin.skin, state.skin.variant, capeSpec ? capeSheetUrl(capeSpec) : state.skin.cape);
+    if (id) el.querySelector('#tryName')!.textContent = CATALOG.find((c) => c.id === id)?.name ?? id;
+    tryAvatar.play(slot === 'wings' || slot === 'back' || slot === 'cape' ? 'spin' : 'idle');
+  };
+  void tryAvatar?.setSkin(state.skin.skin, state.skin.variant, state.skin.cape).then(() => tryOn(null));
+  el.addEventListener('click', (e) => {
+    const t = (e.target as HTMLElement).closest<HTMLElement>('[data-c3d]');
+    if (t) tryOn(t.dataset.c3d!, t.dataset.slot);
+  });
+  // Card pictures: the real 3D model on a mannequin, rendered when the card scrolls into view.
+  const io = new IntersectionObserver((entries) => {
+    for (const en of entries) {
+      if (!en.isIntersecting) continue;
+      const th = en.target as HTMLElement;
+      io.unobserve(th);
+      void cosmeticPoster(th.dataset.c3d!, th.dataset.slot!, DEFAULT_SKIN).then((url) => { if (url && th.isConnected) th.innerHTML = `<img alt="" src="${url}">`; });
+    }
+  }, { rootMargin: '200px' });
+  onLeave(() => { io.disconnect(); tryAvatar?.dispose(); });
   const list = el.querySelector<HTMLElement>('#items')!;
   const draw = () => {
     const items = CATALOG.filter((i) => (!f.slot || i.slot === f.slot) && (!f.rarity || i.rarity === f.rarity) && (!f.q || i.name.toLowerCase().includes(f.q))
       && (!f.owned || inv.owned.includes(i.id)) && (mode !== 'shop' || (i.unlock === 'shop' && !inv.owned.includes(i.id))));
     mount(list, items.length ? html`${items.slice(0, 300).map((i) => card(i, inv, mode))}` : html`<div class="empty">Keine Treffer.</div>`);
+    list.querySelectorAll<HTMLElement>('[data-c3d]').forEach((th) => io.observe(th));
   };
   el.querySelector('#q')!.addEventListener('input', (e) => { f.q = (e.target as HTMLInputElement).value.toLowerCase(); draw(); });
   el.querySelector('#rar')!.addEventListener('change', (e) => { f.rarity = (e.target as HTMLSelectElement).value; draw(); });
@@ -69,6 +103,8 @@ async function browser(el: HTMLElement, mode: 'collection' | 'shop'): Promise<vo
       if (b.dataset.equip) {
         const r = await lego<{ equipped: Record<string, string> }>('PUT', '/api/equip', { slot: b.dataset.slot, itemId: b.dataset.on === '1' ? b.dataset.equip : null });
         inv.equipped = r.equipped;
+        state.equipped = r.equipped;
+        tryOn(null);
       } else if (b.dataset.buy) {
         const item = CATALOG.find((i) => i.id === b.dataset.buy)!;
         if (!(await confirm('Kaufen?', `${item.name} für ${fmtNum(item.price)} Coins?`, 'Kaufen'))) return;

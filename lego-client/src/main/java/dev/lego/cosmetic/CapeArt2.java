@@ -416,7 +416,7 @@ final class CapeArt2 {
       double var23 = 0.0;
       double var25 = var19;
 
-      for (byte var27 = 0; var27 <= 160; var27 += 2) {
+      for (int var27 = 0; var27 <= 160; var27 += 2) {
          double var28 = (var27 % 80 + 80) % 80 / 80.0;
          double var30 = var19;
          if (var28 > 0.3 && var28 < 0.36) {

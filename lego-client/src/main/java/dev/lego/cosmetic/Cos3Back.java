@@ -140,7 +140,7 @@ final class Cos3Back {
       var0.color(-264466);
       Geo.chain(var0, "c3_fur", var11, var13, 12);
 
-      for (byte var14 = 2; var14 < var6 - 1; var14 += 2) {
+      for (int var14 = 2; var14 < var6 - 1; var14 += 2) {
          float var15 = (float)var14 / (var6 - 1);
          var0.color(var15 > 0.7F ? -264466 : -1014230);
          float[] var16 = var7[var14];
@@ -201,7 +201,7 @@ final class Cos3Back {
          var0.pop();
       }
 
-      for (byte var19 = 1; var19 < var4 - 1; var19 += 2) {
+      for (int var19 = 1; var19 < var4 - 1; var19 += 2) {
          float var22 = (float)var19 / (var4 - 1);
          float[] var24 = var5[var19];
          float[] var25 = var5[var19 + 1];
@@ -246,7 +246,7 @@ final class Cos3Back {
       var0.translate(0.0F, var3, 0.0F);
       var0.color(-11908526);
 
-      for (byte var4 = -1; var4 <= 1; var4 += 2) {
+      for (int var4 = -1; var4 <= 1; var4 += 2) {
          Cos3Geo.bbox(var0, "white", var4 * 0.45F - 0.17F, 0.0F, -0.35F, var4 * 0.45F + 0.17F, 0.28F, 0.75F, 0.1F);
          Geo.tube(var0, "white", new float[]{var4 * 0.45F, 0.25F, 0.15F}, new float[]{var4 * 0.4F, 1.0F, 0.0F}, 0.15F, 0.13F, 5);
       }
@@ -255,7 +255,7 @@ final class Cos3Back {
       var0.translate(0.0F, 1.4F, -1.1F);
       var0.rotY(90.0F);
 
-      for (byte var7 = -1; var7 <= 1; var7 += 2) {
+      for (int var7 = -1; var7 <= 1; var7 += 2) {
          var0.push();
          var0.translate(0.0F, 0.0F, var7 * 0.12F);
          var0.rotZ(-42 + var7 * 4 + Cos3Geo.sin(var2 * 1.3F) * 3.0F);
@@ -273,7 +273,7 @@ final class Cos3Back {
       Geo.ellipsoid(var0, "c3_plume", 0.0F, 1.75F, 0.35F, 0.8F, 1.1F, 0.9F, 12, 7);
       float var8 = (float)Math.pow(Math.max(0.0F, Cos3Geo.sin(var2 * 1.1F)), 12.0) * 38.0F * (0.6F + 0.4F * Cos3Geo.sin(var2 * 18.0F));
 
-      for (byte var5 = -1; var5 <= 1; var5 += 2) {
+      for (int var5 = -1; var5 <= 1; var5 += 2) {
          var0.push();
          var0.translate(var5 * 0.95F, 2.9F, 0.2F);
          var0.rotZ(var5 * (6.0F + (var5 < 0 ? var8 * 0.3F : var8)));
@@ -297,7 +297,7 @@ final class Cos3Back {
       var0.color(-14497624);
       var0.sphere("c3_plume", 0.95F, 14, 8, 0.0F, 0.0F, 1.0F, 1.0F);
 
-      for (byte var9 = -1; var9 <= 1; var9 += 2) {
+      for (int var9 = -1; var9 <= 1; var9 += 2) {
          var0.color(-461586);
          Geo.ellipsoid(var0, "white", var9 * 0.52F, 0.02F, 0.48F, 0.42F, 0.48F, 0.4F, 10, 6);
          boolean var6 = Cos3Geo.fract(var2 * 0.3F) > 0.96F;
@@ -339,7 +339,7 @@ final class Cos3Back {
       int var4 = -862048;
       var0.color(var3);
 
-      for (byte var5 = -1; var5 <= 1; var5 += 2) {
+      for (int var5 = -1; var5 <= 1; var5 += 2) {
          for (int var6 = 0; var6 < 2; var6++) {
             float var7 = var6 == 0 ? 0.8F : -1.0F;
             Cos3Geo.limb(
@@ -381,7 +381,7 @@ final class Cos3Back {
 
       float var14 = Cos3Geo.sin(var2 * 2.2F) * 12.0F + (float)Math.pow(Math.max(0.0F, Cos3Geo.sin(var2 * 0.7F)), 10.0) * 35.0F;
 
-      for (byte var8 = -1; var8 <= 1; var8 += 2) {
+      for (int var8 = -1; var8 <= 1; var8 += 2) {
          var0.push();
          var0.translate(var8 * 0.65F, 2.2F, -0.1F);
          var0.scale(var8, 1.0F, 1.0F);
@@ -416,7 +416,7 @@ final class Cos3Back {
       var0.color(var4);
       Cos3Geo.bbox(var0, "c3_metal", -0.4F, -0.62F, 0.3F, 0.4F, -0.3F, 1.55F, 0.12F);
 
-      for (byte var15 = -1; var15 <= 1; var15 += 2) {
+      for (int var15 = -1; var15 <= 1; var15 += 2) {
          var0.glow(true).color(-8118);
          Geo.ellipsoid(var0, "white", var15 * 0.7F, 0.18F, 0.35F, 0.12F, 0.16F, 0.2F, 6, 4);
          var0.glow(false).color(-857904);
@@ -540,7 +540,7 @@ final class Cos3Back {
       Cos3Geo.bbox(var0, "white", -0.18F, -3.4F, -4.72F, 0.18F, -1.8F, -4.45F, 0.05F);
       var0.glow(false);
 
-      for (byte var5 = -1; var5 <= 1; var5 += 2) {
+      for (int var5 = -1; var5 <= 1; var5 += 2) {
          float var6 = var5 * 2.75F;
          float var7 = -3.95F;
          var0.push();
@@ -633,8 +633,8 @@ final class Cos3Back {
       Cos3Geo.bbox(var0, "c3_metal", -1.1F, -2.35F, -1.1F, 1.1F, -2.05F, 1.1F, 0.08F);
       Cos3Geo.bbox(var0, "c3_metal", -1.15F, -5.1F, -1.15F, 1.15F, -4.75F, 1.15F, 0.1F);
 
-      for (byte var4 = -1; var4 <= 1; var4 += 2) {
-         for (byte var5 = -1; var5 <= 1; var5 += 2) {
+      for (int var4 = -1; var4 <= 1; var4 += 2) {
+         for (int var5 = -1; var5 <= 1; var5 += 2) {
             Cos3Geo.bbox(var0, "c3_metal", var4 * 0.95F - 0.14F, -4.8F, var5 * 0.95F - 0.14F, var4 * 0.95F + 0.14F, -2.3F, var5 * 0.95F + 0.14F, 0.05F);
          }
       }

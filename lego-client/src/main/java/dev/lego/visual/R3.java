@@ -80,7 +80,7 @@ public final class R3 {
             VertexConsumer var4 = consumers.getBuffer((RenderType)var2.getKey());
             float[] var5 = var3.d;
 
-            for (byte var6 = 0; var6 < var3.n; var6 += 10) {
+            for (int var6 = 0; var6 < var3.n; var6 += 10) {
                var4.addVertex(entry, var5[var6], var5[var6 + 1], var5[var6 + 2])
                   .setColor(Float.floatToRawIntBits(var5[var6 + 3]))
                   .setUv(var5[var6 + 4], var5[var6 + 5])

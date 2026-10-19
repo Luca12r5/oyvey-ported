@@ -217,7 +217,7 @@ final class PetRig {
    }
 
    static void feet(G var0, Pets.P var1, String var2, float var3, float var4, float var5, float var6) {
-      for (byte var7 = -1; var7 <= 1; var7 += 2) {
+      for (int var7 = -1; var7 <= 1; var7 += 2) {
          float var8 = frac(var1.t * 2.1F + (var7 > 0 ? 0.0F : 0.5F));
          float[] var9 = step(var8, 0.55F, var6, 0.55F);
          float var10 = var1.walkW;

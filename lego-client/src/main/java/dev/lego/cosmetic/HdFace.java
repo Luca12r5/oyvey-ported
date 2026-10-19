@@ -16,7 +16,7 @@ final class HdFace {
       int var6 = var0.color;
       var0.color(var2);
 
-      for (byte var7 = -1; var7 <= 1; var7 += 2) {
+      for (int var7 = -1; var7 <= 1; var7 += 2) {
          float[][] var8 = new float[][]{
             {var7 * var4, var3, var5},
             {var7 * 4.25F, var3 + 0.05F, var5 - 0.8F},
@@ -59,7 +59,7 @@ final class HdFace {
          var2[var3] = new float[]{var6, var7};
       }
 
-      for (byte var8 = -1; var8 <= 1; var8 += 2) {
+      for (int var8 = -1; var8 <= 1; var8 += 2) {
          float[][] var10 = new float[var2.length][];
 
          for (int var5 = 0; var5 < var2.length; var5++) {
@@ -74,7 +74,7 @@ final class HdFace {
       Geo.chain(var0, "hd_gold", new float[][]{{-0.35F, 3.95F, 4.5F}, {0.0F, 3.75F, 4.55F}, {0.35F, 3.95F, 4.5F}}, new float[]{0.1F, 0.1F, 0.1F}, 5);
       var0.color(-571411206);
 
-      for (byte var9 = -1; var9 <= 1; var9 += 2) {
+      for (int var9 = -1; var9 <= 1; var9 += 2) {
          Geo.ellipsoid(var0, "hd_glass", var9 * 0.55F, 2.75F, 4.2F, 0.18F, 0.32F, 0.14F, 5, 3);
       }
 
@@ -125,7 +125,7 @@ final class HdFace {
       float var2 = (float)Math.pow(Math.max(0.0, Math.sin(var1.time * 6.0F)), 4.0);
       float[][] var3 = HdGeo.heart(2.0F, 28);
 
-      for (byte var4 = -1; var4 <= 1; var4 += 2) {
+      for (int var4 = -1; var4 <= 1; var4 += 2) {
          var0.push();
          var0.translate(var4 * 2.15F, 3.55F, 4.5F);
          var0.scale(1.0F + 0.08F * var2, 1.0F + 0.08F * var2, 1.0F);
@@ -159,7 +159,7 @@ final class HdFace {
       float var2 = var1.time;
       float[][] var3 = HdGeo.star(2.35F, 1.1F, 5);
 
-      for (byte var4 = -1; var4 <= 1; var4 += 2) {
+      for (int var4 = -1; var4 <= 1; var4 += 2) {
          var0.push();
          var0.translate(var4 * 2.25F, 3.6F, 4.5F);
          var0.rotZ(var4 * 8);
@@ -220,7 +220,7 @@ final class HdFace {
       var0.translate(0.0F, 1.55F, 4.25F);
       var0.rotZ(Cos3Geo.sin(var2 * 2.2F) * 1.2F);
 
-      for (byte var4 = -1; var4 <= 1; var4 += 2) {
+      for (int var4 = -1; var4 <= 1; var4 += 2) {
          byte var5 = 12;
          float[][] var6 = new float[var5 + 1][];
          float[] var7 = new float[var5 + 1];
@@ -313,7 +313,7 @@ final class HdFace {
       var0.pop();
       Cos3Geo.halo(var0, var18[0], 0.0F, var18[1] + 0.2F, 3.6F, Cos3Geo.alpha(0.55, 16726618));
 
-      for (byte var11 = -1; var11 <= 1; var11 += 2) {
+      for (int var11 = -1; var11 <= 1; var11 += 2) {
          var0.glow(false).color(-12960182);
          var0.push();
          var0.translate(var11 * 4.4F, 0.0F, -0.6F);
@@ -338,7 +338,7 @@ final class HdFace {
       var0.push();
       var0.translate(0.0F, 3.75F, 4.3F);
 
-      for (byte var3 = -1; var3 <= 1; var3 += 2) {
+      for (int var3 = -1; var3 <= 1; var3 += 2) {
          float[][] var4 = new float[20][];
 
          for (int var5 = 0; var5 < 20; var5++) {
@@ -438,7 +438,7 @@ final class HdFace {
       Geo.ellipsoid(var0, "hd_ninja", 0.0F, 5.95F, -4.75F, 0.9F, 0.6F, 0.5F, 8, 5);
       float var5 = Cos3Geo.sin(var2 * 4.0F) * 10.0F + var3 * 25.0F;
 
-      for (byte var6 = -1; var6 <= 1; var6 += 2) {
+      for (int var6 = -1; var6 <= 1; var6 += 2) {
          byte var7 = 9;
          float[][] var8 = new float[var7 + 1][];
          float[] var9 = new float[var7 + 1];

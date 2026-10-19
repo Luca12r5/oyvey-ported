@@ -364,7 +364,7 @@ final class Auras {
          String var7 = var2[var3 % 4];
          var0.box(var7, -1.6F, -0.7F, -0.8F, 1.6F, 0.7F, 0.8F, 0.0F, 0.0F, 1.0F, 1.0F);
 
-         for (byte var8 = -1; var8 <= 1; var8 += 2) {
+         for (int var8 = -1; var8 <= 1; var8 += 2) {
             var0.push();
             var0.translate(var8 * 0.8F, 0.7F, 0.0F);
             var0.cylinder(var7, 0.45F, 0.45F, 0.0F, 0.45F, 8, true, 0.1F, 0.1F, 0.9F, 0.9F);

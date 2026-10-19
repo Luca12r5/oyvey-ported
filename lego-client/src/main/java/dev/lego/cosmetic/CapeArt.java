@@ -218,7 +218,7 @@ final class CapeArt {
          for (double var23 : new double[]{0.38, 0.62, 0.82}) {
             double var25 = var10 * (0.34 - (var23 - 0.38) * 0.35);
 
-            for (byte var27 = -1; var27 <= 1; var27 += 2) {
+            for (int var27 = -1; var27 <= 1; var27 += 2) {
                double var28 = var14 + var27 * Math.PI / 4.0;
                var12.moveTo(var6 + var16 * var10 * var23, var8 + var18 * var10 * var23);
                var12.lineTo(var6 + var16 * var10 * var23 + Math.cos(var28) * var25, var8 + var18 * var10 * var23 + Math.sin(var28) * var25);

@@ -283,7 +283,7 @@ public final class Xmas {
          double var7 = 20 + var3 * 8;
          double var9 = 70 + var3 * 30;
 
-         for (byte var11 = 0; var11 < 512; var11 += 2) {
+         for (int var11 = 0; var11 < 512; var11 += 2) {
             double var12 = var9 + Math.sin(var11 / 80.0 + var5) * var7 + Math.sin(var11 / 31.0 + var5 * 2.0) * 8.0;
             double var14 = Math.sin(Math.PI * var11 / 512.0);
             int var16 = (int)(70.0 * var14);
@@ -310,7 +310,7 @@ public final class Xmas {
          Random var3 = new Random(11 + var1);
          double var4 = var1 == 0 ? 70.0 : 100.0;
 
-         for (byte var6 = 0; var6 <= 1024; var6 += 8) {
+         for (int var6 = 0; var6 <= 1024; var6 += 8) {
             double var7 = var4 + Math.sin(var6 / (140.0 + var1 * 60) + var1 * 2) * 22.0 + Math.sin(var6 / 47.0 + var1) * 6.0;
             var2.lineTo(var6, var7);
          }
@@ -346,7 +346,7 @@ public final class Xmas {
       Random var2 = new Random(5L);
       double var3 = 10.0;
 
-      for (byte var5 = 0; var5 <= 512; var5 += 32) {
+      for (int var5 = 0; var5 <= 512; var5 += 32) {
          double var6 = 6.0 + Math.sin(var5 / 61.0) * 4.0 + var2.nextDouble() * 4.0;
          var1.quadTo(var5 - 16, Math.min(var3, var6) - 3.0, var5, var6);
          var3 = var6;
@@ -376,13 +376,13 @@ public final class Xmas {
       var0.setColor(new Color(255, 255, 255, 200));
       var0.setStroke(new BasicStroke(2.0F));
 
-      for (byte var10 = 10; var10 < 512; var10 += 37) {
+      for (int var10 = 10; var10 < 512; var10 += 37) {
          var0.drawLine(var10, 12, var10 + 12, 11);
       }
 
       var0.setColor(new Color(150, 190, 240, 120));
 
-      for (byte var11 = 0; var11 < 512; var11 += 3) {
+      for (int var11 = 0; var11 < 512; var11 += 3) {
          var0.fillRect(var11, 30 + (int)(Math.sin(var11 / 23.0) * 2.5), 3, 2);
       }
    }

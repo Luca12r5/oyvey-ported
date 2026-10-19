@@ -239,7 +239,7 @@ public final class CTex {
                   var0x.fillRect(0, 0, 64, 128);
                   var0x.setColor(ca(0, 60));
 
-                  for (byte var1x = 0; var1x < 128; var1x += 9) {
+                  for (int var1x = 0; var1x < 128; var1x += 9) {
                      var0x.fillRect(0, var1x, 64, 3);
                   }
 
@@ -253,7 +253,7 @@ public final class CTex {
                var0x.fillRect(0, 0, 64, 64);
                var0x.setColor(ca(16777215, 22));
 
-               for (byte var1x = 0; var1x < 64; var1x += 4) {
+               for (int var1x = 0; var1x < 64; var1x += 4) {
                   var0x.drawLine(0, var1x, 64, var1x);
                }
             });

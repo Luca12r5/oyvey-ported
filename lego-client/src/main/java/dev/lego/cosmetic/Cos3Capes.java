@@ -343,7 +343,7 @@ final class Cos3Capes {
       var0.setStroke(new BasicStroke(2.0F, 1, 1));
       var0.draw(var8);
 
-      for (byte var9 = -1; var9 <= 1; var9 += 2) {
+      for (int var9 = -1; var9 <= 1; var9 += 2) {
          AffineTransform var10 = var0.getTransform();
          var0.translate(80 + var9 * 2, 190 - var9 * 14);
          var0.rotate(var9 * (0.7 + var6 * 2.0));
@@ -626,7 +626,7 @@ final class Cos3Capes {
 
       var0.fill(new java.awt.geom.Rectangle2D.Double(var8 - 17.0, var10 + 38.0, 34.0, 1.2));
 
-      for (byte var25 = -1; var25 <= 1; var25 += 2) {
+      for (int var25 = -1; var25 <= 1; var25 += 2) {
          double var14 = var8 + var25 * 14;
          double var16 = var10 + 2.0;
          var0.setColor(new Color(659466));
@@ -648,14 +648,14 @@ final class Cos3Capes {
       var27.lineTo(var8 + 10.0, var10 - 14.0);
       var0.draw(var27);
 
-      for (byte var15 = -1; var15 <= 1; var15 += 2) {
+      for (int var15 = -1; var15 <= 1; var15 += 2) {
          AffineTransform var29 = var0.getTransform();
          var0.translate(var8, var10 + 82.0);
          var0.rotate(var15 * 0.6);
          var0.setColor(new Color(14214352));
          var0.fill(new java.awt.geom.RoundRectangle2D.Double(-40.0, -4.0, 80.0, 8.0, 6.0, 6.0));
 
-         for (byte var17 = -1; var17 <= 1; var17 += 2) {
+         for (int var17 = -1; var17 <= 1; var17 += 2) {
             var0.fill(new java.awt.geom.Ellipse2D.Double(var17 * 40 - 7, -9.0, 10.0, 10.0));
             var0.fill(new java.awt.geom.Ellipse2D.Double(var17 * 40 - 7, -1.0, 10.0, 10.0));
          }

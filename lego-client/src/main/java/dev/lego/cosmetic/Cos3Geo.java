@@ -594,7 +594,7 @@ final class Cos3Geo {
       skinBox(var0, var1, -4.0F, -12.0F, -2.0F, 4.0F, 0.0F, 2.0F, 16, 16, 8, 12, 4, 0.0F);
       skinBox(var0, var1, -4.0F, -12.0F, -2.0F, 4.0F, 0.0F, 2.0F, 16, 32, 8, 12, 4, 0.25F);
 
-      for (byte var10 = 1; var10 >= -1; var10 -= 2) {
+      for (int var10 = 1; var10 >= -1; var10 -= 2) {
          var0.push();
          var0.translate(var10 * 5, -2.0F, 0.0F);
          var0.rotZ(var10 * (var10 > 0 ? var6 : var7));
@@ -610,7 +610,7 @@ final class Cos3Geo {
          var0.pop();
       }
 
-      for (byte var11 = 1; var11 >= -1; var11 -= 2) {
+      for (int var11 = 1; var11 >= -1; var11 -= 2) {
          var0.push();
          var0.translate(var11 * 2, -12.0F, 0.0F);
          var0.rotX(var11 * var8);

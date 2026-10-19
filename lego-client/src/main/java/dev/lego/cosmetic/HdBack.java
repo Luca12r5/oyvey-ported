@@ -14,7 +14,7 @@ final class HdBack {
       int var5 = var0.color;
       var0.color(var1);
 
-      for (byte var6 = -1; var6 <= 1; var6 += 2) {
+      for (int var6 = -1; var6 <= 1; var6 += 2) {
          float[][] var7 = new float[][]{
             {var6 * var2, var3, var4},
             {var6 * var2, -1.2F, -2.35F},
@@ -153,7 +153,7 @@ final class HdBack {
       Cos3Geo.gem(var0, "hd_gem", 0.45F, 0.35F, 0.1F, 6);
       var0.pop();
 
-      for (byte var10 = -1; var10 <= 1; var10 += 2) {
+      for (int var10 = -1; var10 <= 1; var10 += 2) {
          Cos3Geo.ball(var0, "hd_gem", var10 * 3.5F, 0.45F, 0.0F, 0.35F, 6);
       }
 
@@ -258,7 +258,7 @@ final class HdBack {
       var0.color(-2564376);
 
       for (int var10 = 0; var10 < 3; var10++) {
-         for (byte var6 = -1; var6 <= 1; var6 += 2) {
+         for (int var6 = -1; var6 <= 1; var6 += 2) {
             var0.push();
             var0.translate(var6 * 1.2F, 13.5F + var10 * 0.8F, 0.0F);
             var0.rotZ(var6 * -90);
@@ -286,7 +286,7 @@ final class HdBack {
       var0.color(-12960184);
       Cos3Geo.bbox(var0, "hd_steel", -3.4F, -8.4F, -1.4F, 3.4F, -0.8F, 0.0F, 0.3F);
 
-      for (byte var3 = -1; var3 <= 1; var3 += 2) {
+      for (int var3 = -1; var3 <= 1; var3 += 2) {
          var0.push();
          var0.translate(var3 * 2.15F, -1.4F, -2.95F);
          var0.color(-1512206);
@@ -373,7 +373,7 @@ final class HdBack {
       var0.pop();
       var0.color(-1512206);
 
-      for (byte var3 = 0; var3 < var2.length; var3 += 2) {
+      for (int var3 = 0; var3 < var2.length; var3 += 2) {
          Cos3Geo.ball(var0, "hd_chrome", var2[var3][0] * 0.86F, var2[var3][1] * 0.86F + 0.1F, 0.5F, 0.18F, 5);
       }
 
@@ -492,7 +492,7 @@ final class HdBack {
       var0.color(-15069688);
       Geo.ellipsoid(var0, "hd_gloss", 0.0F, 1.55F, 2.4F, 0.4F, 0.28F, 0.22F, 8, 5);
 
-      for (byte var5 = -1; var5 <= 1; var5 += 2) {
+      for (int var5 = -1; var5 <= 1; var5 += 2) {
          Cos3Geo.ball(var0, "hd_gloss", var5 * 0.85F, 2.4F, 1.8F, 0.3F, 8);
          var0.color(var3);
          Geo.ellipsoid(var0, "hd_fur", var5 * 1.7F, 3.6F, 0.0F, 0.95F, 0.95F, 0.55F, 10, 6);

@@ -72,7 +72,7 @@ public final class EmoteLib {
       if (var0 <= var1[0]) {
          return (float)var1[1];
       } else {
-         for (byte var2 = 2; var2 < var1.length; var2 += 2) {
+         for (int var2 = 2; var2 < var1.length; var2 += 2) {
             if (var0 <= var1[var2]) {
                double var3 = (var0 - var1[var2 - 2]) / Math.max(1.0E-4, var1[var2] - var1[var2 - 2]);
                var3 = var3 * var3 * (3.0 - 2.0 * var3);

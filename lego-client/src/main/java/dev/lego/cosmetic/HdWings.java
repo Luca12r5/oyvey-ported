@@ -167,7 +167,7 @@ final class HdWings {
          ? 72.0F
          : Geo.lerp(18.0F + 22.0F * (0.5F + 0.5F * Cos3Geo.sin(var2 * 2.6F)), 20.0F + 45.0F * (0.5F + 0.5F * Cos3Geo.sin(var2 * 12.0F)), var3);
 
-      for (byte var5 = 1; var5 >= -1; var5 -= 2) {
+      for (int var5 = 1; var5 >= -1; var5 -= 2) {
          var0.push();
          var0.scale(var5, 1.0F, 1.0F);
          var0.translate(0.55F, 2.5F, -2.9F);
@@ -191,7 +191,7 @@ final class HdWings {
 
       Cos3Geo.ball(var0, "hd_fur", 0.0F, 3.3F, -3.1F, 0.62F, 8);
 
-      for (byte var9 = -1; var9 <= 1; var9 += 2) {
+      for (int var9 = -1; var9 <= 1; var9 += 2) {
          float var6 = Cos3Geo.sin(var2 * 2.2F + var9) * 0.3F;
          float[][] var7 = new float[][]{{var9 * 0.2F, 3.7F, -3.1F}, {var9 * 0.9F, 5.2F, -3.3F + var6}, {var9 * 1.5F, 6.4F, -3.6F + var6}};
          Cos3Geo.limb(var0, "hd_plastic", var7, new float[]{0.08F, 0.07F, 0.06F}, 4);
@@ -209,7 +209,7 @@ final class HdWings {
          ? 70.0F
          : Geo.lerp(22.0F + 18.0F * (0.5F + 0.5F * Cos3Geo.sin(var2 * 3.4F)), 20.0F + 40.0F * (0.5F + 0.5F * Cos3Geo.sin(var2 * 16.0F)), var3);
 
-      for (byte var5 = 1; var5 >= -1; var5 -= 2) {
+      for (int var5 = 1; var5 >= -1; var5 -= 2) {
          for (int var6 = 0; var6 < 2; var6++) {
             var0.push();
             var0.scale(var5, 1.0F, 1.0F);
@@ -259,7 +259,7 @@ final class HdWings {
       Wings.Pose var2 = Wings.pose(var1, 0.8F);
       float var3 = 17.0F;
 
-      for (byte var4 = 1; var4 >= -1; var4 -= 2) {
+      for (int var4 = 1; var4 >= -1; var4 -= 2) {
          var0.push();
          var0.scale(var4, 1.0F, 1.0F);
          var0.translate(1.0F, -2.0F, -2.45F);

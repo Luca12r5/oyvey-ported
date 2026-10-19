@@ -349,7 +349,7 @@ final class PetTex {
       var1.fillRect(0, 0, 64, 64);
       var1.setColor(ca(7336959, 16));
 
-      for (byte var2 = 0; var2 < 64; var2 += 3) {
+      for (int var2 = 0; var2 < 64; var2 += 3) {
          var1.fillRect(0, var2, 64, 1);
       }
 
@@ -455,7 +455,7 @@ final class PetTex {
 
       var1.setColor(ca(16777215, 60));
 
-      for (byte var4 = 0; var4 < 64; var4 += 5) {
+      for (int var4 = 0; var4 < 64; var4 += 5) {
          var1.drawLine(var4, 0, var4 + 8, 64);
       }
 
@@ -471,7 +471,7 @@ final class PetTex {
       var1.setStroke(new BasicStroke(4.0F));
       var1.setColor(ca(13208090, 150));
 
-      for (byte var2 = -64; var2 < 64; var2 += 12) {
+      for (int var2 = -64; var2 < 64; var2 += 12) {
          var1.drawLine(0, var2 + 32, 32, var2 + 20);
       }
 
@@ -495,7 +495,7 @@ final class PetTex {
       var2.setStroke(new BasicStroke(2.0F));
       var2.setColor(ca(dark(var0, 0.12F), 150));
 
-      for (byte var4 = 4; var4 < 64; var4 += 9) {
+      for (int var4 = 4; var4 < 64; var4 += 9) {
          var2.drawLine(0, 32, 64, var4);
       }
 
@@ -513,7 +513,7 @@ final class PetTex {
       var3.fillRect(0, 0, var0, var1);
       var3.setColor(c(16769674));
 
-      for (byte var4 = 4; var4 < var1; var4 += 6) {
+      for (int var4 = 4; var4 < var1; var4 += 6) {
          for (int var5 = var4 / 6 % 2 * 4; var5 < var0; var5 += 8) {
             var3.fill(el(var5, var4, 2.2, 3.0));
          }
@@ -549,7 +549,7 @@ final class PetTex {
 
       var3.setColor(ca(13215354, 120));
 
-      for (byte var13 = 0; var13 < var0; var13 += 6) {
+      for (int var13 = 0; var13 < var0; var13 += 6) {
          var3.drawLine(var13, 70, var13, 128);
       }
 
@@ -566,7 +566,7 @@ final class PetTex {
       var3.fillRect(0, 0, var0, var1);
       var3.setColor(ca(16777215, 90));
 
-      for (byte var4 = 0; var4 < var0; var4 += 16) {
+      for (int var4 = 0; var4 < var0; var4 += 16) {
          var3.fill(el(var4 + 8, 26.0, 6.0, 22.0));
       }
 
@@ -626,7 +626,7 @@ final class PetTex {
                   var9.draw(new java.awt.geom.Line2D.Double(var42, var18, var42, var20));
                }
 
-               for (byte var36 = -1; var36 <= 1; var36 += 2) {
+               for (int var36 = -1; var36 <= 1; var36 += 2) {
                   for (int var43 = 0; var43 < 2; var43++) {
                      double var46 = var36 * (1.3 + var43 * 0.25);
                      var9.draw(
@@ -669,7 +669,7 @@ final class PetTex {
                var9.setStroke(new BasicStroke(5.0F, 1, 1));
                var9.setColor(ca(10107416, 110));
 
-               for (byte var34 = -1; var34 <= 1; var34 += 2) {
+               for (int var34 = -1; var34 <= 1; var34 += 2) {
                   var9.draw(
                      new java.awt.geom.QuadCurve2D.Double(
                         sx(var6, var34 * 0.45), sy(var7, -0.05), sx(var6, var34 * 0.56), sy(var7, -0.35), sx(var6, var34 * 0.75), sy(var7, -0.55)
@@ -682,7 +682,7 @@ final class PetTex {
             break;
          case "panda":
             if (var1) {
-               for (byte var33 = -1; var33 <= 1; var33 += 2) {
+               for (int var33 = -1; var33 <= 1; var33 += 2) {
                   AffineTransform var41 = var9.getTransform();
                   double var45 = sx(var6, var33 * 0.38);
                   double var48 = sy(var7, 0.03);
@@ -735,14 +735,14 @@ final class PetTex {
             break;
          case "owl":
             if (var1) {
-               for (byte var30 = -1; var30 <= 1; var30 += 2) {
+               for (int var30 = -1; var30 <= 1; var30 += 2) {
                   patch(var9, var6, var7, var30 * 0.36, 0.02, 0.36, 0.34, var4, 255);
                }
 
                var9.setStroke(new BasicStroke(2.0F));
                var9.setColor(ca(var5, 120));
 
-               for (byte var31 = -1; var31 <= 1; var31 += 2) {
+               for (int var31 = -1; var31 <= 1; var31 += 2) {
                   var9.draw(el(sx(var6, var31 * 0.36), sy(var7, 0.02), 50.0, 50.0));
                }
             } else {
@@ -833,7 +833,7 @@ final class PetTex {
                patch(var9, var6, var7, -0.5, -0.35, 0.5, 0.35, var4, 255);
                patch(var9, var6, var7, 0.0, 0.6, 0.35, 0.3, var5, 150);
 
-               for (byte var27 = -1; var27 <= 1; var27 += 2) {
+               for (int var27 = -1; var27 <= 1; var27 += 2) {
                   patch(var9, var6, var7, var27 * 0.36, 0.34, 0.1, 0.06, var4, 230);
                }
             } else {
@@ -875,11 +875,11 @@ final class PetTex {
             if (!var1) {
                patch(var9, var6, var7, 0.0, -0.6, 0.7, 0.4, var4, 255);
             } else {
-               for (byte var24 = -1; var24 <= 1; var24 += 2) {
+               for (int var24 = -1; var24 <= 1; var24 += 2) {
                   patch(var9, var6, var7, var24 * 0.5, -0.35, 0.45, 0.35, var4, 255);
                }
 
-               for (byte var25 = -1; var25 <= 1; var25 += 2) {
+               for (int var25 = -1; var25 <= 1; var25 += 2) {
                   patch(var9, var6, var7, var25 * 0.33, 0.36, 0.1, 0.06, var4, 240);
                }
             }
@@ -898,7 +898,7 @@ final class PetTex {
             var9.setStroke(new BasicStroke(2.0F, 1, 1));
 
             for (int var23 = 0; var23 < 7; var23++) {
-               for (byte var37 = 0; var37 < var6 + 16; var37 += 16) {
+               for (int var37 = 0; var37 < var6 + 16; var37 += 16) {
                   double var17 = var37 + var23 % 2 * 8;
                   double var19 = 10 + var23 * 16;
                   var9.setColor(ca(light(var3, 0.3F), 140));
@@ -1088,7 +1088,7 @@ final class PetTex {
       var0.setColor(ca(var3, 150));
 
       for (int var4 = 0; var4 < 6; var4++) {
-         for (byte var5 = 0; var5 < var1 + 12; var5 += 12) {
+         for (int var5 = 0; var5 < var1 + 12; var5 += 12) {
             double var6 = var5 + var4 % 2 * 6;
             double var8 = 20 + var4 * 12;
             var0.draw(new java.awt.geom.Arc2D.Double(var6 - 6.0, var8 - 6.0, 12.0, 12.0, 180.0, 180.0, 0));
@@ -1230,7 +1230,7 @@ final class PetTex {
       double var7 = 60.0 * var0.eye;
       double var9 = 50.0 * var0.gap;
 
-      for (byte var11 = -1; var11 <= 1; var11 += 2) {
+      for (int var11 = -1; var11 <= 1; var11 += 2) {
          double var12 = 128.0 + var11 * var9;
          double var14 = 84.0;
          boolean var16 = true;
@@ -1488,7 +1488,7 @@ final class PetTex {
          var11 = 16734826;
       }
 
-      for (byte var13 = -1; var13 <= 1; var13 += 2) {
+      for (int var13 = -1; var13 <= 1; var13 += 2) {
          double var14 = 128.0 + var13 * (var4 + var6 * 0.62);
          double var16 = 84.0 + var8 * 0.62;
          soft(var3, var14, var16, 50.0, 30.0, var11, var12);
@@ -1506,7 +1506,7 @@ final class PetTex {
          var3.setStroke(new BasicStroke(2.2F, 1, 1));
          var3.setColor(ca(5913130, 150));
 
-         for (byte var27 = -1; var27 <= 1; var27 += 2) {
+         for (int var27 = -1; var27 <= 1; var27 += 2) {
             for (int var29 = 0; var29 < 2; var29++) {
                double var15 = 128.0 + var27 * (var4 + var6 * 0.95);
                double var17 = 84.0 + var8 * 0.66 + var29 * 9;
@@ -1522,13 +1522,13 @@ final class PetTex {
       double var28 = 84.0 - var8 * 0.62;
       switch (var1) {
          case "angry":
-            for (byte var34 = -1; var34 <= 1; var34 += 2) {
+            for (int var34 = -1; var34 <= 1; var34 += 2) {
                double var37 = 128.0 + var34 * var4;
                var3.draw(new java.awt.geom.Line2D.Double(var37 - var34 * var6 * 0.55, var28 + 12.0, var37 + var34 * var6 * 0.4, var28 - 6.0));
             }
             break;
          case "sad":
-            for (byte var33 = -1; var33 <= 1; var33 += 2) {
+            for (int var33 = -1; var33 <= 1; var33 += 2) {
                double var36 = 128.0 + var33 * var4;
                var3.draw(
                   new java.awt.geom.QuadCurve2D.Double(var36 - var33 * var6 * 0.45, var28 - 6.0, var36, var28 - 2.0, var36 + var33 * var6 * 0.4, var28 + 8.0)
@@ -1630,7 +1630,7 @@ final class PetTex {
 
       switch (var1) {
          case "sad":
-            for (byte var43 = -1; var43 <= 1; var43 += 2) {
+            for (int var43 = -1; var43 <= 1; var43 += 2) {
                double var46 = 128.0 + var43 * var4 + var43 * var6 * 0.18;
                double var24 = 84.0 + var8 * 0.38;
                var3.setPaint(new GradientPaint(0.0F, (float)var24, ca(10478591, 220), 0.0F, (float)(var24 + 70.0), ca(7325951, 60)));

@@ -122,7 +122,7 @@ final class Cos3Aura {
       var0.scale(1.35F);
       float[] var10 = new float[]{0.01F, 0.01F, 0.04F, 0.04F};
 
-      for (byte var11 = -1; var11 <= 1; var11 += 2) {
+      for (int var11 = -1; var11 <= 1; var11 += 2) {
          var0.push();
          var0.rotY(-18 * var11);
          var0.color(-1);
@@ -371,7 +371,7 @@ final class Cos3Aura {
       float var6 = var1.sneak ? 55.0F : 26.0F - var3 * 8.0F;
       float var7 = 0.5F + 0.5F * Cos3Geo.sin(var2 * 0.8F);
 
-      for (byte var8 = -1; var8 <= 1; var8 += 2) {
+      for (int var8 = -1; var8 <= 1; var8 += 2) {
          var0.push();
          var0.translate(var8 * 1.2F, -2.2F, -3.6F);
          var0.scale(var8 * 1.3F, 1.3F, 1.3F);
@@ -434,7 +434,7 @@ final class Cos3Aura {
       float var3 = mv(var1);
       float var4 = Cos3Geo.sin(var2 * 1.5F) * 6.0F * (1.0F - var3) + Cos3Geo.sin(var2 * 6.0F) * 14.0F * var3;
 
-      for (byte var5 = -1; var5 <= 1; var5 += 2) {
+      for (int var5 = -1; var5 <= 1; var5 += 2) {
          var0.push();
          var0.translate(var5 * 1.0F, -2.4F, -3.4F);
          var0.scale(var5, 1.0F, 1.0F);

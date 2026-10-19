@@ -240,7 +240,7 @@ final class HdAuras {
       int var4 = var0.color;
       var0.color(var1);
 
-      for (byte var5 = -1; var5 <= 1; var5 += 2) {
+      for (int var5 = -1; var5 <= 1; var5 += 2) {
          var0.push();
          var0.rotY(var5 * 12);
          float[][] var6 = new float[6][];

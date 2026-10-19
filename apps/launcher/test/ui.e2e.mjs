@@ -52,6 +52,12 @@ await call(me.token, 'POST', '/api/friends/requests', { player: 'Alex' });
 await call(friend.token, 'POST', `/api/friends/requests/${me.user.id}/accept`);
 await call(friend.token, 'POST', `/api/messages/${me.user.id}`, { body: 'Hi aus dem UI-Test' });
 await call(me.token, 'POST', '/api/admin/news', { kind: 'news', title: 'Launcher-Test', body: 'News im Launcher' });
+// Wear a free hat, wings and knife so the play screen shows real 3D cosmetics.
+const { CATALOG } = await import('@lego/shared');
+for (const slot of ['hat', 'wings', 'knife']) {
+  const item = CATALOG.find((c) => c.slot === slot && c.unlock === 'default');
+  if (item) await call(me.token, 'PUT', '/api/equip', { slot, itemId: item.id });
+}
 
 const userData = mkdtempSync(join(tmpdir(), 'lego-launcher-ud-'));
 mkdirSync(userData, { recursive: true });
@@ -103,6 +109,8 @@ await page('play', 'SPIELEN');
 // Old settings are migrated to the night-blue look (NoRisk colours).
 const bgColor = await win.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
 if (bgColor !== '#070e19') problems.push(`old settings were not migrated to Nacht: --bg is ${bgColor}`);
+await win.waitForSelector('#avatar[data-cos]', { timeout: 8000 }).catch(() => problems.push('equipped cosmetics not shown in 3D on the play screen'));
+await win.waitForTimeout(800);
 if (shots) await win.screenshot({ path: join(shots, 'launcher-play-default.png') });
 for (const id of ['play', 'profiles', 'mods', 'skins', 'capes']) if (!(await win.locator(`#sidebar [data-page=${id}]`).count())) problems.push(`${id} tab missing`);
 if (await win.locator('#sidebar [data-page=designs]').count()) problems.push('designs should live under Optionen');
@@ -157,6 +165,13 @@ await win.waitForTimeout(600);
 if (shots) await win.screenshot({ path: join(shots, 'launcher-cape-editor.png') });
 await win.click('#capeEditor [aria-label="Schließen"]');
 await page('cosmetics', 'Sammlung');
+await win.waitForSelector('.item .thumb img', { timeout: 15000 }).catch(() => problems.push('no 3D cosmetic pictures on the cards'));
+if (!(await win.locator('#tryOn').count())) problems.push('3D try-on missing');
+await win.waitForTimeout(3000);
+if (shots) await win.screenshot({ path: join(shots, 'launcher-cosmetics-cards.png') });
+await win.locator('.item .thumb[data-slot=wings]').first().click().catch(() => {});
+await win.waitForTimeout(1500);
+if (shots) await win.screenshot({ path: join(shots, 'launcher-cosmetics.png') });
 await page('shop', 'Shop');
 await page('friends', 'Alex');
 await page('rewards', 'Tägliche Belohnung');

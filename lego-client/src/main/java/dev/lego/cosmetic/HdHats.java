@@ -437,7 +437,7 @@ final class HdHats {
       float[][] var4 = earShape(4.6F, 4.9F, 0.4F, 5);
       float[][] var5 = earShape(2.9F, 3.3F, 0.22F, 4);
 
-      for (byte var6 = 1; var6 >= -1; var6 -= 2) {
+      for (int var6 = 1; var6 >= -1; var6 -= 2) {
          var0.push();
          var0.scale(var6, 1.0F, 1.0F);
          var0.translate(2.25F, 7.75F, 0.2F);
@@ -470,7 +470,7 @@ final class HdHats {
       float var2 = var1.time;
       float var3 = var1.preview ? 0.0F : var1.move;
 
-      for (byte var4 = 1; var4 >= -1; var4 -= 2) {
+      for (int var4 = 1; var4 >= -1; var4 -= 2) {
          var0.push();
          var0.scale(var4, 1.0F, 1.0F);
          var0.translate(1.85F, 7.6F, 0.2F);
@@ -551,7 +551,7 @@ final class HdHats {
    static void horns(G var0, Cos.A var1) {
       float var2 = var1.time;
 
-      for (byte var3 = 1; var3 >= -1; var3 -= 2) {
+      for (int var3 = 1; var3 >= -1; var3 -= 2) {
          var0.push();
          var0.scale(var3, 1.0F, 1.0F);
          var0.translate(2.5F, 7.75F, 1.0F);
@@ -596,7 +596,7 @@ final class HdHats {
       var0.color(-12960698);
       XmasGeo.sweep(var0, "hd_leather", var6, var15, var17, null, 10, 2.0F);
 
-      for (byte var11 = 1; var11 >= -1; var11 -= 2) {
+      for (int var11 = 1; var11 >= -1; var11 -= 2) {
          var0.push();
          var0.translate(var11 * 4.05F, 3.3F, 0.0F);
          var0.rotZ(var11 * -90);
@@ -632,7 +632,7 @@ final class HdHats {
       float[][] var3 = earShape(4.3F, 5.3F, 0.3F, 6);
       float[][] var4 = earShape(2.6F, 3.4F, 0.15F, 4);
 
-      for (byte var5 = 1; var5 >= -1; var5 -= 2) {
+      for (int var5 = 1; var5 >= -1; var5 -= 2) {
          var0.push();
          var0.scale(var5, 1.0F, 1.0F);
          var0.translate(2.35F, 7.7F, 0.1F);
@@ -852,7 +852,7 @@ final class HdHats {
          flower(var0, var19 % 3 == 1 ? 6 : 5, var12, var18[var19 % var18.length], var19 % 5 == 2 ? -30166 : -12246, 22.0F);
          var0.pop();
 
-         for (byte var13 = -1; var13 <= 1; var13 += 2) {
+         for (int var13 = -1; var13 <= 1; var13 += 2) {
             if (var13 <= 0 && var19 % 2 != 1) {
                double var14 = var9 + var13 * 0.24;
                float[] var16 = Cos3Models.loopPt(2.0F, 3.3F, var14);
@@ -875,7 +875,7 @@ final class HdHats {
          var0.rotY((float)(-Math.toDegrees(var21)));
          float var22 = 30.0F + 45.0F * Math.abs(Cos3Geo.sin(var2 * 14.0F));
 
-         for (byte var23 = -1; var23 <= 1; var23 += 2) {
+         for (int var23 = -1; var23 <= 1; var23 += 2) {
             var0.push();
             var0.rotZ(var23 * var22);
             var0.color(-20438);
@@ -940,7 +940,7 @@ final class HdHats {
       var0.pop();
       var0.color(-1);
 
-      for (byte var12 = 1; var12 >= -1; var12 -= 2) {
+      for (int var12 = 1; var12 >= -1; var12 -= 2) {
          var0.push();
          var0.scale(var12, 1.0F, 1.0F);
          var0.translate(4.8F, 1.9F, 0.2F);
@@ -1254,7 +1254,7 @@ final class HdHats {
       var0.color(-13989318);
       XmasGeo.sweep(var0, "hd_plastic", var5, var16, var7, null, 8, 1.0F);
 
-      for (byte var8 = 1; var8 >= -1; var8 -= 2) {
+      for (int var8 = 1; var8 >= -1; var8 -= 2) {
          float[] var9 = XmasCos.bandPt(var8 > 0 ? 1.0053096491487339 : 2.1362830044410597, 5.0F, 5.55F, 3.5F);
          byte var10 = 10;
          float[][] var11 = new float[var10 + 1][];
@@ -1272,7 +1272,7 @@ final class HdHats {
          Cos3Geo.limb(var0, "hd_plastic", var11, var12, 7);
          var0.color(-13989318);
 
-         for (byte var17 = 1; var17 < var10; var17 += 2) {
+         for (int var17 = 1; var17 < var10; var17 += 2) {
             var0.push();
             var0.translate(var11[var17][0], var11[var17][1], var11[var17][2]);
             float[] var19 = var11[var17 + 1];
@@ -1315,7 +1315,7 @@ final class HdHats {
 
       var3[17] = new float[]{0.3F, 0.6F};
 
-      for (byte var7 = 1; var7 >= -1; var7 -= 2) {
+      for (int var7 = 1; var7 >= -1; var7 -= 2) {
          var0.push();
          var0.scale(var7, 1.0F, 1.0F);
          var0.rotZ(10.0F);

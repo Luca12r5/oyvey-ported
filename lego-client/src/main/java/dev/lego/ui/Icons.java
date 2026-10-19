@@ -45,7 +45,7 @@ public final class Icons {
       java.awt.geom.Path2D.Double var1 = new java.awt.geom.Path2D.Double();
       var1.moveTo(var0[0] * k, var0[1] * k);
 
-      for (byte var2 = 2; var2 < var0.length; var2 += 2) {
+      for (int var2 = 2; var2 < var0.length; var2 += 2) {
          var1.lineTo(var0[var2] * k, var0[var2 + 1] * k);
       }
 

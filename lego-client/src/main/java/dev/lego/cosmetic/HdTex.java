@@ -275,7 +275,7 @@ final class HdTex {
                var0x.fillRect(0, 0, 256, 32);
                var0x.setColor(Capes.col(0, 0.25));
 
-               for (byte var1 = 0; var1 < 256; var1 += 4) {
+               for (int var1 = 0; var1 < 256; var1 += 4) {
                   var0x.drawLine(var1, 0, var1, 32);
                }
 
@@ -288,7 +288,7 @@ final class HdTex {
                var0x.fillRect(0, 0, 256, 32);
                var0x.setColor(Capes.col(0, 0.22));
 
-               for (byte var1 = 0; var1 < 32; var1 += 3) {
+               for (int var1 = 0; var1 < 32; var1 += 3) {
                   var0x.drawLine(0, var1, 256, var1);
                }
 
@@ -330,12 +330,12 @@ final class HdTex {
                var0x.setColor(Capes.col(0, 0.18));
                var0x.setStroke(new BasicStroke(1.4F));
 
-               for (byte var1 = 30; var1 < 256; var1 += 46) {
+               for (int var1 = 30; var1 < 256; var1 += 46) {
                   var0x.drawLine(0, var1, 128, var1);
                }
 
-               for (byte var3 = 12; var3 < 256; var3 += 23) {
-                  for (byte var2 = 4; var2 < 128; var2 += 16) {
+               for (int var3 = 12; var3 < 256; var3 += 23) {
+                  for (int var2 = 4; var2 < 128; var2 += 16) {
                      var0x.fill(new Double(var2, var3, 2.4, 2.4));
                   }
                }

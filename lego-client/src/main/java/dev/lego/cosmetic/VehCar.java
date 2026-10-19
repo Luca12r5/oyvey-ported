@@ -82,8 +82,8 @@ final class VehCar {
       var0.translate(0.0F, VehGeo.sin(var1.time * 38.0F) * 0.04F * (1.0F - var1.move * 0.5F), 0.0F);
       float var6 = var1.lean * 16.0F;
 
-      for (byte var7 = -1; var7 <= 1; var7 += 2) {
-         for (byte var8 = -1; var8 <= 1; var8 += 2) {
+      for (int var7 = -1; var7 <= 1; var7 += 2) {
+         for (int var8 = -1; var8 <= 1; var8 += 2) {
             var0.push();
             var0.translate(var7 * 10.6F, 4.6F, var8 > 0 ? 19.5F : -18.5F);
             if (var8 > 0) {
@@ -213,17 +213,17 @@ final class VehCar {
          var0.pop();
       }
 
-      for (byte var34 = -1; var34 <= 1; var34 += 2) {
+      for (int var34 = -1; var34 <= 1; var34 += 2) {
          VehGeo.beam(var0, "veh_carbon", VehGeo.p(var34 * 11.4F, 11.5F, 9.4F), VehGeo.p(var34 * 13.4F, 12.6F, 9.9F), 0.45F, 0.35F);
          VehGeo.ellipsoid(var0, var4, var34 * 13.9F, 12.8F, 10.1F, 1.45F, 0.85F, 0.8F, 8, 5);
          VehGeo.ellipsoid(var0, "veh_mirror", var34 * 13.9F, 12.8F, 9.45F, 1.2F, 0.66F, 0.2F, 8, 4);
       }
 
-      for (byte var35 = -1; var35 <= 1; var35 += 2) {
+      for (int var35 = -1; var35 <= 1; var35 += 2) {
          VehGeo.ellipsoid(var0, "veh_flat:111216", var35 * 12.1F, 7.6F, -10.8F, 0.75F, 1.5F, 3.4F, 8, 4);
       }
 
-      for (byte var36 = -1; var36 <= 1; var36 += 2) {
+      for (int var36 = -1; var36 <= 1; var36 += 2) {
          VehGeo.beam(
             var0, "veh_carbon", VehGeo.p(var36 * 6, 9.6F, -25.0F), VehGeo.p(var36 * 6, 14.3F, -27.2F), 0.5F, 1.6F, 0.5F, 1.2F, VehGeo.p(0.0F, 0.0F, 1.0F)
          );
@@ -247,7 +247,7 @@ final class VehCar {
       var0.pop();
       var0.glow(true);
 
-      for (byte var37 = -1; var37 <= 1; var37 += 2) {
+      for (int var37 = -1; var37 <= 1; var37 += 2) {
          VehGeo.ellipsoid(var0, "veh_glow:FFF6D8", var37 * 7.9F, 7.6F, 28.3F, 2.3F, 0.95F, 2.2F, 8, 4);
          VehGeo.tube(var0, "veh_glow:FF2A2A", VehGeo.p(var37 * 3.5F, 8.2F, -29.6F), VehGeo.p(var37 * 8.9F, 8.1F, -29.1F), 0.5F, 0.45F, 8, true);
       }
@@ -263,7 +263,7 @@ final class VehCar {
          VehGeo.box(var0, "veh_carbon", var38 * 3.2F - 0.12F, 3.3F, -31.0F, var38 * 3.2F + 0.12F, 4.4F, -28.0F);
       }
 
-      for (byte var39 = -1; var39 <= 1; var39 += 2) {
+      for (int var39 = -1; var39 <= 1; var39 += 2) {
          var0.push();
          var0.translate(var39 * 6.6F, 3.9F, -30.2F);
          var0.rotX(-90.0F);
@@ -298,7 +298,7 @@ final class VehCar {
       String var2 = "veh_c:D81E1E";
       String var3 = "veh_c:FFCD03";
 
-      for (byte var4 = -1; var4 <= 1; var4 += 2) {
+      for (int var4 = -1; var4 <= 1; var4 += 2) {
          var0.push();
          var0.translate(var4 * 9.2F, 2.2F, 10.5F);
          var0.rotY(var1.lean * 20.0F);
@@ -310,7 +310,7 @@ final class VehCar {
          var0.pop();
       }
 
-      for (byte var8 = -1; var8 <= 1; var8 += 2) {
+      for (int var8 = -1; var8 <= 1; var8 += 2) {
          VehGeo.pipe(
             var0,
             var2,
@@ -340,7 +340,7 @@ final class VehCar {
       VehGeo.pipe(var0, "veh_chrome", new float[][]{{-7.0F, 2.2F, -12.5F}, {-7.0F, 2.8F, -15.0F}, {7.0F, 2.8F, -15.0F}, {7.0F, 2.2F, -12.5F}}, 0.36F, 6, true);
       VehGeo.box(var0, "veh_alu", -3.8F, 1.32F, -6.2F, 3.8F, 1.6F, 13.0F);
 
-      for (byte var10 = -1; var10 <= 1; var10 += 2) {
+      for (int var10 = -1; var10 <= 1; var10 += 2) {
          VehGeo.rbox(var0, var3, var10 < 0 ? -8.9F : 5.0F, 1.6F, -6.6F, var10 < 0 ? -5.0F : 8.9F, 4.3F, 5.6F, 1.1F);
       }
 
@@ -354,7 +354,7 @@ final class VehCar {
       VehGeo.rbox(var0, "veh_flat:1A1B20", -3.8F, 0.0F, -1.3F, 3.8F, 9.6F, 0.1F, 0.6F);
       var0.pop();
 
-      for (byte var11 = -1; var11 <= 1; var11 += 2) {
+      for (int var11 = -1; var11 <= 1; var11 += 2) {
          VehGeo.rbox(var0, "veh_flat:1A1B20", var11 < 0 ? -4.3F : 3.4F, 1.6F, -5.6F, var11 < 0 ? -3.4F : 4.3F, 5.4F, 0.8F, 0.35F);
       }
 

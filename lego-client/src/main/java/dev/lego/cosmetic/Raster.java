@@ -387,7 +387,7 @@ public final class Raster {
       int var12 = px(var0, var5 + 1, var6 + 1);
       int var13 = 0;
 
-      for (byte var14 = 0; var14 < 32; var14 += 8) {
+      for (int var14 = 0; var14 < 32; var14 += 8) {
          float var15 = (var9 >>> var14 & 0xFF) * (1.0F - var7) + (var10 >>> var14 & 0xFF) * var7;
          float var16 = (var11 >>> var14 & 0xFF) * (1.0F - var7) + (var12 >>> var14 & 0xFF) * var7;
          var13 |= (Math.round(var15 * (1.0F - var8) + var16 * var8) & 0xFF) << var14;

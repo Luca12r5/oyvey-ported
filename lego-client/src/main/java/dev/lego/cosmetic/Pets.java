@@ -27,7 +27,7 @@ public final class Pets {
             float[] var7 = new float[]{0.0F};
             G var8 = new G((var1x, var2x, var3x, var4x, var5x, var6x, var7x, var8x) -> {
                if (!var1x.equals("pet_star") && !var1x.equals("pet_heart")) {
-                  for (byte var9x = 1; var9x < 12; var9x += 3) {
+                  for (int var9x = 1; var9x < 12; var9x += 3) {
                      var7[0] = Math.max(var7[0], var2x[var9x]);
                   }
                }
@@ -370,7 +370,7 @@ public final class Pets {
    static void legs4(G var0, Pets.P var1, String var2, float var3, float var4, float var5, float var6, float var7) {
       float var8 = var1.lie * var7 * 0.72F;
 
-      for (byte var9 = -1; var9 <= 1; var9 += 2) {
+      for (int var9 = -1; var9 <= 1; var9 += 2) {
          leg(var0, var2, var9 * var3, var4, var6, var7, var9 * var1.walk - var1.lie * 72.0F, var8);
          leg(var0, var2, var9 * var3, var5, var6, var7, -var9 * var1.walk + var1.lie * 72.0F, var8);
       }
@@ -477,7 +477,7 @@ public final class Pets {
       if (var3 > 0.4F) {
          float var26 = Math.min(1.0F, (var3 - 0.4F) / 0.4F);
 
-         for (byte var23 = -1; var23 <= 1; var23 += 2) {
+         for (int var23 = -1; var23 <= 1; var23 += 2) {
             var0.push();
             var0.translate(var23 * var2.headRx * 0.9F, -var2.headRy * 0.35F, -0.2F);
             var0.rotZ(-var23 * 115);

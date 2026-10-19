@@ -62,7 +62,7 @@ final class Wings {
       String var7 = "fea_" + var2;
       String var8 = "cov_" + var2;
 
-      for (byte var9 = 1; var9 >= -1; var9 -= 2) {
+      for (int var9 = 1; var9 >= -1; var9 -= 2) {
          var0.push();
          root(var0, var6, var9, 0.9F, -2.2F);
          var0.glow(var4);
@@ -262,7 +262,7 @@ final class Wings {
       float var15 = 0.62F * var3;
       float var16 = -0.95F * var3;
 
-      for (byte var17 = 1; var17 >= -1; var17 -= 2) {
+      for (int var17 = 1; var17 >= -1; var17 -= 2) {
          var0.push();
          root(var0, var7, var17, 1.0F, -1.6F);
          ArrayList var18 = new ArrayList();
@@ -368,7 +368,7 @@ final class Wings {
          ? 72.0F
          : Geo.lerp(18.0F + 22.0F * (0.5F + 0.5F * Geo.sin(var2 * 2.6)), 20.0F + 45.0F * (0.5F + 0.5F * Geo.sin(var2 * 12.0F)), var3);
 
-      for (byte var5 = 1; var5 >= -1; var5 -= 2) {
+      for (int var5 = 1; var5 >= -1; var5 -= 2) {
          var0.push();
          var0.scale(var5, 1.0F, 1.0F);
          var0.translate(0.5F, 2.5F, -2.4F);
@@ -416,7 +416,7 @@ final class Wings {
          : Geo.lerp(22.0F + 18.0F * (0.5F + 0.5F * Geo.sin(var2 * 3.4)), 20.0F + 40.0F * (0.5F + 0.5F * Geo.sin(var2 * 16.0F)), var3);
       var0.glow(true);
 
-      for (byte var5 = 1; var5 >= -1; var5 -= 2) {
+      for (int var5 = 1; var5 >= -1; var5 -= 2) {
          for (int var6 = 0; var6 < 2; var6++) {
             var0.push();
             var0.scale(var5, 1.0F, 1.0F);
@@ -468,7 +468,7 @@ final class Wings {
       Wings.Pose var2 = pose(var1, 0.8F);
       float var3 = 17.0F;
 
-      for (byte var4 = 1; var4 >= -1; var4 -= 2) {
+      for (int var4 = 1; var4 >= -1; var4 -= 2) {
          var0.push();
          root(var0, var2, var4, 1.0F, -2.0F);
          float[] var5 = new float[]{0.0F, 0.0F, 0.0F};

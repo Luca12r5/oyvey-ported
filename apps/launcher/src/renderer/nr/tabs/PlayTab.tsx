@@ -21,6 +21,8 @@ export interface PlayTabProps {
   signedIn: boolean;
   connected: boolean;
   skin: { skin: string | null; variant: 'classic' | 'slim'; cape: string | null };
+  /** Equipped LEGO cosmetics shown in 3D on the character. */
+  cosmetics: string[];
   reducedMotion: boolean;
   onSignIn: () => void;
   onPickProfile: (group: HTMLElement) => void;
@@ -72,7 +74,7 @@ export function PlayTab(p: PlayTabProps) {
         <div className="relative z-10">
           <div className="flex flex-col items-center">
             <div className="relative w-full flex flex-col items-center" style={{ maxWidth: `${Math.round(500 * k)}px` }}>
-              <PlayerRig playerName={p.playerName} skin={p.skin.skin} variant={p.skin.variant} cape={p.skin.cape} animated={anim && !p.reducedMotion} reducedMotion={p.reducedMotion} height={rigH} showTag={nametag} />
+              <PlayerRig playerName={p.playerName} skin={p.skin.skin} variant={p.skin.variant} cape={p.skin.cape} animated={anim && !p.reducedMotion} reducedMotion={p.reducedMotion} height={rigH} showTag={nametag} cosmetics={p.cosmetics} />
               <div className="absolute left-0 right-0 flex justify-center px-4 bottom-2 z-30">
                 <div style={{ width: `${Math.round(Math.min(520, 330 * Math.min(1.5, k)))}px` }}>
                   <MainLaunchButton

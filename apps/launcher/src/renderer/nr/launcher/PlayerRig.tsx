@@ -18,9 +18,11 @@ interface PlayerRigProps {
   height?: number;
   /** Name tag above the head. */
   showTag?: boolean;
+  /** Equipped cosmetics (item ids) worn in 3D. */
+  cosmetics?: string[];
 }
 
-export function PlayerRig({ playerName, skin, variant, cape, animated, reducedMotion, height = PLAYER_RIG_HEIGHT, showTag = true }: PlayerRigProps) {
+export function PlayerRig({ playerName, skin, variant, cape, animated, reducedMotion, height = PLAYER_RIG_HEIGHT, showTag = true, cosmetics = [] }: PlayerRigProps) {
   const k = height / PLAYER_RIG_HEIGHT;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const avatarRef = useRef<Avatar | null>(null);
@@ -44,6 +46,8 @@ export function PlayerRig({ playerName, skin, variant, cape, animated, reducedMo
 
   useEffect(() => { void avatarRef.current?.setSkin(skin, variant, cape).catch(() => {}); }, [skin, variant, cape, reducedMotion]);
   useEffect(() => { avatarRef.current?.setPaused(!animated); }, [animated, reducedMotion]);
+  const cosKey = cosmetics.join(',');
+  useEffect(() => { avatarRef.current?.wear(cosKey ? cosKey.split(',') : []); }, [cosKey, reducedMotion]);
 
   // Name tag follows the head (projected from the 3D model), so it sits just above it at any size or zoom.
   const tagRef = useRef<HTMLDivElement>(null);

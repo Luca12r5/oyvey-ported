@@ -86,7 +86,7 @@ public final class CosRender {
          } else {
             int var3 = 0;
 
-            for (byte var4 = 0; var4 < var2.argb.length; var4 += 3) {
+            for (int var4 = 0; var4 < var2.argb.length; var4 += 3) {
                int var5 = var2.argb[var4] >>> 24;
                if (var5 > 12 && var5 < 235) {
                   var3++;

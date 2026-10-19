@@ -13,6 +13,7 @@ import { playPage } from './pages/play.ts';
 import { setUiSounds } from './nr/lib/sound.ts';
 import { mountShell, setAccent, shellStore, actions, gameStore, initGame, NAV_ICONS } from './nr/mount.tsx';
 import { themeStore, applyAccentToDOM } from './nr/store/theme.ts';
+import type { CapeSpec } from '@lego/shared';
 import { skinsPage } from './pages/skins.ts';
 import { playSplash } from './splash.ts';
 import { webglAvailable } from './intro3d.ts';
@@ -39,9 +40,12 @@ export interface State {
   head: string;
   skin: { skin: string | null; variant: 'classic' | 'slim'; cape: string | null };
   coins: number | null;
+  /** Equipped LEGO cosmetics (slot -> item id) and the own designed cape, from the LEGO server. */
+  equipped: Record<string, string>;
+  customCape: CapeSpec | null;
 }
 
-export const state = { head: '', skin: { skin: null, variant: 'classic', cape: null }, coins: null } as unknown as State;
+export const state = { head: '', skin: { skin: null, variant: 'classic', cape: null }, coins: null, equipped: {}, customCape: null } as unknown as State;
 
 type Page = (el: HTMLElement) => Promise<void> | void;
 /** `slot`: main dock, bottom of the dock, or the "Mehr" menu. */
@@ -356,10 +360,18 @@ export async function loadIdentity(): Promise<void> {
   // Guests who loaded a skin by name see that name and face everywhere too.
   state.head = state.auth.signedIn || (state.settings.guestName && state.skin.skin) ? await headFromSkin(state.skin.skin, 64) : '';
   state.coins = null;
+  state.equipped = {};
   if (state.auth.lego.connected) {
     try {
       state.coins = (await lego<{ balance: number }>('GET', '/api/me/credits')).balance;
     } catch { /* offline */ }
+    // Equipped cosmetics are shown in 3D on the play screen.
+    const [inv, cape] = await Promise.all([
+      lego<{ equipped: Record<string, string> }>('GET', '/api/inventory').catch(() => null),
+      lego<{ cape: { spec: CapeSpec } | null }>('GET', '/api/me/cape-spec').catch(() => null),
+    ]);
+    state.equipped = inv?.equipped ?? {};
+    state.customCape = cape?.cape?.spec ?? null;
   }
   refreshChrome();
 }

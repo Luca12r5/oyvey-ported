@@ -249,7 +249,7 @@ final class Models {
    static void catEars(G var0, Cos.A var1) {
       float var2 = (float)Math.max(0.0, Math.sin(var1.time * 3.1F) - 0.85F) * 60.0F;
 
-      for (byte var3 = 1; var3 >= -1; var3 -= 2) {
+      for (int var3 = 1; var3 >= -1; var3 -= 2) {
          var0.push();
          var0.scale(var3, 1.0F, 1.0F);
          var0.translate(2.4F, 7.6F, 0.4F);
@@ -260,7 +260,7 @@ final class Models {
    }
 
    static void bunnyEars(G var0, Cos.A var1) {
-      for (byte var2 = 1; var2 >= -1; var2 -= 2) {
+      for (int var2 = 1; var2 >= -1; var2 -= 2) {
          var0.push();
          var0.scale(var2, 1.0F, 1.0F);
          var0.translate(1.8F, 7.8F, 0.0F);
@@ -273,7 +273,7 @@ final class Models {
    }
 
    static void horns(G var0, Cos.A var1) {
-      for (byte var2 = 1; var2 >= -1; var2 -= 2) {
+      for (int var2 = 1; var2 >= -1; var2 -= 2) {
          var0.push();
          var0.scale(var2, 1.0F, 1.0F);
          var0.translate(2.6F, 7.6F, 1.2F);
@@ -345,7 +345,7 @@ final class Models {
          );
       }
 
-      for (byte var19 = 1; var19 >= -1; var19 -= 2) {
+      for (int var19 = 1; var19 >= -1; var19 -= 2) {
          var0.push();
          var0.translate(var19 * 4.2F, 3.4F, 0.0F);
          var0.rotZ(var19 * -90);
@@ -363,7 +363,7 @@ final class Models {
       var0.translate(0.0F, 3.6F, 4.12F);
       var0.plane("sunglasses", 0.0F, 0.0F, 9.0F, 2.25F, 0.0F, 0.0F, 1.0F, 1.0F);
 
-      for (byte var2 = 1; var2 >= -1; var2 -= 2) {
+      for (int var2 = 1; var2 >= -1; var2 -= 2) {
          var0.push();
          var0.translate(var2 * 4.3F, 0.4F, 0.0F);
          var0.box("felt_black", -0.18F, -0.25F, -5.5F, 0.18F, 0.25F, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F);
@@ -404,7 +404,7 @@ final class Models {
 
       var0.box("lego_yellow", -2.2F, -6.6F, -3.55F, 2.2F, -4.4F, -3.3F, 0.0F, 0.0F, 1.0F, 1.0F);
 
-      for (byte var5 = 1; var5 >= -1; var5 -= 2) {
+      for (int var5 = 1; var5 >= -1; var5 -= 2) {
          var0.box("strap", var5 * 2.1F - 0.55F, -6.0F, 0.0F, var5 * 2.1F + 0.55F, 0.3F, 0.35F, 0.0F, 0.0F, 1.0F, 1.0F);
          var0.box("strap", var5 * 2.1F - 0.55F, 0.0F, 0.0F, var5 * 2.1F + 0.55F, 0.35F, 4.4F, 0.0F, 0.0F, 1.0F, 1.0F);
          var0.box("strap", var5 * 2.1F - 0.55F, -5.5F, 4.1F, var5 * 2.1F + 0.55F, 0.35F, 4.45F, 0.0F, 0.0F, 1.0F, 1.0F);

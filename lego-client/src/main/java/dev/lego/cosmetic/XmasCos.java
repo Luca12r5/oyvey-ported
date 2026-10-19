@@ -46,7 +46,7 @@ final class XmasCos {
       var0.color(-4712930);
       Cos3Geo.limb(var0, "xm_velvet", var4, var9, 7);
 
-      for (byte var6 = -1; var6 <= 1; var6 += 2) {
+      for (int var6 = -1; var6 <= 1; var6 += 2) {
          float[] var7 = bandPt(var6 > 0 ? Math.PI / 3 : Math.PI * 2.0 / 3.0, 5.0F, 5.6F, 3.6F);
          var0.push();
          var0.translate(var7[0], var7[1] - 0.1F, var7[2]);
@@ -132,7 +132,7 @@ final class XmasCos {
       var0.color(-1);
       Cos3Geo.band(var0, "xm_elfcuff", 2.6F, 2.1F, 0.62F, 4.9F, 6.7F, 0.0F, 3.0F);
 
-      for (byte var29 = -1; var29 <= 1; var29 += 2) {
+      for (int var29 = -1; var29 <= 1; var29 += 2) {
          var0.push();
          var0.translate(var29 * 5.45F, 5.2F, 0.4F);
          XmasGeo.bell(var0, 0.55F, Cos3Geo.sin(var2 * 3.0F + var29) * 12.0F);
@@ -288,7 +288,7 @@ final class XmasCos {
          var6[var7] = new float[]{XmasTex.GMAN[var7][0] * 2.35F, XmasTex.GMAN[var7][1] * 2.35F};
       }
 
-      for (byte var9 = -1; var9 <= 1; var9 += 2) {
+      for (int var9 = -1; var9 <= 1; var9 += 2) {
          var0.push();
          var0.translate(var9 * 5.0F, 3.4F, 0.0F);
          var0.color(-593170);

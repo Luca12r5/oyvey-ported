@@ -170,7 +170,7 @@ final class XmasGeo {
       int var4 = var0.color;
       var0.color(-1);
 
-      for (byte var5 = -1; var5 <= 1; var5 += 2) {
+      for (int var5 = -1; var5 <= 1; var5 += 2) {
          var0.push();
          var0.rotX(var5 * 14);
          float[][] var6 = new float[var3.length][];
@@ -211,7 +211,7 @@ final class XmasGeo {
       int var3 = var0.color;
       var0.color(var1);
 
-      for (byte var4 = -1; var4 <= 1; var4 += 2) {
+      for (int var4 = -1; var4 <= 1; var4 += 2) {
          var0.push();
          var0.translate(var4 * 0.75F * var2, 0.12F * var2, 0.0F);
          var0.rotZ(var4 * 18);

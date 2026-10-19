@@ -213,7 +213,7 @@ final class PetReal {
       var3.snLen = 2.1F;
       var3.snR = 0.78F;
       var3.ears = (var0x, var1x) -> {
-         for (byte var2x = -1; var2x <= 1; var2x += 2) {
+         for (int var2x = -1; var2x <= 1; var2x += 2) {
             Pets.earPointy(var0x, var1x, Pets.col(8291214), Pets.col(15329250), Pets.col(5133150), var2x * 1.0F, 1.2F, -0.35F, var2x, 0.72F, 1.6F, 8.0F);
          }
       };
@@ -261,7 +261,7 @@ final class PetReal {
          float var2x = Math.max(0.0F, 1.0F - var1x.ear) * 15.0F;
          float var3x = Math.max(0.0F, var1x.ear - 1.0F) * 90.0F;
 
-         for (byte var4x = -1; var4x <= 1; var4x += 2) {
+         for (int var4x = -1; var4x <= 1; var4x += 2) {
             var0x.push();
             var0x.translate(var4x * 1.45F, 0.75F, -0.3F);
             var0x.rotZ(var4x * (14.0F + var2x - var3x + var1x.earTwitch * (var4x > 0 ? 1 : 0)) + PetGeo.sin(var1x.t * 9.0F) * 4.0F * var1x.walkW);
@@ -316,7 +316,7 @@ final class PetReal {
       var3.pawR = 0.55F;
       var3.babyS = 0.66F;
       var3.ears = (var0x, var1x) -> {
-         for (byte var2x = -1; var2x <= 1; var2x += 2) {
+         for (int var2x = -1; var2x <= 1; var2x += 2) {
             Pets.earPointy(var0x, var1x, Pets.col(15790840), Pets.col(14212842), var2x * 0.95F, 1.1F, -0.3F, var2x, 0.7F, 1.05F, 14.0F);
          }
       };
@@ -373,7 +373,7 @@ final class PetReal {
       var3.babySnout = 0.55F;
       String var4 = Pets.col(2364688);
       var3.ears = (var1x, var2x) -> {
-         for (byte var3x = -1; var3x <= 1; var3x += 2) {
+         for (int var3x = -1; var3x <= 1; var3x += 2) {
             Pets.earPointy(var1x, var2x, Pets.col(10707002), Pets.col(5911584), var3x * 0.7F, 1.15F, -0.4F, var3x, 0.45F, 1.15F, 6.0F);
          }
 
@@ -445,7 +445,7 @@ final class PetReal {
       var3.babyHead = 1.65F;
       int var5 = Math.max(1, Math.min(5, var1.level));
       var3.ears = (var0x, var1x) -> {
-         for (byte var2x = -1; var2x <= 1; var2x += 2) {
+         for (int var2x = -1; var2x <= 1; var2x += 2) {
             Pets.earPointy(var0x, var1x, Pets.col(11104586), Pets.col(16181466), var2x * 0.95F, 0.85F, -0.4F, var2x, 0.72F, 1.75F, 55.0F);
          }
       };
@@ -462,7 +462,7 @@ final class PetReal {
          String var4 = Pets.col(15259576);
          float var5 = var2 == 2 ? 0.55F : (var2 == 3 ? 1.6F : (var2 == 4 ? 2.5F : 3.3F));
 
-         for (byte var6 = -1; var6 <= 1; var6 += 2) {
+         for (int var6 = -1; var6 <= 1; var6 += 2) {
             var0.push();
             var0.translate(var6 * 0.6F, 1.05F, -0.1F);
             var0.rotZ(-var6 * 22);
@@ -530,7 +530,7 @@ final class PetReal {
       String var4 = Pets.col(10114598);
       String var5 = Pets.col(12085806);
       var3.ears = (var0x, var1x) -> {
-         for (byte var2x = -1; var2x <= 1; var2x += 2) {
+         for (int var2x = -1; var2x <= 1; var2x += 2) {
             Pets.earRound(var0x, var1x, Pets.col(14195285), Pets.col(16180160), var2x * 1.35F, 1.3F, -0.35F, var2x, 0.58F);
          }
       };
@@ -608,13 +608,13 @@ final class PetReal {
       var3.pawLen = 1.15F;
       var3.span = 0.95F;
       var3.ears = (var0x, var1x) -> {
-         for (byte var2x = -1; var2x <= 1; var2x += 2) {
+         for (int var2x = -1; var2x <= 1; var2x += 2) {
             Pets.earRound(var0x, var1x, Pets.col(14712862), Pets.col(16774890), var2x * 1.3F, 1.25F, -0.3F, var2x, 0.55F);
          }
 
          float var4x = PetRig.lerp(0.4F, 1.0F, var1x.gr);
 
-         for (byte var3x = -1; var3x <= 1; var3x += 2) {
+         for (int var3x = -1; var3x <= 1; var3x += 2) {
             var0x.push();
             var0x.translate(var3x * 1.5F, -0.55F, -0.2F);
             var0x.rotY(-var3x * 35);
@@ -673,7 +673,7 @@ final class PetReal {
       var3.ears = (var2x, var3x) -> {
          float var4x = 0.8F + var4 * 0.45F;
 
-         for (byte var5x = -1; var5x <= 1; var5x += 2) {
+         for (int var5x = -1; var5x <= 1; var5x += 2) {
             var2x.push();
             var2x.translate(var5x * 0.75F, 1.0F, -0.6F);
             var2x.rotZ(-var5x * 18);
@@ -723,7 +723,7 @@ final class PetReal {
          float var7x = var6x[0] * 38.0F * var5x;
          String var8x = "pet_dwing:4E3A9E:" + (var4 >= 5 ? "E07AE8" : "B89AF5");
 
-         for (byte var9x = -1; var9x <= 1; var9x += 2) {
+         for (int var9x = -1; var9x <= 1; var9x += 2) {
             var2x.push();
             var2x.translate(var9x * 1.3F, 1.9F, 1.6F);
             var2x.scale(var9x, 1.0F, 1.0F);
@@ -776,7 +776,7 @@ final class PetReal {
       float var13 = PetRig.lerp(1.2F, 1.9F, var3);
       String var14 = Pets.gl(15906874);
 
-      for (byte var15 = -1; var15 <= 1; var15 += 2) {
+      for (int var15 = -1; var15 <= 1; var15 += 2) {
          float var16 = PetRig.frac(var2.t * 2.1F + (var15 > 0 ? 0.0F : 0.5F));
          float var17 = (1.0F - var5) * var2.walkW * Math.max(0.0F, PetGeo.sin((Math.PI * 2) * var16)) * 0.5F;
          var0.push();
@@ -823,7 +823,7 @@ final class PetReal {
       float var32 = PetRig.lerp(1.9F, 3.1F, var3);
       float var19 = 1.0F - var11;
 
-      for (byte var20 = -1; var20 <= 1; var20 += 2) {
+      for (int var20 = -1; var20 <= 1; var20 += 2) {
          var0.push();
          var0.translate(var20 * var30 * 0.8F, var30 * 0.55F, 0.9F);
          var0.scale(var20, 1.0F, 1.0F);

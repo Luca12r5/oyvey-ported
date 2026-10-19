@@ -167,7 +167,7 @@ public final class Theme {
       var12 = scale(var12, var16, var15);
       int var17 = var16;
 
-      for (byte var18 = var15; var17 * 2 < var1 && var18 * 2 < var2; var12 = scale(var12, var17, var18)) {
+      for (int var18 = var15; var17 * 2 < var1 && var18 * 2 < var2; var12 = scale(var12, var17, var18)) {
          var17 *= 2;
          var18 *= 2;
       }

@@ -388,7 +388,7 @@ final class Cos3Tex {
          var4.setPaint(new GradientPaint(0.0F, 0.0F, new Color(Capes.mix(var0, 16777215, 0.12)), 0.0F, 32.0F, new Color(Capes.mix(var0, var1, 0.5))));
          var4.fillRect(0, 0, 256, 32);
 
-         for (byte var5 = 0; var5 < 32; var5 += 2) {
+         for (int var5 = 0; var5 < 32; var5 += 2) {
             var4.setColor(Capes.col(0, 0.06));
             var4.drawLine(0, var5, 256, var5);
          }

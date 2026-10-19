@@ -8,6 +8,8 @@ import { t } from '../i18n.ts';
 import type { GameProfile } from '../../core/settings.ts';
 import { signInFlow } from './account.ts';
 import { renderPlay } from '../nr/mount.tsx';
+import { CUSTOM_CAPE_ID } from '@lego/shared';
+import { capeSheetUrl, presetSpec } from '../capeart.ts';
 
 const LOADER_NAMES: Record<string, string> = { fabric: 'Fabric', quilt: 'Quilt', forge: 'Forge', neoforge: 'NeoForge' };
 
@@ -27,7 +29,9 @@ export function playPage(el: HTMLElement): void {
     playerName: (a.signedIn ? a.name : s.guestName) || 'Gast',
     signedIn: a.signedIn,
     connected: a.lego.connected,
-    skin: state.skin,
+    // An equipped LEGO cape (modern or own design) replaces the Minecraft cape in the preview.
+    skin: { ...state.skin, cape: legoCape() ?? state.skin.cape },
+    cosmetics: Object.entries(state.equipped).filter(([slot]) => slot !== 'cape' && slot !== 'nametag').map(([, id]) => id),
     reducedMotion: s.reducedMotion,
     onSignIn: () => void signInFlow(),
     onPickProfile: (group) => profileMenu(group.querySelector('#drop') as HTMLElement ?? group),
@@ -35,6 +39,13 @@ export function playPage(el: HTMLElement): void {
     onRefresh: () => void loadIdentity(),
   });
   onLeave(unmount);
+}
+
+function legoCape(): string | null {
+  const id = state.equipped.cape;
+  if (!id) return null;
+  const spec = id === CUSTOM_CAPE_ID ? state.customCape : presetSpec(id);
+  return spec ? capeSheetUrl(spec) : null;
 }
 
 /** Set by the profile menu; the profiles page opens the editor directly. */

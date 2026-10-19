@@ -271,7 +271,7 @@ final class Tex3 {
                   var0x.fill(new java.awt.geom.RoundRectangle2D.Double(0.0, 4.0, 256.0, 56.0, 30.0, 30.0));
                   var0x.setColor(Capes.col(2811647, 0.25));
 
-                  for (byte var1 = 8; var1 < 60; var1 += 4) {
+                  for (int var1 = 8; var1 < 60; var1 += 4) {
                      var0x.fillRect(10, var1, 236, 1);
                   }
 

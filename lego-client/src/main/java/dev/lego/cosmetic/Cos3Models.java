@@ -339,7 +339,7 @@ final class Cos3Models {
       var0.color(-12961210);
       Cos3Geo.limb(var0, "c3_fur", var7, new float[]{0.5F, 0.55F, 0.55F, 0.55F, 0.5F}, 8);
 
-      for (byte var8 = -1; var8 <= 1; var8 += 2) {
+      for (int var8 = -1; var8 <= 1; var8 += 2) {
          var0.push();
          var0.scale(var8, 1.0F, 1.0F);
          var0.color(-13355970);
@@ -549,7 +549,7 @@ final class Cos3Models {
       var0.pop();
       float var12 = var1.preview ? 0.4F : 0.25F + var1.move * 1.2F;
 
-      for (byte var13 = -1; var13 <= 1; var13 += 2) {
+      for (int var13 = -1; var13 <= 1; var13 += 2) {
          byte var14 = 7;
          float[][] var15 = new float[var14][];
          float[] var16 = new float[var14];
@@ -728,7 +728,7 @@ final class Cos3Models {
          Geo.chain(var0, "c3_metal", var8, var16, 5);
       }
 
-      for (byte var11 = -1; var11 <= 1; var11 += 2) {
+      for (int var11 = -1; var11 <= 1; var11 += 2) {
          var0.color(-14012872);
          Cos3Geo.bbox(var0, "c3_metal", var11 > 0 ? 4.45F : -5.75F, 2.2F, -1.9F, var11 > 0 ? 5.75F : -4.45F, 5.5F, 0.6F, 0.4F);
 
@@ -764,7 +764,7 @@ final class Cos3Models {
       int var3 = 0xFF000000 | Capes.hsv(0.8 + 0.12 * Math.sin(var2 * 1.2), 0.75, 1.0);
       byte var4 = 18;
 
-      for (byte var5 = -1; var5 <= 1; var5 += 2) {
+      for (int var5 = -1; var5 <= 1; var5 += 2) {
          float var6 = var5 * 2.1F;
          float var7 = 3.75F;
          float[][] var8 = new float[var4][];

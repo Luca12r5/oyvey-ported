@@ -99,7 +99,7 @@ final class VehTex {
                var0.fillRect(0, 0, var2, var2);
                var0.setColor(new Color(14, 14, 16));
 
-               for (byte var29 = 0; var29 < var2; var29 += 8) {
+               for (int var29 = 0; var29 < var2; var29 += 8) {
                   var0.fillRect(var29, 0, 2, var2);
                   var0.fillRect(var29 + 4, var2 / 3, 2, var2 / 3);
                }
@@ -118,7 +118,7 @@ final class VehTex {
                var0.fillRect(0, 0, var2, var2);
                var0.setColor(new Color(255, 255, 255, 40));
 
-               for (byte var28 = 0; var28 < var2; var28 += 3) {
+               for (int var28 = 0; var28 < var2; var28 += 3) {
                   var0.drawLine(0, var28, var2, var28);
                }
 
@@ -157,14 +157,14 @@ final class VehTex {
                var0.fillRect(0, 0, var2, var2);
                var0.setColor(new Color(90, 92, 98));
 
-               for (byte var26 = 0; var26 < var2; var26 += 6) {
+               for (int var26 = 0; var26 < var2; var26 += 6) {
                   var0.fillOval(var26 + 1, var26 * 7 % (var2 - 6) + 2, 3, 3);
                }
 
                return true;
             case "veh_carbon":
-               for (byte var25 = 0; var25 < var2; var25 += 4) {
-                  for (byte var33 = 0; var33 < var2; var33 += 4) {
+               for (int var25 = 0; var25 < var2; var25 += 4) {
+                  for (int var33 = 0; var33 < var2; var33 += 4) {
                      boolean var35 = ((var33 + var25) / 4 & 1) == 0;
                      var0.setPaint(
                         new GradientPaint(
@@ -197,7 +197,7 @@ final class VehTex {
                var0.setColor(new Color(62, 64, 72));
                var0.setStroke(new BasicStroke(1.4F));
 
-               for (byte var24 = 0; var24 < var2; var24 += 6) {
+               for (int var24 = 0; var24 < var2; var24 += 6) {
                   for (int var32 = var24 / 6 % 2 * 4; var32 < var2; var32 += 8) {
                      var0.drawOval(var32, var24, 6, 5);
                   }
@@ -266,7 +266,7 @@ final class VehTex {
                var0.fillRect(0, 0, var2, var2);
                var0.setColor(new Color(52, 54, 60));
 
-               for (byte var21 = 0; var21 < var2; var21 += 5) {
+               for (int var21 = 0; var21 < var2; var21 += 5) {
                   var0.fillRect(0, var21, var2, 2);
                }
 
@@ -276,7 +276,7 @@ final class VehTex {
                var0.fillRect(0, 0, var2, var2);
                var0.setColor(new Color(60, 62, 70));
 
-               for (byte var20 = 0; var20 < var2; var20 += 6) {
+               for (int var20 = 0; var20 < var2; var20 += 6) {
                   var0.fillRect(0, var20, var2, 2);
                }
 
@@ -362,7 +362,7 @@ final class VehTex {
                var0.fillRect(0, 0, var2, var2);
                var0.setColor(new Color(80, 88, 104, 150));
 
-               for (byte var16 = 0; var16 < var2; var16 += 8) {
+               for (int var16 = 0; var16 < var2; var16 += 8) {
                   var0.drawLine(var16, 0, var16, var2);
                }
 
@@ -373,7 +373,7 @@ final class VehTex {
                var0.fillRect(0, 0, var2, var2);
                var0.setColor(new Color(150, 154, 162));
 
-               for (byte var15 = 0; var15 < var2; var15 += 8) {
+               for (int var15 = 0; var15 < var2; var15 += 8) {
                   var0.fillRoundRect(var15, var2 / 4, 6, var2 / 2, 3, 3);
                }
 
@@ -390,7 +390,7 @@ final class VehTex {
                var0.fillRect(0, 0, var2, var2);
                var0.setColor(new Color(110, 72, 36));
 
-               for (byte var5 = 0; var5 < var2; var5 += 6) {
+               for (int var5 = 0; var5 < var2; var5 += 6) {
                   var0.drawLine(var5, 0, var5, var2);
                   var0.drawLine(0, var5 + 3, var2, var5 + 3);
                }

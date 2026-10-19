@@ -47,7 +47,7 @@ final class VehBoard {
       var0.push();
       float var2 = -var1.lean * 6.0F;
 
-      for (byte var3 = -1; var3 <= 1; var3 += 2) {
+      for (int var3 = -1; var3 <= 1; var3 += 2) {
          truck(var0, var1, var3 * 8.3F, var3 * var1.lean * 9.0F);
       }
 
@@ -82,9 +82,9 @@ final class VehBoard {
          true
       );
 
-      for (byte var9 = -1; var9 <= 1; var9 += 2) {
-         for (byte var4 = -1; var4 <= 1; var4 += 2) {
-            for (byte var5 = -1; var5 <= 1; var5 += 2) {
+      for (int var9 = -1; var9 <= 1; var9 += 2) {
+         for (int var4 = -1; var4 <= 1; var4 += 2) {
+            for (int var5 = -1; var5 <= 1; var5 += 2) {
                float var6 = var4 * 0.75F;
                float var7 = var9 * 8.3F + var5 * 0.8F;
                float var8 = 3.05F + concave(var6);
@@ -93,7 +93,7 @@ final class VehBoard {
          }
       }
 
-      for (byte var10 = -1; var10 <= 1; var10 += 2) {
+      for (int var10 = -1; var10 <= 1; var10 += 2) {
          float var11 = var10 * 8.3F;
          VehGeo.rbox(var0, "veh_alu", -1.25F, 2.05F, var11 - 1.3F, 1.25F, 2.58F, var11 + 1.3F, 0.2F);
          var0.push();
@@ -113,7 +113,7 @@ final class VehBoard {
       VehGeo.rbox(var0, "veh_alu", -1.05F, -0.45F, -0.5F, 1.05F, 0.62F, 0.5F, 0.22F);
       VehGeo.tube(var0, "veh_chrome", VehGeo.p(-4.0F, 0.0F, 0.0F), VehGeo.p(4.0F, 0.0F, 0.0F), 0.16F, 0.16F, 6, true);
 
-      for (byte var4 = -1; var4 <= 1; var4 += 2) {
+      for (int var4 = -1; var4 <= 1; var4 += 2) {
          var0.push();
          var0.translate(var4 * 3.35F, 0.0F, 0.0F);
          if (var4 < 0) {
@@ -211,11 +211,11 @@ final class VehBoard {
       }, (var0x, var1x, var2x, var3x, var4x) -> "veh_glow:24E0FF", true, true, 1.0F, 0.0F);
       var0.glow(false).color(-1);
 
-      for (byte var4 = -1; var4 <= 1; var4 += 2) {
+      for (int var4 = -1; var4 <= 1; var4 += 2) {
          VehGeo.rbox(var0, "veh_rubber", -3.0F, 1.1999999F, var4 < 0 ? -7.6F : 2.0F, 3.0F, 1.5799999F, var4 < 0 ? -2.0F : 7.6F, 0.12F);
       }
 
-      for (byte var6 = -1; var6 <= 1; var6 += 2) {
+      for (int var6 = -1; var6 <= 1; var6 += 2) {
          var0.push();
          var0.translate(0.0F, 0.0F, var6 * 7);
          VehGeo.lathe(

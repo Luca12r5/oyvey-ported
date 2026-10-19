@@ -115,7 +115,7 @@ final class XmasCapes {
       java.awt.geom.Path2D.Double var8 = new java.awt.geom.Path2D.Double();
       var8.moveTo(0.0, 170.0);
 
-      for (byte var9 = 0; var9 <= 160; var9 += 8) {
+      for (int var9 = 0; var9 <= 160; var9 += 8) {
          var8.lineTo(var9, 160.0 - 12.0 * Math.sin(var9 * 0.03 + 1.0) - 6.0 * Math.sin(var9 * 0.08));
       }
 
@@ -154,7 +154,7 @@ final class XmasCapes {
       var0.fill(var15);
       double var16 = 0.8 + 0.1 * Math.sin(var2 * 3.0) + 0.06 * Math.sin(var2 * 7.0 + 1.0);
 
-      for (byte var18 = -1; var18 <= 1; var18 += 2) {
+      for (int var18 = -1; var18 <= 1; var18 += 2) {
          var0.setColor(new Color(Capes.mix(16751146, 16769162, var16)));
          var0.fill(new java.awt.geom.Rectangle2D.Double(var25 + var18 * 8 - 4.0, var12 - 11.0, 8.0, 7.0));
          Capes.addDot(var1, var25 + var18 * 8, var12 - 7.0, 12.0, 16752704, 0.35 * var16);
@@ -180,7 +180,7 @@ final class XmasCapes {
       java.awt.geom.Path2D.Double var27 = new java.awt.geom.Path2D.Double();
       var27.moveTo(0.0, 204.0);
 
-      for (byte var28 = 0; var28 <= 160; var28 += 8) {
+      for (int var28 = 0; var28 <= 160; var28 += 8) {
          var27.lineTo(var28, 200.0 + 4.0 * Math.sin(var28 * 0.05 + 2.0));
       }
 
@@ -290,7 +290,7 @@ final class XmasCapes {
 
       double var40 = 0.8 + 0.12 * Math.sin(var2 * 3.0) + 0.06 * Math.sin(var2 * 5.0 + 1.0);
 
-      for (byte var42 = -1; var42 <= 1; var42 += 2) {
+      for (int var42 = -1; var42 <= 1; var42 += 2) {
          double var47 = var8 + var42 * 28;
          double var50 = var10 - var14 + 14.0;
          Capes.addDot(var1, var47, var50 + 9.0, 22.0, 16752704, 0.4 * var40);
@@ -308,7 +308,7 @@ final class XmasCapes {
       var0.setColor(new Color(16765498));
       var0.fill(new Double(var8 + 5.0, var10 - 20.0, 4.0, 4.0));
 
-      for (byte var43 = -1; var43 <= 1; var43 += 2) {
+      for (int var43 = -1; var43 <= 1; var43 += 2) {
          candyStick(var0, var8 + var43 * 15, var10, var10 - 44.0, var43);
       }
 
@@ -327,7 +327,7 @@ final class XmasCapes {
          var0.fill(new Double(var51 - 5.0 - var44, var48 - 2.0, 10 + var44 * 2, 5.0));
       }
 
-      for (byte var45 = -1; var45 <= 1; var45 += 2) {
+      for (int var45 = -1; var45 <= 1; var45 += 2) {
          double var49 = var8 + var45 * 62;
          double var52 = var10 + 16.0;
          var0.setColor(new Color(16052460));
@@ -729,7 +729,7 @@ final class XmasCapes {
       var0.setColor(new Color(Capes.shade(var7, 0.62)));
       var0.fill(new java.awt.geom.Rectangle2D.Double(var1, var3, var5, var5));
 
-      for (byte var8 = -1; var8 <= 1; var8 += 2) {
+      for (int var8 = -1; var8 <= 1; var8 += 2) {
          AffineTransform var9 = var0.getTransform();
          var0.translate(var1 + var5 / 2.0 + var8 * var5 * 0.22, var3 + var5 * 0.5);
          var0.rotate(-var8 * 0.55);

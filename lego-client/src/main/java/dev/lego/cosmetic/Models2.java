@@ -22,7 +22,7 @@ final class Models2 {
    static void foxEars(G var0, Cos.A var1) {
       float var2 = (float)Math.max(0.0, Math.sin(var1.time * 2.7F) - 0.8F) * 70.0F;
 
-      for (byte var3 = 1; var3 >= -1; var3 -= 2) {
+      for (int var3 = 1; var3 >= -1; var3 -= 2) {
          var0.push();
          var0.scale(var3, 1.0F, 1.0F);
          var0.translate(2.3F, 7.7F, 0.2F);
@@ -159,7 +159,7 @@ final class Models2 {
       var0.box("steel", -0.5F, -2.4F, 4.6F, 0.5F, 0.4F, 5.05F, 0.0F, 0.0F, 1.0F, 1.0F);
       var0.color(-1);
 
-      for (byte var7 = 1; var7 >= -1; var7 -= 2) {
+      for (int var7 = 1; var7 >= -1; var7 -= 2) {
          float[][] var8 = new float[7][];
          float[] var4 = new float[7];
 
@@ -328,7 +328,7 @@ final class Models2 {
    }
 
    static void alien(G var0, Cos.A var1) {
-      for (byte var2 = 1; var2 >= -1; var2 -= 2) {
+      for (int var2 = 1; var2 >= -1; var2 -= 2) {
          float[][] var3 = new float[6][];
          float[] var4 = new float[6];
 
@@ -366,7 +366,7 @@ final class Models2 {
       var0.rotY(-10.0F);
       var0.color(-42342);
 
-      for (byte var2 = 1; var2 >= -1; var2 -= 2) {
+      for (int var2 = 1; var2 >= -1; var2 -= 2) {
          var0.push();
          var0.translate(var2 * 2.2F, 0.3F, 0.0F);
          var0.rotZ(var2 * 18);

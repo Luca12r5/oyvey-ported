@@ -619,7 +619,7 @@ public final class ModsPart implements HubView.Part {
 
    static Gx.Img rainbow(int var0) {
       return Gx.painted("rainbow", var0, var0, var1 -> {
-         for (byte var2 = 0; var2 < 360; var2 += 3) {
+         for (int var2 = 0; var2 < 360; var2 += 3) {
             var1.setColor(Color.getHSBColor(var2 / 360.0F, 0.75F, 1.0F));
             var1.fill(new Double(0.0, 0.0, var0, var0, var2, 4.0, 2));
          }

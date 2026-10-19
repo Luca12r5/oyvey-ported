@@ -258,7 +258,7 @@ final class XmasBack {
       var0.color(-11414);
       Cos3Geo.bbox(var0, "c3_metal", -0.55F, -8.3F, -2.64F, 0.55F, -7.5F, -2.45F, 0.08F);
 
-      for (byte var4 = -1; var4 <= 1; var4 += 2) {
+      for (int var4 = -1; var4 <= 1; var4 += 2) {
          float var5 = var4 > 0 ? -2.95F : -4.2F;
          float[] var6 = new float[]{-var4 * 2.3F, -11.8F, var5};
          float[] var7 = new float[]{var4 * 6.2F, 2.3F, var5};
@@ -537,7 +537,7 @@ final class XmasBack {
       float var3 = mv(var1);
       float var4 = Cos3Geo.sin(var2 * 1.5F) * 6.0F * (1.0F - var3) + Cos3Geo.sin(var2 * 6.0F) * 14.0F * var3;
 
-      for (byte var5 = -1; var5 <= 1; var5 += 2) {
+      for (int var5 = -1; var5 <= 1; var5 += 2) {
          var0.push();
          var0.translate(var5 * 1.0F, -2.4F, -3.4F);
          var0.scale(var5, 1.0F, 1.0F);
@@ -578,7 +578,7 @@ final class XmasBack {
 
          var0.glow(false);
 
-         for (byte var21 = 0; var21 < var6; var21 += 3) {
+         for (int var21 = 0; var21 < var6; var21 += 3) {
             float[] var23 = var7[var21];
             var0.push();
             var0.translate(var23[0], var23[1] + Cos3Geo.sin(var2 * 2.0F + var21) * 0.3F, var23[2]);
@@ -614,7 +614,7 @@ final class XmasBack {
 
          XmasGeo.wire(var0, Arrays.copyOf(var24, var25), 0.07F);
 
-         for (byte var27 = 1; var27 < var25; var27 += 4) {
+         for (int var27 = 1; var27 < var25; var27 += 4) {
             float[] var28 = var24[var27];
             XmasGeo.fairy(
                var0, var28[0], var28[1] - 0.25F, var28[2], 0.22F, XmasGeo.LIGHTS[var27 / 3 % XmasGeo.LIGHTS.length], XmasGeo.twinkle(var2, var27 + var5 * 7)
@@ -651,7 +651,7 @@ final class XmasBack {
       float var4 = 1.0F - 0.18F * var2.fold;
       float var5 = var1.time;
 
-      for (byte var6 = 1; var6 >= -1; var6 -= 2) {
+      for (int var6 = 1; var6 >= -1; var6 -= 2) {
          var0.push();
          var0.scale(var6, 1.0F, 1.0F);
          var0.translate(0.9F, -2.2F, -2.35F);

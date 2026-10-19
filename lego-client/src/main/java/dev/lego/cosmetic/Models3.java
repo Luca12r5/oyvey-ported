@@ -26,7 +26,7 @@ final class Models3 {
    }
 
    private static void temples(G var0, float var1, float var2) {
-      for (byte var3 = 1; var3 >= -1; var3 -= 2) {
+      for (int var3 = 1; var3 >= -1; var3 -= 2) {
          var0.box("felt_black", var3 * 4.12F - 0.16F, var1 - 0.22F, -3.5F, var3 * 4.12F + 0.16F, var1 + 0.22F, var2, 0.0F, 0.0F, 1.0F, 1.0F);
       }
    }
@@ -167,7 +167,7 @@ final class Models3 {
       var0.pop();
       var0.color(-13965569);
 
-      for (byte var9 = 1; var9 >= -1; var9 -= 2) {
+      for (int var9 = 1; var9 >= -1; var9 -= 2) {
          var0.box("white", var9 * 4.5F - 0.15F, -0.2F, -1.4F, var9 * 4.5F + 0.15F, 0.2F, 1.2F, 0.0F, 0.0F, 1.0F, 1.0F);
       }
 
@@ -200,7 +200,7 @@ final class Models3 {
       Geo.sqTube(var0, "cloth", 4.45F, 4.45F, 5.4F, 6.6F, 5.0F, 20, 0.0F, 0.0F, 1.0F, 1.0F);
       float var2 = Geo.sin(var1.time * 4.0F) * 10.0F + var1.move * 25.0F;
 
-      for (byte var3 = -1; var3 <= 1; var3 += 2) {
+      for (int var3 = -1; var3 <= 1; var3 += 2) {
          var0.push();
          var0.translate(var3 * 0.6F, 6.0F, -4.4F);
          var0.rotY(var3 * 15);
@@ -234,7 +234,7 @@ final class Models3 {
       var0.color(-1);
 
       for (int var2 = 0; var2 < 3; var2++) {
-         for (byte var3 = -1; var3 <= 1; var3 += 2) {
+         for (int var3 = -1; var3 <= 1; var3 += 2) {
             var0.box("steel", var3 * 0.95F - 0.25F, 12.9F + var2 * 0.7F, -0.05F, var3 * 0.95F + 0.25F, 13.2F + var2 * 0.7F, 0.15F, 0.0F, 0.0F, 1.0F, 1.0F);
          }
       }
@@ -265,7 +265,7 @@ final class Models3 {
       var0.color(-12960184);
       var0.box("steel", -3.4F, -8.5F, -1.6F, 3.4F, -0.8F, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F);
 
-      for (byte var2 = -1; var2 <= 1; var2 += 2) {
+      for (int var2 = -1; var2 <= 1; var2 += 2) {
          var0.push();
          var0.translate(var2 * 2.1F, -1.5F, -2.9F);
          var0.color(-1512206);
@@ -299,7 +299,7 @@ final class Models3 {
 
       var0.color(-1);
 
-      for (byte var6 = -1; var6 <= 1; var6 += 2) {
+      for (int var6 = -1; var6 <= 1; var6 += 2) {
          var0.color(-14012874);
          var0.box("leather_dark", var6 * 2.2F - 0.5F, -7.0F, 2.0F, var6 * 2.2F + 0.5F, 0.35F, 2.3F, 0.0F, 0.0F, 1.0F, 1.0F);
          var0.box("leather_dark", var6 * 2.2F - 0.5F, 0.0F, -2.1F, var6 * 2.2F + 0.5F, 0.35F, 2.3F, 0.0F, 0.0F, 1.0F, 1.0F);
@@ -437,7 +437,7 @@ final class Models3 {
       var0.plane("teddy_face", 0.0F, 0.0F, 3.4F, 3.4F, 0.0F, 0.0F, 1.0F, 1.0F);
       var0.pop();
 
-      for (byte var2 = -1; var2 <= 1; var2 += 2) {
+      for (int var2 = -1; var2 <= 1; var2 += 2) {
          Geo.ellipsoid(var0, "fur_brown", var2 * 1.7F, 3.6F, 0.0F, 0.9F, 0.9F, 0.55F, 10, 6);
          Geo.ellipsoid(var0, "fur_brown", var2 * 2.4F, -1.4F, 0.4F, 0.8F, 1.5F, 0.8F, 8, 6);
          Geo.ellipsoid(var0, "fur_brown", var2 * 1.3F, -4.8F, 0.6F, 0.9F, 0.8F, 1.1F, 8, 6);

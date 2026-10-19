@@ -100,7 +100,7 @@ final class PetGeo {
       int[][] var13 = new int[][]{{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
 
       for (int var14 = 0; var14 < 3; var14++) {
-         for (byte var15 = -1; var15 <= 1; var15 += 2) {
+         for (int var15 = -1; var15 <= 1; var15 += 2) {
             int var16 = (var14 + 1) % 3;
             int var17 = (var14 + 2) % 3;
             float[][] var18 = new float[4][];
@@ -121,8 +121,8 @@ final class PetGeo {
          for (int var25 = var23 + 1; var25 < 3; var25++) {
             int var27 = 3 - var23 - var25;
 
-            for (byte var29 = -1; var29 <= 1; var29 += 2) {
-               for (byte var31 = -1; var31 <= 1; var31 += 2) {
+            for (int var29 = -1; var29 <= 1; var29 += 2) {
+               for (int var31 = -1; var31 <= 1; var31 += 2) {
                   float[][] var33 = new float[4][];
                   int[] var35 = new int[]{-1, 1, 1, -1};
 
@@ -146,9 +146,9 @@ final class PetGeo {
          }
       }
 
-      for (byte var24 = -1; var24 <= 1; var24 += 2) {
-         for (byte var26 = -1; var26 <= 1; var26 += 2) {
-            for (byte var28 = -1; var28 <= 1; var28 += 2) {
+      for (int var24 = -1; var24 <= 1; var24 += 2) {
+         for (int var26 = -1; var26 <= 1; var26 += 2) {
+            for (int var28 = -1; var28 <= 1; var28 += 2) {
                float var30 = var24 < 0 ? var9[0] : var10[0];
                float var32 = var26 < 0 ? var9[1] : var10[1];
                float var34 = var28 < 0 ? var9[2] : var10[2];

@@ -177,7 +177,7 @@ final class VehGeo {
       float[] var13 = new float[]{0.3F, 0.3F, 0.7F, 0.3F, 0.7F, 0.7F, 0.3F, 0.7F};
 
       for (int var14 = 0; var14 < 3; var14++) {
-         for (byte var15 = -1; var15 <= 1; var15 += 2) {
+         for (int var15 = -1; var15 <= 1; var15 += 2) {
             int var16 = (var14 + 1) % 3;
             int var17 = (var14 + 2) % 3;
             float[][] var18 = new float[4][];
@@ -199,8 +199,8 @@ final class VehGeo {
             for (int var26 = var24 + 1; var26 < 3; var26++) {
                int var28 = 3 - var24 - var26;
 
-               for (byte var30 = -1; var30 <= 1; var30 += 2) {
-                  for (byte var32 = -1; var32 <= 1; var32 += 2) {
+               for (int var30 = -1; var30 <= 1; var30 += 2) {
+                  for (int var32 = -1; var32 <= 1; var32 += 2) {
                      float[][] var34 = new float[4][];
                      int[] var36 = new int[]{-1, 1, 1, -1};
 
@@ -224,9 +224,9 @@ final class VehGeo {
             }
          }
 
-         for (byte var25 = -1; var25 <= 1; var25 += 2) {
-            for (byte var27 = -1; var27 <= 1; var27 += 2) {
-               for (byte var29 = -1; var29 <= 1; var29 += 2) {
+         for (int var25 = -1; var25 <= 1; var25 += 2) {
+            for (int var27 = -1; var27 <= 1; var27 += 2) {
+               for (int var29 = -1; var29 <= 1; var29 += 2) {
                   float var31 = var25 < 0 ? var9[0] : var10[0];
                   float var33 = var27 < 0 ? var9[1] : var10[1];
                   float var35 = var29 < 0 ? var9[2] : var10[2];

@@ -291,7 +291,7 @@ public final class AmbientTex {
       var0.translate(64, 64);
       var0.setColor(new Color(28, 20, 36));
 
-      for (byte var2 = -1; var2 <= 1; var2 += 2) {
+      for (int var2 = -1; var2 <= 1; var2 += 2) {
          AffineTransform var3 = var0.getTransform();
          var0.scale(var2, var1);
          java.awt.geom.Path2D.Double var4 = new java.awt.geom.Path2D.Double();
@@ -378,7 +378,7 @@ public final class AmbientTex {
    private static void butterfly(Graphics2D var0, float var1) {
       var0.translate(64, 64);
 
-      for (byte var2 = -1; var2 <= 1; var2 += 2) {
+      for (int var2 = -1; var2 <= 1; var2 += 2) {
          AffineTransform var3 = var0.getTransform();
          var0.scale(var2 * var1, 1.0);
          java.awt.geom.Path2D.Double var4 = new java.awt.geom.Path2D.Double();

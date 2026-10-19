@@ -338,7 +338,7 @@ final class XmasTex {
             if (var4 == 2) {
                var3x.setStroke(new BasicStroke(5.0F));
 
-               for (byte var4x = -64; var4x < 128; var4x += 16) {
+               for (int var4x = -64; var4x < 128; var4x += 16) {
                   var3x.drawLine(var4x, 0, var4x + 64, 64);
                }
             } else {
@@ -369,7 +369,7 @@ final class XmasTex {
 
             var3x.setColor(Capes.col(16777215, 0.08));
 
-            for (byte var14 = 0; var14 < 64; var14 += 3) {
+            for (int var14 = 0; var14 < 64; var14 += 3) {
                var3x.drawLine(0, var14, 64, var14);
             }
          }

@@ -8,6 +8,7 @@
 import { SkinViewer, WalkingAnimation, WaveAnimation, PlayerAnimation, type PlayerObject } from 'skinview3d';
 import { AmbientLight, CanvasTexture, DirectionalLight, Mesh, MeshBasicMaterial, PlaneGeometry, Box3, Vector3 } from 'three';
 import minifig from './assets/minifig.png';
+import { wearCosmetics } from './cosmetics3d.ts';
 
 export const DEFAULT_SKIN: string = minifig;
 export type Anim = 'idle' | 'walk' | 'wave' | 'spin';
@@ -23,6 +24,8 @@ export interface Avatar {
   /** Zoom step (+1 closer, -1 further); the mouse wheel zooms as well. */
   zoom(step: number): void;
   resize(): void;
+  /** Puts on LEGO cosmetics in 3D (replaces the previous set). */
+  wear(ids: string[]): void;
   /** Top of the head as a share of the canvas height (0 = top), or null without 3D. */
   headTop(): number | null;
   /** Three.js access for extra meshes (cosmetics); null without 3D. */
@@ -192,6 +195,7 @@ export function createAvatar(canvas: HTMLCanvasElement, reducedMotion: boolean):
   };
   play('idle');
   placeShadow();
+  let takeOff: (() => void) | null = null;
   const ro = new ResizeObserver(() => { const b = box(); viewer.setSize(b.width, b.height); });
   ro.observe(canvas.parentElement!);
   return {
@@ -227,7 +231,12 @@ export function createAvatar(canvas: HTMLCanvasElement, reducedMotion: boolean):
       return (1 - p.y) / 2;
     },
     viewer,
+    wear(ids) {
+      takeOff?.();
+      takeOff = ids.length ? wearCosmetics(viewer, ids) : null;
+    },
     dispose() {
+      takeOff?.();
       removeEventListener('mousemove', onMove);
       ro.disconnect();
       (shadow.material as MeshBasicMaterial).map?.dispose();
@@ -276,6 +285,7 @@ function flatAvatar(canvas: HTMLCanvasElement): Avatar {
     setPaused() { /* static */ },
     resize: draw,
     headTop: () => null,
+    wear: () => {},
     viewer: null,
     dispose() { ro.disconnect(); },
   };

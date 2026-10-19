@@ -468,7 +468,7 @@ final class Tex2 {
             var0.setColor(Capes.col(1711654, 0.8));
             var0.setStroke(new BasicStroke(1.6F));
 
-            for (byte var2 = 40; var2 < 256; var2 += 46) {
+            for (int var2 = 40; var2 < 256; var2 += 46) {
                var0.drawLine(0, var2, 64, var2 + 6);
             }
 

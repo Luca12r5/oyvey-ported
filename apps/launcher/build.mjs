@@ -3,7 +3,7 @@
 //   LEGO_BACKEND_URL    default LEGO server, e.g. https://api.example.com
 //   LEGO_CURSEFORGE_KEY optional CurseForge API key for CurseForge modpack imports
 import { build } from 'esbuild';
-import { cpSync, mkdirSync, rmSync, copyFileSync } from 'node:fs';
+import { cpSync, mkdirSync, rmSync, copyFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -48,6 +48,8 @@ await build({ ...common, entryPoints: ['src/renderer/app.ts'], outfile: `${out}/
 
 cpSync('src/renderer/index.html', `${out}/renderer/index.html`);
 cpSync('src/renderer/styles.css', `${out}/renderer/styles.css`);
+// The LEGO client's 3D cosmetics (exported by tools/cosmetics3d/export.mjs).
+if (existsSync('assets/cosmetics3d')) cpSync('assets/cosmetics3d', `${out}/renderer/cosmetics3d`, { recursive: true });
 writeFileSync(`${out}/renderer/nr.css`, nrCss.css);
 const fonts = [
   ['@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2', 'silkscreen-400.woff2'],

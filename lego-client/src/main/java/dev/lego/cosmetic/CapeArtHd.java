@@ -189,7 +189,7 @@ final class CapeArtHd {
       });
       relief(var1, var6, 9.0, 0.45, 1.1, 0.5);
 
-      for (byte var7 = 0; var7 < 256; var7 += 12) {
+      for (int var7 = 0; var7 < 256; var7 += 12) {
          Double var8 = new Double();
          var8.moveTo(75.0, var7 + 10);
          var8.lineTo(80.0, var7 - 2);

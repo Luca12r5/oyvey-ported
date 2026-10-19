@@ -74,7 +74,7 @@ final class XmasPets {
          Cos3Geo.ball(var0, "xm_coal", 0.0F, 2.75F - var5 * 0.4F + (float)Math.sin(var7) * 1.8F, (float)Math.cos(var7) * 1.8F + 0.02F, 0.24F, 6);
       }
 
-      for (byte var14 = -1; var14 <= 1; var14 += 2) {
+      for (int var14 = -1; var14 <= 1; var14 += 2) {
          boolean var16 = var14 > 0 && (var2.is("happy") || var2.is("excited") || var2.is("love"));
          float var8 = var16 ? 55.0F + Cos3Geo.sin(var2.t * 7.0F) * 22.0F : 20.0F + Cos3Geo.sin(var2.t * 2.0F + var14) * 6.0F + var3[2] * 30.0F;
          if (var2.is("sad")) {
@@ -101,7 +101,7 @@ final class XmasPets {
       float var17 = var2.closed ? 0.15F : 1.0F;
       var0.color(-14803420);
 
-      for (byte var18 = -1; var18 <= 1; var18 += 2) {
+      for (int var18 = -1; var18 <= 1; var18 += 2) {
          double var9 = var18 * 0.36 + var2.lookX * 0.12;
          double var11 = 0.28 + var2.lookY * 0.08;
          var0.push();
@@ -200,7 +200,7 @@ final class XmasPets {
       var3.babyHead = 1.6F;
       float var4 = var2.gr;
       var3.ears = (var0x, var1x) -> {
-         for (byte var2x = -1; var2x <= 1; var2x += 2) {
+         for (int var2x = -1; var2x <= 1; var2x += 2) {
             Pets.earPointy(var0x, var1x, Pets.col(10118208), Pets.col(16181466), var2x * 1.0F, 0.8F, -0.45F, var2x, 0.7F, 1.6F, 62.0F);
          }
       };
@@ -263,7 +263,7 @@ final class XmasPets {
       int var4 = var0.color;
       var0.color(-1);
 
-      for (byte var5 = -1; var5 <= 1; var5 += 2) {
+      for (int var5 = -1; var5 <= 1; var5 += 2) {
          var0.push();
          var0.translate(var5 * 0.62F, 1.0F, -0.15F);
          var0.scale(var5 * var3, var3, var3);
@@ -295,7 +295,7 @@ final class XmasPets {
       String var8 = "xm_ginger";
       float var9 = 0.62F;
 
-      for (byte var10 = -1; var10 <= 1; var10 += 2) {
+      for (int var10 = -1; var10 <= 1; var10 += 2) {
          var0.push();
          var0.translate(var10 * 0.95F, 3.3F, 0.0F);
          var0.rotX(var10 * var6 - var2.sit * 80.0F);
@@ -319,7 +319,7 @@ final class XmasPets {
 
       var0.color(-1);
 
-      for (byte var19 = -1; var19 <= 1; var19 += 2) {
+      for (int var19 = -1; var19 <= 1; var19 += 2) {
          boolean var21 = var19 > 0 && (var2.is("happy") || var2.is("excited")) && var3 < 0.3F;
          float var24 = var21 ? 75.0F + Cos3Geo.sin(var2.t * 8.0F) * 25.0F : Cos3Geo.sin(var2.t * 2.0F + var19) * 5.0F - 5.0F;
          var0.push();
@@ -345,7 +345,7 @@ final class XmasPets {
       float var20 = var2.closed ? 0.2F : 1.0F;
       var0.color(-1);
 
-      for (byte var22 = -1; var22 <= 1; var22 += 2) {
+      for (int var22 = -1; var22 <= 1; var22 += 2) {
          var0.push();
          var0.translate(var22 * 0.62F + var2.lookX * 0.12F, 0.35F + var2.lookY * 0.1F, 0.7F);
          var0.scale(1.0F, var20, 0.5F);
@@ -370,7 +370,7 @@ final class XmasPets {
       Cos3Geo.limb(var0, "white", var26, var27, 4);
       var0.color(-1013110);
 
-      for (byte var28 = -1; var28 <= 1; var28 += 2) {
+      for (int var28 = -1; var28 <= 1; var28 += 2) {
          Geo.ellipsoid(var0, "white", var28 * 1.1F, -0.25F, 0.62F, 0.28F, 0.2F, 0.12F, 6, 3);
       }
 
@@ -427,7 +427,7 @@ final class XmasPets {
       Pets.root(var0, var2);
       var0.color(-1);
 
-      for (byte var8 = -1; var8 <= 1; var8 += 2) {
+      for (int var8 = -1; var8 <= 1; var8 += 2) {
          float var9 = PetRig.frac(var2.t * 2.1F + (var8 > 0 ? 0.0F : 0.5F));
          float var10 = var2.walkW * Math.max(0.0F, Cos3Geo.sin((Math.PI * 2) * var9)) * 0.5F;
          PetGeo.blob(var0, Pets.gl(3054152), var8 * 1.4F, 0.45F + var10, 0.4F, 0.75F, 0.5F, 1.0F, 8, 4);
@@ -589,7 +589,7 @@ final class XmasPets {
          {0.0F, 7.4F, 11.4F}
       };
 
-      for (byte var5 = -1; var5 <= 1; var5 += 2) {
+      for (int var5 = -1; var5 <= 1; var5 += 2) {
          float[][] var6 = new float[var4.length][];
 
          for (int var7 = 0; var7 < var4.length; var7++) {
@@ -611,7 +611,7 @@ final class XmasPets {
       var0.color(-8779246);
       Cos3Geo.bbox(var0, "xm_red_lacquer", -4.95F, 2.5F, -8.6F, 4.95F, 3.3F, 9.8F, 0.2F);
 
-      for (byte var15 = -1; var15 <= 1; var15 += 2) {
+      for (int var15 = -1; var15 <= 1; var15 += 2) {
          var0.push();
          var0.rotY(-90.0F);
          var0.color(-1);
@@ -714,7 +714,7 @@ final class XmasPets {
       }
 
       if (var3 > 0.05F) {
-         for (byte var26 = -1; var26 <= 1; var26 += 2) {
+         for (int var26 = -1; var26 <= 1; var26 += 2) {
             for (int var30 = 0; var30 < 3; var30++) {
                float var32 = Cos3Geo.fract(var2 * 2.2F + var30 / 3.0F + (var26 > 0 ? 0.0F : 0.17F));
                Cos3Geo.halo(
