@@ -108,6 +108,7 @@ public final class MenuView extends View {
          Gx.textSpaced("v" + Env.version + "   •   MINECRAFT " + Env.mcVersion, var3, var4 + this.pf(40.0), this.pf(7.4F), 2, -1711276033, this.pf(1.6F));
       }
 
+      Gx.textCenter(greeting(), var3, var4 - this.pf(58.0) + (float)Math.sin(var6 / 900.0) * this.pf(1.2F), this.pf(8.0F), 3, Gx.mix(-1, Style.accent, 0.35F));
       Gx.popAlpha();
       float var22 = var2 ? var1 : Ease.outCubic(Ease.stagger(var1, 1, 0.09F, 0.5F));
       int var23 = this.p(300.0);
@@ -236,5 +237,18 @@ public final class MenuView extends View {
       } else {
          return false;
       }
+   }
+
+   /** "Guten Abend, Name!" - by the local time of day. */
+   private static String greeting() {
+      int h = java.time.LocalTime.now().getHour();
+      String hi = h >= 5 && h < 11 ? "Guten Morgen" : h < 17 && h >= 11 ? "Hallo" : h >= 17 && h < 22 ? "Guten Abend" : "Gute Nacht";
+      String name;
+      try {
+         name = dev.lego.core.Mc.mc().getUser().getName();
+      } catch (Throwable e) {
+         name = "";
+      }
+      return name == null || name.isEmpty() ? hi + "!" : hi + ", " + name + "!";
    }
 }

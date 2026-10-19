@@ -17,6 +17,8 @@ public final class UiSettings {
    public static double animSpeed = 2.0;
    public static boolean animations = true;
    public static boolean xmas = true;
+   /** Corner rounding of the whole UI (1 = as designed). */
+   public static double roundness = 1.4;
 
    private UiSettings() {
    }
@@ -41,6 +43,7 @@ public final class UiSettings {
             var1.put("animSpeed", UiSettings.animSpeed);
             var1.put("animations", UiSettings.animations);
             var1.put("xmas", UiSettings.xmas);
+            var1.put("roundness", UiSettings.roundness);
             return var1;
          }
 
@@ -57,6 +60,8 @@ public final class UiSettings {
             UiSettings.animSpeed = Math.max(0.5, Math.min(3.0, Json.dbl(var1, "animSpeed", UiSettings.animSpeed)));
             UiSettings.animations = Json.bool(var1, "animations", UiSettings.animations);
             UiSettings.xmas = Json.bool(var1, "xmas", UiSettings.xmas);
+            UiSettings.roundness = Math.max(0.0, Math.min(2.5, Json.dbl(var1, "roundness", UiSettings.roundness)));
+            Gx.round = (float)UiSettings.roundness;
             Sound.uiSounds = UiSettings.sounds;
          }
       });

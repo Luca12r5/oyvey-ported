@@ -33,6 +33,22 @@ public final class Perf {
       }
    }
 
+   private static boolean reported;
+
+   /** Once per session, 60 s after joining a world: the ten most expensive sections to the log (CI reads it). */
+   public static void report(long joinedAt) {
+      if (reported || joinedAt == 0L || System.currentTimeMillis() - joinedAt < 60000L) {
+         return;
+      }
+      reported = true;
+      StringBuilder b = new StringBuilder("LEGO perf (ms/frame, smoothed):");
+      SECTIONS.entrySet().stream()
+         .sorted((a, c) -> Double.compare(c.getValue()[0], a.getValue()[0]))
+         .limit(10)
+         .forEach(e -> b.append(String.format(Locale.ROOT, " %s=%.2f", e.getKey(), e.getValue()[0])));
+      dev.lego.LegoClient.LOG(b.toString());
+   }
+
    public static Map<String, double[]> sections() {
       return SECTIONS;
    }

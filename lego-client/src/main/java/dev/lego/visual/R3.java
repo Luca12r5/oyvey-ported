@@ -400,17 +400,33 @@ public final class R3 {
       double var29 = Math.cos(var17) * Math.sin(var19);
       double var31 = var7 / 2.0;
       double var33 = var9 / 2.0;
-      double[][] var35 = new double[][]{
-         {var1 - var21 * var31 - var25 * var33, var3 - var27 * var33, var5 - var23 * var31 - var29 * var33, var11, var14},
-         {var1 + var21 * var31 - var25 * var33, var3 - var27 * var33, var5 + var23 * var31 - var29 * var33, var13, var14},
-         {var1 + var21 * var31 + var25 * var33, var3 + var27 * var33, var5 + var23 * var31 + var29 * var33, var13, var12},
-         {var1 - var21 * var31 + var25 * var33, var3 + var27 * var33, var5 - var23 * var31 + var29 * var33, var11, var12}
-      };
-      double[][] var36 = new double[][]{var35[0], var35[1], var35[2], var35[3], var35[3], var35[2], var35[1], var35[0]};
+      dquad(
+         var16,
+         var1 - var21 * var31 - var25 * var33, var3 - var27 * var33, var5 - var23 * var31 - var29 * var33, var11, var14,
+         var1 + var21 * var31 - var25 * var33, var3 - var27 * var33, var5 + var23 * var31 - var29 * var33, var13, var14,
+         var1 + var21 * var31 + var25 * var33, var3 + var27 * var33, var5 + var23 * var31 + var29 * var33, var13, var12,
+         var1 - var21 * var31 + var25 * var33, var3 + var27 * var33, var5 - var23 * var31 + var29 * var33, var11, var12,
+         var15
+      );
+   }
 
-      for (double[] var40 : var36) {
-         tv(var16, var40[0], var40[1], var40[2], (float)var40[3], (float)var40[4], var15);
-      }
+   /** Double-sided quad without temporary arrays (billboards run for every particle, every frame). */
+   private static void dquad(
+      R3.Batch b,
+      double x0, double y0, double z0, float u0, float v0,
+      double x1, double y1, double z1, float u1, float v1,
+      double x2, double y2, double z2, float u2, float v2,
+      double x3, double y3, double z3, float u3, float v3,
+      int c
+   ) {
+      tv(b, x0, y0, z0, u0, v0, c);
+      tv(b, x1, y1, z1, u1, v1, c);
+      tv(b, x2, y2, z2, u2, v2, c);
+      tv(b, x3, y3, z3, u3, v3, c);
+      tv(b, x3, y3, z3, u3, v3, c);
+      tv(b, x2, y2, z2, u2, v2, c);
+      tv(b, x1, y1, z1, u1, v1, c);
+      tv(b, x0, y0, z0, u0, v0, c);
    }
 
    public static void billboardRot(Identifier var0, double var1, double var3, double var5, double var7, double var9, int var11) {
@@ -431,17 +447,14 @@ public final class R3 {
       double var39 = (-var17 * var29 + var21 * var27) * var31;
       double var41 = var23 * var27 * var31;
       double var43 = (-var19 * var29 + var25 * var27) * var31;
-      double[][] var45 = new double[][]{
-         {var1 - var33 - var39, var3 - var35 - var41, var5 - var37 - var43, 0.0, 1.0},
-         {var1 + var33 - var39, var3 + var35 - var41, var5 + var37 - var43, 1.0, 1.0},
-         {var1 + var33 + var39, var3 + var35 + var41, var5 + var37 + var43, 1.0, 0.0},
-         {var1 - var33 + var39, var3 - var35 + var41, var5 - var37 + var43, 0.0, 0.0}
-      };
-      double[][] var46 = new double[][]{var45[0], var45[1], var45[2], var45[3], var45[3], var45[2], var45[1], var45[0]};
-
-      for (double[] var50 : var46) {
-         tv(var12, var50[0], var50[1], var50[2], (float)var50[3], (float)var50[4], var11);
-      }
+      dquad(
+         var12,
+         var1 - var33 - var39, var3 - var35 - var41, var5 - var37 - var43, 0.0F, 1.0F,
+         var1 + var33 - var39, var3 + var35 - var41, var5 + var37 - var43, 1.0F, 1.0F,
+         var1 + var33 + var39, var3 + var35 + var41, var5 + var37 + var43, 1.0F, 0.0F,
+         var1 - var33 + var39, var3 - var35 + var41, var5 - var37 + var43, 0.0F, 0.0F,
+         var11
+      );
    }
 
    public static void glowBillboard(Identifier var0, double var1, double var3, double var5, double var7, int var9) {
@@ -454,17 +467,14 @@ public final class R3 {
       double var21 = Math.cos(var13);
       double var23 = Math.cos(var11) * Math.sin(var13);
       double var25 = var7 / 2.0;
-      double[][] var27 = new double[][]{
-         {var1 - var15 * var25 - var19 * var25, var3 - var21 * var25, var5 - var17 * var25 - var23 * var25, 0.0, 1.0},
-         {var1 + var15 * var25 - var19 * var25, var3 - var21 * var25, var5 + var17 * var25 - var23 * var25, 1.0, 1.0},
-         {var1 + var15 * var25 + var19 * var25, var3 + var21 * var25, var5 + var17 * var25 + var23 * var25, 1.0, 0.0},
-         {var1 - var15 * var25 + var19 * var25, var3 + var21 * var25, var5 - var17 * var25 + var23 * var25, 0.0, 0.0}
-      };
-      double[][] var28 = new double[][]{var27[0], var27[1], var27[2], var27[3], var27[3], var27[2], var27[1], var27[0]};
-
-      for (double[] var32 : var28) {
-         tv(var10, var32[0], var32[1], var32[2], (float)var32[3], (float)var32[4], var9);
-      }
+      dquad(
+         var10,
+         var1 - var15 * var25 - var19 * var25, var3 - var21 * var25, var5 - var17 * var25 - var23 * var25, 0.0F, 1.0F,
+         var1 + var15 * var25 - var19 * var25, var3 - var21 * var25, var5 + var17 * var25 - var23 * var25, 1.0F, 1.0F,
+         var1 + var15 * var25 + var19 * var25, var3 + var21 * var25, var5 + var17 * var25 + var23 * var25, 1.0F, 0.0F,
+         var1 - var15 * var25 + var19 * var25, var3 + var21 * var25, var5 - var17 * var25 + var23 * var25, 0.0F, 0.0F,
+         var9
+      );
    }
 
    public static void billboard(Identifier var0, double var1, double var3, double var5, double var7, int var9) {
@@ -502,12 +512,7 @@ public final class R3 {
 
    public static void skyQuad(RenderType var0, double[] var1, double[] var2, double[] var3, double[] var4, float[] var5, int var6) {
       R3.Batch var7 = layer(var0);
-      double[][] var8 = new double[][]{var1, var2, var3, var4};
-      int[] var9 = new int[]{0, 1, 2, 3, 3, 2, 1, 0};
-
-      for (int var13 : var9) {
-         tv(var7, var8[var13][0], var8[var13][1], var8[var13][2], var5[var13 * 2], var5[var13 * 2 + 1], var6);
-      }
+      dquad(var7, var1[0], var1[1], var1[2], var5[0], var5[1], var2[0], var2[1], var2[2], var5[2], var5[3], var3[0], var3[1], var3[2], var5[4], var5[5], var4[0], var4[1], var4[2], var5[6], var5[7], var6);
    }
 
    public static void end() {

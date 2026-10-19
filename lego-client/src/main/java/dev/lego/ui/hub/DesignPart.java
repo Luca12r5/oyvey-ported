@@ -152,6 +152,19 @@ public final class DesignPart implements HubView.Part {
          + var50;
       var10 = this.sliderRow(
             var1,
+            "Rundung",
+            "roundness",
+            UiSettings.roundness / 2.5,
+            Math.round(UiSettings.roundness * 100.0) + "%",
+            var0 -> Gx.round = (float)(UiSettings.roundness = Math.round(var0 * 2.5 * 10.0) / 10.0),
+            var2 + var6,
+            var10,
+            var11,
+            var49
+         )
+         + var50;
+      var10 = this.sliderRow(
+            var1,
             "Animations-Tempo",
             "animspeed",
             (UiSettings.animSpeed - 0.5) / 2.5,

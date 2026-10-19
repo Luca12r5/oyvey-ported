@@ -73,6 +73,7 @@ public final class LegoClient implements ClientModInitializer {
    private static KeyMapping waypointKey;
    private static KeyMapping hudKey;
    private static KeyMapping consoleKey;
+   private static KeyMapping perfKey;
    private static boolean consoleAutoShown = false;
    private static boolean introShown = false;
    private static SpotifyModule spotify;
@@ -127,6 +128,7 @@ public final class LegoClient implements ClientModInitializer {
       waypointKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.waypoint", 78, var2));
       hudKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.hud", -1, var2));
       consoleKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.console", 299, var2));
+      perfKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.perf", 301, var2));
       setupEnv();
       ClientTickEvents.END_CLIENT_TICK.register(LegoClient::tick);
       ScreenEvents.AFTER_INIT.register((var0, var1x, var2x, var3x) -> {
@@ -370,6 +372,14 @@ public final class LegoClient implements ClientModInitializer {
          }
 
          dev.lego.games.Duels.tick();
+
+         while (perfKey.consumeClick()) {
+            if (Performance.monitor != null) {
+               Performance.monitor.toggle();
+            }
+         }
+
+         Perf.report(joinedAt);
 
          while (consoleKey.consumeClick()) {
             if (var0.screen == null || var0.screen instanceof TitleScreen) {

@@ -176,12 +176,20 @@ public final class Gx {
       }
    }
 
+   /** Corner rounding of the whole UI (UiSettings "Rundung"; 1 = as designed). */
+   public static float round = 1.4F;
+
+   public static int rounder(int r) {
+      return r <= 0 ? r : Math.round(r * round);
+   }
+
    static int bucket(int var0) {
       return var0 <= 24 ? var0 : (var0 + 2) / 4 * 4;
    }
 
    public static void rect(int var0, int var1, int var2, int var3, int var4, int var5) {
       if (var2 > 0 && var3 > 0) {
+         var4 = rounder(var4);
          var4 = Math.max(0, Math.min(var4, Math.min(var2, var3) / 2));
          if (var4 <= 0) {
             fill(var0, var1, var2, var3, var5);
@@ -201,6 +209,7 @@ public final class Gx {
 
    public static void rectV(int var0, int var1, int var2, int var3, int var4, int var5, int var6) {
       if (var2 > 0 && var3 > 0) {
+         var4 = rounder(var4);
          var4 = Math.max(0, Math.min(var4, Math.min(var2, var3) / 2));
          if (var4 <= 0) {
             gradientV(var0, var1, var2, var3, var5, var6);
@@ -223,6 +232,7 @@ public final class Gx {
 
    public static void outline(int var0, int var1, int var2, int var3, int var4, int var5, int var6) {
       if (var2 > 0 && var3 > 0 && var5 > 0) {
+         var4 = rounder(var4);
          var4 = Math.max(var5, Math.min(var4, Math.min(var2, var3) / 2));
          Gx.Img var7 = ring(var4, var5);
          tex(var7, var0, var1, var4, var4, 0, 0, var4, var4, var6);
