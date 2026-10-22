@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Regenerates packages/shared/src/client-cosmetics.ts from the client's
 // cosmetic registration calls so backend/launcher ids match the game.
+// Caution: items registered in loops (vehicles, knives) are not found by the
+// pattern; check the diff and keep them before committing a regenerated list.
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -20,7 +22,14 @@ for (const f of readdirSync(dir).filter((n) => n.endsWith('.java')).sort()) {
 const ids = new Set(items.map((i) => i[0]));
 if (ids.size !== items.length) throw new Error('duplicate cosmetic ids');
 const esc = (v) => v.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-const head = readFileSync(out, 'utf8').split('export const CLIENT_COSMETICS')[0];
-writeFileSync(out, `${head}export const CLIENT_COSMETICS: readonly ClientCosmeticSeed[] = [\n${items
-  .map(([a, b, c, d]) => `  ['${a}', '${esc(b)}', '${c}', '${d}'],`).join('\n')}\n];\n`);
-console.log(`wrote ${items.length} cosmetics`);
+// Only the base list is regenerated; the knives (generated from KNIFE_TYPES × KNIFE_FINISHES)
+// and the rest after it stay as they are.
+const text = readFileSync(out, 'utf8');
+const marker = 'const CLIENT_COSMETICS_BASE: readonly ClientCosmeticSeed[] = [\n';
+const at = text.indexOf(marker);
+const end = text.indexOf('\n];\n', at);
+if (at < 0 || end < 0) throw new Error('CLIENT_COSMETICS_BASE not found');
+const base = items.filter(([id]) => !id.startsWith('knife_'));
+writeFileSync(out, `${text.slice(0, at)}${marker}${base
+  .map(([a, b, c, d]) => `  ['${a}', '${esc(b)}', '${c}', '${d}'],`).join('\n')}${text.slice(end)}`);
+console.log(`wrote ${base.length} cosmetics (+ generated knives)`);

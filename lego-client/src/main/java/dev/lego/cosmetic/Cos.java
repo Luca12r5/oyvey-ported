@@ -193,6 +193,8 @@ public final class Cos {
       public float growth = 0.5F;
       public float wheel;
       public float lean;
+      /** Folding knives: 0 = closed, 1 = open (see KnifeTricks). */
+      public float knifeOpen = 1.0F;
    }
 
    public static final class Item {

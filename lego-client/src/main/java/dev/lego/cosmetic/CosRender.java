@@ -159,7 +159,15 @@ public final class CosRender {
       CosRender.Built[] slot = items == null ? KNIFE_LOCAL : KNIFE_REMOTE.computeIfAbsent(id, k -> new CosRender.Built[1]);
       int ver = key.hashCode();
       CosRender.Built b = slot[0];
-      if (b == null || now - b.t > 33L || b.ver != ver) {
+      boolean moving = false;
+      if (items == null) {
+         KnifeTricks.frame(key);
+         var4.knifeOpen = KnifeTricks.open();
+         moving = KnifeTricks.partsMoving();
+      } else {
+         var4.knifeOpen = 1.0F;
+      }
+      if (b == null || now - b.t > 33L || b.ver != ver || moving) {
          LinkedHashMap<String, List<CosRender.Q>> normal = new LinkedHashMap<>();
          LinkedHashMap<String, List<CosRender.Q>> glow = new LinkedHashMap<>();
          G g = new G((tex, p, uv, argb, glowing, n0, n1, n2) -> (glowing ? glow : normal).computeIfAbsent(tex, k -> new ArrayList<>()).add(new CosRender.Q(p, uv, argb, n0, n1, n2)));

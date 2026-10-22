@@ -8,7 +8,7 @@ export type CosmeticSlot = (typeof COSMETIC_SLOTS)[number];
 
 export type ClientCosmeticSeed = [id: string, name: string, slot: CosmeticSlot, rarity: 'common' | 'rare' | 'epic' | 'legendary'];
 
-export const CLIENT_COSMETICS: readonly ClientCosmeticSeed[] = [
+const CLIENT_COSMETICS_BASE: readonly ClientCosmeticSeed[] = [
   ['aura_fire', 'Feuer-Aura', 'aura', 'legendary'],
   ['aura_frost', 'Frost-Aura', 'aura', 'epic'],
   ['aura_hearts', 'Herz-Aura', 'aura', 'rare'],
@@ -246,20 +246,29 @@ export const CLIENT_COSMETICS: readonly ClientCosmeticSeed[] = [
   ['xm_pet_giftmonster', 'Geschenk-Monster', 'pet', 'legendary'],
   ['xm_pet_penguin', 'Pinguin mit Mütze', 'pet', 'epic'],
   ['xm_veh_sleigh', 'Weihnachtsschlitten', 'vehicle', 'legendary'],
-  // Halloween knives (own designs; held in the right hand, purely visual)
-  ['knife_karambit_pumpkin', 'Karambit | Kürbis-Fade', 'knife', 'epic'],
-  ['knife_karambit_bloodmoon', 'Karambit | Blutmond', 'knife', 'legendary'],
-  ['knife_karambit_ghost', 'Karambit | Geisterglas', 'knife', 'legendary'],
-  ['knife_butterfly_pumpkin', 'Butterfly | Kürbis-Fade', 'knife', 'epic'],
-  ['knife_butterfly_bloodmoon', 'Butterfly | Blutmond', 'knife', 'legendary'],
-  ['knife_butterfly_ghost', 'Butterfly | Geisterglas', 'knife', 'legendary'],
-  ['knife_bayonet_pumpkin', 'Bajonett | Kürbis-Fade', 'knife', 'epic'],
-  ['knife_bayonet_bloodmoon', 'Bajonett | Blutmond', 'knife', 'legendary'],
-  ['knife_bayonet_ghost', 'Bajonett | Geisterglas', 'knife', 'legendary'],
-  ['knife_talon_pumpkin', 'Talon | Kürbis-Fade', 'knife', 'epic'],
-  ['knife_talon_bloodmoon', 'Talon | Blutmond', 'knife', 'legendary'],
-  ['knife_talon_ghost', 'Talon | Geisterglas', 'knife', 'legendary'],
-  ['knife_machete_pumpkin', 'Machete | Kürbis-Fade', 'knife', 'epic'],
-  ['knife_machete_bloodmoon', 'Machete | Blutmond', 'knife', 'legendary'],
-  ['knife_machete_ghost', 'Machete | Geisterglas', 'knife', 'legendary'],
+  // Knives: generated below (KNIFE_TYPES × KNIFE_FINISHES).
+];
+
+/**
+ * Knives (own models in the shape of real knife types, held in the right hand, purely visual):
+ * every shape in every finish. Same ids as the client (lego-client/.../cosmetic/Knives.java).
+ */
+export const KNIFE_TYPES: readonly [id: string, name: string][] = [
+  ['karambit', 'Karambit'], ['butterfly', 'Butterfly'], ['m9', 'M9-Bajonett'], ['bayonet', 'Bajonett'],
+  ['flip', 'Klappmesser'], ['gut', 'Gut-Hook'], ['huntsman', 'Huntsman'], ['falchion', 'Falchion'],
+  ['bowie', 'Bowie'], ['daggers', 'Push-Dolche'], ['navaja', 'Navaja'], ['stiletto', 'Stilett'],
+  ['talon', 'Talon'], ['ranger', 'Ranger'], ['skeleton', 'Skelett'], ['nomad', 'Nomade'],
+  ['survival', 'Survival'], ['paracord', 'Paracord'], ['classic', 'Klassik'], ['kukri', 'Kukri'],
+  ['machete', 'Machete'],
+];
+
+export const KNIFE_FINISHES: readonly [id: string, name: string, rarity: ClientCosmeticSeed[3]][] = [
+  ['pumpkin', 'Kürbis-Fade', 'epic'], ['bloodmoon', 'Blutmond', 'legendary'], ['ghost', 'Geisterglas', 'legendary'],
+  ['sunset', 'Sonnenverlauf', 'epic'], ['damast', 'Damast', 'legendary'], ['tiger', 'Tigerstreifen', 'rare'],
+  ['marble', 'Marmor-Verlauf', 'legendary'], ['gold', 'Gold', 'legendary'],
+];
+
+export const CLIENT_COSMETICS: readonly ClientCosmeticSeed[] = [
+  ...CLIENT_COSMETICS_BASE,
+  ...KNIFE_TYPES.flatMap(([t, tn]) => KNIFE_FINISHES.map(([f, fn, r]): ClientCosmeticSeed => [`knife_${t}_${f}`, `${tn} | ${fn}`, 'knife', r])),
 ];
