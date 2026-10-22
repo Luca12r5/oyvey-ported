@@ -383,7 +383,8 @@ public final class LegoClient implements ClientModInitializer {
          }
 
          Perf.report(joinedAt);
-         dev.lego.cosmetic.KnifeTricks.key(var0.screen == null && knifeKey.isDown());
+         dev.lego.cosmetic.KnifeTricks.key((var0.screen == null && knifeKey.isDown()) || dev.lego.ci.CiShots.knifeKey());
+         dev.lego.ci.CiShots.tick(var0);
 
          while (consoleKey.consumeClick()) {
             if (var0.screen == null || var0.screen instanceof TitleScreen) {

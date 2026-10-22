@@ -6,12 +6,18 @@
 //   node test/real-launch.ts --version 1.21.11 --loader fabric --lego path/to/legoclient.jar
 //   node test/real-launch.ts --version 1.8.9
 //   node test/real-launch.ts --version 1.20.1 --loader forge
+//   node test/real-launch.ts --version 1.21.11 --loader fabric --lego legoclient.jar --shots
+//
+// --shots: a flat world is generated with the official server first, the game starts straight
+// into it (quick play), the LEGO client walks through its looks (-Dlegoclient.ci.shots=1) and
+// the screenshots are printed to the log as small base64 JPEGs (LEGOSHOT lines).
 //
 // The test player has no Microsoft session (access token "0"): enough to reach
 // the title screen and load all mods, not to join online servers. This is a
 // test harness only; the launcher itself always requires a Microsoft login.
 
-import { mkdtempSync, existsSync, copyFileSync, mkdirSync, readFileSync } from 'node:fs';
+import { mkdtempSync, existsSync, copyFileSync, mkdirSync, readFileSync, writeFileSync, readdirSync, cpSync, statSync } from 'node:fs';
+import { spawn, execFileSync } from 'node:child_process';
 import { tmpdir, release } from 'node:os';
 import { join, basename } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -30,6 +36,7 @@ if (gameVersion === 'latest') gameVersion = (await getManifest(fetch)).latest.re
 const loaderType = arg('loader') as LoaderType | null;
 const legoJar = arg('lego');
 const fps = process.argv.includes('--fps');
+const shots = process.argv.includes('--shots');
 const timeoutMs = Number(arg('timeout', '600')) * 1000;
 const root = arg('dir') ?? mkdtempSync(join(tmpdir(), 'lego-real-'));
 
@@ -69,20 +76,46 @@ if (legoJar) {
   copyFileSync(legoJar, join(gameDir, 'mods', basename(legoJar)));
 }
 
+// A flat test world made by the official server (no client-side world creation needed).
+if (shots) {
+  const serverUrl = (base as unknown as { downloads?: { server?: { url: string } } }).downloads?.server?.url;
+  if (!serverUrl) throw new Error('no server download for this version');
+  const srvDir = join(root, 'server');
+  mkdirSync(srvDir, { recursive: true });
+  const jar = join(srvDir, 'server.jar');
+  writeFileSync(jar, Buffer.from(await (await fetch(serverUrl)).arrayBuffer()));
+  writeFileSync(join(srvDir, 'eula.txt'), 'eula=true\n');
+  writeFileSync(join(srvDir, 'server.properties'), ['level-name=world', 'level-type=minecraft\\:flat', 'online-mode=false', 'generate-structures=false', 'spawn-protection=0', 'server-port=25599', 'spawn-monsters=false', ''].join('\n'));
+  step('generating a flat world with the server');
+  await new Promise<void>((resolve, reject) => {
+    const srv = spawn(javaPath, ['-Xmx1G', '-jar', jar, '--nogui'], { cwd: srvDir, stdio: ['pipe', 'pipe', 'pipe'] });
+    const timer = setTimeout(() => { srv.kill('SIGKILL'); reject(new Error('server did not finish in 180 s')); }, 180_000);
+    const onData = (d: Buffer) => { if (/Done \(/.test(d.toString())) srv.stdin.write('stop\n'); };
+    srv.stdout.on('data', onData);
+    srv.stderr.on('data', onData);
+    srv.on('exit', () => { clearTimeout(timer); resolve(); });
+  });
+  mkdirSync(join(gameDir, 'saves'), { recursive: true });
+  cpSync(join(srvDir, 'world'), join(gameDir, 'saves', 'ci'), { recursive: true });
+  step('flat world ready');
+}
+
 const token = 'lego-ci-no-session';
 const args = buildArguments({
   version: merged, env, javaPath, gameDir, assetsDir: l.assets, gameAssetsDir: installed.virtualAssets ?? undefined,
   librariesDir: l.libraries, nativesDir: installed.nativesDir, clientJar: installed.clientJar, classpathSeparator: process.platform === 'win32' ? ';' : ':',
   player: { name: 'LegoCI', uuid: randomUUID().replace(/-/g, ''), accessToken: token, xuid: null, userType: 'msa' },
-  launcherName: 'lego-launcher', launcherVersion: 'ci', memoryMb: { min: 1024, max: 3072 }, extraJvmArgs: [],
+  launcherName: 'lego-launcher', launcherVersion: 'ci', memoryMb: { min: 1024, max: 3072 }, extraJvmArgs: shots ? ['-Dlegoclient.ci.shots=1'] : [],
   resolution: { width: 854, height: 480 }, loggingConfigPath: installed.loggingConfig ?? undefined,
 });
+if (shots) args.push('--quickPlaySingleplayer', 'ci');
 step(`Launch: ${redactArgs(args, token).slice(0, 6).join(' ')} … (${args.length} args)`);
 
 // Markers that the client finished loading and shows the title screen.
 const READY = [/Sound engine started/, /Created: \d+x\d+x\d+ minecraft:textures\/atlas\/blocks\.png-atlas/, /Created: \d+x\d+ textures-atlas/, /Reloading ResourceManager/];
 const lines: string[] = [];
-let ready = false, legoLoaded = false, modCount: string | null = null, noBackend = false;
+let ready = false, legoLoaded = false, modCount: string | null = null, noBackend = false, shotsDone = false;
+const shotNames: string[] = [];
 const clean = createLogCleaner();
 const game = await startGame(javaPath, args, gameDir, join(root, 'logs'), (raw) => {
   const line = clean(raw);
@@ -90,6 +123,10 @@ const game = await startGame(javaPath, args, gameDir, join(root, 'logs'), (raw) 
   lines.push(line);
   if (lines.length > 4000) lines.splice(0, 1000);
   if (/\[LegoClient\] geladen/.test(line)) { legoLoaded = true; step(`LEGO: ${line.trim()}`); }
+  const shot = /\[LegoClient\] CI shot ([a-z-]+)$/.exec(line.trim());
+  if (shot) { shotNames.push(shot[1]!); step(`shot ${shot[1]}`); }
+  if (/\[LegoClient\] CI (in world|shots done)/.test(line)) step(line.trim());
+  if (/\[LegoClient\] CI shots done/.test(line)) shotsDone = true;
   const m = /Loading (\d+) mods/.exec(line);
   if (m) { modCount = m[1]!; step(line.trim()); }
   if (/Exception|ERROR|FATAL|Mixin apply failed/.test(line) && !/Failed to (verify|fetch|load) (authentication|profile|user properties)|realms|telemetry|YggdrasilUserApi|Couldn't connect|AL lib|OpenAL|sound/i.test(line)) console.log(`  ! ${line.slice(0, 300)}`);
@@ -100,10 +137,14 @@ const game = await startGame(javaPath, args, gameDir, join(root, 'logs'), (raw) 
 
 const outcome = await new Promise<{ ok: boolean; why: string }>((resolve) => {
   const timer = setTimeout(() => resolve({ ok: false, why: `timeout after ${timeoutMs / 1000}s` }), timeoutMs);
-  void game.exited.then((r) => { clearTimeout(timer); resolve({ ok: false, why: `game exited early with code ${r.code}${r.crashReport ? `, crash report ${r.crashReport}` : ''}` }); });
+  void game.exited.then((r) => {
+    clearTimeout(timer);
+    if (shots && shotsDone) { resolve({ ok: true, why: `world joined, ${shotNames.length} screenshots taken` }); return; }
+    resolve({ ok: false, why: `game exited early with code ${r.code}${r.crashReport ? `, crash report ${r.crashReport}` : ''}` });
+  });
   const poll = setInterval(() => {
     if (noBackend) { clearInterval(poll); clearTimeout(timer); resolve({ ok: false, why: 'no usable graphics backend (OpenGL and Vulkan both failed)' }); return; }
-    if (!ready) return;
+    if (!ready || shots) return;
     clearInterval(poll);
     // Stay alive a while on the title screen: catches render-time crashes of mods.
     setTimeout(() => { clearTimeout(timer); resolve({ ok: true, why: 'title screen reached and stable for 25 s' }); }, 25_000);
@@ -115,6 +156,26 @@ setTimeout(() => game.child.kill('SIGKILL'), 10_000).unref();
 await game.exited.catch(() => {});
 
 if (legoJar && !legoLoaded) Object.assign(outcome, { ok: false, why: `${outcome.why}; but "[LegoClient] geladen" never appeared` });
+
+// Screenshots → small JPEGs → base64 in the log (LEGOSHOT <name> <i>/<n> <data>).
+if (shots) {
+  const dir = join(gameDir, 'screenshots');
+  const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.png')).sort((a, b) => statSync(join(dir, a)).mtimeMs - statSync(join(dir, b)).mtimeMs) : [];
+  step(`${files.length} screenshots`);
+  files.forEach((f, k) => {
+    const name = shotNames[k] ?? f;
+    try {
+      const jpg = join(dir, `${f}.jpg`);
+      execFileSync('convert', [join(dir, f), '-resize', '640x', '-quality', '62', jpg]);
+      const b64 = readFileSync(jpg).toString('base64');
+      const parts = Math.ceil(b64.length / 8000);
+      for (let i = 0; i < parts; i++) console.log(`LEGOSHOT ${name} ${i + 1}/${parts} ${b64.slice(i * 8000, (i + 1) * 8000)}`);
+    } catch (e) {
+      console.log(`LEGOSHOT ${name} failed: ${(e as Error).message}`);
+    }
+  });
+  if (outcome.ok && files.length === 0) Object.assign(outcome, { ok: false, why: `${outcome.why}; but no screenshots were saved` });
+}
 console.log(`\nRESULT ${outcome.ok ? 'OK' : 'FAIL'}: Minecraft ${gameVersion}${loaderType ? ` ${loaderType}` : ''}${modCount ? ` (${modCount} mods)` : ''} – ${outcome.why} – ${((Date.now() - t0) / 1000).toFixed(0)}s total`);
 if (!outcome.ok) {
   console.log('--- last log lines ---');

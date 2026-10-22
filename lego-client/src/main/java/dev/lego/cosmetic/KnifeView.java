@@ -34,6 +34,11 @@ public final class KnifeView extends Module {
       instance = Modules.register(new KnifeView());
    }
 
+   /** CI screenshots: show the knife instead of swords. */
+   public static void ciReplaceSwords() {
+      if (instance != null) instance.replaces.index = 1;
+   }
+
    static boolean on() {
       return instance == null || instance.enabled;
    }
