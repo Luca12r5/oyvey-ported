@@ -5,10 +5,12 @@ productName: LEGO Launcher
 copyright: LEGO Launcher contributors
 directories:
   output: release
-  buildResources: build
+  # App icon (icon.svg is the source; icon.png/.ico are rendered from it).
+  buildResources: buildres
 files:
   - dist/**/*
   - package.json
+  - buildres/icon.png
   - "!dist/**/*.map"
 asar: true
 # The LEGO client mod built by CI (lego-client) ships with the installer.

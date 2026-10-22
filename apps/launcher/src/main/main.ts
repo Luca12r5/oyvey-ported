@@ -904,7 +904,7 @@ function windowAction(action: string): void {
 function createWindow(): void {
   win = new BrowserWindow({
     width: 1280, height: 800, minWidth: 1024, minHeight: 680, frame: false, backgroundColor: '#07060b', show: false,
-    title: 'LEGO Launcher',
+    title: 'LEGO Launcher', icon: join(app.getAppPath(), 'buildres', 'icon.png'),
     webPreferences: { preload: join(__dirname, 'preload.cjs'), contextIsolation: true, sandbox: true, nodeIntegration: false, webviewTag: false, spellcheck: false },
   });
   win.once('ready-to-show', () => win?.show());
