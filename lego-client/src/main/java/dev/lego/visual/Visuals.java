@@ -90,7 +90,7 @@ public final class Visuals {
       hit = Modules.register(new Visuals.HitParticles());
       trails = Modules.register(new Visuals.Trails());
       kill = Modules.register(new Visuals.KillEffect());
-      fullbright = Modules.register(new Visuals.Fullbright());
+      // Fullbright removed: seeing in the dark is an advantage over vanilla.
       zoom = Modules.register(new Visuals.Zoom());
       noHurtCam = Modules.register(new Visuals.NoHurtCam());
       time = Modules.register(new Visuals.TimeChanger());

@@ -33,7 +33,7 @@ public final class Overlays {
       bars = Modules.register(new Overlays.CinemaBars());
       vignette = Modules.register(new Overlays.Vignette());
       hitmarker = Modules.register(new Overlays.Hitmarker());
-      vrLook = Modules.register(new Overlays.VrLook());
+      // The VR look is now the real Visor headset (dev.visor, key H).
    }
 
    public static void render(int var0, int var1) {

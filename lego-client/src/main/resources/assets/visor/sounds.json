@@ -1,0 +1,20 @@
+{
+	"ui.hover": {"sounds": [{"name": "visor:hover"}]},
+	"ui.click": {"sounds": [{"name": "visor:click"}]},
+	"ui.tab": {"sounds": [{"name": "visor:tab"}]},
+	"ui.toggle_on": {"sounds": [{"name": "visor:toggle_on"}]},
+	"ui.toggle_off": {"sounds": [{"name": "visor:toggle_off"}]},
+	"ui.panel_open": {"sounds": [{"name": "visor:panel_open"}]},
+	"ui.panel_close": {"sounds": [{"name": "visor:panel_close"}]},
+	"ui.menu_open": {"sounds": [{"name": "visor:menu_open"}]},
+	"ui.menu_close": {"sounds": [{"name": "visor:menu_close"}]},
+	"ui.slider": {"sounds": [{"name": "visor:slider"}]},
+	"ui.keybind": {"sounds": [{"name": "visor:keybind"}]},
+	"ui.notify": {"sounds": [{"name": "visor:notify"}]},
+	"ui.recenter": {"sounds": [{"name": "visor:recenter"}]},
+	"ui.deny": {"sounds": [{"name": "visor:deny"}]},
+	"headset.equip": {"sounds": [{"name": "visor:equip"}]},
+	"headset.remove": {"sounds": [{"name": "visor:remove"}]},
+	"headset.boot": {"sounds": [{"name": "visor:boot"}]},
+	"doctor_donut.dance": {"sounds": [{"name": "visor:doctor_donut/dance", "stream": false, "preload": true}]}
+}

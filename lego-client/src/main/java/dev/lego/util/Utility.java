@@ -91,7 +91,7 @@ public final class Utility {
       sneak = Modules.register(new Utility.ToggleSneak());
       freelook = Modules.register(new Utility.Freelook());
       autoGG = Modules.register(new Utility.AutoGG());
-      autoRespawn = Modules.register(new Utility.AutoRespawn());
+      // Auto-Respawn removed: automation that plays for you is not a fair helper.
       waypoints = Modules.register(new Utility.Waypoints());
       deathPoint = Modules.register(new Utility.DeathPoint());
       lowHp = Modules.register(new Utility.LowHpWarning());

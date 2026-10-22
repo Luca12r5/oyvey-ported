@@ -3,15 +3,15 @@
   "id": "legoclient",
   "version": "${version}",
   "name": "LEGO Client",
-  "description": "LEGO Launcher client for Minecraft 1.21.11: HUD, visuals, performance tools, 3D cosmetics, pets, vehicles, emotes, mini games, Spotify HUD and LEGO account integration.",
+  "description": "LEGO Launcher client for Minecraft 1.21.11: HUD, visuals, performance tools, 3D cosmetics, pets, vehicles, emotes, mini games, Spotify HUD and LEGO account integration. Includes Visor (MIT, by pickzugng): put on a headset in Minecraft with a curved menu, hands and a browser.",
   "authors": ["Ar Zero"],
   "license": "MIT",
   "icon": "assets/legoclient/icon.png",
   "environment": "client",
   "entrypoints": {
-    "client": ["dev.lego.LegoClient"]
+    "client": ["dev.lego.LegoClient", "dev.visor.VisorClient"]
   },
-  "mixins": ["legoclient.mixins.json"],
+  "mixins": ["legoclient.mixins.json", "visor.mixins.json"],
   "depends": {
     "fabricloader": ">=0.16.0",
     "minecraft": "1.21.11",

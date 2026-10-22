@@ -32,8 +32,8 @@ export async function vrPage(el: HTMLElement): Promise<void> {
       <div class="panel-h">${icon('cube', 'sm')}<span>VR in Minecraft</span></div>
       <div class="vr-mc-grid">
         <div>
-          <h3>VR-Look (LEGO Client)</h3>
-          <p class="small muted">Im Spiel als Modul „VR-Look“ (Click GUI → Visuals): deine Welt am aktuellen Ort wie in einer Brille, mit Dock-Leiste (Uhr, FPS, Ping, Kopf, Koordinaten), Tasten-Hinweisen und Händen. Linsen-Rand optional. Normale Steuerung mit Tastatur und Maus.</p>
+          <h3>Visor-Brille (LEGO Client)</h3>
+          <p class="small muted">Im Spiel Taste <kbd>H</kbd>: Du setzt eine VR-Brille auf und siehst deine Welt am aktuellen Ort. Dazu ein gebogenes Menü mit allen Modulen, eine Dock-Leiste, Hände, ein echter Browser (SafeSearch, nur https) und VR-Videos. Normale Steuerung mit Tastatur und Maus.</p>
         </div>
         <div>
           <h3>Echtes VR (Vivecraft)</h3>
@@ -77,7 +77,7 @@ export async function vrPage(el: HTMLElement): Promise<void> {
         } catch (e) { errorToast(e); btn.disabled = false; }
       });
     } else {
-      info.textContent = `Vivecraft gibt es (noch) nicht für Minecraft ${r.gameVersion}.${r.suggestion ? ` Neueste unterstützte Version: ${r.suggestion} – leg dafür ein Profil an, dann kann der Launcher es einrichten.` : ''} Bis dahin: VR-Look im LEGO Client.`;
+      info.textContent = `Vivecraft gibt es (noch) nicht für Minecraft ${r.gameVersion}.${r.suggestion ? ` Neueste unterstützte Version: ${r.suggestion} – leg dafür ein Profil an, dann kann der Launcher es einrichten.` : ''} Bis dahin: die Visor-Brille im LEGO Client (Taste H).`;
     }
   } catch {
     info.textContent = 'Konnte Modrinth nicht erreichen (offline?).';

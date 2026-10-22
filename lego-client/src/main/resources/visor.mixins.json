@@ -1,0 +1,21 @@
+{
+	"required": true,
+	"package": "dev.visor.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"ChannelAccessor",
+		"GameRendererMixin",
+		"GuiMixin",
+		"ItemInHandRendererMixin",
+		"KeyboardHandlerMixin",
+		"KeyboardInputMixin",
+		"LevelRendererMixin",
+		"MinecraftMixin",
+		"MouseHandlerMixin",
+		"SoundEngineAccessor",
+		"SoundManagerAccessor"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
