@@ -266,6 +266,7 @@ export const KNIFE_FINISHES: readonly [id: string, name: string, rarity: ClientC
   ['pumpkin', 'Kürbis-Fade', 'epic'], ['bloodmoon', 'Blutmond', 'legendary'], ['ghost', 'Geisterglas', 'legendary'],
   ['sunset', 'Sonnenverlauf', 'epic'], ['damast', 'Damast', 'legendary'], ['tiger', 'Tigerstreifen', 'rare'],
   ['marble', 'Marmor-Verlauf', 'legendary'], ['gold', 'Gold', 'legendary'],
+  ['emerald', 'Smaragd', 'legendary'], ['sapphire', 'Saphir', 'legendary'], ['carbon', 'Karbon', 'rare'], ['night', 'Nachtschwarz', 'epic'],
 ];
 
 export const CLIENT_COSMETICS: readonly ClientCosmeticSeed[] = [

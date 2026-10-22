@@ -20,7 +20,8 @@
     "ClientRenderMixin",
     "BlockEntityCullMixin",
     "WindowTitleMixin",
-    "FirstPersonKnifeMixin"
+    "FirstPersonKnifeMixin",
+    "ItemInHandKnifeMixin"
   ],
   "injectors": {
     "defaultRequire": 0

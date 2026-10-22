@@ -50,7 +50,17 @@ final class Knives {
          float s = 0.5F + 0.5F * (float)Math.sin(u * 9.0F + Math.sin(v * 5.0F + u * 4.0F) * 2.2F);
          return mix(0xFFE11D48, 0xFF2563EB, s);
       }, 0xFFF5F7FF, true, 0xFF15171E, 0xFF262A36),
-      new Finish("gold", "Gold", Cos.Rarity.LEGENDARY, (u, v) -> mix(0xFFFFE08A, 0xFFB7791F, v * 0.9F + u * 0.1F), 0xFFFFF6D5, false, 0xFF2B2116, 0xFFB7791F)
+      new Finish("gold", "Gold", Cos.Rarity.LEGENDARY, (u, v) -> mix(0xFFFFE08A, 0xFFB7791F, v * 0.9F + u * 0.1F), 0xFFFFF6D5, false, 0xFF2B2116, 0xFFB7791F),
+      new Finish("emerald", "Smaragd", Cos.Rarity.LEGENDARY, (u, v) -> {
+         float s = 0.5F + 0.5F * (float)Math.sin(u * 14.0F + v * 4.0F);
+         return mix(0xFF064E3B, 0xFF34D399, 0.35F + s * 0.5F);
+      }, 0xFFA7F3D0, true, 0xFF0B1F18, 0xFF14532D),
+      new Finish("sapphire", "Saphir", Cos.Rarity.LEGENDARY, (u, v) -> {
+         float s = 0.5F + 0.5F * (float)Math.sin(u * 14.0F - v * 4.0F);
+         return mix(0xFF1E3A8A, 0xFF60A5FA, 0.3F + s * 0.55F);
+      }, 0xFFBFDBFE, true, 0xFF0F172A, 0xFF1E3A8A),
+      new Finish("carbon", "Karbon", Cos.Rarity.RARE, (u, v) -> (((int)(u * 34.0F) + (int)(v * 6.0F)) & 1) == 0 ? 0xFF2A2D33 : 0xFF3A3E46, 0xFFD1D5DB, false, 0xFF16181C, 0xFF2A2D33),
+      new Finish("night", "Nachtschwarz", Cos.Rarity.EPIC, (u, v) -> mix(0xFF0B0B10, 0xFF1F1B2E, u), 0xFFA855F7, true, 0xFF0B0B10, 0xFF1F1B2E)
    };
 
    static void register() {
@@ -177,7 +187,7 @@ final class Knives {
       float[][] path = {p(0.0F, y, z0), p(0.0F, y, (z0 * 2 + z1) / 3), p(0.0F, y, (z0 + z1 * 2) / 3), p(0.0F, y, z1)};
       float[] ws = {w * 0.46F, w * 0.5F, w * 0.5F, w * 0.48F}, hs = {h * 0.46F, h * 0.5F, h * 0.5F, h * 0.48F}, es = {3.2F, 3.2F, 3.2F, 3.2F};
       g.glow(false).color(color);
-      XmasGeo.sweep(g, "white", path, ws, hs, es, 10, 1.0F);
+      XmasGeo.sweep(g, "white", path, ws, hs, es, 16, 1.0F);
       // End caps.
       g.box("white", -w * 0.46F, y - h * 0.46F, z0 - 0.08F, w * 0.46F, y + h * 0.46F, z0, 0.0F, 0.0F, 1.0F, 1.0F);
    }
@@ -206,7 +216,7 @@ final class Knives {
          rh[i] = tube;
       }
       g.glow(false).color(color);
-      XmasGeo.sweep(g, "white", path, rw, rh, null, 8, 1.0F);
+      XmasGeo.sweep(g, "white", path, rw, rh, null, 12, 1.0F);
    }
 
    private static final int STEEL = 0xFFB9BEC8;
@@ -490,5 +500,55 @@ final class Knives {
       }
       top[n - 1] = bot[n - 1] = (top[n - 2] + bot[n - 2]) * 0.5F;
       blade(g, f, z, top, bot, 0.22F);
+   }
+
+   // ------------------------------------------------------------------------------------------
+   // the hand in first person
+
+   /** Skin texture area of the right hand (front of the arm's lower end), 0..1. */
+   private static final float SU0 = 44.0F / 64.0F, SV0 = 28.0F / 64.0F, SU1 = 48.0F / 64.0F, SV1 = 32.0F / 64.0F;
+
+   private static void bone(G g, float w, float len, float d) {
+      g.box("@skin", -w / 2.0F, -len, -d / 2.0F, w / 2.0F, 0.0F, d / 2.0F, SU0, SV0, SU1, SV1);
+   }
+
+   /**
+    * Four fingers wrapped round the grip (palm on the -x side, fingers round the underside to
+    * the +x side) and the thumb along the top. {@code a.curl[i]}: 1 = closed round the grip,
+    * 0 = stretched out; {@code a.thumb}: 1 = on the grip, 0 = lifted.
+    */
+   static void fingers(G g, Cos.A a) {
+      g.push();
+      g.translate(1.0F, -10.6F, 0.0F);
+      g.rotX(-8.0F + (float)Math.sin(a.time * 1.6F) * 2.0F);
+      g.color(-1).glow(false);
+      float[] zs = {-0.6F, -1.5F, -2.4F, -3.25F};
+      float[] len = {1.0F, 1.08F, 1.0F, 0.82F};
+      for (int i = 0; i < 4; i++) {
+         float c = Math.max(0.0F, Math.min(1.0F, a.curl[i]));
+         g.push();
+         g.translate(-0.78F, 0.3F, zs[i]);
+         g.rotZ(-12.0F * (1.0F - c));
+         bone(g, 0.46F, 0.95F * len[i], 0.4F);
+         g.translate(0.0F, -0.95F * len[i], 0.0F);
+         g.rotZ(10.0F + 80.0F * c);
+         bone(g, 0.42F, 0.85F * len[i], 0.38F);
+         g.translate(0.0F, -0.85F * len[i], 0.0F);
+         g.rotZ(8.0F + 72.0F * c);
+         bone(g, 0.38F, 0.6F * len[i], 0.36F);
+         g.pop();
+      }
+      // Thumb along the top of the grip, pointing forward.
+      g.push();
+      g.translate(0.45F, 0.6F, -1.4F);
+      g.rotX(-25.0F * (1.0F - Math.max(0.0F, Math.min(1.0F, a.thumb))));
+      g.box("@skin", -0.22F, -0.2F, 0.0F, 0.22F, 0.22F, 1.15F, SU0, SV0, SU1, SV1);
+      g.translate(0.0F, 0.0F, 1.15F);
+      g.rotX(-10.0F);
+      g.box("@skin", -0.2F, -0.18F, 0.0F, 0.2F, 0.2F, 0.75F, SU0, SV0, SU1, SV1);
+      g.pop();
+      // Palm block behind the fingers.
+      g.box("@skin", -1.05F, -0.75F, -3.75F, -0.62F, 0.75F, -0.15F, SU0, SV0, SU1, SV1);
+      g.pop();
    }
 }

@@ -195,6 +195,9 @@ public final class Cos {
       public float lean;
       /** Folding knives: 0 = closed, 1 = open (see KnifeTricks). */
       public float knifeOpen = 1.0F;
+      /** First-person hand around the knife grip: curl per finger (index..little, 1 = closed) and thumb. */
+      public final float[] curl = {1.0F, 1.0F, 1.0F, 1.0F};
+      public float thumb = 1.0F;
    }
 
    public static final class Item {

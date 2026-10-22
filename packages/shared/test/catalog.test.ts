@@ -64,7 +64,7 @@ test('custom tag moderation', () => {
 });
 
 test('catalog: ≥300 real items, ids match the client, prices follow rarity', () => {
-  assert.equal(CLIENT_COSMETICS.length, 405); // 211 + 26 vehicles + 168 knives (21 shapes × 8 finishes)
+  assert.equal(CLIENT_COSMETICS.length, 489); // 211 + 26 vehicles + 252 knives (21 shapes × 12 finishes)
   assert.ok(CATALOG.length >= 300, `catalog has ${CATALOG.length}`);
   assert.equal(new Set(CATALOG.map((i) => i.id)).size, CATALOG.length);
   for (const i of CATALOG) {

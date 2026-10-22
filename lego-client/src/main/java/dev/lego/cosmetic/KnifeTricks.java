@@ -34,6 +34,11 @@ public final class KnifeTricks {
    private static float open = 1.0F;
    private static String type = "";
    private static long lastNanos;
+   private static float clock;
+   private static float nextDrum = 3.0F;
+   private static float drum = -1.0F;
+   private static final float[] curl = {1.0F, 1.0F, 1.0F, 1.0F};
+   private static float thumb = 1.0F;
 
    private KnifeTricks() {
    }
@@ -142,6 +147,54 @@ public final class KnifeTricks {
          if (inspect > inspectTime()) inspect = -1.0F;
       }
       open = openNow();
+      clock += dt;
+      fingerTick(dt);
+   }
+
+   /** Finger poses: wrapped round the grip, drumming now and then, open while the knife spins. */
+   private static void fingerTick(float dt) {
+      boolean anim = KnifeView.animateFingers();
+      if (anim && KnifeView.idleMotion() && drum < 0.0F && !spinning && inspect < 0.0F && drawT < 0.0F && clock > nextDrum) {
+         drum = 0.0F;
+      }
+      if (drum >= 0.0F) {
+         drum += dt;
+         if (drum > 1.3F) {
+            drum = -1.0F;
+            nextDrum = clock + 4.0F + (float)Math.random() * 4.0F;
+         }
+      }
+      for (int i = 0; i < 4; i++) {
+         float target = 1.0F;
+         if (anim) {
+            if (spinning) {
+               target = 0.25F + 0.1F * i; // fingers open so the knife can turn round them
+            } else if (drawT >= 0.0F) {
+               target = 0.35F + 0.65F * smooth(drawT / DRAW_TIME);
+            } else if (drum >= 0.0F) {
+               // Little to index finger, one after another.
+               float k = drum - (3 - i) * 0.14F;
+               target = 1.0F - 0.55F * (float)Math.max(0.0, Math.sin(Math.max(0.0F, Math.min(1.0F, k / 0.45F)) * Math.PI));
+            } else if (inspect >= 0.0F && i == 0) {
+               target = 1.0F - 0.6F * smooth(inspect / 0.4F) * (1.0F - smooth((inspect - (inspectTime() - 0.4F)) / 0.4F));
+            }
+         }
+         curl[i] += (target - curl[i]) * Math.min(1.0F, dt * (spinning ? 10.0F : 16.0F));
+      }
+      float thumbTarget = anim && spinning ? 0.2F : 1.0F;
+      thumb += (thumbTarget - thumb) * Math.min(1.0F, dt * 12.0F);
+   }
+
+   /** Copies the current finger pose into the model parameters. */
+   static void fingers(Cos.A a) {
+      System.arraycopy(curl, 0, a.curl, 0, 4);
+      a.thumb = thumb;
+   }
+
+   static boolean fingersMoving() {
+      if (!KnifeView.animateFingers()) return false;
+      for (float c : curl) if (Math.abs(c - 1.0F) > 0.002F) return true;
+      return Math.abs(thumb - 1.0F) > 0.002F || drum >= 0.0F || spinning || inspect >= 0.0F || drawT >= 0.0F;
    }
 
    private static float openNow() {

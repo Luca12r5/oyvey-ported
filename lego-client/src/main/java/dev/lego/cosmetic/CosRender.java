@@ -153,6 +153,12 @@ public final class CosRender {
 
    /** Knife cosmetic in the right hand (only while that hand is empty). items == null: the local player's equipped knife. */
    static void drawKnife(java.util.UUID id, java.util.Map<Cos.Slot, String> items, PoseStack var0, SubmitNodeCollector var1, int var2, ModelPart arm, Cos.A var4) {
+      drawKnife(id, items, var0, var1, var2, arm, var4, false);
+   }
+
+   private static final CosRender.Built[] FINGERS = new CosRender.Built[1];
+
+   static void drawKnife(java.util.UUID id, java.util.Map<Cos.Slot, String> items, PoseStack var0, SubmitNodeCollector var1, int var2, ModelPart arm, Cos.A var4, boolean firstPerson) {
       String key = items == null ? (Cos.equipped(Cos.Slot.KNIFE) == null ? null : Cos.equipped(Cos.Slot.KNIFE).id) : items.get(Cos.Slot.KNIFE);
       if (key == null) return;
       long now = System.currentTimeMillis();
@@ -184,6 +190,24 @@ public final class CosRender {
          var0.pushPose();
          arm.translateAndRotate(var0);
          var0.scale(-0.0625F, -0.0625F, -0.0625F);
+         if (firstPerson && KnifeView.showFingers()) {
+            // The hand: drawn before the trick rotation so the fingers stay on the hand while the knife turns.
+            KnifeTricks.fingers(var4);
+            CosRender.Built fb = FINGERS[0];
+            if (fb == null || now - fb.t > 33L || KnifeTricks.fingersMoving()) {
+               LinkedHashMap<String, List<CosRender.Q>> fn = new LinkedHashMap<>();
+               G fg = new G((tex, p, uv, argb, glowing, n0, n1, n2) -> fn.computeIfAbsent(tex, k -> new ArrayList<>()).add(new CosRender.Q(p, uv, argb, n0, n1, n2)));
+               Knives.fingers(fg, var4);
+               fb = new CosRender.Built();
+               fb.t = now;
+               fb.normal = fn;
+               fb.glow = new LinkedHashMap<>();
+               FINGERS[0] = fb;
+            }
+            net.minecraft.client.player.LocalPlayer me = net.minecraft.client.Minecraft.getInstance().player;
+            if (me != null) skin = me.getSkin().body().texturePath();
+            submit(var0, var1, fb.normal, false, var2);
+         }
          if (items == null) KnifeTricks.apply(var0);
          submit(var0, var1, b.normal, false, var2);
          submit(var0, var1, b.glow, true, var2);
@@ -203,7 +227,7 @@ public final class CosRender {
       if (Cos.equipped(Cos.Slot.KNIFE) == null) return;
       FIRST_PERSON.time = (float)(System.currentTimeMillis() % 3600000L) / 1000.0F;
       ModelPart arm = FIRST_PERSON_ARM;
-      drawKnife(null, null, armSpace, out, light, arm, FIRST_PERSON);
+      drawKnife(null, null, armSpace, out, light, arm, FIRST_PERSON, true);
    }
 
    /** Stand-in for the first-person right arm part: only its rest transform is used. */
