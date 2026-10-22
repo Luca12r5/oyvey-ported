@@ -48,12 +48,21 @@ public final class Capes {
       }
    }
 
+   /** Designed/catalog spec capes ("cape_m_*", "capespec_*") that animate. */
+   private static boolean specAnimated(String var0) {
+      if (var0 == null) return false;
+      if (var0.startsWith("capespec_")) return CapeSpecs.animated("spec_" + var0.substring(9));
+      return var0.startsWith("cape_") && CapeSpecs.isPreset(var0.substring(5)) && CapeSpecs.animated(var0.substring(5));
+   }
+
    public static int frames(String var0) {
+      if (specAnimated(var0)) return CapeSpecs.FRAMES;
       Capes.Spec var1 = spec(var0);
       return var1 == null ? 1 : var1.frames;
    }
 
    public static float fps(String var0) {
+      if (specAnimated(var0)) return 10.0F;
       Capes.Spec var1 = spec(var0);
       return var1 != null && var1.frames > 1 ? var1.fps : 0.0F;
    }

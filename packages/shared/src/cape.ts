@@ -27,7 +27,12 @@ export interface CapeSpec {
   border: { width: number; color: string };
   text: { value: string; color: string; y: number; size: number } | null;
   shine: boolean;
+  /** Animated: symbols pulse and float, the shine sweeps, waves/stripes move, stars twinkle. */
+  anim?: boolean;
 }
+
+/** Frames of an animated cape (one loop). */
+export const CAPE_FRAMES = 16;
 
 /** Front of the cape in texture pixels (10×16 Minecraft pixels × 8). */
 export const CAPE_FRONT_W = 80;
@@ -200,6 +205,7 @@ export function sanitizeCapeSpec(x: unknown): CapeSpec {
     border: { width: Math.round(num(b.width, 0, 8, 0)), color: hex(b.color, '#ffffff') },
     text: t && value ? { value, color: hex(t.color, '#ffffff'), y: r3(num(t.y, 0, 1, 0.8)), size: Math.round(num(t.size, 1, 3, 2)) } : null,
     shine: o.shine === true,
+    ...(o.anim === true ? { anim: true } : {}),
   };
 }
 
@@ -246,16 +252,17 @@ function multiStop(colors: Rgb[], t: number): Rgb {
   return t < 0.5 ? lerp(colors[0]!, colors[1]!, t * 2) : lerp(colors[1]!, colors[2]!, (t - 0.5) * 2);
 }
 
-function background(spec: CapeSpec, x: number, y: number, w: number, h: number): Rgb {
+function background(spec: CapeSpec, x: number, y: number, w: number, h: number, t: number): Rgb {
   const cs = spec.bg.colors.map(rgb);
   const u = (x + 0.5) / w, v = (y + 0.5) / h;
   const a = (spec.bg.angle * Math.PI) / 180, ca = Math.cos(a), sa = Math.sin(a);
+  const p = Math.PI * 2 * t;
   switch (spec.bg.type) {
     case 'solid': return cs[0]!;
-    case 'gradient': return multiStop(cs, ((u - 0.5) * ca + (v - 0.5) * sa) / (Math.abs(ca) * 0.5 + Math.abs(sa) * 0.5 || 1) * 0.5 + 0.5);
-    case 'radial': return multiStop(cs, Math.hypot(u - 0.5, (v - 0.38) * (h / w) * 0.62) / 0.62);
+    case 'gradient': return multiStop(cs, ((u - 0.5) * ca + (v - 0.5) * sa) / (Math.abs(ca) * 0.5 + Math.abs(sa) * 0.5 || 1) * 0.5 + 0.5 + 0.12 * Math.sin(p));
+    case 'radial': return multiStop(cs, Math.hypot(u - 0.5, (v - 0.38) * (h / w) * 0.62) / 0.62 * (1 + 0.08 * Math.sin(p)));
     case 'stripes': {
-      const band = Math.floor((x * ca + y * sa) / (w / 5) + 1000);
+      const band = Math.floor((x * ca + y * sa) / (w / 5) + 1000 + t * 5);
       return cs[band % cs.length]!;
     }
     case 'checker': return cs[(Math.floor(x / 10) + Math.floor(y / 10)) % 2]!;
@@ -265,26 +272,35 @@ function background(spec: CapeSpec, x: number, y: number, w: number, h: number):
       const d = Math.hypot((u - 0.32) * 1.2, v - 0.62);
       c = lerp(c, neb, clamp01(0.55 - d * 1.4));
       const s = capeHash(x, y, 7);
-      if (s > 0.985) c = lerp(c, [255, 255, 255], 0.6 + (s - 0.985) * 26);
+      if (s > 0.985) c = lerp(c, [255, 255, 255], (0.6 + (s - 0.985) * 26) * (0.55 + 0.45 * Math.sin(p * 2 + s * 400)));
       return c;
     }
-    case 'waves': return multiStop(cs, 0.5 + 0.5 * Math.sin(v * Math.PI * 2 * 3 + Math.sin(u * Math.PI * 2) * 1.5));
+    case 'waves': return multiStop(cs, 0.5 + 0.5 * Math.sin(v * Math.PI * 2 * 3 + Math.sin(u * Math.PI * 2) * 1.5 + p));
     case 'split': return u + v * (h / w) * 0.62 < 0.5 + 0.31 * (h / w) ? cs[0]! : cs[1]!;
   }
 }
 
 const SS: [number, number][] = [[0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]];
 
-/** Draws the cape front (80×128 RGBA). */
-export function renderCapeFront(input: CapeSpec): Uint8ClampedArray {
+/**
+ * Draws the cape front (80×128 RGBA). {@code frame} (0..CAPE_FRAMES-1) is the animation frame
+ * of an animated cape; still capes ignore it.
+ */
+export function renderCapeFront(input: CapeSpec, frame = 0): Uint8ClampedArray {
   const spec = sanitizeCapeSpec(input);
   const W = CAPE_FRONT_W, H = CAPE_FRONT_H;
+  const t = spec.anim ? (((frame % CAPE_FRAMES) + CAPE_FRAMES) % CAPE_FRAMES) / CAPE_FRAMES : 0;
+  const p = Math.PI * 2 * t;
   const px: Rgb[] = new Array(W * H);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) px[y * W + x] = background(spec, x, y, W, H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) px[y * W + x] = background(spec, x, y, W, H, t);
 
-  for (const s of spec.symbols) {
+  spec.symbols.forEach((s, si) => {
     const parts = CAPE_SYMBOLS[s.id]!.parts;
-    const cx = s.x * W, cy = s.y * H, half = (s.size * W) / 2;
+    // Animated: each symbol breathes (size) and floats (height), a little out of step.
+    const pulse = spec.anim ? 1 + 0.07 * Math.sin(p + si * 1.3) : 1;
+    const float = spec.anim ? 0.018 * Math.sin(p + si * 0.9) : 0;
+    const glowK = spec.anim ? 0.4 + 0.25 * (0.5 + 0.5 * Math.sin(p * 2 + si)) : 0.55;
+    const cx = s.x * W, cy = (s.y + float) * H, half = (s.size * pulse * W) / 2;
     const a = (s.rot * Math.PI) / 180, ca = Math.cos(a), sa = Math.sin(a);
     const cov = new Float32Array(W * H);
     const x0 = Math.max(0, Math.floor(cx - half * 1.5)), x1 = Math.min(W - 1, Math.ceil(cx + half * 1.5));
@@ -309,14 +325,14 @@ export function renderCapeFront(input: CapeSpec): Uint8ClampedArray {
           const c = cov[yy * W + xx]!;
           if (c > 0) g = Math.max(g, c * (1 - Math.hypot(dx, dy) / (R + 1)));
         }
-        if (g > 0) px[y * W + x] = lerp(px[y * W + x]!, col, g * 0.55);
+        if (g > 0) px[y * W + x] = lerp(px[y * W + x]!, col, g * glowK);
       }
     }
     for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
       const c = cov[y * W + x]!;
       if (c > 0) px[y * W + x] = lerp(px[y * W + x]!, col, c);
     }
-  }
+  });
 
   if (spec.text) {
     const t = spec.text, chars = [...t.value];
@@ -342,7 +358,8 @@ export function renderCapeFront(input: CapeSpec): Uint8ClampedArray {
   if (spec.shine) {
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const d = (x + y * 0.55) / W;
-      const k = Math.max(0, 1 - Math.abs(d - 0.62) / 0.14) * 0.22;
+      const at = spec.anim ? -0.3 + 1.9 * t : 0.62;
+      const k = Math.max(0, 1 - Math.abs(d - at) / 0.14) * 0.22;
       if (k > 0) px[y * W + x] = lerp(px[y * W + x]!, [255, 255, 255], k);
     }
   }
@@ -361,11 +378,11 @@ export function renderCapeFront(input: CapeSpec): Uint8ClampedArray {
 }
 
 /** Full 512×256 cape texture in the standard 64×32 layout (×8): front, back, edges. */
-export function renderCapeSheet(input: CapeSpec): Uint8ClampedArray {
+export function renderCapeSheet(input: CapeSpec, frame = 0): Uint8ClampedArray {
   const spec = sanitizeCapeSpec(input);
   const W = CAPE_SHEET_W, H = CAPE_SHEET_H;
   const out = new Uint8ClampedArray(W * H * 4);
-  const front = renderCapeFront(spec);
+  const front = renderCapeFront(spec, frame);
   const base = rgb(spec.bg.colors[0]!);
   const back = lerp(base, [0, 0, 0], 0.35);
   const edge = spec.border.width > 0 ? rgb(spec.border.color) : lerp(base, [0, 0, 0], 0.2);
@@ -387,7 +404,7 @@ export function renderCapeSheet(input: CapeSpec): Uint8ClampedArray {
 
 const sym = (id: string, x: number, y: number, size: number, color: string, glow = false, rot = 0): CapeSymbol => ({ id, x, y, size, rot, color, glow });
 const spec = (type: CapeBgType, colors: string[], angle: number, symbols: CapeSymbol[], border: [number, string], shine = true, text: CapeSpec['text'] = null): CapeSpec =>
-  ({ v: 1, bg: { type, colors, angle }, symbols, border: { width: border[0], color: border[1] }, text, shine });
+  ({ v: 1, bg: { type, colors, angle }, symbols, border: { width: border[0], color: border[1] }, text, shine, anim: true });
 
 /** Modern catalog capes (ids cape_m_*), drawn from specs like custom capes. */
 export const CAPE_PRESETS: Record<string, { name: string; spec: CapeSpec }> = {
@@ -486,6 +503,7 @@ export function capeFromPrompt(prompt: string, seed = 0): CapeSpec {
     border: { width: /rand|border|rahmen/.test(p) || rnd() > 0.5 ? pickArr([2, 3, 4]) : 0, color: symColor },
     text: text ? { value: text, color: '#ffffff', y: 0.86, size: 2 } : null,
     shine: !/matt|matte|flat/.test(p),
+    anim: !/still|statisch|ruhig|static/.test(p),
   });
 }
 
@@ -525,8 +543,9 @@ export const CAPE_SPEC_SCHEMA = {
       properties: { value: { type: 'string', maxLength: CAPE_MAX_TEXT }, color: { type: 'string' }, y: { type: 'number' }, size: { type: 'integer', minimum: 1, maximum: 3 } },
     },
     shine: { type: 'boolean' },
+    anim: { type: 'boolean' },
   },
-  required: ['bg', 'symbols', 'border', 'text', 'shine'],
+  required: ['bg', 'symbols', 'border', 'text', 'shine', 'anim'],
 } as const;
 
 /** Everything the Java renderer needs (written to the client's capes.json by tools/gen-cape-assets.mjs). */

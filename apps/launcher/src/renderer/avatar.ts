@@ -9,6 +9,7 @@ import { SkinViewer, WalkingAnimation, WaveAnimation, PlayerAnimation, type Play
 import { AmbientLight, CanvasTexture, DirectionalLight, Mesh, MeshBasicMaterial, PlaneGeometry, Box3, Vector3 } from 'three';
 import minifig from './assets/minifig.png';
 import { wearCosmetics } from './cosmetics3d.ts';
+import { capeSheetFrames } from './capeart.ts';
 
 export const DEFAULT_SKIN: string = minifig;
 export type Anim = 'idle' | 'walk' | 'wave' | 'spin';
@@ -196,6 +197,7 @@ export function createAvatar(canvas: HTMLCanvasElement, reducedMotion: boolean):
   play('idle');
   placeShadow();
   let takeOff: (() => void) | null = null;
+  let capeTimer = 0;
   const ro = new ResizeObserver(() => { const b = box(); viewer.setSize(b.width, b.height); });
   ro.observe(canvas.parentElement!);
   return {
@@ -207,8 +209,26 @@ export function createAvatar(canvas: HTMLCanvasElement, reducedMotion: boolean):
     },
     async setSkin(skin, variant, cape) {
       await viewer.loadSkin(skin ?? DEFAULT_SKIN, { model: skin ? (variant === 'slim' ? 'slim' : 'default') : 'default' });
-      if (cape) await viewer.loadCape(cape);
-      else viewer.resetCape();
+      clearInterval(capeTimer);
+      if (cape) {
+        await viewer.loadCape(cape);
+        // Animated capes play their frames (10 per second) on the figure.
+        const frames = capeSheetFrames(cape);
+        if (frames && !reducedMotion) {
+          let f = 0;
+          capeTimer = window.setInterval(() => {
+            if (paused) return;
+            f = (f + 1) % frames.length;
+            // Draw the next frame into the viewer's cape canvas; no new texture each time.
+            const v = viewer as unknown as { capeCanvas: HTMLCanvasElement; capeTexture: { needsUpdate: boolean } | null };
+            const ctx = v.capeCanvas.getContext('2d');
+            if (!ctx || !v.capeTexture) return;
+            ctx.clearRect(0, 0, v.capeCanvas.width, v.capeCanvas.height);
+            ctx.drawImage(frames[f]!, 0, 0, v.capeCanvas.width, v.capeCanvas.height);
+            v.capeTexture.needsUpdate = true;
+          }, 100);
+        }
+      } else viewer.resetCape();
       play(current);
       placeShadow();
     },
@@ -236,6 +256,7 @@ export function createAvatar(canvas: HTMLCanvasElement, reducedMotion: boolean):
       takeOff = ids.length ? wearCosmetics(viewer, ids) : null;
     },
     dispose() {
+      clearInterval(capeTimer);
       takeOff?.();
       removeEventListener('mousemove', onMove);
       ro.disconnect();

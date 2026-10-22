@@ -92,10 +92,19 @@ public final class CapeSpecs {
       return "capespec_" + id;
    }
 
-   /** Paints "m_<preset>" or "spec_<id>" (CTex names cape_m_* / capespec_*). */
+   /** Paints "m_<preset>" or "spec_<id>", optionally "#<frame>" (CTex names cape_m_* / capespec_*). */
    static CTex.T paint(String name) {
+      int frame = 0;
+      int hash = name.indexOf('#');
+      if (hash >= 0) {
+         try {
+            frame = Integer.parseInt(name.substring(hash + 1));
+         } catch (NumberFormatException ignored) {
+         }
+         name = name.substring(0, hash);
+      }
       Object spec = name.startsWith("spec_") ? CUSTOM.get(name.substring(5)) : PRESETS.get(name);
-      return sheet(spec);
+      return sheet(spec, frame);
    }
 
    static boolean isPreset(String name) {
@@ -151,18 +160,19 @@ public final class CapeSpecs {
       return t < 0.5 ? lerp(cs[0], cs[1], t * 2) : lerp(cs[1], cs[2], (t - 0.5) * 2);
    }
 
-   private static double[] background(String type, double[][] cs, double angle, int x, int y, int w, int h) {
+   private static double[] background(String type, double[][] cs, double angle, int x, int y, int w, int h, double t) {
       double u = (x + 0.5) / w, v = (y + 0.5) / h;
       double a = angle * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
+      double p = Math.PI * 2 * t;
       switch (type) {
          case "gradient": {
             double den = Math.abs(ca) * 0.5 + Math.abs(sa) * 0.5;
-            return stops(cs, ((u - 0.5) * ca + (v - 0.5) * sa) / (den == 0 ? 1 : den) * 0.5 + 0.5);
+            return stops(cs, ((u - 0.5) * ca + (v - 0.5) * sa) / (den == 0 ? 1 : den) * 0.5 + 0.5 + 0.12 * Math.sin(p));
          }
          case "radial":
-            return stops(cs, Math.hypot(u - 0.5, (v - 0.38) * ((double)h / w) * 0.62) / 0.62);
+            return stops(cs, Math.hypot(u - 0.5, (v - 0.38) * ((double)h / w) * 0.62) / 0.62 * (1 + 0.08 * Math.sin(p)));
          case "stripes": {
-            int band = (int)Math.floor((x * ca + y * sa) / (w / 5.0) + 1000);
+            int band = (int)Math.floor((x * ca + y * sa) / (w / 5.0) + 1000 + t * 5);
             return cs[band % cs.length];
          }
          case "checker":
@@ -173,11 +183,11 @@ public final class CapeSpecs {
             double d = Math.hypot((u - 0.32) * 1.2, v - 0.62);
             c = lerp(c, neb, clamp(0.55 - d * 1.4, 0, 1));
             double s = hash(x, y, 7);
-            if (s > 0.985) c = lerp(c, new double[]{255, 255, 255}, 0.6 + (s - 0.985) * 26);
+            if (s > 0.985) c = lerp(c, new double[]{255, 255, 255}, (0.6 + (s - 0.985) * 26) * (0.55 + 0.45 * Math.sin(p * 2 + s * 400)));
             return c;
          }
          case "waves":
-            return stops(cs, 0.5 + 0.5 * Math.sin(v * Math.PI * 2 * 3 + Math.sin(u * Math.PI * 2) * 1.5));
+            return stops(cs, 0.5 + 0.5 * Math.sin(v * Math.PI * 2 * 3 + Math.sin(u * Math.PI * 2) * 1.5 + p));
          case "split":
             return u + v * ((double)h / w) * 0.62 < 0.5 + 0.31 * ((double)h / w) ? cs[0] : cs[1];
          default:
@@ -185,9 +195,21 @@ public final class CapeSpecs {
       }
    }
 
-   /** Cape front 80x128 as RGB doubles. */
-   static double[][] front(Object spec) {
+   /** Frames of an animated cape (CAPE_FRAMES in cape.ts). */
+   static final int FRAMES = 16;
+
+   /** Whether a preset ("m_...") or a designed cape ("spec_<id>") is animated. */
+   static boolean animated(String name) {
+      Object spec = name.startsWith("spec_") ? CUSTOM.get(name.substring(5)) : PRESETS.get(name);
+      return spec != null && Json.bool(spec, "anim", false);
+   }
+
+   /** Cape front 80x128 as RGB doubles; {@code frame} only matters for animated capes. */
+   static double[][] front(Object spec, int frame) {
       int W = FW, H = FH;
+      boolean anim = Json.bool(spec, "anim", false);
+      double t = anim ? Math.floorMod(frame, FRAMES) / (double)FRAMES : 0;
+      double ph = Math.PI * 2 * t;
       Map<String, Object> bg = Json.obj(spec, "bg");
       String type = Json.str(bg, "type", "solid");
       List<Object> colors = bg == null ? null : Json.arr(bg, "colors");
@@ -197,17 +219,23 @@ public final class CapeSpecs {
       double[][] cs = cl.toArray(new double[0][]);
       double angle = Json.dbl(bg, "angle", 90);
       double[][] px = new double[W * H][];
-      for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) px[y * W + x] = background(type, cs, angle, x, y, W, H);
+      for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) px[y * W + x] = background(type, cs, angle, x, y, W, H, t);
 
       List<Object> symbols = Json.arr(spec, "symbols");
       if (symbols != null) {
          int count = 0;
+         int si = -1;
          for (Object s : symbols) {
             if (count++ >= 6) break;
             List<Part> parts = SYMBOLS.get(Json.str(s, "id", ""));
             if (parts == null) continue;
-            double cx = clamp(Json.dbl(s, "x", 0.5), 0, 1) * W, cy = clamp(Json.dbl(s, "y", 0.5), 0, 1) * H;
-            double half = clamp(Json.dbl(s, "size", 0.5), 0.1, 1) * W / 2;
+            si++;
+            // Animated: each symbol breathes (size) and floats (height), a little out of step.
+            double pulse = anim ? 1 + 0.07 * Math.sin(ph + si * 1.3) : 1;
+            double flt = anim ? 0.018 * Math.sin(ph + si * 0.9) : 0;
+            double glowK = anim ? 0.4 + 0.25 * (0.5 + 0.5 * Math.sin(ph * 2 + si)) : 0.55;
+            double cx = clamp(Json.dbl(s, "x", 0.5), 0, 1) * W, cy = (clamp(Json.dbl(s, "y", 0.5), 0, 1) + flt) * H;
+            double half = clamp(Json.dbl(s, "size", 0.5), 0.1, 1) * pulse * W / 2;
             double a = Json.dbl(s, "rot", 0) * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
             float[] cov = new float[W * H];
             int x0 = Math.max(0, (int)Math.floor(cx - half * 1.5)), x1 = Math.min(W - 1, (int)Math.ceil(cx + half * 1.5));
@@ -232,7 +260,7 @@ public final class CapeSpecs {
                      float c = cov[yy * W + xx];
                      if (c > 0) g = Math.max(g, c * (1 - Math.hypot(dx, dy) / (R + 1)));
                   }
-                  if (g > 0) px[y * W + x] = lerp(px[y * W + x], col, g * 0.55);
+                  if (g > 0) px[y * W + x] = lerp(px[y * W + x], col, g * glowK);
                }
             }
             for (int y = y0; y <= y1; y++) for (int x = x0; x <= x1; x++) {
@@ -271,7 +299,8 @@ public final class CapeSpecs {
       if (Json.bool(spec, "shine", false)) {
          for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) {
             double d = (x + y * 0.55) / W;
-            double k = Math.max(0, 1 - Math.abs(d - 0.62) / 0.14) * 0.22;
+            double at = anim ? -0.3 + 1.9 * t : 0.62;
+            double k = Math.max(0, 1 - Math.abs(d - at) / 0.14) * 0.22;
             if (k > 0) px[y * W + x] = lerp(px[y * W + x], new double[]{255, 255, 255}, k);
          }
       }
@@ -291,9 +320,13 @@ public final class CapeSpecs {
 
    /** Full 512x256 sheet in the vanilla 64x32 cape layout (x8), like renderCapeSheet. */
    static CTex.T sheet(Object spec) {
+      return sheet(spec, 0);
+   }
+
+   static CTex.T sheet(Object spec, int frame) {
       if (!(spec instanceof Map)) spec = Map.of();
       int W = 512, H = 256;
-      double[][] f = front(spec);
+      double[][] f = front(spec, frame);
       Map<String, Object> bg = Json.obj(spec, "bg");
       List<Object> colors = bg == null ? null : Json.arr(bg, "colors");
       double[] base = rgb(hex(colors != null && !colors.isEmpty() ? colors.get(0) : null, 0x1b1b3a));

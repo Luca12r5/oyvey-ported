@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import {
-  CAPE_PRESETS, CAPE_SYMBOL_IDS, CATALOG, DEFAULT_CAPE, capeAssets, capeFromPrompt, capeSpecId, cleanCapeText, renderCapeFront, renderCapeSheet, sanitizeCapeSpec,
+  CAPE_FRAMES, CAPE_PRESETS, CAPE_SYMBOL_IDS, CATALOG, DEFAULT_CAPE, capeAssets, capeFromPrompt, capeSpecId, cleanCapeText, renderCapeFront, renderCapeSheet, sanitizeCapeSpec,
 } from '../src/index.ts';
 
 test('cape specs are sanitised (no unknown symbols, clamped numbers, short clean text)', () => {
@@ -65,4 +65,15 @@ test('offline generator understands colours, symbols, styles and quoted text', (
 test('client capes.json matches the shared definitions', () => {
   const file = new URL('../../../lego-client/src/main/resources/assets/legoclient/data/capes.json', import.meta.url);
   assert.deepEqual(JSON.parse(readFileSync(file, 'utf8')), capeAssets(), 'run: node tools/gen-cape-assets.mjs');
+});
+
+test('animated capes change from frame to frame and loop; still capes do not', () => {
+  const anim = { ...CAPE_PRESETS.m_neon_bolt!.spec, anim: true };
+  const h = (f: number, s = anim) => createHash('sha1').update(renderCapeFront(s, f)).digest('hex');
+  assert.notEqual(h(0), h(4), 'frames differ');
+  assert.equal(h(3), h(3 + CAPE_FRAMES), 'the loop repeats');
+  const still = { ...anim, anim: false };
+  assert.equal(h(0, still), h(7, still), 'a still cape ignores the frame');
+  assert.ok(Object.values(CAPE_PRESETS).every((p) => p.spec.anim), 'catalog capes are animated');
+  assert.equal(sanitizeCapeSpec({ anim: 'yes' }).anim, undefined, 'only true counts');
 });

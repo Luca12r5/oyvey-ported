@@ -315,7 +315,7 @@ public final class CTex {
          default:
             if (var0.startsWith("capespec_")) {
                return CapeSpecs.paint("spec_" + var0.substring(9));
-            } else if (var0.startsWith("cape_") && CapeSpecs.isPreset(var0.substring(5))) {
+            } else if (var0.startsWith("cape_") && CapeSpecs.isPreset(var0.substring(5).replaceFirst("#\\d+$", ""))) {
                return CapeSpecs.paint(var0.substring(5));
             } else if (var0.startsWith("cape_")) {
                return Capes.paint(var0.substring(5));

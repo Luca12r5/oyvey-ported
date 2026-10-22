@@ -195,6 +195,7 @@ export function CapeEditor(p: CapeEditorProps) {
               {spec.text && <Row label="Texthöhe"><Slider value={spec.text.y} min={0} max={1} step={0.01} onChange={(v) => update({ text: { ...spec.text!, y: v } })} unit=" %" /></Row>}
               <Row label="Rand"><Slider value={spec.border.width} min={0} max={8} onChange={(v) => update({ border: { ...spec.border, width: v } })} unit=" px" /><input type="color" value={spec.border.color} onChange={(e) => update({ border: { ...spec.border, color: e.target.value } })} className="w-9 h-8" /></Row>
               <Row label="Glanz"><input type="checkbox" checked={spec.shine} onChange={(e) => update({ shine: e.target.checked })} /></Row>
+              <Row label="Animiert"><input id="capeAnim" type="checkbox" checked={!!spec.anim} onChange={(e) => update({ anim: e.target.checked })} /></Row>
             </Section>
           </div>
         </div>
