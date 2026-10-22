@@ -688,8 +688,10 @@ export function enterVr(opts: VrOptions): Promise<void> {
       keyLight(`m${e.button}`, true);
       if (e.button === 0) pokeAt = performance.now();
       if (opts.xr || !ready) return;
-      if (visual && !locked() && e.button === 0 && !cast(e)) { void canvas.requestPointerLock(); return; }
+      if (state.info.e2e && !cast(e)) root.dataset.lastHit = `none@${e.clientX},${e.clientY}`;
+      if (visual && !locked() && e.button === 0 && !cast(e)) { if (!state.info.e2e) { try { void (canvas.requestPointerLock() as unknown as Promise<void> | undefined)?.catch?.(() => {}); } catch { /* not allowed here */ } } return; }
       const hit = cast(e);
+      if (state.info.e2e) root.dataset.lastHit = hit ? `${ownerOf(hit.object)?.name ?? (propOf(hit.object) ? 'prop' : 'other')}@${e.clientX},${e.clientY}` : `none@${e.clientX},${e.clientY}`;
       if (e.button === 2) {
         if (hit && startGrab(hit)) return;
         if (!locked()) { looking = true; lx = e.clientX; ly = e.clientY; }
@@ -869,7 +871,12 @@ export function enterVr(opts: VrOptions): Promise<void> {
           const a = ease(clamp01((et - 3.2 - i * 0.15) / 0.6));
           const target = (s.root.userData.scale as number | undefined) ?? 1;
           if (a < 1) s.root.scale.setScalar(Math.max(0.001, a * target));
-          else if (s.root.userData.scale) { s.root.scale.setScalar(target); delete s.root.userData.scale; }
+          else if (!s.root.userData.entered) {
+            // Land exactly on the final size even when a slow frame jumped past the end.
+            s.root.scale.setScalar(target);
+            s.root.userData.entered = true;
+            delete s.root.userData.scale;
+          }
         }
         // Window open/close pop (slight overshoot when opening).
         const pop = s.root.userData.pop as { t0: number; from: number; to: number } | undefined;
@@ -1064,6 +1071,8 @@ export function enterVr(opts: VrOptions): Promise<void> {
         const lp = new THREE.Vector3(((590 + 104 + 42) / DW - 0.5) * dock.widthM, (0.5 - (DH - 18) / 2 / DH) * (dock.widthM * DH / DW), 0);
         const sp3 = dock.mesh.localToWorld(lp).project(camera);
         root.dataset.compass = `${Math.round((sp3.x + 1) / 2 * innerWidth)},${Math.round((1 - sp3.y) / 2 * innerHeight)}`;
+        const dp = dock.group.position, hp = headPos();
+        root.dataset.dockInfo = `p=${dp.x.toFixed(2)},${dp.y.toFixed(2)},${dp.z.toFixed(2)} s=${dock.group.scale.x.toFixed(3)} v=${dock.group.visible} head=${hp.x.toFixed(2)},${hp.y.toFixed(2)},${hp.z.toFixed(2)} z=${sp3.z.toFixed(3)}`;
       }
       if (leaving && leftFor() > 1.0) finish();
     };

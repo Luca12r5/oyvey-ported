@@ -318,7 +318,14 @@ await win.waitForFunction(() => Number(document.querySelector('.vr-root')?.datas
 // Headset-style desktop: key hints, dock; the dock's browser button closes and reopens the window.
 if (!(await win.isVisible('.vr-keys'))) problems.push('VR key hints missing');
 const vrClick = async () => {
-  const pos = await win.waitForFunction(() => document.querySelector('.vr-root')?.dataset.compass, null, { timeout: 20_000 }).then((h) => h.jsonValue()).catch(() => null);
+  // Wait until the dock has stopped moving (it slides in and follows the view).
+  let pos = null;
+  for (let i = 0; i < 40; i++) {
+    const a = await win.evaluate(() => document.querySelector('.vr-root')?.dataset.compass ?? null);
+    await win.waitForTimeout(500);
+    const b = await win.evaluate(() => document.querySelector('.vr-root')?.dataset.compass ?? null);
+    if (a && a === b) { pos = b; break; }
+  }
   if (!pos) { problems.push('VR dock not on screen'); return; }
   const [x, y] = pos.split(',').map(Number);
   await win.mouse.move(x, y);
@@ -327,7 +334,7 @@ const vrClick = async () => {
 };
 await win.waitForFunction(() => document.querySelector('.vr-root')?.dataset.browser === '1', null, { timeout: 20_000 }).catch(() => problems.push('VR browser window not shown'));
 await vrClick();
-await win.waitForFunction(() => document.querySelector('.vr-root')?.dataset.browser === '0', null, { timeout: 20_000 }).catch(() => problems.push('VR dock did not close the browser'));
+await win.waitForFunction(() => document.querySelector('.vr-root')?.dataset.browser === '0', null, { timeout: 20_000 }).catch(async () => problems.push(`VR dock did not close the browser (hit ${await win.evaluate(() => document.querySelector('.vr-root')?.dataset.lastHit)}, dock ${await win.evaluate(() => document.querySelector('.vr-root')?.dataset.compass)} ${await win.evaluate(() => document.querySelector('.vr-root')?.dataset.dockInfo)})`));
 await vrClick();
 await win.waitForFunction(() => document.querySelector('.vr-root')?.dataset.browser === '1', null, { timeout: 20_000 }).catch(() => problems.push('VR dock did not reopen the browser'));
 await win.waitForTimeout(1500);
