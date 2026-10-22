@@ -56,11 +56,6 @@ public abstract class Setting<T> {
 		}
 	}
 
-	/** Takes a value from outside (the LEGO module behind a bridged setting) without notifying. */
-	public void mirror(T value) {
-		this.value = this.sanitize(value);
-	}
-
 	public void reset() {
 		this.set(this.defaultValue);
 	}

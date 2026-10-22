@@ -92,7 +92,7 @@ public final class DrDonutt extends Module {
 	private float carryViewPitch;
 
 	public DrDonutt() {
-		super(ID, "DrDonutt", "Doctor Donut in 3D, dancing right in front of you", "disco-ball", Category.VISOR);
+		super(ID, "DrDonutt", "Doctor Donut in 3D, dancing right in front of you", "disco-ball", Category.RENDER);
 		this.group("Doctor Donut", this.animation, this.placement, this.size, this.distance, this.turntable);
 		this.group("Music", this.music, this.volume);
 		UiResources.preload(DonutRenderer.FRONT);

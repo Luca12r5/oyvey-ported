@@ -61,6 +61,7 @@ final class BrowserProcess {
 		command.add("--disable-renderer-backgrounding");
 		command.add("--disable-background-timer-throttling");
 		command.add("--disable-features=CalculateNativeWinOcclusion,Translate,MediaRouter,DialMediaRouteProvider");
+		command.add("--disable-blink-features=AutomationControlled");
 		command.add("--autoplay-policy=no-user-gesture-required");
 		command.add("--force-device-scale-factor=" + BrowserSession.DEVICE_SCALE);
 		command.add("--lang=" + language);

@@ -44,9 +44,8 @@ public final class VisorClient implements ClientModInitializer {
 		VisorSettings.init();
 		ModuleManager.init();
 		BrowserShortcuts.init();
-		// Right Shift opens the LEGO click GUI, so the headset defaults to H.
 		toggleKey = KeyBindingHelper.registerKeyBinding(
-			new KeyMapping("key.visor.toggle", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H, KEY_CATEGORY)
+			new KeyMapping("key.visor.toggle", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT, KEY_CATEGORY)
 		);
 		ResourceLoader.get(PackType.CLIENT_RESOURCES)
 			.registerReloader(id("ui_resources"), (ResourceManagerReloadListener) UiResources::reload);
@@ -57,7 +56,6 @@ public final class VisorClient implements ClientModInitializer {
 					controller.toggle();
 				}
 			}
-			ModuleManager.tickBridge();
 			ModuleManager.tickKeybinds(client, controller.capturesKeyboard());
 			DrDonutt.get().tick(client);
 			SettingsStore.tick();

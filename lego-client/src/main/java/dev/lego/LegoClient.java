@@ -121,7 +121,7 @@ public final class LegoClient implements ClientModInitializer {
       Modules.load();
       spotify.sync();
       Category var2 = Category.register(Identifier.fromNamespaceAndPath("legoclient", "main"));
-      guiKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.gui", 344, var2));
+      guiKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.gui", 345, var2));
       zoomKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.zoom", 67, var2));
       emoteKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.emotes", 66, var2));
       invseeKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.invsee", 86, var2));

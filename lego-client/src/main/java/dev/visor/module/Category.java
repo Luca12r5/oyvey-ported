@@ -1,25 +1,13 @@
 package dev.visor.module;
 
-/** Menu categories (the LEGO client's listed categories plus Visor), in sidebar order. */
+/** Module categories, in the order they appear in the sidebar. */
 public enum Category {
-	HUD("HUD", "squares-four", "Clean on-screen displays", 0xFF2F7BFF),
-	VISUALS("Visuals", "sparkle", "Sky, effects, filters and particles", 0xFF8B5CF6),
-	UTILITY("Utility", "wrench", "Fair helpers: sprint, waypoints, chat", 0xFF22C55E),
-	PERFORMANCE("Performance", "rocket-launch", "More FPS, fewer stutters", 0xFFF59E0B),
-	SPOTIFY("Spotify", "music-notes", "Spotify HUD and karaoke lyrics", 0xFF1ED760),
-	VISOR("Visor", "virtual-reality", "Headset, browser and DrDonutt", 0xFFEC4899);
-
-	/** The menu page for a LEGO client category (null: it has its own screen). */
-	public static @org.jspecify.annotations.Nullable Category of(dev.lego.core.Category lego) {
-		return switch (lego) {
-			case HUD -> HUD;
-			case VISUALS -> VISUALS;
-			case UTILITY -> UTILITY;
-			case PERFORMANCE -> PERFORMANCE;
-			case SPOTIFY -> SPOTIFY;
-			default -> null;
-		};
-	}
+	COMBAT("Combat", "sword", "Fighting feedback, timing and target information", 0xFFF43F5E),
+	MOVEMENT("Movement", "sneaker-move", "Sprinting, sneaking and getting around", 0xFF22C55E),
+	RENDER("Render", "eye", "How the world and its entities are drawn", 0xFF8B5CF6),
+	PLAYER("Player", "user", "Your character, cosmetics and nameplates", 0xFF0EA5E9),
+	WORLD("World", "globe-hemisphere-west", "Maps, coordinates and the environment", 0xFF14B8A6),
+	MISC("Misc", "dots-three-outline", "Everything else that makes life easier", 0xFFF59E0B);
 
 	private final String displayName;
 	private final String icon;

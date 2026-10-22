@@ -18,7 +18,7 @@ Icon artwork: see `THIRD_PARTY_ICONS.md`.
 The LEGO Client (`lego-client`) includes **Visor** by pickzugng (MIT License,
 `lego-client/src/main/resources/assets/visor/licenses/Visor-MIT.txt`): the VR
 headset with its curved menu, hands, browser, VR videos and DrDonutt
-(`lego-client/src/main/java/dev/visor`). Changed for the LEGO Client: the menu
-shows the LEGO client's modules, the headset key is H, and the browser follows
-the launcher's rules (https only, safe search, no downloads). Visor bundles the
+(`lego-client/src/main/java/dev/visor`). Included as is, except: the Fullbright
+entry is left out, and the browser follows the launcher's rules (https only,
+safe search, no downloads). Visor bundles the
 Inter font (SIL OFL 1.1) and Phosphor icons (MIT), see the same folder.

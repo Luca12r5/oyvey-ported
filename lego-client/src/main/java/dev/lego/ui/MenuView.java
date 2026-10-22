@@ -200,7 +200,7 @@ public final class MenuView extends View {
 
       float var56 = var2 ? var1 : Ease.outCubic(Ease.stagger(var1, 7, 0.06F, 0.5F));
       Gx.pushAlpha(var56);
-      Gx.textSpaced("ESC  ODER  RECHTS-SHIFT  ZUM  SCHLIESSEN", var3, this.H - this.pf(22.0), this.pf(6.6F), 2, 1728053247, this.pf(1.2F));
+      Gx.textSpaced("ESC  ODER  RECHTS-STRG  ZUM  SCHLIESSEN", var3, this.H - this.pf(22.0), this.pf(6.6F), 2, 1728053247, this.pf(1.2F));
       String var57 = Env.nowPlaying.get();
       if (var57 != null && !var57.isEmpty()) {
          float var58 = this.pf(8.0);
@@ -231,7 +231,7 @@ public final class MenuView extends View {
 
    @Override
    public boolean key(int var1, int var2) {
-      if (var1 == 344) {
+      if (var1 == 345 || var1 == 344) {
          this.host.close();
          return true;
       } else {
