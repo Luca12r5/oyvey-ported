@@ -8,6 +8,7 @@
   "key.legoclient.waypoint": "Set waypoint",
   "key.legoclient.hud": "HUD editor",
   "key.legoclient.tv": "TV (browser)",
+  "key.legoclient.knife": "Knife: tap = inspect, hold = spin",
   "key.legoclient.perf": "Performance monitor",
   "key.legoclient.console": "Open console"
 }

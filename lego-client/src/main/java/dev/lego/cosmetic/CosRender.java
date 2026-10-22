@@ -176,11 +176,36 @@ public final class CosRender {
          var0.pushPose();
          arm.translateAndRotate(var0);
          var0.scale(-0.0625F, -0.0625F, -0.0625F);
+         if (items == null) KnifeTricks.apply(var0);
          submit(var0, var1, b.normal, false, var2);
          submit(var0, var1, b.glow, true, var2);
          var0.popPose();
       }
       if (KNIFE_REMOTE.size() > 256) KNIFE_REMOTE.clear();
+   }
+
+   private static final Cos.A FIRST_PERSON = new Cos.A();
+
+   /**
+    * The equipped knife in your own hand in first person. {@code armSpace} is the pose that
+    * AvatarRenderer.renderRightHand received; the arm part's own transform (pivot (-5, 2, 0) px,
+    * roll 0.1 rad) is applied here, then the knife is drawn like on the arm in third person.
+    */
+   public static void drawKnifeFirstPerson(PoseStack armSpace, SubmitNodeCollector out, int light) {
+      if (Cos.equipped(Cos.Slot.KNIFE) == null) return;
+      FIRST_PERSON.time = (float)(System.currentTimeMillis() % 3600000L) / 1000.0F;
+      ModelPart arm = FIRST_PERSON_ARM;
+      drawKnife(null, null, armSpace, out, light, arm, FIRST_PERSON);
+   }
+
+   /** Stand-in for the first-person right arm part: only its rest transform is used. */
+   private static final ModelPart FIRST_PERSON_ARM = firstPersonArm();
+
+   private static ModelPart firstPersonArm() {
+      ModelPart p = new ModelPart(java.util.List.of(), java.util.Map.of());
+      p.setPos(-5.0F, 2.0F, 0.0F);
+      p.zRot = 0.1F;
+      return p;
    }
 
    private static final int REMOTE_BUDGET = 3;

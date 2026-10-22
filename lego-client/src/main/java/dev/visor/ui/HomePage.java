@@ -263,12 +263,12 @@ public final class HomePage {
 		c.roundRect(x, y, w, h, 10, Theme.mix(Theme.CARD, Theme.CARD_HOVER, hover));
 		c.pushClip(x, y, w, thumbH);
 		int palette = switch (module.category()) {
-			case COMBAT -> 6;
-			case MOVEMENT -> 3;
-			case RENDER -> 2;
-			case PLAYER -> 5;
-			case WORLD -> 0;
-			case MISC -> 4;
+			case HUD -> 0;
+			case VISUALS -> 2;
+			case UTILITY -> 3;
+			case PERFORMANCE -> 4;
+			case SPOTIFY -> 5;
+			case VISOR -> 6;
 		};
 		c.aurora(x, y, w, thumbH + 12, 10, (module.id().hashCode() & 0xFFFF) / 6553.6F, palette, Theme.mix(0xFF8C8C8C, 0xFFFFFFFF, 0.55F + on * 0.45F));
 		c.popClip();

@@ -19,7 +19,8 @@
     "SkyRenderingMixin",
     "ClientRenderMixin",
     "BlockEntityCullMixin",
-    "WindowTitleMixin"
+    "WindowTitleMixin",
+    "FirstPersonKnifeMixin"
   ],
   "injectors": {
     "defaultRequire": 0

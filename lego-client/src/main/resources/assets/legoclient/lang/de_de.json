@@ -8,6 +8,7 @@
   "key.legoclient.waypoint": "Wegpunkt setzen",
   "key.legoclient.hud": "HUD-Editor",
   "key.legoclient.tv": "Fernseher (Browser)",
+  "key.legoclient.knife": "Messer: tippen = ansehen, halten = drehen",
   "key.legoclient.perf": "Leistungs-Monitor",
   "key.legoclient.console": "Konsole öffnen"
 }
