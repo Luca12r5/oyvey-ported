@@ -96,17 +96,18 @@ function HeaderBar() {
 
 function WindowControls() {
   const fullscreen = useShell((s) => s.fullscreen);
-  const btn = 'titlebar-button-borderless w-5 h-5 flex items-center justify-center text-white/60 hover:text-white transition-colors cursor-pointer';
+  // Big, easy targets (40 px) with a clear hover tile; close turns red.
+  const btn = 'titlebar-button-borderless lx-winbtn w-10 h-10 flex items-center justify-center text-white/85 hover:text-white transition-colors cursor-pointer';
   return (
-    <div className="flex items-center gap-3 ml-4" id="win">
+    <div className="flex items-center gap-1.5 ml-4" id="win">
       <button className={btn} data-win="minimize" title="Minimieren" aria-label="Minimieren" onClick={() => actions.window('minimize')}>
-        <Icon icon="pixel:minus-solid" className="w-4 h-4" />
+        <Icon icon="pixel:minus-solid" className="w-5 h-5" />
       </button>
       <button className={btn} data-win="fullscreen" title="Vollbild (F11)" aria-label="Vollbild" onClick={() => actions.window('fullscreen')}>
-        <Icon icon={fullscreen ? 'solar:quit-full-screen-bold' : 'solar:full-screen-bold'} className="w-4 h-4" />
+        <Icon icon={fullscreen ? 'solar:quit-full-screen-bold' : 'solar:full-screen-bold'} className="w-5 h-5" />
       </button>
-      <button className={btn.replace('hover:text-white', 'hover:text-red-500')} data-win="close" title="Schließen" aria-label="Schließen" onClick={() => actions.window('close')}>
-        <Icon icon="pixel:window-close-solid" className="w-4 h-4" />
+      <button className={`${btn} lx-winbtn-close`} data-win="close" title="Schließen" aria-label="Schließen" onClick={() => actions.window('close')}>
+        <Icon icon="pixel:window-close-solid" className="w-5 h-5" />
       </button>
     </div>
   );

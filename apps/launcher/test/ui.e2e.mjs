@@ -227,6 +227,24 @@ const blue = await win.evaluate(() => {
 });
 if (blue.length) problems.push(`blue left with a pink accent: ${blue.slice(0, 5).join('; ')}`);
 if (shots) await win.screenshot({ path: join(shots, 'launcher-pink.png') });
+// Own colour with the HSV picker (NoRisk style): drag in the field, apply.
+await win.click('#customAccent');
+await win.waitForSelector('#colorPicker #cpSv');
+{
+  const sv = await win.locator('#cpSv').boundingBox();
+  const hue = await win.locator('#cpHue').boundingBox();
+  await win.mouse.click(hue.x + hue.width / 2, hue.y + hue.height * 0.33); // green
+  await win.mouse.click(sv.x + sv.width * 0.9, sv.y + sv.height * 0.1);
+  await win.waitForTimeout(150);
+  const hex = await win.inputValue('#cpHex');
+  if (shots) await win.screenshot({ path: join(shots, 'launcher-colorpicker.png') });
+  await win.click('#cpApply');
+  await win.waitForSelector('#colorPicker', { state: 'detached' }).catch(() => problems.push('colour picker did not close'));
+  const saved = await win.evaluate(() => window.lego.getSettings().then((s) => s.accentColor));
+  if (!saved || saved.toUpperCase() !== hex.toUpperCase()) problems.push(`colour picker: saved ${saved}, picked ${hex}`);
+  const g = parseInt(hex.slice(3, 5), 16), r = parseInt(hex.slice(1, 3), 16);
+  if (!(g > r)) problems.push(`colour picker picked ${hex}, expected a green`);
+}
 await win.click('[data-accent=""]');
 await win.waitForTimeout(300);
 await win.click('[data-tab=scene]');

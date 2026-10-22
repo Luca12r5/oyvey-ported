@@ -10,6 +10,7 @@ import { SkinsTab, type SkinsTabProps } from './tabs/SkinsTab.tsx';
 import { CapesTab, type CapesTabProps } from './tabs/CapesTab.tsx';
 import { CapeEditor, type CapeEditorProps } from './capes/CapeEditor.tsx';
 import { SkinDialog, type SkinDialogProps } from './skins/SkinDialog.tsx';
+import { ColorPicker, type ColorPickerProps } from './ui/ColorPicker.tsx';
 export { modsStore } from './tabs/ModsTab.tsx';
 import { applyAccentToDOM, accentFrom, themeStore } from './store/theme.ts';
 
@@ -73,6 +74,16 @@ export function openCapeEditor(props: Omit<CapeEditorProps, 'onClose'> & { onClo
   const root = createRoot(host);
   const close = () => { root.unmount(); host.remove(); props.onClose?.(); };
   root.render(<CapeEditor {...props} onClose={close} />);
+  return close;
+}
+
+/** Opens the HSV colour picker (NoRisk style); returns a close function. */
+export function openColorPicker(props: Omit<ColorPickerProps, 'onClose'> & { onClose?: () => void }): () => void {
+  const host = document.createElement('div');
+  document.body.append(host);
+  const root = createRoot(host);
+  const close = () => { root.unmount(); host.remove(); props.onClose?.(); };
+  root.render(<ColorPicker {...props} onClose={close} />);
   return close;
 }
 

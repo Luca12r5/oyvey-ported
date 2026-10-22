@@ -12,6 +12,7 @@ import { api, confirm, errorToast, html, mount, toast, type Raw } from '../ui.ts
 import { allThemes, applyTheme, findTheme } from '../theme.ts';
 import { icon } from '../icons.ts';
 import { skinAccent } from '../avatar.ts';
+import { openColorPicker } from '../nr/mount.tsx';
 import { BACKGROUNDS as LAUNCHER_BACKGROUNDS, drawPreview } from '../bg.ts';
 import { is3D, thumbnail } from '../bg3d.ts';
 import { getLang, t as tr } from '../i18n.ts';
@@ -178,7 +179,7 @@ function colorsTab(box: HTMLElement): void {
   const s = state.settings;
   mount(box, html`<section class="set-sec"><h2>${tr('set.accent')}</h2><div class="glass rows"><div class="setting stack"><div><small>${tr('set.accent.d')}</small></div>
       <div class="swatches">${ACCENTS.map((c) => html`<button class="swatch ${s.accentColor === c ? 'on' : ''}" data-accent="${c}" data-c="${c}" title="${c}"></button>`)}
-        <label class="swatch custom" title="${tr('set.custom')}">${icon('plus', 'xs')}<input type="color" id="customAccent" value="${s.accentColor ?? '#ff7a1a'}"></label>
+        <button class="swatch custom" id="customAccent" title="${tr('set.custom')}">${icon('plus', 'xs')}</button>
         <button class="btn sm" id="skinAccent" title="Farbe automatisch aus deinem Skin">${icon('skins', 'sm')} Aus Skin</button>
         <button class="btn sm" data-accent="">${tr('set.reset')}</button></div></div></div></section>
     <section class="set-sec"><h2>Themes</h2><div id="themes"></div></section>`);
@@ -191,7 +192,17 @@ function colorsTab(box: HTMLElement): void {
     if (!b) return;
     void saveNow({ accentColor: b.dataset.accent || null }).then(() => colorsTab(box));
   };
-  box.querySelector('#customAccent')!.addEventListener('input', (e) => live({ accentColor: (e.target as HTMLInputElement).value }));
+  box.querySelector('#customAccent')!.addEventListener('click', () => {
+    const before = state.settings.accentColor;
+    let applied = false;
+    const close = openColorPicker({
+      title: tr('set.custom'),
+      value: before ?? (getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#ff7a1a'),
+      onPreview: (hex) => live({ accentColor: hex }),
+      onApply: (hex) => { applied = true; void saveNow({ accentColor: hex }).then(() => colorsTab(box)); close(); },
+      onClose: () => { if (!applied) live({ accentColor: before }); },
+    });
+  });
   themesTab(box.querySelector<HTMLElement>('#themes')!);
 }
 
