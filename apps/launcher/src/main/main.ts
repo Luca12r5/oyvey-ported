@@ -912,10 +912,15 @@ function registerIpc(): void {
   // Adds Vivecraft (real VR) to an existing profile, e.g. one just made in the profile editor.
   ipcMain.handle('vr:addVivecraft', async (_e, profileId: string) => {
     const p = profileById(profileId);
-    const lt = p.loaderType;
-    if (!lt) throw new Error('Vivecraft braucht einen Mod-Loader (Fabric, NeoForge oder Forge).');
+    // A vanilla profile gets Fabric (Vivecraft is a mod); checked before anything is changed.
+    const lt = p.loaderType ?? 'fabric';
     const v = await projectVersions(fetch, 'vivecraft', p.gameVersion, lt).catch(() => []);
-    if (!v.length) throw new Error(`Vivecraft gibt es (noch) nicht für Minecraft ${p.gameVersion} mit ${lt}.`);
+    if (!v.length) throw new Error(`Vivecraft gibt es (noch) nicht für Minecraft ${p.gameVersion} mit ${lt}. Für 26.3 gibt es Vivecraft: lege dafür ein 26.3-Profil an.`);
+    if (!p.loaderType) {
+      p.loaderType = lt;
+      p.loader = null;
+      p.legoClient = legoClientFits({ gameVersion: p.gameVersion, loaderType: lt });
+    }
     p.memoryMb = Math.max(p.memoryMb, 4096);
     await saveSettings(settings);
     await installProject(fetch, profileDir(p), 'vivecraft', p.gameVersion, lt, 'mod', { title: 'Vivecraft', iconUrl: null });

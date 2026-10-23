@@ -34,6 +34,12 @@ export async function profilesPage(el: HTMLElement): Promise<void> {
     onOpenFolder: (p) => run(() => api.openFolder('game', p.id)),
     onSelect: (p) => run(async () => { state.settings = await api.setSettings({ selectedProfile: p.id }); }),
     onExport: (p) => run(async () => { const r = await api.exportToOfficial(p.id, null); toast(`Im offiziellen Launcher als „${r.name}“ angelegt`, 'ok'); }),
+    onAddVr: (p) => run(async () => {
+      toast(`Installiere Vivecraft in „${p.name}“ …`, 'info');
+      state.settings = (await api.addVivecraft(p.id)).settings;
+      toast(`VR für „${p.name}“ fertig: Vivecraft ist drin. Zum Spielen SteamVR oder Quest Link starten.`, 'ok');
+      await profilesPage(el);
+    }),
     onDuplicate: (p) => run(async () => {
       const copy: GameProfile = { ...p, id: crypto.randomUUID(), name: `${p.name} (Kopie)`, createdAt: Date.now(), lastPlayed: null, gameDir: null };
       const r = await api.saveProfile(copy);
@@ -95,7 +101,7 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
       </section>
       <section class="glass">
         <div class="setting"><div><b>${pixel('brick', 'xs')} ${t('prof.lego')}</b><small>${t('prof.lego.d')}</small></div><label class="switch"><input type="checkbox" name="legoClient" ${draft.legoClient ? 'checked' : ''}><i></i></label></div>
-        ${p ? '' : html`<div class="setting"><div><b>${icon('vr', 'xs')} VR (Vivecraft)</b><small>Echtes VR mit Brille: installiert Vivecraft, nimmt nur VR-sichere FPS-Mods und mindestens 4 GB RAM. Der LEGO Client läuft im VR-Modus mit.</small></div><label class="switch"><input type="checkbox" name="vr"><i></i></label></div>`}
+        ${html`<div class="setting"><div><b>${icon('vr', 'xs')} VR (Vivecraft)</b><small>Echtes VR mit Brille: installiert Vivecraft, nimmt nur VR-sichere FPS-Mods und mindestens 4 GB RAM. Der LEGO Client läuft im VR-Modus mit.</small></div><label class="switch"><input type="checkbox" name="vr"><i></i></label></div>`}
         <div class="setting"><div><b>${pixel('flame', 'xs')} ${t('prof.fps')}</b><small>${t('prof.fps.d')}</small></div><label class="switch"><input type="checkbox" name="performancePack" ${draft.performancePack ? 'checked' : ''}><i></i></label></div>
         <label>${t('prof.memory')}: <b id="memv">${draft.memoryMb}</b> MB <span class="muted">/ ${state.info.totalMemMb} MB</span></label>
         <input type="range" name="memoryMb" min="1024" max="${maxMem}" step="256" value="${draft.memoryMb}">

@@ -22,7 +22,7 @@ const OWN: Record<string, string> = {
   'solar:add-circle-bold': 'plus', 'solar:full-screen-bold': 'fullscreen', 'solar:quit-full-screen-bold': 'exitFullscreen',
   'pixel:minus-solid': 'minimize', 'pixel:expand-solid': 'maximize', 'pixel:window-restore-solid': 'restore', 'pixel:window-close-solid': 'close',
   'solar:gallery-bold': 'image', 'solar:global-bold': 'globe', 'solar:sun-bold': 'sparkle', 'solar:layers-bold': 'block', 'solar:database-bold': 'cube', 'solar:eye-bold': 'external',
-  'pixel:newspaper-solid': 'news', 'pixel:exclamation-triangle-solid': 'info',
+  'pixel:newspaper-solid': 'news', 'solar:glasses-bold': 'vr', 'pixel:exclamation-triangle-solid': 'info',
 };
 
 export function Icon(props: IconProps) {

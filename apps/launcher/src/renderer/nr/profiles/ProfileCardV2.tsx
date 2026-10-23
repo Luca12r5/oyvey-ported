@@ -22,6 +22,8 @@ export interface ProfileCardHandlers {
   onExport: (p: Profile) => void;
   onDuplicate: (p: Profile) => void;
   onSelect: (p: Profile) => void;
+  /** Adds Vivecraft (real VR) to the profile. */
+  onAddVr?: (p: Profile) => void;
 }
 
 function formatLastPlayed(ms: number | null): string {
@@ -61,6 +63,7 @@ export function ProfileCardV2({ profile, selected, layoutMode = 'list', h }: { p
   const contextMenuItems: ContextMenuItem[] = [
     { id: 'edit', label: 'Profil bearbeiten', icon: 'solar:settings-bold', onClick: (p) => h.onEdit(p) },
     { id: 'duplicate', label: 'Duplizieren', icon: 'solar:copy-bold', onClick: (p) => h.onDuplicate(p) },
+    ...(h.onAddVr ? [{ id: 'vr', label: 'VR (Vivecraft) hinzufügen', icon: 'solar:glasses-bold', onClick: (p: Profile) => h.onAddVr!(p) }] : []),
     { id: 'export', label: 'In offiziellen Launcher', icon: 'solar:download-bold', onClick: (p) => h.onExport(p) },
     { id: 'open-folder', label: 'Ordner öffnen', icon: 'solar:folder-bold', onClick: (p) => h.onOpenFolder(p) },
     { id: 'delete', label: 'Löschen', icon: 'solar:trash-bin-trash-bold', destructive: true, separator: true, onClick: (p) => h.onDelete(p) },
