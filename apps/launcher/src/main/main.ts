@@ -25,7 +25,7 @@ import { fetchJson } from '../core/net.ts';
 import { createLogCleaner, diagnose, startGame } from '../core/launch.ts';
 import { classifyDrop, safeFileName } from '../core/dropimport.ts';
 import { CONTENT_KINDS, listContent, validContentName, type ContentKind } from '../core/content.ts';
-import { DEFAULT_PROFILE, fastJvmFlags, LEGO_CLIENT_GAME_VERSION, legoClientFits, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
+import { DEFAULT_PROFILE, fastJvmFlags, LEGO_CLIENT_GAME_VERSION, LEGO_CLIENT_VERSIONS, legoClientFits, setLegoClientVersions, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
 import { encryptionAvailable, loadAccounts, loadSettings, paths, saveAccounts, saveSettings, type Account, type AccountStore } from './store.ts';
 import { crashSignature, parseDb, prune, rank, recordApplied, recordCrash, recordOutcome, recordUndo, type LearnDb } from '../core/crashlearn.ts';
 import { setupUpdater, checkForUpdate, installUpdate } from './updater.ts';
@@ -265,28 +265,38 @@ async function latestRelease(): Promise<string> {
 }
 
 // ---- launching ---------------------------------------------------------------
-/** The LEGO client jar shipped inside the installer (resources/legoclient.jar). */
-function bundledLegoClient(): string | null {
+/**
+ * The LEGO client jar shipped inside the installer for a game version:
+ * resources/legoclient-<version>.jar (1.21.11 also as the older resources/legoclient.jar).
+ */
+function bundledLegoClient(gameVersion: string = LEGO_CLIENT_GAME_VERSION): string | null {
+  const first = gameVersion === LEGO_CLIENT_GAME_VERSION;
   const candidates = [
-    app.isPackaged ? join(process.resourcesPath, 'legoclient.jar') : null,
-    !app.isPackaged ? process.env.LEGO_CLIENT_JAR ?? null : null,
+    app.isPackaged ? join(process.resourcesPath, `legoclient-${gameVersion}.jar`) : null,
+    app.isPackaged && first ? join(process.resourcesPath, 'legoclient.jar') : null,
+    !app.isPackaged ? process.env[first ? 'LEGO_CLIENT_JAR' : `LEGO_CLIENT_JAR_${gameVersion.replace(/\W/g, '_')}`] ?? null : null,
   ];
   return candidates.find((p): p is string => !!p && existsSync(p)) ?? null;
+}
+
+/** Game versions this installation has a LEGO Client for. */
+function shippedLegoClientVersions(): string[] {
+  return LEGO_CLIENT_VERSIONS.filter((v) => v === LEGO_CLIENT_GAME_VERSION || bundledLegoClient(v));
 }
 
 /**
  * LEGO client: a release offered by the LEGO server (allows hotfixes without a
  * launcher update), otherwise the copy shipped with the launcher.
  */
-async function legoClientFile(): Promise<ModFile> {
-  if (backendUrl()) {
+async function legoClientFile(gameVersion: string = LEGO_CLIENT_GAME_VERSION): Promise<ModFile> {
+  if (backendUrl() && gameVersion === LEGO_CLIENT_GAME_VERSION) {
     try {
       const r = await legoApi().call<{ version: string; url: string; filename: string; sha512?: string; sha256?: string } | null>('GET', '/api/public/client-release');
       if (r?.url && /^[\w.+\-]+\.jar$/.test(r.filename) && (r.sha512 || r.sha256)) return { url: r.url, filename: r.filename, sha512: r.sha512, sha256: r.sha256 };
     } catch { /* server offline: use the bundled client */ }
   }
-  const local = bundledLegoClient();
-  if (!local) throw new Error('Der LEGO Client fehlt in dieser Installation und der LEGO-Server bietet keinen Download an. Bitte den Launcher neu installieren.');
+  const local = bundledLegoClient(gameVersion);
+  if (!local) throw new Error(`Der LEGO Client für Minecraft ${gameVersion} fehlt in dieser Installation. Bitte den Launcher neu installieren.`);
   return { url: '', filename: 'legoclient.jar', localPath: local };
 }
 
@@ -299,7 +309,7 @@ async function prepareMods(profile: GameProfile, gameDir: string, report: (step:
     const v = api.find((x) => x.version_type === 'release') ?? api[0];
     const file = v?.files.find((x) => x.primary) ?? v?.files[0];
     if (!file) throw new Error(`Keine Fabric API für Minecraft ${profile.gameVersion}.`);
-    managed.push({ url: file.url, filename: file.filename, sha512: file.hashes.sha512, size: file.size }, await legoClientFile());
+    managed.push({ url: file.url, filename: file.filename, sha512: file.hashes.sha512, size: file.size }, await legoClientFile(profile.gameVersion));
   }
   if (profile.performancePack && profile.loaderType) {
     report('FPS-Paket');
@@ -563,6 +573,7 @@ function registerIpc(): void {
   ipcMain.handle('info', () => ({
     version: app.getVersion(), platform: process.platform, arch: process.arch,
     totalMemMb: Math.round(totalmem() / 1048576), freeMemMb: Math.round(freemem() / 1048576),
+    legoClientVersions: shippedLegoClientVersions(),
     cpus: cpus().length, cpuModel: cpus()[0]?.model ?? '', msClientConfigured: !!clientId(), msClientBuiltIn: !!MS_CLIENT_ID, gameDir: paths.game(),
     ...(process.env.LEGO_E2E === '1' && { e2e: true }),
     ...(process.env.LEGO_E2E_WELCOME === '1' && { e2eWelcome: true }),
@@ -892,7 +903,7 @@ function registerIpc(): void {
     // VR renders the world twice: give it enough memory.
     p.memoryMb = Math.max(p.memoryMb, 4096);
     // The LEGO Client runs in VR too (it switches to its VR-safe mode when it sees Vivecraft).
-    p.legoClient = lt === 'fabric' && gv === LEGO_CLIENT_GAME_VERSION;
+    p.legoClient = legoClientFits({ gameVersion: gv, loaderType: lt });
     await saveSettings(settings);
     await installProject(fetch, profileDir(p), 'vivecraft', gv, lt, 'mod', { title: 'Vivecraft', iconUrl: null });
     if (lt === 'fabric') await installProject(fetch, profileDir(p), 'fabric-api', gv, lt, 'mod', { title: 'Fabric API', iconUrl: null }).catch(() => []);
@@ -925,7 +936,7 @@ function registerIpc(): void {
     const p = await addProfile(`Max FPS (Vulkan) ${gv}`, gv, 'fabric', null, 'flame');
     // No FPS pack here: it brings Sodium, which does not work together with VulkanMod.
     p.performancePack = false;
-    p.legoClient = gv === LEGO_CLIENT_GAME_VERSION;
+    p.legoClient = legoClientFits({ gameVersion: gv, loaderType: 'fabric' });
     await saveSettings(settings);
     const added: string[] = [];
     for (const m of VULKAN_PACK) {
@@ -1171,6 +1182,7 @@ if (!app.requestSingleInstanceLock()) {
   app.whenReady().then(async () => {
     // Only WebXR (VR mode) may be granted; everything else is denied.
     session.defaultSession.setPermissionRequestHandler((_wc, perm, cb) => cb(/^(xr|vr|ar)|xr-spatial|spatial-tracking/i.test(String(perm))));
+    setLegoClientVersions(shippedLegoClientVersions());
     settings = await loadSettings();
     discord.configure(settings.discordAppId || null);
     idlePresence();

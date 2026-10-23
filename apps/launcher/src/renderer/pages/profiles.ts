@@ -7,7 +7,7 @@ import { renderProfileContent, renderProfiles } from '../nr/mount.tsx';
 import { api, confirm, dialog, errorToast, html, mount, toast } from '../ui.ts';
 import { icon, pixel, PIXEL_ICONS } from '../icons.ts';
 import { t } from '../i18n.ts';
-import { LEGO_CLIENT_GAME_VERSION, LOADER_TYPES, loaderSupports, type GameProfile, type LoaderType } from '../../core/settings.ts';
+import { LEGO_CLIENT_GAME_VERSION, legoClientFits, legoClientVersions, LOADER_TYPES, loaderSupports, newestLegoClientVersion, type GameProfile, type LoaderType } from '../../core/settings.ts';
 import type { FoundInstance } from '../../core/importers.ts';
 import { takeNewProfileRequest } from './play.ts';
 import { openModsFor } from './mods.ts';
@@ -69,7 +69,7 @@ function contentView(el: HTMLElement, p: GameProfile): void {
 async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
   el.onclick = null;
   const base: GameProfile = p ?? {
-    id: '', name: t('prof.new'), gameVersion: LEGO_CLIENT_GAME_VERSION, loaderType: 'fabric', loader: null, performancePack: true, icon: 'grass',
+    id: '', name: t('prof.new'), gameVersion: newestLegoClientVersion(), loaderType: 'fabric', loader: null, performancePack: true, icon: 'grass',
     legoClient: true, memoryMb: Math.min(4096, Math.max(1024, state.info.totalMemMb - 2048)), jvmArgs: '', resolution: null, gameDir: null, createdAt: 0, lastPlayed: null,
   };
   const draft: GameProfile = { ...base };
@@ -131,11 +131,11 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
     el.querySelector<HTMLElement>('#loaderNote')!.textContent = draft.loaderType === 'forge' || draft.loaderType === 'neoforge'
       ? `${LOADER_LABEL[draft.loaderType]}: ${t('prof.experimental')} – der offizielle Installer läuft beim ersten Start im Hintergrund.` : '';
     el.querySelector<HTMLElement>('#loaderRow')!.hidden = !draft.loaderType;
-    const legoOk = draft.gameVersion === LEGO_CLIENT_GAME_VERSION && draft.loaderType === 'fabric';
+    const legoOk = legoClientFits(draft);
     if (!legoOk) lego.checked = false;
     // Back on Fabric 1.21.11: the LEGO Client is on again unless the player switched it off.
     else if (lego.dataset.userOff !== '1') lego.checked = true;
-    lego.disabled = draft.gameVersion !== LEGO_CLIENT_GAME_VERSION;
+    lego.disabled = !legoClientVersions().includes(draft.gameVersion);
     fps.disabled = !draft.loaderType;
     if (!draft.loaderType) fps.checked = false;
     if (vr) { vr.disabled = !draft.loaderType; if (!draft.loaderType) vr.checked = false; }

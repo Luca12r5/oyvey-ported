@@ -27,6 +27,7 @@ import { friendsPage } from './pages/social.ts';
 import { rewardsPage } from './pages/rewards.ts';
 import { accountPage, signInFlow } from './pages/account.ts';
 import { settingsPage } from './pages/settings.ts';
+import { setLegoClientVersions } from '../core/settings.ts';
 import { modsPage } from './pages/mods.ts';
 import { capesPage } from './pages/capes.ts';
 import { designsPage } from './pages/designs.ts';
@@ -438,6 +439,7 @@ async function bootConsole(): Promise<void> {
 async function boot(): Promise<void> {
   if (new URLSearchParams(location.search).get('console') === '1') return bootConsole();
   [state.settings, state.auth, state.info] = await Promise.all([api.getSettings(), api.authState(), api.info()]);
+  setLegoClientVersions(state.info.legoClientVersions ?? []);
   retheme();
   viewEl = await mountShell(document.getElementById('nrRoot')!);
   renderWindowButtons(await api.windowState());

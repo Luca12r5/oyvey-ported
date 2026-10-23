@@ -113,8 +113,19 @@ export const DEFAULT_PROFILE: GameProfile = {
   memoryMb: 4096, jvmArgs: '', resolution: null, gameDir: null, createdAt: 0, lastPlayed: null,
 };
 
-/** The LEGO client is built for exactly this game version and loader. */
+/** The LEGO client's first (long-term) game version; the default profile uses it. */
 export const LEGO_CLIENT_GAME_VERSION = '1.21.11';
+/** Every game version a LEGO Client build exists for (Fabric). */
+export const LEGO_CLIENT_VERSIONS = ['1.21.11', '26.3'] as const;
+let legoAvailable: string[] = [LEGO_CLIENT_GAME_VERSION];
+/** Which of LEGO_CLIENT_VERSIONS this installation really ships (set at start). */
+export function setLegoClientVersions(v: readonly string[]): void {
+  const ok = v.filter((x) => (LEGO_CLIENT_VERSIONS as readonly string[]).includes(x));
+  legoAvailable = ok.length ? ok : [LEGO_CLIENT_GAME_VERSION];
+}
+export function legoClientVersions(): string[] { return [...legoAvailable]; }
+/** The newest game version with a LEGO Client in this installation. */
+export function newestLegoClientVersion(): string { return legoAvailable[legoAvailable.length - 1]!; }
 
 /** Brings profiles saved by older launcher versions to the current shape. */
 export function migrateProfile(p: Partial<GameProfile> & { loader?: string | null }): GameProfile {
@@ -126,13 +137,13 @@ export function migrateProfile(p: Partial<GameProfile> & { loader?: string | nul
     loader: p.loader ?? null,
     performancePack: p.performancePack ?? false,
     icon: p.icon ?? 'grass',
-    legoClient: !!p.legoClient && (p.gameVersion ?? DEFAULT_PROFILE.gameVersion) === LEGO_CLIENT_GAME_VERSION,
+    legoClient: !!p.legoClient && legoAvailable.includes(p.gameVersion ?? DEFAULT_PROFILE.gameVersion),
   } as GameProfile;
 }
 
-/** The LEGO Client mod is built for Fabric 1.21.11 only. */
+/** The LEGO Client mod exists for Fabric on the versions in legoClientVersions(). */
 export function legoClientFits(p: { gameVersion?: string; loaderType?: LoaderType | null }): boolean {
-  return p.gameVersion === LEGO_CLIENT_GAME_VERSION && p.loaderType === 'fabric';
+  return !!p.gameVersion && legoAvailable.includes(p.gameVersion) && p.loaderType === 'fabric';
 }
 
 export const SETTINGS_VERSION = 14;
@@ -208,7 +219,7 @@ export function validateProfile(p: Partial<GameProfile>, totalMemMb: number): st
   if (!p.gameVersion || !/^[0-9a-z.\-_ ]{2,32}$/i.test(p.gameVersion)) e.push('Ungültige Minecraft-Version');
   if (p.loader !== null && p.loader !== undefined && !/^[0-9][0-9a-z.+\-]*$/i.test(p.loader)) e.push('Ungültige Loader-Version');
   if (p.loaderType !== null && p.loaderType !== undefined && !(LOADER_TYPES as readonly string[]).includes(p.loaderType)) e.push('Ungültiger Mod-Loader');
-  if (p.legoClient && (p.gameVersion !== LEGO_CLIENT_GAME_VERSION || p.loaderType !== 'fabric')) e.push(`Der LEGO Client gibt es nur für Fabric ${LEGO_CLIENT_GAME_VERSION}`);
+  if (p.legoClient && !legoClientFits(p)) e.push(`Der LEGO Client gibt es nur für Fabric ${legoAvailable.join(' / ')}`);
   if (!p.memoryMb || p.memoryMb < 1024 || p.memoryMb > Math.max(2048, totalMemMb - 1024)) e.push(`RAM 1024-${Math.max(2048, totalMemMb - 1024)} MB`);
   if (p.jvmArgs && parseJvmArgs(p.jvmArgs).rejected.length) e.push(`Nicht erlaubte JVM-Argumente: ${parseJvmArgs(p.jvmArgs).rejected.join(' ')}`);
   if (p.resolution && (p.resolution.width < 320 || p.resolution.height < 240 || p.resolution.width > 7680 || p.resolution.height > 4320)) e.push('Auflösung 320x240 bis 7680x4320');

@@ -28,6 +28,8 @@ export interface AppInfo {
   platform: string;
   arch: string;
   totalMemMb: number;
+  /** Game versions with a LEGO Client in this installation. */
+  legoClientVersions: string[];
   freeMemMb: number;
   cpus: number;
   cpuModel: string;

@@ -1,21 +1,18 @@
-# API explorer for the 26.3 port. One query per line:
-#   pkg <regex>              list classes whose name matches (minecraft + fabric-api + libs), case-insensitive
-#   class <fqcn>             javap -public of that class
-#   classgrep <fqcn> <regex> only the matching lines of javap -p (case-insensitive)
-pkg ^net/minecraft/client/gui/[A-Za-z]*$
-class net.minecraft.client.gui.screens.Screen
-class net.minecraft.client.gui.components.Renderable
-class net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement
-class net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
-classgrep com.mojang.blaze3d.platform.InputConstants isKeyDown|getKey|Type|static .*\(
-class net.minecraft.client.PreferredGraphicsApi
-pkg VertexConsumer|BufferSource|MultiBuffer
-class net.minecraft.client.renderer.OrderedSubmitNodeCollector
-class net.minecraft.client.renderer.texture.DynamicTexture
-class net.minecraft.client.renderer.texture.AbstractTexture
-class net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents$AfterTranslucentFeatures
-class net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents$BeforeBlockOutline
-class net.fabricmc.fabric.api.client.rendering.v1.LivingEntityRenderLayerRegistrationCallback$RegistrationHelper
-pkg ^net/minecraft/client/input/
-class net.minecraft.client.input.KeyEvent
-pkg ^net/minecraft/client/renderer/[A-Z][^$/]*$
+# API explorer for the 26.3 port (see mc-api.yml).
+class net.minecraft.client.gui.GuiGraphicsExtractor
+class net.minecraft.client.Minecraft
+classgrep net.minecraft.client.Options hideGui|hud|camera|fov|gamma
+classgrep net.minecraft.client.renderer.GameRenderer public
+classgrep net.minecraft.client.renderer.LevelRenderer static|light
+classgrep net.minecraft.client.player.LocalPlayer message
+classgrep net.minecraft.client.multiplayer.ClientLevel time
+classgrep net.minecraft.client.Screenshot public
+pkg RenderTypes|AvatarRenderer|PlayerRenderer|ItemInHand|ScreenEvents
+classgrep net.minecraft.client.renderer.entity.EntityRenderDispatcher public
+class net.minecraft.client.renderer.FirstPersonHandsAndItemsRenderer
+class net.minecraft.client.renderer.SubmitNodeCollector$CustomGeometryRenderer
+class com.mojang.blaze3d.vertex.VertexConsumer
+classgrep net.minecraft.client.renderer.ScreenEffectRenderer public|private
+classgrep net.minecraft.client.Camera public
+classgrep net.minecraft.client.gui.Gui public
+pkg ^net/minecraft/util/Util|^net/minecraft/Util
