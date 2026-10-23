@@ -106,6 +106,7 @@ public final class LegoClient implements ClientModInitializer {
       dev.lego.cosmetic.KnifeView.register();
       dev.lego.cosmetic.SkinLayers3D.register();
       Utility.registerAll();
+      dev.lego.net.SessionRefresher.init();
       dev.lego.net.LegoNet.register();
       Performance.registerAll();
       Emotes.register();

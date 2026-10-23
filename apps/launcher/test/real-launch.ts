@@ -25,6 +25,7 @@ import { currentEnv, buildArguments, redactArgs } from '../src/core/mojang.ts';
 import { getManifest, installJava, installVersion, layout, resolveLoaderVersion, syncMods, vanillaVersion, type ModFile } from '../src/core/install.ts';
 import { projectVersions, performanceFiles } from '../src/core/modrinth.ts';
 import { createLogCleaner, startGame } from '../src/core/launch.ts';
+import { SessionBridge } from '../src/core/sessionbridge.ts';
 import type { LoaderType } from '../src/core/settings.ts';
 
 const arg = (name: string, d: string | null = null) => {
@@ -37,6 +38,8 @@ const loaderType = arg('loader') as LoaderType | null;
 const legoJar = arg('lego');
 const fps = process.argv.includes('--fps');
 const shots = process.argv.includes('--shots');
+// In-game session renewal through the launcher's bridge (LEGO Client SessionRefresher).
+const sessionTest = process.argv.includes('--session-test');
 // Extra Modrinth projects for this loader/version, e.g. --mods vivecraft,lithium
 const extraMods = (arg('mods') ?? '').split(',').filter(Boolean);
 const timeoutMs = Number(arg('timeout', '600')) * 1000;
@@ -114,11 +117,24 @@ if (shots) {
 }
 
 const token = 'lego-ci-no-session';
+const renewed = 'lego-ci-renewed-session';
+const playerUuid = randomUUID().replace(/-/g, '');
+let sessionEnv: Record<string, string> | undefined;
+let bridge: SessionBridge | null = null;
+if (sessionTest) {
+  bridge = new SessionBridge({
+    session: async (uuid) => ({ name: 'LegoCI', uuid, accessToken: renewed, xuid: null, expiresAt: Date.now() + 86_400_000 }),
+    accounts: () => [{ uuid: playerUuid, name: 'LegoCI' }],
+    requestSwitch: () => {},
+  });
+  await bridge.start();
+  sessionEnv = bridge.env(bridge.register(playerUuid));
+}
 const args = buildArguments({
   version: merged, env, javaPath, gameDir, assetsDir: l.assets, gameAssetsDir: installed.virtualAssets ?? undefined,
   librariesDir: l.libraries, nativesDir: installed.nativesDir, clientJar: installed.clientJar, classpathSeparator: process.platform === 'win32' ? ';' : ':',
-  player: { name: 'LegoCI', uuid: randomUUID().replace(/-/g, ''), accessToken: token, xuid: null, userType: 'msa' },
-  launcherName: 'lego-launcher', launcherVersion: 'ci', memoryMb: { min: 1024, max: 3072 }, extraJvmArgs: shots ? ['-Dlegoclient.ci.shots=1'] : [],
+  player: { name: 'LegoCI', uuid: playerUuid, accessToken: token, xuid: null, userType: 'msa' },
+  launcherName: 'lego-launcher', launcherVersion: 'ci', memoryMb: { min: 1024, max: 3072 }, extraJvmArgs: [...(shots ? ['-Dlegoclient.ci.shots=1'] : []), ...(sessionTest ? ['-Dlegoclient.ci.session=1'] : [])],
   resolution: { width: 854, height: 480 }, loggingConfigPath: installed.loggingConfig ?? undefined,
 });
 if (shots) args.push('--quickPlaySingleplayer', 'ci');
@@ -127,15 +143,19 @@ step(`Launch: ${redactArgs(args, token).slice(0, 6).join(' ')} … (${args.lengt
 // Markers that the client finished loading and shows the title screen.
 const READY = [/Sound engine started/, /Created: \d+x\d+x\d+ minecraft:textures\/atlas\/blocks\.png-atlas/, /Created: \d+x\d+ textures-atlas/, /Reloading ResourceManager/];
 const lines: string[] = [];
-let ready = false, legoLoaded = false, modCount: string | null = null, noBackend = false, shotsDone = false;
+let ready = false, legoLoaded = false, modCount: string | null = null, noBackend = false, shotsDone = false, sessionRenewed = false;
 const shotNames: string[] = [];
 const clean = createLogCleaner();
+let leaked = false;
 const game = await startGame(javaPath, args, gameDir, join(root, 'logs'), (raw) => {
   const line = clean(raw);
   if (line === null) return;
   lines.push(line);
   if (lines.length > 4000) lines.splice(0, 1000);
   if (/\[LegoClient\] geladen/.test(line)) { legoLoaded = true; step(`LEGO: ${line.trim()}`); }
+  if (line.includes(renewed)) { console.log('  ! renewed session token leaked into the log'); leaked = true; }
+  if (/Sitzung erneuert \(uuid gleich\)|Sitzung/.test(line) && /\[LegoClient\]/.test(line)) step(line.trim());
+  if (/Sitzung erneuert \(uuid gleich\)/.test(line)) sessionRenewed = true;
   const shot = /\[LegoClient\] CI shot ([a-z0-9-]+)$/.exec(line.trim());
   if (shot) { shotNames.push(shot[1]!); step(`shot ${shot[1]}`); }
   if (/\[LegoClient\] CI (in world|shots done|waiting)/.test(line)) step(line.trim());
@@ -146,7 +166,7 @@ const game = await startGame(javaPath, args, gameDir, join(root, 'logs'), (raw) 
   // Minecraft 26.x tries OpenGL, then Vulkan; if neither works it shows a dialog and waits.
   if (/Failed to create backend Vulkan/.test(line) && lines.some((l) => /Failed to create backend OpenGL/.test(l))) noBackend = true;
   if (!ready && READY.some((r) => r.test(line))) { ready = true; step(`ready: ${line.trim().slice(0, 160)}`); }
-});
+}, sessionEnv);
 
 const outcome = await new Promise<{ ok: boolean; why: string }>((resolve) => {
   const timer = setTimeout(() => resolve({ ok: false, why: `timeout after ${timeoutMs / 1000}s` }), timeoutMs);
@@ -160,7 +180,15 @@ const outcome = await new Promise<{ ok: boolean; why: string }>((resolve) => {
     if (!ready || shots) return;
     clearInterval(poll);
     // Stay alive a while on the title screen: catches render-time crashes of mods.
-    setTimeout(() => { clearTimeout(timer); resolve({ ok: true, why: 'title screen reached and stable for 25 s' }); }, 25_000);
+    // With --session-test also wait (up to 60 s) for the in-game session renewal.
+    const t0 = Date.now();
+    const settle = setInterval(() => {
+      const waited = Date.now() - t0;
+      if (waited < 25_000 || (sessionTest && !sessionRenewed && waited < 60_000)) return;
+      clearInterval(settle);
+      clearTimeout(timer);
+      resolve({ ok: true, why: `title screen reached and stable for ${Math.round(waited / 1000)} s${sessionTest ? (sessionRenewed ? ', session renewed in game' : '') : ''}` });
+    }, 500);
   }, 500);
 });
 
@@ -179,6 +207,9 @@ setTimeout(() => game.child.kill('SIGKILL'), 10_000).unref();
 await game.exited.catch(() => {});
 
 if (legoJar && !legoLoaded) Object.assign(outcome, { ok: false, why: `${outcome.why}; but "[LegoClient] geladen" never appeared` });
+if (sessionTest && !sessionRenewed) Object.assign(outcome, { ok: false, why: `${outcome.why}; but the session was not renewed in game` });
+if (leaked) Object.assign(outcome, { ok: false, why: `${outcome.why}; renewed token appeared in the log` });
+await bridge?.stop();
 
 // Screenshots → small JPEGs → base64 in the log (LEGOSHOT <name> <i>/<n> <data>).
 if (shots) {
