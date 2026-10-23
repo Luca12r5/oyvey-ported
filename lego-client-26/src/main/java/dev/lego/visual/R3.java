@@ -89,6 +89,7 @@ public final class R3 {
                }
             });
             var0 += var3.n / 10;
+         }
       }
 
       lastVertices = var0;
