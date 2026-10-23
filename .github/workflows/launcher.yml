@@ -53,7 +53,8 @@ jobs:
       - name: Build LEGO client
         shell: bash
         run: |
-          ./gradlew -p lego-client build -x test --no-daemon
+          # Maven mirrors sometimes answer 403/timeouts: retry before giving up.
+          for i in 1 2 3; do ./gradlew -p lego-client build -x test --no-daemon && break; [ $i = 3 ] && exit 1; echo "retry $i"; sleep 20; done
           jar=$(ls lego-client/build/libs/legoclient-*.jar | grep -v -- '-sources' | head -1)
           cp "$jar" apps/launcher/resources/legoclient.jar
           ls -la apps/launcher/resources
@@ -70,7 +71,7 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          gradle -p lego-client-26 build -x test --no-daemon --console=plain -q
+          for i in 1 2 3; do gradle -p lego-client-26 build -x test --no-daemon --console=plain -q && break; [ $i = 3 ] && exit 1; echo "retry $i"; sleep 20; done
           jar=$(ls lego-client-26/build/libs/legoclient-*.jar | grep -v -- '-sources' | head -1)
           cp "$jar" apps/launcher/resources/legoclient-26.3.jar
           ls -la apps/launcher/resources
@@ -249,8 +250,15 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           ls -la win
-          gh release delete launcher-nightly --yes --cleanup-tag || true
-          gh release create launcher-nightly win/*.exe \
-            --prerelease --target "$GITHUB_SHA" \
-            --title "LEGO Launcher (neueste Version)" \
-            --notes "Automatisch gebaut aus ${GITHUB_SHA::7} am $(date -u '+%d.%m.%Y %H:%M') UTC. Windows: die .exe herunterladen und starten."
+          notes="Automatisch gebaut aus ${GITHUB_SHA::7} am $(date -u '+%d.%m.%Y %H:%M') UTC. Windows: die .exe herunterladen und starten."
+          # The page stays online: replace the files in place instead of deleting the release first.
+          if gh release view launcher-nightly > /dev/null 2>&1; then
+            gh release upload launcher-nightly win/*.exe --clobber
+            for old in $(gh release view launcher-nightly --json assets -q '.assets[].name'); do
+              [ -f "win/$old" ] || gh release delete-asset launcher-nightly "$old" --yes
+            done
+            gh release edit launcher-nightly --prerelease --title "LEGO Launcher (neueste Version)" --notes "$notes"
+          else
+            gh release create launcher-nightly win/*.exe --prerelease --target "$GITHUB_SHA" \
+              --title "LEGO Launcher (neueste Version)" --notes "$notes"
+          fi
