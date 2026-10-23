@@ -45,6 +45,8 @@ export interface GameProfile {
   gameDir: string | null;
   createdAt: number;
   lastPlayed: number | null;
+  /** Minecraft account (uuid) this profile plays with; null = the launcher's active account. */
+  account: string | null;
 }
 
 export interface Settings {
@@ -110,7 +112,7 @@ export interface Settings {
 
 export const DEFAULT_PROFILE: GameProfile = {
   id: 'lego-default', name: 'LEGO Client', gameVersion: '1.21.11', loaderType: 'fabric', loader: null, performancePack: true, icon: 'brick', legoClient: true,
-  memoryMb: 4096, jvmArgs: '', resolution: null, gameDir: null, createdAt: 0, lastPlayed: null,
+  memoryMb: 4096, jvmArgs: '', resolution: null, gameDir: null, createdAt: 0, lastPlayed: null, account: null,
 };
 
 /** The LEGO client's first (long-term) game version; the default profile uses it. */
@@ -138,6 +140,7 @@ export function migrateProfile(p: Partial<GameProfile> & { loader?: string | nul
     performancePack: p.performancePack ?? false,
     icon: p.icon ?? 'grass',
     legoClient: !!p.legoClient && legoAvailable.includes(p.gameVersion ?? DEFAULT_PROFILE.gameVersion),
+    account: typeof p.account === 'string' && ACCOUNT_RE.test(p.account) ? p.account : null,
   } as GameProfile;
 }
 
@@ -213,8 +216,12 @@ export function parseJvmArgs(raw: string): { args: string[]; rejected: string[] 
   return { args, rejected };
 }
 
+/** Minecraft profile uuid, with or without dashes. */
+export const ACCOUNT_RE = /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i;
+
 export function validateProfile(p: Partial<GameProfile>, totalMemMb: number): string[] {
   const e: string[] = [];
+  if (p.account !== null && p.account !== undefined && !ACCOUNT_RE.test(p.account)) e.push('Ungültiges Konto');
   if (!p.name || p.name.length > 40) e.push('Name 1-40 Zeichen');
   if (!p.gameVersion || !/^[0-9a-z.\-_ ]{2,32}$/i.test(p.gameVersion)) e.push('Ungültige Minecraft-Version');
   if (p.loader !== null && p.loader !== undefined && !/^[0-9][0-9a-z.+\-]*$/i.test(p.loader)) e.push('Ungültige Loader-Version');

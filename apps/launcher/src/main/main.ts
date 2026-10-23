@@ -23,6 +23,7 @@ import { listEntries, readEntry } from '../core/zip.ts';
 import { exportToOfficial, officialLauncherPresent, officialMinecraftDir, openOfficialLauncher } from '../core/official.ts';
 import { fetchJson } from '../core/net.ts';
 import { createLogCleaner, diagnose, startGame } from '../core/launch.ts';
+import { SessionBridge } from '../core/sessionbridge.ts';
 import { classifyDrop, safeFileName } from '../core/dropimport.ts';
 import { CONTENT_KINDS, listContent, validContentName, type ContentKind } from '../core/content.ts';
 import { DEFAULT_PROFILE, fastJvmFlags, LEGO_CLIENT_GAME_VERSION, LEGO_CLIENT_VERSIONS, legoClientFits, setLegoClientVersions, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
@@ -57,7 +58,25 @@ let legoError: string | null = null;
 let signInAbort: AbortController | null = null;
 let loginWin: BrowserWindow | null = null;
 let launchAbort: AbortController | null = null;
-let running: GameProfile | null = null;
+/** Games started by this launcher, by profile id (several at once, each with its own account). */
+interface RunningGame { profile: GameProfile; uuid: string; key: string | null; secrets: Set<string> }
+const runningGames = new Map<string, RunningGame>();
+/** Restart requests from the game ("Konto wechseln"), by bridge key. */
+const pendingSwitch = new Map<string, { uuid: string; server: string | null }>();
+const anyRunning = () => [...runningGames.values()][0]?.profile ?? null;
+/** Session renewal for running games (see core/sessionbridge.ts). */
+const bridge = new SessionBridge({
+  session: async (uuid, force) => {
+    const a = store.accounts.find((x) => x.mc.uuid === uuid);
+    if (!a) throw new Error('Konto nicht mehr angemeldet');
+    // Renew well before Mojang's ~24 h expiry so joining a server never meets a dead token.
+    const mc = await freshSession(a, force ? Infinity : 30 * 60_000);
+    for (const g of runningGames.values()) if (g.uuid === uuid) g.secrets.add(mc.accessToken);
+    return { name: mc.name, uuid: mc.uuid, accessToken: mc.accessToken, xuid: mc.xuid, expiresAt: mc.expiresAt };
+  },
+  accounts: () => store.accounts.map((a) => ({ uuid: a.mc.uuid, name: a.mc.name })),
+  requestSwitch: (key, uuid, server) => { pendingSwitch.set(key, { uuid, server }); },
+});
 /** Instance folders the user found via scan or picker; only these may be imported. */
 const offeredInstances = new Map<string, FoundInstance>();
 const env = currentEnv(process.platform, process.arch, release());
@@ -127,10 +146,9 @@ function authState(): AuthState {
 }
 
 /** Returns a valid Minecraft session for the active account, refreshing through Microsoft when it expired. */
-async function freshSession(): Promise<MinecraftSession> {
-  const a = active();
+async function freshSession(a: Account | null = active(), minLeftMs = 5 * 60_000): Promise<MinecraftSession> {
   if (!a) throw new AuthError('signed_out', 'Bitte zuerst mit Microsoft anmelden.');
-  if (a.mc.expiresAt - Date.now() > 5 * 60_000) return a.mc;
+  if (a.mc.expiresAt - Date.now() > minLeftMs) return a.mc;
   // Refresh tokens are bound to the app id that signed the account in.
   const ms = await refreshMicrosoft(fetch, a.clientId ?? clientId(), a.msRefreshToken);
   const mc = await minecraftFromMicrosoft(fetch, ms.accessToken);
@@ -227,7 +245,7 @@ setInterval(() => {
 setInterval(() => {
   if (!active()?.lego) return;
   void legoApi().call('POST', '/api/me/presence', {
-    status: running ? 'in_game' : 'online', gameVersion: running?.gameVersion ?? null, activity: running ? 'Minecraft' : 'Launcher',
+    status: anyRunning() ? 'in_game' : 'online', gameVersion: anyRunning()?.gameVersion ?? null, activity: anyRunning() ? 'Minecraft' : 'Launcher',
   }).catch(() => {});
 }, 30_000).unref();
 
@@ -323,18 +341,28 @@ async function prepareMods(profile: GameProfile, gameDir: string, report: (step:
   if (profile.loaderType || managed.length) await syncMods(fetch, join(gameDir, 'mods'), managed, report, signal);
 }
 
-async function launch(profileId: string, opts: { joinServer?: string } = {}): Promise<{ ok: boolean; error?: string }> {
-  consoleBuf = [];
-  if (running) return { ok: false, error: 'Minecraft läuft bereits.' };
+/** The account a profile plays with: its own one if still signed in, else the active account. */
+function accountFor(profile: GameProfile): Account | null {
+  return (profile.account && store.accounts.find((a) => a.mc.uuid === profile.account)) || active();
+}
+
+async function launch(profileId: string, opts: { joinServer?: string; account?: string } = {}): Promise<{ ok: boolean; error?: string }> {
   const profile = settings.profiles.find((p) => p.id === profileId);
   if (!profile) return { ok: false, error: 'Profil nicht gefunden.' };
+  if (runningGames.has(profile.id)) return { ok: false, error: 'Dieses Profil läuft bereits.' };
+  const account = (opts.account && store.accounts.find((a) => a.mc.uuid === opts.account)) || accountFor(profile);
+  // Mojang allows one game per account at a time: a second login throws the first one off servers.
+  if (account && [...runningGames.values()].some((g) => g.uuid === account.mc.uuid)) {
+    return { ok: false, error: `Mit dem Konto ${account.mc.name} läuft schon ein Spiel. Wähle für dieses Profil ein anderes Konto (Profil bearbeiten → Konto).` };
+  }
+  if (!runningGames.size) consoleBuf = [];
   launchAbort = new AbortController();
   const signal = launchAbort.signal;
   const report = (step: string, p?: { done: number; total: number; bytes: number; totalBytes: number }) => send('launch-progress', { step, ...p } satisfies LaunchProgress);
   const log = (line: string) => send('game-log', { line: `[installer] ${line}`, stream: 'out' });
   try {
     report('Anmeldung prüfen');
-    const mc = await freshSession();
+    const mc = await freshSession(account);
     const l = layout(paths.game());
     const gameDir = profileDir(profile);
     await mkdir(gameDir, { recursive: true });
@@ -372,19 +400,37 @@ async function launch(profileId: string, opts: { joinServer?: string } = {}): Pr
     report('Starte Minecraft');
     send('game-log', { line: `[launcher] ${javaPath} ${redactArgs(args, mc.accessToken).join(' ')}`, stream: 'out' });
     const clean = createLogCleaner();
+    // The LEGO Client can renew its session in game (no restart after ~24 h) over the local bridge.
+    const key = profile.legoClient ? (await bridge.start(), bridge.register(mc.uuid)) : null;
+    const entry: RunningGame = { profile, uuid: mc.uuid, key, secrets: new Set([mc.accessToken]) };
+    const redact = (line: string) => { for (const s of entry.secrets) line = line.split(s).join('<redacted>'); return line; };
     const game = await startGame(javaPath, args, gameDir, paths.logs(), (raw, stream) => {
       const line = clean(raw);
-      if (line !== null) send('game-log', { line: line.split(mc.accessToken).join('<redacted>'), stream });
-    });
-    running = profile;
+      if (line !== null) send('game-log', { line: redact(line), stream });
+    }, key ? bridge.env(key) : undefined).catch((e) => { if (key) bridge.revoke(key); throw e; });
+    runningGames.set(profile.id, entry);
+    send('game-started', { profileId: profile.id });
     profile.lastPlayed = Date.now();
-    discord.set({ details: `Spielt Minecraft ${profile.gameVersion}${profile.legoClient ? ' mit LEGO Client' : ''}`, state: `Profil: ${profile.name}`, startedAt: Date.now() });
+    discord.set({ details: `Spielt Minecraft ${profile.gameVersion}${profile.legoClient ? ' mit LEGO Client' : ''}`, state: runningGames.size > 1 ? `${runningGames.size} Spiele gleichzeitig` : `Profil: ${profile.name}`, startedAt: Date.now() });
     await saveSettings(settings);
     if (active()?.lego) void legoApi().call('POST', '/api/me/metrics', { metric: 'launches', amount: 1 }).catch(() => {});
     if (settings.closeOnLaunch) win?.minimize();
+    const finish = () => {
+      runningGames.delete(profile.id);
+      if (key) bridge.revoke(key);
+      if (!runningGames.size) idlePresence();
+    };
     void game.exited.then(async (r) => {
-      running = null;
-      idlePresence();
+      finish();
+      // "Konto wechseln" in game: the client quit cleanly, start it again with the other account.
+      const sw = key ? pendingSwitch.get(key) : undefined;
+      if (key) pendingSwitch.delete(key);
+      if (sw && r.code === 0) {
+        send('game-exit', { ...r, logFile: game.logFile, hint: null, diagnoses: [], profileId: profile.id, switching: true });
+        const next = await launch(profile.id, { account: sw.uuid, ...(sw.server ? { joinServer: sw.server } : {}) });
+        if (!next.ok) send('game-log', { line: `[launcher] Kontowechsel fehlgeschlagen: ${next.error}`, stream: 'err' });
+        return;
+      }
       let hint: string | null = null;
       let diagnoses: Diagnosis[] = [];
       if (r.code !== 0) {
@@ -401,7 +447,7 @@ async function launch(profileId: string, opts: { joinServer?: string } = {}): Pr
       send('game-exit', { ...r, logFile: game.logFile, hint, diagnoses, profileId: profile.id });
       if (settings.closeOnLaunch) win?.restore();
     }).catch((e) => {
-      running = null;
+      finish();
       send('game-exit', { code: -1, crashReport: null, logFile: game.logFile, hint: String(e) });
     });
     return { ok: true };
@@ -597,7 +643,7 @@ function registerIpc(): void {
   ipcMain.handle('client:module', async (_e, profileId: string, id: string, on: boolean) => {
     const p = settings.profiles.find((x) => x.id === profileId);
     if (!p?.legoClient) throw new Error('Dieses Profil nutzt den LEGO Client nicht.');
-    if (running?.id === p.id) throw new Error('Während das Spiel läuft, stellst du Module direkt im Spiel um (Rechte Shift-Taste).');
+    if (runningGames.has(p.id)) throw new Error('Während das Spiel läuft, stellst du Module direkt im Spiel um (Rechte Shift-Taste).');
     const file = join(profileDir(p), 'config', 'legoclient.json');
     const next = setModule(await readFile(file, 'utf8'), String(id), !!on);
     if (next === null) throw new Error('Unbekanntes Modul.');
@@ -760,7 +806,7 @@ function registerIpc(): void {
     return authState();
   });
   ipcMain.handle('auth:switch', async (_e, uuid: string) => {
-    if (running) throw new Error('Während Minecraft läuft kann das Konto nicht gewechselt werden.');
+    // Running games keep the account they were started with.
     if (!store.accounts.some((a) => a.mc.uuid === uuid)) throw new Error('Konto nicht gefunden.');
     store = { ...store, active: uuid };
     await saveAccounts(store);
@@ -807,7 +853,8 @@ function registerIpc(): void {
     return launch(String(profileId), { joinServer: `localhost:${s.port}` });
   });
   ipcMain.on('game:cancel', () => launchAbort?.abort());
-  ipcMain.handle('game:running', () => !!running);
+  ipcMain.handle('game:running', () => runningGames.size > 0);
+  ipcMain.handle('game:runningProfiles', () => [...runningGames.keys()]);
   ipcMain.handle('folder', async (_e, kind: string, profileId?: string) => {
     const gameDir = profileDir(profileById(profileId));
     const sub: Record<string, string> = { mods: 'mods', screenshots: 'screenshots', resourcepacks: 'resourcepacks', shaderpacks: 'shaderpacks', datapacks: 'datapacks', saves: 'saves' };

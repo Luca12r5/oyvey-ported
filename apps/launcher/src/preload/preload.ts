@@ -3,7 +3,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { LauncherApi } from '../ipc-types.ts';
 
-const CHANNELS = new Set(['auth', 'launch-progress', 'game-log', 'game-exit', 'lego-event', 'update', 'window-state', 'vrb-frame', 'vrb-state', 'server-log', 'server-state']);
+const CHANNELS = new Set(['auth', 'launch-progress', 'game-log', 'game-exit', 'game-started', 'lego-event', 'update', 'window-state', 'vrb-frame', 'vrb-state', 'server-log', 'server-state']);
 
 const api: LauncherApi = {
   info: () => ipcRenderer.invoke('info'),
@@ -43,6 +43,7 @@ const api: LauncherApi = {
   launch: (id) => ipcRenderer.invoke('game:launch', id),
   cancelLaunch: () => ipcRenderer.send('game:cancel'),
   gameRunning: () => ipcRenderer.invoke('game:running'),
+  runningProfiles: () => ipcRenderer.invoke('game:runningProfiles'),
   openFolder: (k, id) => ipcRenderer.invoke('folder', k, id),
   mods: (id) => ipcRenderer.invoke('mods:list', id),
   servers: () => ipcRenderer.invoke('server:list'),

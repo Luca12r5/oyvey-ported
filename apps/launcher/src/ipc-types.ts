@@ -93,6 +93,8 @@ export interface LauncherApi {
   launch(profileId: string): Promise<{ ok: boolean; error?: string }>;
   cancelLaunch(): void;
   gameRunning(): Promise<boolean>;
+  /** Profile ids whose game is running. */
+  runningProfiles(): Promise<string[]>;
   openFolder(kind: 'game' | 'logs' | 'mods' | 'screenshots' | 'resourcepacks' | 'shaderpacks' | 'datapacks' | 'saves', profileId?: string): Promise<void>;
   mods(profileId: string): Promise<ModEntry[]>;
   servers(): Promise<(LocalServer & { running: boolean })[]>;
@@ -133,5 +135,5 @@ export interface LauncherApi {
   diagnostics(): Promise<string>;
   checkUpdate(): Promise<{ available: boolean; version?: string; error?: string }>;
   installUpdate(): Promise<void>;
-  on(channel: 'auth' | 'launch-progress' | 'game-log' | 'game-exit' | 'lego-event' | 'update' | 'window-state' | 'vrb-frame' | 'vrb-state' | 'server-log' | 'server-state', cb: (data: any) => void): () => void;
+  on(channel: 'auth' | 'launch-progress' | 'game-log' | 'game-exit' | 'game-started' | 'lego-event' | 'update' | 'window-state' | 'vrb-frame' | 'vrb-state' | 'server-log' | 'server-state', cb: (data: any) => void): () => void;
 }

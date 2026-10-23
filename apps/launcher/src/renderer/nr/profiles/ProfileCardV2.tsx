@@ -1,6 +1,6 @@
 // Ported from the NoRisk Client launcher (GPL-3.0): components/profiles/ProfileCardV2.tsx.
 // Wired to the LEGO launcher's profiles (pixel icons, LEGO Client flag, launch, mods page).
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Icon } from '../lib/iconify.tsx';
 import { useThemeStore } from '../store/theme.ts';
 import { ProfileIconV2 } from './ProfileIconV2.tsx';
@@ -56,9 +56,9 @@ export function ProfileCardV2({ profile, selected, layoutMode = 'list', h }: { p
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const launching = useGame((s) => s.launching);
   const status = useGame((s) => s.status);
-  const [mine, setMine] = useState(false);
-  useEffect(() => { if (!launching) setMine(false); }, [launching]);
-  const isLaunching = launching && mine;
+  const launchingId = useGame((s) => s.launchingId);
+  const isRunning = useGame((s) => s.runningIds.includes(profile.id));
+  const isLaunching = launching && launchingId === profile.id;
 
   const contextMenuItems: ContextMenuItem[] = [
     { id: 'edit', label: 'Profil bearbeiten', icon: 'solar:settings-bold', onClick: (p) => h.onEdit(p) },
@@ -69,10 +69,10 @@ export function ProfileCardV2({ profile, selected, layoutMode = 'list', h }: { p
     { id: 'delete', label: 'Löschen', icon: 'solar:trash-bin-trash-bold', destructive: true, separator: true, onClick: (p) => h.onDelete(p) },
   ];
 
-  const play = () => { setMine(true); h.onSelect(profile); void launchProfile(profile.id); };
+  const play = () => { h.onSelect(profile); void launchProfile(profile.id); };
 
   const actionButtons: ProfileActionButton[] = [
-    { id: 'play', label: isLaunching ? 'STOP' : 'PLAY', icon: isLaunching ? 'solar:stop-bold' : 'solar:play-bold', variant: isLaunching ? 'destructive' : 'primary', tooltip: isLaunching ? 'Abbrechen' : 'Spielen', onClick: play },
+    { id: 'play', label: isLaunching ? 'STOP' : isRunning ? 'LÄUFT' : 'PLAY', icon: isLaunching ? 'solar:stop-bold' : 'solar:play-bold', variant: isLaunching ? 'destructive' : 'primary', tooltip: isLaunching ? 'Abbrechen' : isRunning ? 'Läuft – Konsole öffnen' : 'Spielen', onClick: play },
     { id: 'mods', label: 'INHALT', icon: 'solar:box-bold', variant: 'secondary', tooltip: 'Inhalte: Mods, Packs, Welten, Screenshots', onClick: (p) => h.onMods(p) },
     {
       id: 'settings', label: 'SETTINGS', icon: 'solar:settings-bold', variant: 'icon-only', tooltip: 'Profil-Optionen',

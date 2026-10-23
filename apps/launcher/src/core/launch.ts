@@ -12,13 +12,13 @@ export interface GameProcess {
   exited: Promise<{ code: number | null; crashReport: string | null; durationMs: number }>;
 }
 
-export async function startGame(javaPath: string, args: string[], gameDir: string, logsDir: string, onLine: (line: string, stream: 'out' | 'err') => void): Promise<GameProcess> {
+export async function startGame(javaPath: string, args: string[], gameDir: string, logsDir: string, onLine: (line: string, stream: 'out' | 'err') => void, env?: Record<string, string>): Promise<GameProcess> {
   await mkdir(gameDir, { recursive: true });
   await mkdir(logsDir, { recursive: true });
   const logFile = join(logsDir, `launch-${new Date().toISOString().replace(/[:.]/g, '-')}.log`);
   const log = createWriteStream(logFile);
   const started = Date.now();
-  const child = spawn(javaPath, args, { cwd: gameDir, stdio: ['ignore', 'pipe', 'pipe'], shell: false, windowsHide: false });
+  const child = spawn(javaPath, args, { cwd: gameDir, stdio: ['ignore', 'pipe', 'pipe'], shell: false, windowsHide: false, ...(env ? { env: { ...process.env, ...env } } : {}) });
   const pipe = (stream: NodeJS.ReadableStream | null, kind: 'out' | 'err') => {
     let buf = '';
     stream?.setEncoding('utf8');

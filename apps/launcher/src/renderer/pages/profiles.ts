@@ -76,7 +76,7 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
   el.onclick = null;
   const base: GameProfile = p ?? {
     id: '', name: t('prof.new'), gameVersion: newestLegoClientVersion(), loaderType: 'fabric', loader: null, performancePack: true, icon: 'grass',
-    legoClient: true, memoryMb: Math.min(4096, Math.max(1024, state.info.totalMemMb - 2048)), jvmArgs: '', resolution: null, gameDir: null, createdAt: 0, lastPlayed: null,
+    legoClient: true, memoryMb: Math.min(4096, Math.max(1024, state.info.totalMemMb - 2048)), jvmArgs: '', resolution: null, gameDir: null, createdAt: 0, lastPlayed: null, account: null,
   };
   const draft: GameProfile = { ...base };
   let versions: Version[] = [];
@@ -103,6 +103,12 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
         <div class="setting"><div><b>${pixel('brick', 'xs')} ${t('prof.lego')}</b><small>${t('prof.lego.d')}</small></div><label class="switch"><input type="checkbox" name="legoClient" ${draft.legoClient ? 'checked' : ''}><i></i></label></div>
         ${html`<div class="setting"><div><b>${icon('vr', 'xs')} VR (Vivecraft)</b><small>Echtes VR mit Brille: installiert Vivecraft, nimmt nur VR-sichere FPS-Mods und mindestens 4 GB RAM. Der LEGO Client läuft im VR-Modus mit.</small></div><label class="switch"><input type="checkbox" name="vr"><i></i></label></div>`}
         <div class="setting"><div><b>${pixel('flame', 'xs')} ${t('prof.fps')}</b><small>${t('prof.fps.d')}</small></div><label class="switch"><input type="checkbox" name="performancePack" ${draft.performancePack ? 'checked' : ''}><i></i></label></div>
+        <label>Konto</label>
+        <select name="account">
+          <option value="">Aktives Konto (oben rechts gewählt)</option>
+          ${state.auth.accounts.map((a) => html`<option value="${a.uuid}" ${draft.account === a.uuid ? 'selected' : ''}>${a.name}</option>`)}
+        </select>
+        <small class="tiny muted">Mit festem Konto kannst du zwei Spiele gleichzeitig mit verschiedenen Konten spielen.</small>
         <label>${t('prof.memory')}: <b id="memv">${draft.memoryMb}</b> MB <span class="muted">/ ${state.info.totalMemMb} MB</span></label>
         <input type="range" name="memoryMb" min="1024" max="${maxMem}" step="256" value="${draft.memoryMb}">
         <label>${t('prof.jvm')}</label><input name="jvmArgs" value="${draft.jvmArgs}" placeholder="-XX:+UseG1GC">
@@ -199,7 +205,7 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
     const fd = new FormData(f);
     const w = Number(fd.get('w')), h = Number(fd.get('h'));
     const profile: GameProfile = {
-      ...draft, id: draft.id || crypto.randomUUID(), name: String(fd.get('name')), legoClient: lego.checked, performancePack: fps.checked,
+      ...draft, id: draft.id || crypto.randomUUID(), name: String(fd.get('name')), legoClient: lego.checked, performancePack: fps.checked, account: String(fd.get('account') ?? '') || null,
       memoryMb: Number(fd.get('memoryMb')), jvmArgs: String(fd.get('jvmArgs') ?? ''), resolution: w && h ? { width: w, height: h } : null,
     };
     try {
