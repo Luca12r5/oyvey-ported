@@ -5,10 +5,12 @@
 import { go, state } from '../app.ts';
 import { api, errorToast, html, mount, toast } from '../ui.ts';
 import { icon } from '../icons.ts';
+import { newestLegoClientVersion } from '../../core/settings.ts';
 import { enterVr, passthroughSupported, vrRequirements, xrSupported } from '../vr/lobby.ts';
 
 export async function vrPage(el: HTMLElement): Promise<void> {
-  const prof = state.settings.profiles.find((p) => p.id === state.settings.selectedProfile) ?? state.settings.profiles[0];
+  // VR profiles use the newest version the LEGO Client ships for (it runs alongside Vivecraft).
+  const vrVersion = newestLegoClientVersion();
   mount(el, html`<div class="vr-page">
     <div class="vr-modes">
       <section class="panel vr-mode">
@@ -37,7 +39,7 @@ export async function vrPage(el: HTMLElement): Promise<void> {
         </div>
         <div>
           <h3>Echtes VR (Vivecraft)</h3>
-          <p class="small muted" id="viveInfo">Prüfe, ob Vivecraft für ${prof?.gameVersion ?? '1.21.11'} verfügbar ist …</p>
+          <p class="small muted" id="viveInfo">Prüfe, ob Vivecraft für ${vrVersion} verfügbar ist …</p>
           <button class="btn sm" id="viveBtn" hidden>${icon('plus', 'sm')} VR-Profil erstellen</button>
         </div>
       </div>
@@ -65,11 +67,11 @@ export async function vrPage(el: HTMLElement): Promise<void> {
     if (ok) start.classList.add('primary');
   });
 
-  // Vivecraft (real VR in Minecraft) for the selected profile's version.
+  // Vivecraft (real VR in Minecraft) for vrVersion.
   const info = el.querySelector<HTMLElement>('#viveInfo')!;
   const btn = el.querySelector<HTMLButtonElement>('#viveBtn')!;
   try {
-    const gv = prof?.gameVersion ?? '1.21.11';
+    const gv = vrVersion;
     const r = await api.vivecraft(gv);
     if (!el.isConnected) return;
     if (r.available) {
