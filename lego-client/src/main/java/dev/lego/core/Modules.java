@@ -17,7 +17,7 @@ import net.fabricmc.loader.api.FabricLoader;
 
 public final class Modules {
    public static final List<Module> ALL = new ArrayList<>();
-   public static String theme = "halloween";
+   public static String theme = "nacht";
    public static String hudTheme = "standard";
    public static int hudAccent = 0;
    public static int accent = 7;
@@ -96,7 +96,7 @@ public final class Modules {
       try {
          LinkedHashMap var0 = new LinkedHashMap();
          var0.put("theme", theme);
-         var0.put("designVersion", 4L);
+         var0.put("designVersion", 5L);
          var0.put("hudTheme", hudTheme);
          var0.put("hudAccent", (long)hudAccent);
          var0.put("accent", (long)accent);
@@ -172,6 +172,12 @@ public final class Modules {
          if (designVer < 4L && "winter".equals(theme)) {
             theme = "halloween";
             accent = 7;
+         }
+
+         // Round 11: the launcher's night look (NoRisk colours) for everybody still on the old default.
+         if (designVer < 5L && "halloween".equals(theme)) {
+            theme = "nacht";
+            accent = 3;
          }
 
          if (var1 instanceof Map) {
