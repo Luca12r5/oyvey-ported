@@ -33,6 +33,7 @@ jobs:
             case "$kind" in
               pkg) cut -d'|' -f2 classes.txt | grep -E "$arg" | grep -v '\$[0-9]' | sed 's/\.class$//' | sort -u | head -400 ;;
               class) javap -public -cp "$CP" "$arg" 2>&1 | head -400 ;;
+              classgrep) c=${arg%% *}; re=${arg#* }; javap -p -cp "$CP" "$c" 2>&1 | grep -E -- "$re" | head -200 ;;
               grep) cut -d'|' -f2 classes.txt | grep -E '^(net/minecraft|com/mojang)/' | grep -v '\$' | sed 's/\.class$//;s#/#.#g' | while read -r c; do javap -p -cp "$CP" "$c" 2>/dev/null | grep -E "$arg" | sed "s#^#$c: #"; done | head -200 ;;
             esac
           done

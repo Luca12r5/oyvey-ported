@@ -31,6 +31,7 @@ import { modsPage } from './pages/mods.ts';
 import { capesPage } from './pages/capes.ts';
 import { designsPage } from './pages/designs.ts';
 import { vrPage } from './pages/vr.ts';
+import { serversPage } from './pages/servers.ts';
 import { newsPage, feedbackPage, devPage } from './pages/misc.ts';
 
 export interface State {
@@ -64,6 +65,7 @@ const PAGES: PageDef[] = [
   { id: 'cosmetics', label: () => t('nav.cosmetics'), icon: 'cosmetics', page: cosmeticsPage, needsLego: true, slot: 'more' },
   { id: 'shop', label: () => t('nav.shop'), icon: 'shop', page: shopPage, needsLego: true, slot: 'more' },
   { id: 'vr', label: () => t('nav.vr'), icon: 'vr', page: vrPage, slot: 'more' },
+  { id: 'servers', label: () => (state.settings.language === 'en' ? 'Own server' : 'Eigener Server'), icon: 'globe', page: (el) => serversPage(el), slot: 'more' },
   { id: 'rewards', label: () => t('nav.rewards'), icon: 'rewards', page: rewardsPage, needsLego: true, slot: 'more' },
   { id: 'news', label: () => t('nav.news'), icon: 'news', page: newsPage, slot: 'more' },
   { id: 'feedback', label: () => t('nav.feedback'), icon: 'feedback', page: feedbackPage, needsLego: true, slot: 'more' },

@@ -1,13 +1,24 @@
 # API explorer for the 26.3 port. One query per line:
-#   pkg <regex>     list classes whose name matches (minecraft + fabric-api + libs)
-#   class <fqcn>    javap -public of that class
-#   grep <regex>    classes that contain a member/string matching (javap -p, slow: keep small)
-pkg (?i)glfw|InputConstants|KeyMapping|keybind|sdl
-pkg ^com/mojang/blaze3d/
-pkg ^com/mojang/renderpearl/[^$]*$
-pkg net/fabricmc/fabric/api/client/rendering/
-pkg net/fabricmc/fabric/api/client/keymapping|net/fabricmc/fabric/api/client/keybinding|KeyBindingHelper|KeyMappingHelper
-pkg (?i)MultiBufferSource|BufferSource|SubmitNodeCollector|RenderType[^s]
-class com.mojang.blaze3d.platform.InputConstants
-class com.mojang.blaze3d.vertex.PoseStack
-class net.minecraft.client.KeyMapping
+#   pkg <regex>              list classes whose name matches (minecraft + fabric-api + libs)
+#   class <fqcn>             javap -public of that class
+#   classgrep <fqcn> <regex> only the matching lines of javap -p
+class com.mojang.renderpearl.api.device.GpuBackend
+classgrep net.minecraft.client.Options (?i)backend|vulkan|graphics|preferred
+pkg (?i)GraphicsApi|PreferredGraphics|BackendOption|GraphicsBackend
+class com.mojang.blaze3d.systems.RenderSystem
+class com.mojang.renderpearl.api.vertex.VertexFormat
+class com.mojang.renderpearl.api.pipeline.RenderPipeline
+class com.mojang.renderpearl.api.device.GpuDevice
+class com.mojang.renderpearl.api.commands.CommandEncoder
+class com.mojang.renderpearl.api.commands.RenderPass
+class com.mojang.renderpearl.api.textures.GpuTexture
+class net.minecraft.client.renderer.rendertype.RenderType
+class net.minecraft.client.renderer.SubmitNodeCollector
+class net.minecraft.client.gui.GuiGraphics
+class net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
+class net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext
+class net.fabricmc.fabric.api.client.rendering.v1.LivingEntityRenderLayerRegistrationCallback
+class net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
+classgrep net.minecraft.client.gui.screens.Screen (?i)render|key|mouse|char
+classgrep com.mojang.blaze3d.platform.Window (?i)handle|width|height|scale|cursor
+pkg ^net/minecraft/client/renderer/[A-Z][^$/]*$

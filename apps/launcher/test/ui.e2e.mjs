@@ -402,7 +402,7 @@ await win.click('#tbFriends');
 await win.click('[data-chat]');
 await win.waitForSelector('#send');
 await win.fill('#send input', 'Antwort aus dem Launcher');
-await win.click('#send button');
+await win.click('#send button.primary');
 await win.waitForTimeout(400);
 const thread = await call(friend.token, 'GET', `/api/messages/${me.user.id}`);
 if (!thread.messages.some((m) => m.body === 'Antwort aus dem Launcher')) problems.push('chat message not delivered');

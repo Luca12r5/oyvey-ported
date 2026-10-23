@@ -3,7 +3,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { LauncherApi } from '../ipc-types.ts';
 
-const CHANNELS = new Set(['auth', 'launch-progress', 'game-log', 'game-exit', 'lego-event', 'update', 'window-state', 'vrb-frame', 'vrb-state']);
+const CHANNELS = new Set(['auth', 'launch-progress', 'game-log', 'game-exit', 'lego-event', 'update', 'window-state', 'vrb-frame', 'vrb-state', 'server-log', 'server-state']);
 
 const api: LauncherApi = {
   info: () => ipcRenderer.invoke('info'),
@@ -45,6 +45,15 @@ const api: LauncherApi = {
   gameRunning: () => ipcRenderer.invoke('game:running'),
   openFolder: (k, id) => ipcRenderer.invoke('folder', k, id),
   mods: (id) => ipcRenderer.invoke('mods:list', id),
+  servers: () => ipcRenderer.invoke('server:list'),
+  saveServer: (s) => ipcRenderer.invoke('server:save', s),
+  deleteServer: (id) => ipcRenderer.invoke('server:delete', id),
+  startServer: (id) => ipcRenderer.invoke('server:start', id),
+  stopServer: (id) => ipcRenderer.invoke('server:stop', id),
+  serverCommand: (id, c) => ipcRenderer.invoke('server:cmd', id, c),
+  serverLog: (id) => ipcRenderer.invoke('server:log', id),
+  serverFolder: (id) => ipcRenderer.invoke('server:folder', id),
+  joinServer: (id, profileId) => ipcRenderer.invoke('server:join', id, profileId),
   openConsole: () => ipcRenderer.invoke('console:open'),
   consoleHistory: () => ipcRenderer.invoke('console:history'),
   content: (id, kind) => ipcRenderer.invoke('content:list', id, kind),

@@ -2,6 +2,7 @@
 
 import type { GameProfile, LoaderType, Settings } from './core/settings.ts';
 import type { ContentEntry, ContentKind } from './core/content.ts';
+import type { LocalServer } from './core/server.ts';
 import type { InstalledMod, ProjectType, SearchHit } from './core/modrinth.ts';
 import type { Diagnosis, Fix } from './core/crashdoc.ts';
 import type { FoundInstance } from './core/importers.ts';
@@ -92,6 +93,15 @@ export interface LauncherApi {
   gameRunning(): Promise<boolean>;
   openFolder(kind: 'game' | 'logs' | 'mods' | 'screenshots' | 'resourcepacks' | 'shaderpacks' | 'datapacks' | 'saves', profileId?: string): Promise<void>;
   mods(profileId: string): Promise<ModEntry[]>;
+  servers(): Promise<(LocalServer & { running: boolean })[]>;
+  saveServer(s: Partial<LocalServer>): Promise<LocalServer>;
+  deleteServer(id: string): Promise<void>;
+  startServer(id: string): Promise<void>;
+  stopServer(id: string): Promise<void>;
+  serverCommand(id: string, cmd: string): Promise<void>;
+  serverLog(id: string): Promise<string[]>;
+  serverFolder(id: string): Promise<void>;
+  joinServer(id: string, profileId: string): Promise<{ ok: boolean; error?: string }>;
   /** Modrinth project ids already installed in a profile for a content type. */
   installedIds(profileId: string, type: ProjectType): Promise<string[]>;
   /** Opens (or focuses) the separate console window. */
@@ -121,5 +131,5 @@ export interface LauncherApi {
   diagnostics(): Promise<string>;
   checkUpdate(): Promise<{ available: boolean; version?: string; error?: string }>;
   installUpdate(): Promise<void>;
-  on(channel: 'auth' | 'launch-progress' | 'game-log' | 'game-exit' | 'lego-event' | 'update' | 'window-state' | 'vrb-frame' | 'vrb-state', cb: (data: any) => void): () => void;
+  on(channel: 'auth' | 'launch-progress' | 'game-log' | 'game-exit' | 'lego-event' | 'update' | 'window-state' | 'vrb-frame' | 'vrb-state' | 'server-log' | 'server-state', cb: (data: any) => void): () => void;
 }

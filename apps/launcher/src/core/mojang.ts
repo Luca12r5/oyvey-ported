@@ -48,7 +48,7 @@ export interface VersionJson {
   libraries: Library[];
   assetIndex?: { id: string; sha1: string; size: number; url: string; totalSize?: number };
   assets?: string;
-  downloads?: { client?: { sha1: string; size: number; url: string } };
+  downloads?: { client?: { sha1: string; size: number; url: string }; server?: { sha1: string; size: number; url: string } };
   javaVersion?: { component: string; majorVersion: number };
   logging?: { client?: { argument: string; file: { id: string; sha1: string; size: number; url: string }; type: string } };
 }
@@ -171,6 +171,8 @@ export interface LaunchContext {
   extraJvmArgs: string[];
   resolution?: { width: number; height: number };
   loggingConfigPath?: string;
+  /** Join this server right after start ("host:port"). */
+  joinServer?: string;
 }
 
 function expand(args: Argument[] | undefined, env: Env): string[] {
@@ -232,7 +234,16 @@ export function buildArguments(ctx: LaunchContext): string[] {
     if (a.includes('${')) continue;
     cleaned.push(a);
   }
+  if (ctx.joinServer) cleaned.push(...joinArgs(v, ctx.joinServer));
   return [...memory, ...ctx.extraJvmArgs, ...jvm, v.mainClass, ...cleaned];
+}
+
+/** Game arguments to join a server on start: quick play (1.20+) or the old --server/--port. */
+export function joinArgs(v: Pick<VersionJson, 'arguments' | 'minecraftArguments'>, target: string): string[] {
+  if (!/^[\w.-]{1,253}(:\d{1,5})?$/.test(target)) return [];
+  if (JSON.stringify(v.arguments?.game ?? []).includes('quickPlayMultiplayer')) return ['--quickPlayMultiplayer', target];
+  const [host, port] = target.split(':');
+  return ['--server', host!, ...(port ? ['--port', port] : [])];
 }
 
 /** Masks the access token for logs. */

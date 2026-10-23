@@ -31,6 +31,7 @@ import { crashSignature, parseDb, prune, rank, recordApplied, recordCrash, recor
 import { setupUpdater, checkForUpdate, installUpdate } from './updater.ts';
 import { VrBrowser } from './vrbrowser.ts';
 import { DiscordPresence } from './discord.ts';
+import { ServerManager } from './servers.ts';
 import { validAppId } from '../core/discordrpc.ts';
 import { listModules, setModule } from '../core/clientcfg.ts';
 import type { AuthState, LaunchProgress, ModEntry, SkinData } from '../ipc-types.ts';
@@ -64,6 +65,8 @@ const env = currentEnv(process.platform, process.arch, release());
 /** The console window (opened from the launcher, like the NoRisk launcher's) and its log buffer. */
 let consoleWin: BrowserWindow | null = null;
 const discord = new DiscordPresence();
+let servers: ServerManager | null = null;
+const srv = () => (servers ??= new ServerManager(app.getPath('userData'), paths.game(), env, fetch, (ev, data) => send(ev, data)));
 const idlePresence = () => discord.set({ details: 'Im LEGO Launcher' });
 let consoleBuf: { line: string; stream: string }[] = [];
 
@@ -310,7 +313,7 @@ async function prepareMods(profile: GameProfile, gameDir: string, report: (step:
   if (profile.loaderType || managed.length) await syncMods(fetch, join(gameDir, 'mods'), managed, report, signal);
 }
 
-async function launch(profileId: string): Promise<{ ok: boolean; error?: string }> {
+async function launch(profileId: string, opts: { joinServer?: string } = {}): Promise<{ ok: boolean; error?: string }> {
   consoleBuf = [];
   if (running) return { ok: false, error: 'Minecraft läuft bereits.' };
   const profile = settings.profiles.find((p) => p.id === profileId);
@@ -354,6 +357,7 @@ async function launch(profileId: string): Promise<{ ok: boolean; error?: string 
       memoryMb: { min: Math.min(1024, profile.memoryMb), max: profile.memoryMb },
       extraJvmArgs: [...(profile.performancePack ? fastJvmFlags(jvm.args) : []), ...jvm.args, ...(active()?.lego ? [`-Dlegoclient.api=${backendUrl()}`] : []), ...(profile.legoClient && !settings.introEnabled ? ['-Dlegoclient.intro=0'] : [])],
       resolution: profile.resolution ?? undefined, loggingConfigPath: installed.loggingConfig ?? undefined,
+      joinServer: opts.joinServer,
     });
     report('Starte Minecraft');
     send('game-log', { line: `[launcher] ${javaPath} ${redactArgs(args, mc.accessToken).join(' ')}`, stream: 'out' });
@@ -776,6 +780,21 @@ function registerIpc(): void {
     return loaderVersions(fetch, type, gv).catch(() => []);
   });
   ipcMain.handle('game:launch', (_e, id: string) => launch(id));
+  // Own Minecraft server on this PC.
+  ipcMain.handle('server:list', () => srv().all());
+  ipcMain.handle('server:save', (_e, s: unknown) => srv().upsert(s));
+  ipcMain.handle('server:delete', (_e, id: string) => srv().remove(String(id)));
+  ipcMain.handle('server:start', (_e, id: string) => srv().start(String(id)));
+  ipcMain.handle('server:stop', (_e, id: string) => srv().stop(String(id)));
+  ipcMain.handle('server:cmd', (_e, id: string, cmd: unknown) => srv().command(String(id), cmd));
+  ipcMain.handle('server:log', (_e, id: string) => srv().log(String(id)));
+  ipcMain.handle('server:folder', async (_e, id: string) => { await mkdir(srv().dir(String(id)), { recursive: true }); await shell.openPath(srv().dir(String(id))); });
+  // Start a profile and join the server right away.
+  ipcMain.handle('server:join', async (_e, id: string, profileId: string) => {
+    const s = (await srv().all()).find((x) => x.id === id);
+    if (!s) throw new Error('Server nicht gefunden');
+    return launch(String(profileId), { joinServer: `localhost:${s.port}` });
+  });
   ipcMain.on('game:cancel', () => launchAbort?.abort());
   ipcMain.handle('game:running', () => !!running);
   ipcMain.handle('folder', async (_e, kind: string, profileId?: string) => {
@@ -1169,4 +1188,6 @@ if (!app.requestSingleInstanceLock()) {
     }
   });
   app.on('window-all-closed', () => app.quit());
+  // Servers save their world and stop with the launcher.
+  app.on('before-quit', () => servers?.stopAll());
 }
