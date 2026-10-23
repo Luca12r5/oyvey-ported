@@ -324,8 +324,8 @@ public final class SolarSmash extends View {
         // categories
         int cx = x + p(10), cy = y + p(6);
         for (int i = 0; i < SolarTools.CATS.length; i++) {
-            String c = (i + 1) + "  " + SolarTools.CATS[i];
-            float fs = pf(7.2f);
+            String c = (i < 9 ? (i + 1) + "  " : "") + SolarTools.CATS[i];
+            float fs = pf(SolarTools.CATS.length > 8 ? 6.4f : 7.2f);
             int cw = Math.round(Gx.width(c, fs, Fonts.BOLD)) + p(30), ch = p(22);
             boolean sel = i == cat, hv = hover(cx, cy, cw, ch);
             Gx.rect(cx, cy, cw, ch, ch / 2, sel ? 0xFFE3263B : hv ? 0x33FFFFFF : 0x14FFFFFF);
@@ -428,7 +428,7 @@ public final class SolarSmash extends View {
     @Override
     public boolean key(int key, int mods) {
         if (key < 0) return false;
-        if (key >= 49 && key <= 56) { cat = key - 49; tool = 0; drawerOpen = true; return true; }
+        if (key >= 49 && key <= 48 + Math.min(9, SolarTools.CATS.length)) { cat = key - 49; tool = 0; drawerOpen = true; return true; }
         if (key == 262) { tool = (tool + 1) % tools().size(); return true; }
         if (key == 263) { tool = (tool - 1 + tools().size()) % tools().size(); return true; }
         if (key == 32) { paused = !paused; return true; }

@@ -9,8 +9,8 @@ final class SolarTools {
 
     enum Kind { BEAM, SHOT, RAIN, SWARM, AREA, GLOBAL, HOLE, SPLIT }
 
-    static final String[] CATS = {"Laser", "Meteore", "Aliens", "Natur", "Kosmos", "Sci-Fi", "Spaß", "Weihnachten"};
-    static final String[] CAT_ICONS = {"bolt", "gem", "eye", "flame", "moon", "chip", "heart", "gift"};
+    static final String[] CATS = {"Laser", "Meteore", "Aliens", "Natur", "Kosmos", "Sci-Fi", "Spaß", "Weihnachten", "Physik", "Apokalypse"};
+    static final String[] CAT_ICONS = {"bolt", "gem", "eye", "flame", "moon", "chip", "heart", "gift", "target", "skull"};
 
     static final class Tool {
         final int cat;
@@ -179,5 +179,48 @@ final class SolarTools {
         add(new Tool(7, "Lichterketten-Strahl", BM, 0xFFFFC94A, "Bunte Lichter brennen sich ein")).dmg(10, 18, 90, 0.4f).style(CO).width(1).n(3).snd(BELL);
         add(new Tool(7, "Schneemann-Armee", RN, 0xFFF4F8FF, "Schneemänner landen überall")).dmg(14, 20, 0, 0.4f).style(I).sprite(-4).n(16).dur(4).speed(0.8f).snd(ICE);
         add(new Tool(7, "Kohle-Regen", RN, 0xFF2A2A2A, "Für alle, die unartig waren")).dmg(12, 50, 120, 0.6f).style(B).n(30).dur(3).speed(1.8f).snd(BOOM);
+        // ---------------------------------------------------------------- 8 Physik (20)
+        add(new Tool(8, "Railgun", SHT, 0xFF7FD8FF, "Ein Projektil mit Überschall, schlägt sofort ein")).dmg(14, 140, 200, 0.7f).speed(4f).snd(DEEP);
+        add(new Tool(8, "Gauss-Salve", RN, 0xFF9FE0FF, "Viele kleine Hochgeschwindigkeits-Geschosse")).dmg(7, 70, 160, 0.5f).n(28).dur(2).speed(3f).snd(LASER);
+        add(new Tool(8, "Kinetischer Stab", SHT, 0xFFC8C8D0, "Wolfram-Stab aus dem Orbit (\"Rods from God\")")).dmg(26, 200, 220, 0.9f).speed(3f).snd(BOOM);
+        add(new Tool(8, "Mond-Crash", SHT, 0xFFBDBDBD, "Ein ganzer Mond stürzt ab")).dmg(170, 255, 255, 1f).style(LV).speed(0.5f).sprite(-1).snd(DEEP);
+        add(new Tool(8, "Planetenkollision", SHT, 0xFFB57A4A, "Ein zweiter Planet rammt diesen")).dmg(260, 255, 255, 1f).style(LV).speed(0.4f).sprite(-1).snd(DEEP);
+        add(new Tool(8, "Asteroiden-Gürtel", RN, 0xFF9A8A7A, "Hunderte Gesteinsbrocken")).dmg(12, 60, 120, 0.5f).n(60).dur(5).speed(1.4f).snd(BOOM);
+        add(new Tool(8, "Neutronenstern-Vorbeiflug", GL, 0xFFDDE8FF, "Die Gezeiten zerreißen die Kruste")).dmg(0, 90, 60, 0.6f).style(SH).dur(4).snd(DEEP);
+        add(new Tool(8, "Gezeitenwelle", AR, 0xFF3A8AE0, "Ozeane schwappen über die Kontinente")).dmg(140, 6, 0, 0.55f).style(FL).dur(4).snd(SPLASH);
+        add(new Tool(8, "Tsunami", AR, 0xFF2A6AD0, "Eine Flutwelle läuft um den Planeten")).dmg(120, 8, 0, 0.6f).style(FL).dur(5).snd(SPLASH);
+        add(new Tool(8, "Supervulkan", AR, 0xFFFF5A1A, "Ein Vulkan bricht in riesigem Ausmaß aus")).dmg(70, 80, 255, 0.85f).style(LV).dur(5).snd(BOOM);
+        add(new Tool(8, "Kontinentalbeben", AR, 0xFF9A7A5A, "Risse ziehen durch die Kruste")).dmg(90, 40, 20, 0.5f).style(SH).dur(4).snd(BOOM);
+        add(new Tool(8, "Magnetsturm", GL, 0xFF8AFFC8, "Polarlichter und Stromausfall überall")).dmg(0, 4, 0, 0.3f).style(EMP).dur(5).snd(UFO);
+        add(new Tool(8, "Sonnenwind", GL, 0xFFFFE08A, "Die Atmosphäre wird weggeblasen")).dmg(0, 10, 120, 0.4f).style(SA).dur(4).snd(WHOOSH);
+        add(new Tool(8, "Gamma-Blitz", GL, 0xFFE8F6FF, "Ein Gammastrahlenblitz trifft eine Seite")).dmg(0, 30, 255, 0.9f).style(B).dur(2).snd(DEEP);
+        add(new Tool(8, "Wurmloch", HO, 0xFF6A3AFF, "Saugt alles in ein anderes Universum")).dmg(80, 255, 30, 1f).style(RF).dur(4).snd(DEEP);
+        add(new Tool(8, "Mini-Schwarzes-Loch", HO, 0xFF0A0A12, "Klein, aber sehr hungrig")).dmg(40, 255, 40, 1f).style(AN).dur(3).snd(DEEP);
+        add(new Tool(8, "Plasma-Kugel", SHT, 0xFFFF6AE8, "Heißes Plasma, frisst sich ein")).dmg(36, 70, 255, 0.7f).style(F).speed(1.2f).snd(LASER);
+        add(new Tool(8, "Schockwelle", AR, 0xFFFFFFFF, "Eine Druckwelle rast über die Oberfläche")).dmg(130, 12, 40, 0.5f).style(SH).dur(2).snd(THUNDER);
+        add(new Tool(8, "Kometenschauer", RN, 0xFFBFE8FF, "Eis-Kometen mit langen Schweifen")).dmg(18, 70, 30, 0.5f).style(I).n(16).dur(4).speed(1.6f).snd(WHOOSH);
+        add(new Tool(8, "Kernschmelze", AR, 0xFFFFA02A, "Der Kern kocht über")).dmg(100, 120, 255, 0.9f).style(LV).dur(4).snd(BOOM);
+
+        // ---------------------------------------------------------------- 9 Apokalypse (20)
+        add(new Tool(9, "Planetenknacker", SP, 0xFFFF3A2A, "Reißt riesige Spalten bis zum Kern")).dmg(0, 255, 255, 1f).style(LV).width(3f).snd(DEEP);
+        add(new Tool(9, "Antimaterie-Bombe", SHT, 0xFFEAF6FF, "Materie und Antimaterie löschen sich aus")).dmg(160, 255, 120, 1f).style(AN).speed(1f).snd(DEEP);
+        add(new Tool(9, "Sternen-Supernova", GL, 0xFFFFF0B0, "Der Stern explodiert, alles verglüht")).dmg(0, 120, 255, 1f).style(F).dur(4).snd(DEEP);
+        add(new Tool(9, "Armada", SW, 0xFF8AA0C8, "Eine ganze Raumflotte greift an")).dmg(10, 40, 160, 0.6f).n(40).dur(10).sprite(5).speed(1.6f).snd(LASER);
+        add(new Tool(9, "Nano-Schwarm", SW, 0xFF9AFFE0, "Winzige Maschinen fressen die Oberfläche")).dmg(6, 30, 10, 0.7f).style(TX).n(60).dur(10).sprite(5).speed(2.2f).snd(UFO);
+        add(new Tool(9, "Zeitbombe", SHT, 0xFFFFD34A, "Tickt, dann ein riesiger Knall")).dmg(150, 220, 255, 1f).style(F).speed(0.5f).snd(BOOM);
+        add(new Tool(9, "Todesstern-Strahl", BM, 0xFF3AFF6A, "Ein grüner Planetenzerstörer")).dmg(60, 255, 255, 1f).style(LV).width(6f).snd(DEEP);
+        add(new Tool(9, "Kettenreaktion", RN, 0xFFFF7A2A, "Eine Explosion löst die nächste aus")).dmg(40, 120, 255, 0.8f).style(F).n(14).dur(4).speed(1f).snd(BOOM);
+        add(new Tool(9, "Atomwinter", GL, 0xFFDDE6F0, "Asche verdunkelt, Eis bedeckt alles")).dmg(0, 6, 0, 0.6f).style(I).dur(5).snd(ICE);
+        add(new Tool(9, "Virus-Ausbruch", GL, 0xFF9CFF3C, "Eine Seuche breitet sich aus")).dmg(0, 4, 0, 0.9f).style(TX).dur(6).snd(UFO);
+        add(new Tool(9, "Riss im Raum", HO, 0xFFB35CFF, "Die Realität reißt auf")).dmg(120, 255, 60, 1f).style(RF).dur(5).snd(DEEP);
+        add(new Tool(9, "Kern-Laser", BM, 0xFFFF8A2A, "Schneidet bis zum Kern und darüber hinaus")).dmg(30, 255, 255, 1f).style(LV).width(3f).snd(LASER);
+        add(new Tool(9, "Meteor-Apokalypse", RN, 0xFF7A5A4A, "Tausend Meteore auf einmal")).dmg(30, 150, 255, 0.9f).style(F).n(80).dur(6).speed(1.4f).snd(BOOM);
+        add(new Tool(9, "Sonnen-Sturz", SHT, 0xFFFFE07A, "Ein kleiner Stern fällt auf den Planeten")).dmg(240, 255, 255, 1f).style(F).speed(0.4f).snd(DEEP);
+        add(new Tool(9, "Quantenbombe", SHT, 0xFF8AE0FF, "Ist gleichzeitig explodiert und nicht")).dmg(120, 200, 120, 0.95f).style(AN).speed(1f).snd(MAGIC);
+        add(new Tool(9, "Gravitationskollaps", GL, 0xFF6A5AFF, "Der Planet fällt in sich zusammen")).dmg(0, 255, 60, 1f).style(SH).dur(5).snd(DEEP);
+        add(new Tool(9, "Strahlungsgürtel", GL, 0xFFE8FF6A, "Unsichtbar, aber tödlich")).dmg(0, 2, 30, 0.95f).style(TX).dur(4).snd(UFO);
+        add(new Tool(9, "Lava-Ozean", AR, 0xFFFF4A10, "Die Oberfläche wird zu Lava")).dmg(220, 30, 255, 0.95f).style(LV).dur(6).snd(BOOM);
+        add(new Tool(9, "Riesen-Lego-Armada", SW, 0xFFE3000B, "Fliegende Lego-Raumschiffe")).dmg(14, 50, 60, 0.6f).style(LG).n(30).dur(10).sprite(5).speed(1.6f).snd(FUNNY);
+        add(new Tool(9, "Alles auf einmal", RN, 0xFFFF2A6A, "Von allem etwas – das große Finale")).dmg(50, 200, 255, 1f).style(AN).n(40).dur(6).speed(1.2f).snd(DEEP);
     }
 }
