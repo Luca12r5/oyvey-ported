@@ -15,7 +15,7 @@ import {
 } from '../core/install.ts';
 import { loaderSupports } from '../core/loaders.ts';
 import {
-  installedMods, installMrPack, installProject, type SearchFilters, packLoader, performanceFiles, projectVersions, readPackIndex, removeMod, search, toggleMod,
+  installedMods, installMrPack, installProject, type SearchFilters, packLoader, performanceFiles, projectVersions, readPackIndex, VULKAN_PACK, removeMod, search, toggleMod,
   type ProjectType,
 } from '../core/modrinth.ts';
 import { cfLoader, copyInstance, installCfPack, readCfManifest, readFolder, scanInstances, type FoundInstance } from '../core/importers.ts';
@@ -23,7 +23,7 @@ import { listEntries, readEntry } from '../core/zip.ts';
 import { exportToOfficial, officialLauncherPresent, officialMinecraftDir, openOfficialLauncher } from '../core/official.ts';
 import { fetchJson } from '../core/net.ts';
 import { createLogCleaner, diagnose, startGame } from '../core/launch.ts';
-import { DEFAULT_PROFILE, fastJvmFlags, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
+import { DEFAULT_PROFILE, fastJvmFlags, LEGO_CLIENT_GAME_VERSION, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
 import { encryptionAvailable, loadAccounts, loadSettings, paths, saveAccounts, saveSettings, type Account, type AccountStore } from './store.ts';
 import { setupUpdater, checkForUpdate, installUpdate } from './updater.ts';
 import { VrBrowser } from './vrbrowser.ts';
@@ -766,6 +766,31 @@ function registerIpc(): void {
     await installProject(fetch, profileDir(p), 'vivecraft', gv, lt, 'mod', { title: 'Vivecraft', iconUrl: null });
     if (lt === 'fabric') await installProject(fetch, profileDir(p), 'fabric-api', gv, lt, 'mod', { title: 'Fabric API', iconUrl: null }).catch(() => []);
     return { profileId: p.id };
+  });
+  // Max FPS with the Vulkan renderer (VulkanMod, Fabric): checked live on Modrinth for the version.
+  ipcMain.handle('perf:vulkan', async (_e, gameVersion: unknown) => {
+    const gv = typeof gameVersion === 'string' && /^[\w.\-]{1,20}$/.test(gameVersion) ? gameVersion : LEGO_CLIENT_GAME_VERSION;
+    const v = await projectVersions(fetch, 'vulkanmod', gv, 'fabric').catch(() => []);
+    if (v.length) return { available: true, gameVersion: gv };
+    const all = await projectVersions(fetch, 'vulkanmod', null, 'fabric').catch(() => []);
+    const newest = all.flatMap((x) => x.game_versions).find((x) => /^\d+\.\d+(\.\d+)?$/.test(x)) ?? null;
+    return { available: false, gameVersion: gv, suggestion: newest };
+  });
+  ipcMain.handle('perf:vulkanProfile', async (_e, gameVersion: unknown) => {
+    const gv = typeof gameVersion === 'string' && /^[\w.\-]{1,20}$/.test(gameVersion) ? gameVersion : LEGO_CLIENT_GAME_VERSION;
+    const p = await addProfile(`Max FPS (Vulkan) ${gv}`, gv, 'fabric', null, 'flame');
+    // No FPS pack here: it brings Sodium, which does not work together with VulkanMod.
+    p.performancePack = false;
+    p.legoClient = gv === LEGO_CLIENT_GAME_VERSION;
+    await saveSettings(settings);
+    const added: string[] = [];
+    for (const m of VULKAN_PACK) {
+      const ok = await installProject(fetch, profileDir(p), m.slug, gv, 'fabric', 'mod', { title: m.title, iconUrl: null }).then(() => true, () => false);
+      if (ok) added.push(m.title);
+    }
+    await installProject(fetch, profileDir(p), 'fabric-api', gv, 'fabric', 'mod', { title: 'Fabric API', iconUrl: null }).catch(() => []);
+    if (!added.includes('VulkanMod')) throw new Error(`VulkanMod gibt es (noch) nicht für Minecraft ${gv}.`);
+    return { profileId: p.id, mods: added };
   });
   ipcMain.handle('crash:last', () => lastCrash);
   ipcMain.handle('crash:analyze', async (_e, profileId: string) => {

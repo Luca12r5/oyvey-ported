@@ -273,7 +273,8 @@ public final class Visuals2 {
             double var3 = System.currentTimeMillis() / 1000.0;
 
             for (Player var6 : Mc.players()) {
-               if (var6 != var2 && !Mc.isSpectator(var6) && !(var2.distanceToSqr(var6) > this.range.get() * this.range.get())) {
+               // Only players you can see (no information through walls).
+               if (var6 != var2 && !Mc.isSpectator(var6) && !(var2.distanceToSqr(var6) > this.range.get() * this.range.get()) && var2.hasLineOfSight(var6)) {
                   double[] var7 = Mc.lerpPos(var6, var1);
                   int var8 = this.color.argb(Mc.id(var6) * 0.21) & 16777215;
                   R3.ring(var7[0], var7[1] + 0.02, var7[2], 0.55, 0.62, 36, R3.argb(var8, 0.9), R3.argb(var8, 0.9), 0.0);
@@ -361,7 +362,9 @@ public final class Visuals2 {
 
       void render(float var1) {
          Entity var2 = HudModules.CombatTracker.lastTarget();
-         if (var2 != null && var2.isAlive() && System.currentTimeMillis() - HudModules.CombatTracker.lastAttackAt() <= 6000L) {
+         LocalPlayer me = Mc.player();
+         // Only while the target is in sight (no marker through walls).
+         if (var2 != null && var2.isAlive() && me != null && me.hasLineOfSight(var2) && System.currentTimeMillis() - HudModules.CombatTracker.lastAttackAt() <= 6000L) {
             double[] var3 = Mc.lerpPos(var2, var1);
             double var4 = System.currentTimeMillis() / 1000.0;
             int var6 = this.color.argb() & 16777215;

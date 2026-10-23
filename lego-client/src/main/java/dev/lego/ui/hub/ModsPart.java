@@ -441,7 +441,8 @@ public final class ModsPart implements HubView.Part {
    }
 
    private int rowH(HubView var1, Setting var2) {
-      return var2 instanceof Setting.Color ? var1.p(66.0) : var1.p(44.0);
+      if (var2 instanceof Setting.Color c) return c.custom() ? var1.p(66.0 + 134.0) : var1.p(66.0);
+      return var1.p(44.0);
    }
 
    private void row(HubView var1, Module var2, Setting var3, int var4, int var5, int var6, int var7, boolean var8, int var9) {
@@ -573,7 +574,51 @@ public final class ModsPart implements HubView.Part {
             }
          }
 
-         Gx.textRight(Setting.Color.NAMES[var32.index], var15, var5 + var1.p(20.0), var1.pf(8.0), 2, Style.sub);
+         // Own colour: last swatch opens an HSV picker (saturation/brightness field + hue bar), like the NoRisk launcher.
+         int cx = var51 + var37 * (var42 + var46);
+         boolean own = var32.custom();
+         boolean ownHover = var8 && var1.hover(cx, var57, var42, var42);
+         float ownScale = Ease.to("sw:" + var10 + "own", own ? 1.12F : (ownHover ? 1.08F : 1.0F), 16.0F);
+         Gx.push();
+         Gx.scaleAt(cx + var42 / 2.0F, var57 + var42 / 2.0F, ownScale);
+         Gx.circle(cx + var42 / 2, var57 + var42 / 2, var42 / 2, var32.customArgb());
+         Gx.ringAt(cx + var42 / 2, var57 + var42 / 2, var42 / 2, Math.max(1, var1.p(1.0)), Style.stroke);
+         if (own) Gx.ringAt(cx + var42 / 2, var57 + var42 / 2, var42 / 2 + var1.p(3.0), Math.max(1, var1.p(1.4)), Style.text);
+         Gx.pop();
+         if (var8) {
+            Kit.hit(cx - var46 / 2, var57 - var1.p(4.0), var42 + var46, var42 + var1.p(8.0)).click(() -> {
+               var32.index = Setting.Color.CUSTOM;
+               Modules.scheduleSave();
+            });
+         }
+         if (own) {
+            int pw = Math.min(var1.p(260.0), var6 - var1.p(32.0));
+            int ph = var1.p(96.0);
+            int px = var51;
+            int py = var57 + var42 + var1.p(12.0);
+            int hueDeg = Math.round(var32.hue * 360.0F) / 2 * 2;
+            Gx.image(svField(hueDeg, pw, ph), px, py, pw, ph, -1);
+            Gx.outline(px, py, pw, ph, var1.p(4.0), Math.max(1, var1.p(0.7)), Style.stroke);
+            int mx = px + Math.round(var32.sat * pw), my = py + Math.round((1.0F - var32.bri) * ph);
+            Gx.ringAt(mx, my, var1.p(5.0), Math.max(1, var1.p(1.4)), -1);
+            int hy = py + ph + var1.p(8.0), hh = var1.p(12.0);
+            Gx.image(hueBar(pw, hh), px, hy, pw, hh, -1);
+            int hx = px + Math.round(var32.hue * pw);
+            Gx.rect(hx - var1.p(2.0), hy - var1.p(2.0), var1.p(4.0), hh + var1.p(4.0), var1.p(2.0), -1);
+            if (var8) {
+               Kit.hit(px, py, pw, ph).drag((mxf, myf) -> {
+                  var32.sat = Math.max(0.0F, Math.min(1.0F, (mxf - px) / pw));
+                  var32.bri = Math.max(0.0F, Math.min(1.0F, 1.0F - (myf - py) / ph));
+                  Modules.scheduleSave();
+               });
+               Kit.hit(px, hy - var1.p(4.0), pw, hh + var1.p(8.0)).drag((mxf, myf) -> {
+                  var32.hue = Math.max(0.0F, Math.min(0.999F, (mxf - px) / pw));
+                  Modules.scheduleSave();
+               });
+            }
+         }
+
+         Gx.textRight(var32.name(), var15, var5 + var1.p(20.0), var1.pf(8.0), 2, Style.sub);
       } else if (var3 instanceof Setting.Text var33) {
          boolean var38 = this.editing == var33;
          float var43 = var1.pf(8.0);
@@ -615,6 +660,27 @@ public final class ModsPart implements HubView.Part {
             });
          }
       }
+   }
+
+   /** Saturation (left→right) / brightness (top→bottom) field for one hue. */
+   static Gx.Img svField(int hueDeg, int w, int h) {
+      return Gx.painted("sv" + hueDeg, w, h, g -> {
+         Color pure = Color.getHSBColor(hueDeg / 360.0F, 1.0F, 1.0F);
+         g.setPaint(new java.awt.GradientPaint(0, 0, Color.WHITE, w, 0, pure));
+         g.fillRect(0, 0, w, h);
+         g.setPaint(new java.awt.GradientPaint(0, 0, new Color(0, 0, 0, 0), 0, h, Color.BLACK));
+         g.fillRect(0, 0, w, h);
+      });
+   }
+
+   /** Hue bar red → yellow → green → cyan → blue → magenta → red. */
+   static Gx.Img hueBar(int w, int h) {
+      return Gx.painted("huebar", w, h, g -> {
+         for (int x = 0; x < w; x++) {
+            g.setColor(Color.getHSBColor((float)x / Math.max(1, w), 1.0F, 1.0F));
+            g.fillRect(x, 0, 1, h);
+         }
+      });
    }
 
    static Gx.Img rainbow(int var0) {

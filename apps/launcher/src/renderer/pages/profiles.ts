@@ -28,6 +28,7 @@ export async function profilesPage(el: HTMLElement): Promise<void> {
     selectedId: s.selectedProfile,
     onCreate: () => leave(() => editor(el, null)),
     onImport: () => importDialog(el),
+    onVulkan: () => vulkanDialog(el),
     onEdit: (p) => leave(() => editor(el, p)),
     onMods: (p) => leave(() => { openModsFor(p.id); void go('mods'); }),
     onOpenFolder: (p) => run(() => api.openFolder('game', p.id)),
@@ -179,6 +180,35 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
       void profilesPage(el);
     } catch (err) { errorToast(err); }
   });
+}
+
+/** Max FPS: a profile with the Vulkan renderer (VulkanMod) if it exists for the version. */
+function vulkanDialog(el: HTMLElement): void {
+  const gv = state.settings.profiles.find((x) => x.id === state.settings.selectedProfile)?.gameVersion ?? LEGO_CLIENT_GAME_VERSION;
+  const d = dialog(html`<h2>Max FPS mit Vulkan</h2>
+    <p class="muted" id="vkInfo">Prüfe, ob VulkanMod für Minecraft ${gv} verfügbar ist …</p>
+    <form method="dialog" class="row between gap"><button class="btn" id="vkGo" hidden type="button">Profil anlegen</button><button class="btn">${t('prof.back')}</button></form>`);
+  const info = d.querySelector<HTMLElement>('#vkInfo')!;
+  const goBtn = d.querySelector<HTMLButtonElement>('#vkGo')!;
+  void api.vulkan(gv).then((r) => {
+    if (r.available) {
+      info.textContent = `VulkanMod gibt es für Minecraft ${r.gameVersion}. Der Launcher legt ein eigenes Profil an: VulkanMod (Vulkan statt OpenGL), Lithium, FerriteCore, ModernFix und Dynamic FPS${r.gameVersion === LEGO_CLIENT_GAME_VERSION ? ' plus LEGO Client (im Vulkan-Modus ohne eigene Shader-Effekte)' : ''}. Sodium ist nicht dabei, weil es mit VulkanMod nicht zusammen läuft. Wie viel FPS es bringt, hängt von deiner Grafikkarte ab; sie muss Vulkan 1.2 können.`;
+      goBtn.hidden = false;
+    } else {
+      info.textContent = `VulkanMod gibt es (noch) nicht für Minecraft ${r.gameVersion}.${r.suggestion ? ` Neueste unterstützte Version: ${r.suggestion}.` : ''} Bis dahin bringt das FPS-Paket (Sodium & Co.) im normalen Profil am meisten.`;
+    }
+  }).catch((e) => { info.textContent = `Prüfung fehlgeschlagen: ${(e as Error).message}`; });
+  goBtn.onclick = async () => {
+    goBtn.disabled = true;
+    goBtn.textContent = 'Wird eingerichtet …';
+    try {
+      const r = await api.vulkanProfile(gv);
+      state.settings = await api.setSettings({ selectedProfile: r.profileId });
+      d.close();
+      toast(`Max-FPS-Profil angelegt: ${r.mods.join(', ')}`, 'ok');
+      void profilesPage(el);
+    } catch (err) { errorToast(err); goBtn.disabled = false; goBtn.textContent = 'Profil anlegen'; }
+  };
 }
 
 function importDialog(el: HTMLElement): void {

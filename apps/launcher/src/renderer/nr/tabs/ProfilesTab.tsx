@@ -32,6 +32,8 @@ export interface ProfilesTabProps extends ProfileCardHandlers {
   selectedId: string;
   onCreate: () => void;
   onImport: () => void;
+  /** Max-FPS profile with the Vulkan renderer. */
+  onVulkan?: () => void;
 }
 
 export function ProfilesTab(p: ProfilesTabProps) {
@@ -84,6 +86,7 @@ export function ProfilesTab(p: ProfilesTabProps) {
   }, [sorted, selectedVersions]);
 
   const actionButtons: ActionButton[] = [
+    ...(p.onVulkan ? [{ id: 'vulkan', label: 'MAX FPS', icon: 'solar:fire-bold', tooltip: 'Max-FPS-Profil mit Vulkan (VulkanMod)', onClick: p.onVulkan }] : []),
     { id: 'import', label: 'IMPORT', icon: 'solar:import-bold', tooltip: 'Modpack-Datei, anderen Launcher oder Ordner importieren', onClick: p.onImport },
     { id: 'new', label: 'CREATE', icon: 'solar:widget-add-bold', tooltip: 'Neues Profil erstellen', onClick: p.onCreate },
   ];

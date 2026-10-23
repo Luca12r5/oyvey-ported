@@ -358,6 +358,7 @@ public final class CustomSky extends Module {
    }
 
    public void render() {
+      if (dev.lego.core.Compat.vulkan) return;
       if (this.inOverworld()) {
          double var1 = 256.0;
 

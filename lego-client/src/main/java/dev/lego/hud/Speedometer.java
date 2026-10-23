@@ -46,6 +46,7 @@ final class Speedometer extends HudModule {
    }
 
    private Color tint() {
+      if (this.color.custom()) return new Color(this.color.customArgb(), false);
       int i = Math.max(0, Math.min(Setting.Color.PALETTE.length - 1, this.color.index));
       if (i == Setting.Color.PALETTE.length - 1) {
          double t = System.currentTimeMillis() / 2600.0;
@@ -74,7 +75,7 @@ final class Speedometer extends HudModule {
 
    @Override
    public String key() {
-      return String.format(Locale.ROOT, "%d|%.1f|%.1f|%b|%d|%.0f|%d", this.design.index, this.shown(), this.math.accel(), this.math.braking(), this.unit.index, this.max.get(), this.color.index == Setting.Color.PALETTE.length - 1 ? System.currentTimeMillis() / 100 : this.color.index);
+      return String.format(Locale.ROOT, "%d|%.1f|%.1f|%b|%d|%.0f|%d", this.design.index, this.shown(), this.math.accel(), this.math.braking(), this.unit.index, this.max.get(), this.color.index == Setting.Color.PALETTE.length - 1 ? System.currentTimeMillis() / 100 : (this.color.custom() ? this.color.customArgb() : this.color.index));
    }
 
    @Override

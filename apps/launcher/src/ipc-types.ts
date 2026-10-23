@@ -75,6 +75,8 @@ export interface LauncherApi {
   resetSkin(): Promise<SkinData>;
   vivecraft(gameVersion?: string): Promise<{ available: boolean; gameVersion: string; loader: string | null; suggestion?: string | null }>;
   vivecraftProfile(gameVersion: string, loader: string): Promise<{ profileId: string }>;
+  vulkan(gameVersion?: string): Promise<{ available: boolean; gameVersion: string; suggestion?: string | null }>;
+  vulkanProfile(gameVersion: string): Promise<{ profileId: string; mods: string[] }>;
   crashLast(): Promise<{ profileId: string; diagnoses: Diagnosis[] } | null>;
   crashAnalyze(profileId: string): Promise<{ profileId: string; diagnoses: Diagnosis[] }>;
   crashFix(profileId: string, fix: Fix | { kind: 'enable-mod'; filename: string }): Promise<{ undo: Fix | { kind: 'enable-mod'; filename: string } | null; message: string }>;

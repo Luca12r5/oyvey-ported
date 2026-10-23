@@ -177,6 +177,19 @@ export const PERFORMANCE_PACK: { slug: string; title: string }[] = [
   { slug: 'immediatelyfast', title: 'ImmediatelyFast' },
   { slug: 'entityculling', title: 'EntityCulling' },
   { slug: 'modernfix', title: 'ModernFix' },
+  { slug: 'dynamic-fps', title: 'Dynamic FPS' },
+];
+
+/**
+ * Max-FPS profile with the Vulkan renderer: VulkanMod replaces Sodium (both rewrite the renderer
+ * and do not work together); the rest are logic/memory optimisations that work with it.
+ */
+export const VULKAN_PACK: { slug: string; title: string }[] = [
+  { slug: 'vulkanmod', title: 'VulkanMod' },
+  { slug: 'lithium', title: 'Lithium' },
+  { slug: 'ferrite-core', title: 'FerriteCore' },
+  { slug: 'modernfix', title: 'ModernFix' },
+  { slug: 'dynamic-fps', title: 'Dynamic FPS' },
 ];
 
 /** Resolves the performance pack files that exist for this game version/loader. */

@@ -65,7 +65,11 @@ public abstract class Setting {
       public static final String[] NAMES = new String[]{
          "Grün", "Rot", "Gelb", "Blau", "Hellblau", "Lila", "Pink", "Orange", "Weiß", "Eis", "Lime", "Regenbogen"
       };
+      /** Index into PALETTE, or CUSTOM for an own colour chosen with the HSV picker. */
       public int index;
+      public static final int CUSTOM = PALETTE.length;
+      /** Own colour (hue 0..1, saturation 0..1, brightness 0..1), used when index == CUSTOM. */
+      public float hue = 0.07F, sat = 0.9F, bri = 1.0F;
 
       public Color(String var1, int var2) {
          super(var1);
@@ -76,8 +80,22 @@ public abstract class Setting {
          return this.index == PALETTE.length - 1;
       }
 
+      public boolean custom() {
+         return this.index == CUSTOM;
+      }
+
+      public int customArgb() {
+         return 0xFF000000 | java.awt.Color.HSBtoRGB(this.hue, this.sat, this.bri) & 16777215;
+      }
+
+      public String name() {
+         return this.custom() ? String.format("#%06X", this.customArgb() & 16777215) : NAMES[Math.max(0, Math.min(NAMES.length - 1, this.index))];
+      }
+
       public int argb(double var1) {
-         if (!this.rainbow()) {
+         if (this.custom()) {
+            return this.customArgb();
+         } else if (!this.rainbow()) {
             return PALETTE[this.index];
          } else {
             double var3 = System.currentTimeMillis() / 2600.0 + var1;
@@ -91,13 +109,20 @@ public abstract class Setting {
 
       @Override
       public Object save() {
-         return (long)this.index;
+         return this.custom() ? String.format("#%06X", this.customArgb() & 16777215) : (Object)(long)this.index;
       }
 
       @Override
       public void load(Object var1) {
          if (var1 instanceof Number) {
             this.index = Math.max(0, Math.min(PALETTE.length - 1, ((Number)var1).intValue()));
+         } else if (var1 instanceof String str && str.matches("#[0-9A-Fa-f]{6}")) {
+            int rgb = Integer.parseInt(str.substring(1), 16);
+            float[] hsb = java.awt.Color.RGBtoHSB(rgb >> 16 & 255, rgb >> 8 & 255, rgb & 255, null);
+            this.hue = hsb[0];
+            this.sat = hsb[1];
+            this.bri = hsb[2];
+            this.index = CUSTOM;
          }
       }
    }

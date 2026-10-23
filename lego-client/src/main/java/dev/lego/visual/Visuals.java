@@ -308,6 +308,10 @@ public final class Visuals {
 
       @Override
       public void tick() {
+         if (dev.lego.core.Compat.vulkan) {
+            this.setEnabled(false);
+            return;
+         }
          String id = IDS[Math.max(0, Math.min(IDS.length - 1, this.mode.index))];
          if (id.equals("custom")) {
             int sat = (int)Math.round(Math.max(0.0, Math.min(200.0, this.saturation.get())) / 10.0) * 10;

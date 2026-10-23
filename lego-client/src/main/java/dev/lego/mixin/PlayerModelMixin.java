@@ -22,6 +22,10 @@ public abstract class PlayerModelMixin {
    )
    private void lego$emote(AvatarRenderState var1, CallbackInfo var2) {
       try {
+         dev.lego.cosmetic.SkinLayers3D.hideFlat((PlayerModel)(Object)this, var1);
+      } catch (Throwable ignored) {
+      }
+      try {
          if (Mc.player() == null) {
             return;
          }

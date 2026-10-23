@@ -57,6 +57,8 @@ public final class HudModules {
       Modules.register(new HudModules.Hunger());
       Modules.register(new HudModules.Health());
       Modules.register(new HudModules.Combo());
+      Modules.register(new HudModules.ElytraInfo());
+      Modules.register(new HudModules.ChunkInfo());
    }
 
    static String sessionTime() {
@@ -1032,6 +1034,53 @@ public final class HudModules {
       @Override
       public void paint(Graphics2D var1, Color var2) {
          simplePaint(var1, this.icon, this.value, this.unit, this.w(), var2);
+      }
+   }
+
+   /** Elytra: durability in percent, and while gliding speed and climb/sink rate. */
+   static final class ElytraInfo extends HudModules.Simple {
+      ElytraInfo() {
+         super("elytra", "Elytra-Info", "Haltbarkeit der Elytra, im Flug Tempo und Steigen/Sinken", "wings", 0.006, 0.58);
+      }
+
+      @Override
+      void compute() {
+         LocalPlayer p = Mc.player();
+         ItemStack chest = p == null ? ItemStack.EMPTY : p.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
+         if (p == null || !chest.is(net.minecraft.world.item.Items.ELYTRA)) {
+            this.value = "-";
+            this.unit = "";
+            return;
+         }
+         int max = Math.max(1, chest.getMaxDamage());
+         int pct = Math.round(100.0F * (max - chest.getDamageValue()) / max);
+         if (p.isFallFlying()) {
+            net.minecraft.world.phys.Vec3 v = p.getDeltaMovement();
+            this.value = String.format(Locale.ROOT, "%d %% · %.0f b/s · %+.1f", pct, v.length() * 20.0, v.y * 20.0);
+         } else {
+            this.value = pct + " %";
+         }
+         this.unit = "";
+      }
+   }
+
+   /** Chunk you stand in and your position inside it (handy for farms and chunk borders). */
+   static final class ChunkInfo extends HudModules.Simple {
+      ChunkInfo() {
+         super("chunk", "Chunk-Info", "Chunk-Koordinaten und Position im Chunk", "grid", 0.006, 0.64);
+      }
+
+      @Override
+      void compute() {
+         LocalPlayer p = Mc.player();
+         if (p == null) {
+            this.value = "-";
+            this.unit = "";
+            return;
+         }
+         int x = (int)Math.floor(Mc.x(p)), z = (int)Math.floor(Mc.z(p));
+         this.value = String.format(Locale.ROOT, "%d %d · %d %d", x >> 4, z >> 4, x & 15, z & 15);
+         this.unit = "";
       }
    }
 

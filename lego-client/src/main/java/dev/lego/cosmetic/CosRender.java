@@ -623,6 +623,11 @@ public final class CosRender {
          Perf.begin("Kosmetik");
 
          try {
+            try {
+               SkinLayers3D.submit(var1, var2, var3, var4, this.getParentModel());
+            } catch (Throwable e) {
+               // never break the player render
+            }
             LocalPlayer var7 = Mc.player();
             if (var7 != null && var4.id != Mc.id(var7)) {
                if (dev.lego.net.LegoNet.cosmeticsEnabled()) {
