@@ -582,6 +582,11 @@ body.stage-plain .halo, body.stage-plain .floor, body.stage-plain .pedestal, bod
 .req-card { border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
 .search-res { padding: 8px; }
 .chat .msg { animation: toast .25s var(--ease); }
+.msg.pic { padding: 4px; display: flex; flex-direction: column; gap: 4px; }
+.msg.pic span { padding: 2px 7px 4px; }
+.chat-pic { display: block; max-width: 100%; max-height: 260px; border-radius: 9px; cursor: zoom-in; background: rgba(0,0,0,.25); }
+.chat-pic-big { display: block; max-width: min(90vw, 1400px); max-height: 80vh; border-radius: 10px; }
+#chatCard.drop { outline: 2px dashed var(--accent); outline-offset: -6px; }
 .guest-note { display: flex; gap: 8px; align-items: flex-start; max-width: 460px; padding: 8px 12px; border-radius: 12px; font-size: .82rem; color: var(--muted); background: color-mix(in srgb, var(--bg) 60%, transparent); border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent); }
 .guest-note b { color: var(--accent); }
 body.guest .wordmark::after { content: "GAST"; margin-left: 8px; padding: 1px 6px; border-radius: 6px; font-size: .58rem; letter-spacing: .1em; color: #fff; background: var(--accent); -webkit-text-fill-color: #fff; }

@@ -1,0 +1,38 @@
+# API explorer for the LEGO Client port to a new Minecraft version: answers the queries in
+# tools/mcapi/query.txt with class lists and javap output from the real game + Fabric API jars.
+name: MC API explorer
+
+on:
+  push:
+    paths: ['tools/mcapi/query.txt', '.github/workflows/mc-api.yml']
+  workflow_dispatch:
+
+jobs:
+  explore:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.7.1'
+      - name: Classpath
+        run: gradle -p lego-client-26 printClasspath --no-daemon --console=plain -q | grep '^CP ' | sed 's/^CP //' > cp.txt && wc -l cp.txt && grep -iE 'minecraft|fabric-api|blaze|renderpearl|lwjgl|sdl' cp.txt | head -40
+      - name: Queries
+        run: |
+          while read -r jar; do [ -f "$jar" ] && unzip -Z1 "$jar" 2>/dev/null | grep '\.class$' | sed "s#^#$jar|#"; done < cp.txt > classes.txt
+          wc -l classes.txt
+          CP=$(paste -sd: cp.txt)
+          grep -vE '^\s*(#|$)' tools/mcapi/query.txt | while read -r kind arg; do
+            echo "================ $kind $arg"
+            case "$kind" in
+              pkg) cut -d'|' -f2 classes.txt | grep -E "$arg" | grep -v '\$[0-9]' | sed 's/\.class$//' | sort -u | head -400 ;;
+              class) javap -public -cp "$CP" "$arg" 2>&1 | head -400 ;;
+              grep) cut -d'|' -f2 classes.txt | grep -E '^(net/minecraft|com/mojang)/' | grep -v '\$' | sed 's/\.class$//;s#/#.#g' | while read -r c; do javap -p -cp "$CP" "$c" 2>/dev/null | grep -E "$arg" | sed "s#^#$c: #"; done | head -200 ;;
+            esac
+          done

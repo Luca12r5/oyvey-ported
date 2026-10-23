@@ -1,0 +1,13 @@
+# API explorer for the 26.3 port. One query per line:
+#   pkg <regex>     list classes whose name matches (minecraft + fabric-api + libs)
+#   class <fqcn>    javap -public of that class
+#   grep <regex>    classes that contain a member/string matching (javap -p, slow: keep small)
+pkg (?i)glfw|InputConstants|KeyMapping|keybind|sdl
+pkg ^com/mojang/blaze3d/
+pkg ^com/mojang/renderpearl/[^$]*$
+pkg net/fabricmc/fabric/api/client/rendering/
+pkg net/fabricmc/fabric/api/client/keymapping|net/fabricmc/fabric/api/client/keybinding|KeyBindingHelper|KeyMappingHelper
+pkg (?i)MultiBufferSource|BufferSource|SubmitNodeCollector|RenderType[^s]
+class com.mojang.blaze3d.platform.InputConstants
+class com.mojang.blaze3d.vertex.PoseStack
+class net.minecraft.client.KeyMapping

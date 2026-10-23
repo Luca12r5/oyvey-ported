@@ -57,3 +57,9 @@ java {
     sourceCompatibility = JavaVersion.VERSION_25
     targetCompatibility = JavaVersion.VERSION_25
 }
+
+// Prints the compile classpath (used by the API explorer workflow, mc-api.yml).
+tasks.register('printClasspath') {
+    def cp = sourceSets.main.compileClasspath
+    doLast { cp.files.each { println "CP ${it}" } }
+}

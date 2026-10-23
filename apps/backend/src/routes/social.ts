@@ -7,14 +7,32 @@ import { requireUser } from '../app.ts';
 import { badRequest, conflict, forbidden, notFound } from '../http.ts';
 import { cleanText, newId, obj, oneOf, str } from '../security.ts';
 import { addMetric } from '../services/progress.ts';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { areFriends, canSee, findUser, getUser, isBlocked, publicUser, type UserRow } from '../services/users.ts';
 
 const MAX_FRIENDS = 300;
 const MAX_PARTY = 8;
 
+const MAX_CHAT_IMAGE = 5 * 1024 * 1024;
+
+/** A picture for a chat message: base64 PNG, JPEG or WebP (checked by content), at most 5 MB. */
+export function chatImage(raw: unknown): { mime: string; data: Buffer } {
+  const a = obj(raw);
+  const b64 = str(a, 'data', 8, 7_000_000, { trim: false });
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(b64)) throw badRequest('invalid_image', 'Picture must be base64');
+  const data = Buffer.from(b64, 'base64');
+  if (data.length > MAX_CHAT_IMAGE) throw badRequest('image_too_large', 'Pictures up to 5 MB');
+  if (data.length >= 8 && data.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return { mime: 'image/png', data };
+  if (data.length >= 3 && data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) return { mime: 'image/jpeg', data };
+  if (data.length >= 12 && data.subarray(0, 4).toString('latin1') === 'RIFF' && data.subarray(8, 12).toString('latin1') === 'WEBP') return { mime: 'image/webp', data };
+  throw badRequest('invalid_image', 'Only PNG, JPEG or WebP pictures');
+}
+
 export function registerSocial(app: App): void {
   const r = app.router;
   const db = app.db;
+  const chatDir = join(app.config.dataDir, 'chat');
 
   function target(ref: string): UserRow {
     const u = findUser(db, ref);
@@ -186,9 +204,9 @@ export function registerSocial(app: App): void {
     return {
       conversations: rows.map((c) => {
         const p = getUser(db, c.partner)!;
-        const last = db.get<{ body: string; from_id: string; created_at: number }>('SELECT body, from_id, created_at FROM messages WHERE id = :i', { i: c.last_id })!;
+        const last = db.get<{ body: string; from_id: string; created_at: number; image_id: string | null }>('SELECT body, from_id, created_at, image_id FROM messages WHERE id = :i', { i: c.last_id })!;
         const unread = db.get<{ n: number }>('SELECT COUNT(*) AS n FROM messages WHERE from_id = :p AND to_id = :u AND read_at IS NULL', { p: c.partner, u: u.id })!.n;
-        return { partner: publicUser(p), last: { body: last.body, mine: last.from_id === u.id, at: last.created_at }, unread };
+        return { partner: publicUser(p), last: { body: last.body || (last.image_id ? '📷 Bild' : ''), mine: last.from_id === u.id, at: last.created_at, image: !!last.image_id }, unread };
       }),
     };
   });
@@ -198,7 +216,7 @@ export function registerSocial(app: App): void {
     const other = ctx.params.id!;
     const before = Number(ctx.query.get('before') ?? 0) || null;
     const msgs = db.all(
-      `SELECT id, from_id, to_id, body, created_at, read_at FROM messages
+      `SELECT id, from_id, to_id, body, created_at, read_at, image_id FROM messages
        WHERE ((from_id = :u AND to_id = :o) OR (from_id = :o AND to_id = :u)) AND (:b IS NULL OR id < :b)
        ORDER BY id DESC LIMIT 50`, { u: u.id, o: other, b: before });
     db.run('UPDATE messages SET read_at = :t WHERE from_id = :o AND to_id = :u AND read_at IS NULL', { t: Date.now(), o: other, u: u.id });
@@ -212,13 +230,37 @@ export function registerSocial(app: App): void {
     if (to.id === u.id) throw badRequest('self');
     if (isBlocked(db, to.id, u.id) || isBlocked(db, u.id, to.id)) throw forbidden('You cannot message this player');
     if (!canSee(db, to.privacy_messages, to.id, u.id)) throw forbidden('This player only accepts messages from friends');
-    const body = cleanText(str(obj(ctx.body), 'body', 1, 1000));
+    const b = obj(ctx.body);
+    const pic = b.image === undefined || b.image === null ? null : chatImage(b.image);
+    const body = pic && (b.body === undefined || b.body === '') ? '' : cleanText(str(b, 'body', 1, 1000));
     const now = Date.now();
-    const id = db.run('INSERT INTO messages(from_id, to_id, body, created_at) VALUES (:f, :t, :b, :n)', { f: u.id, t: to.id, b: body, n: now }).lastInsertRowid;
-    const msg = { id, from_id: u.id, to_id: to.id, body, created_at: now, read_at: null, fromName: u.mcName };
+    let imageId: string | null = null;
+    if (pic) {
+      const today = db.get<{ n: number }>('SELECT COUNT(*) AS n FROM message_images WHERE owner_id = :u AND created_at > :t', { u: u.id, t: now - 86_400_000 })!.n;
+      if (today >= 60) throw badRequest('too_many_images', 'At most 60 pictures per day');
+      imageId = newId();
+      mkdirSync(chatDir, { recursive: true });
+      writeFileSync(join(chatDir, imageId), pic.data);
+      db.run('INSERT INTO message_images(id, owner_id, peer_id, mime, size, created_at) VALUES (:i, :o, :p, :m, :s, :t)', { i: imageId, o: u.id, p: to.id, m: pic.mime, s: pic.data.length, t: now });
+    }
+    const id = db.run('INSERT INTO messages(from_id, to_id, body, created_at, image_id) VALUES (:f, :t, :b, :n, :img)', { f: u.id, t: to.id, b: body, n: now, img: imageId }).lastInsertRowid;
+    const msg = { id, from_id: u.id, to_id: to.id, body, created_at: now, read_at: null, image_id: imageId, fromName: u.mcName };
     app.events.send(to.id, 'message', msg);
     return msg;
-  }, { rate: ['messages', 30] });
+  }, { rate: ['messages', 30], bodyLimit: 7_500_000 });
+
+  // A picture of a conversation: only for its sender and receiver.
+  r.get('/api/messages/image/:imageId', (ctx: AppCtx) => {
+    const u = requireUser(ctx);
+    const id = ctx.params.imageId!;
+    if (!/^[\w-]{8,64}$/.test(id)) throw notFound('Picture not found');
+    const img = db.get<{ owner_id: string; peer_id: string; mime: string }>('SELECT owner_id, peer_id, mime FROM message_images WHERE id = :i', { i: id });
+    if (!img || (img.owner_id !== u.id && img.peer_id !== u.id)) throw notFound('Picture not found');
+    let data: Buffer;
+    try { data = readFileSync(join(chatDir, id)); } catch { throw notFound('Picture not found'); }
+    ctx.headers['Cache-Control'] = 'private, max-age=86400';
+    return { mime: img.mime, data: data.toString('base64') };
+  });
 
   // ---- parties ----------------------------------------------------------
   function myParty(userId: string): { id: string; leader_id: string } | undefined {

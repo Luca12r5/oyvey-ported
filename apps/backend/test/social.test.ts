@@ -54,6 +54,19 @@ test('private messages respect privacy and blocks', async (t) => {
   assert.equal(thread.body.messages.length, 1);
   assert.equal((await b.call('GET', '/api/messages')).body.conversations[0].unread, 0);
 
+  // Pictures (screenshots): checked by content, only the two can load them.
+  assert.equal((await a.call('POST', `/api/messages/${b.id}`, { image: { data: Buffer.from('not an image at all').toString('base64') } })).status, 400);
+  const pic = await a.call('POST', `/api/messages/${b.id}`, { image: { data: PNG.toString('base64') } });
+  assert.equal(pic.status, 200);
+  assert.equal(pic.body.body, '');
+  const imgId = pic.body.image_id as string;
+  const got = await b.call('GET', `/api/messages/image/${imgId}`);
+  assert.equal(got.body.mime, 'image/png');
+  assert.deepEqual(Buffer.from(got.body.data, 'base64'), PNG);
+  const eve = await login(h, 'Eve');
+  assert.equal((await eve.call('GET', `/api/messages/image/${imgId}`)).status, 404);
+  assert.equal((await b.call('GET', '/api/messages')).body.conversations[0].last.body, '📷 Bild');
+
   await b.call('POST', '/api/blocks', { player: 'Carol' });
   assert.equal((await a.call('POST', `/api/messages/${b.id}`, { body: 'hello?' })).status, 403);
   assert.equal((await a.call('GET', '/api/friends')).body.friends.length, 0, 'blocking removes the friendship');

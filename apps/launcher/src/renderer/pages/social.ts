@@ -16,6 +16,36 @@ interface Found { id: string; uuid: string; name: string; relation: 'friend' | '
 type Level = 'everyone' | 'friends' | 'nobody';
 interface Privacy { profile: Level; status: Level; activity: Level; messages: Level; friendRequests: boolean }
 
+interface ChatMsg { id?: number; from_id: string; body: string; image_id?: string | null }
+
+const pictures = new Map<string, Promise<string>>();
+/** A chat picture as data URL (loaded once per session; only sender and receiver may load it). */
+function chatPicture(id: string): Promise<string> {
+  let p = pictures.get(id);
+  if (!p) {
+    p = lego<{ mime: string; data: string }>('GET', `/api/messages/image/${encodeURIComponent(id)}`).then((r) => `data:${r.mime};base64,${r.data}`);
+    pictures.set(id, p);
+    p.catch(() => pictures.delete(id));
+  }
+  return p;
+}
+
+/** Base64 of a picture for sending; large ones are scaled to 2560 px and re-encoded as JPEG (≤ 5 MB). */
+export async function pictureBase64(file: Blob): Promise<string> {
+  const toB64 = async (b: Blob) => { const u = new Uint8Array(await b.arrayBuffer()); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(s); };
+  if (file.size <= 4.5 * 1024 * 1024 && /^image\/(png|jpeg|webp)$/.test(file.type)) return toB64(file);
+  const bmp = await createImageBitmap(file);
+  const k = Math.min(1, 2560 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height);
+  for (const q of [0.9, 0.8, 0.65, 0.5]) {
+    const b = await new Promise<Blob | null>((r) => c.toBlob(r, 'image/jpeg', q));
+    if (b && b.size <= 4.8 * 1024 * 1024) return toB64(b);
+  }
+  throw new Error('Bild ist zu groß.');
+}
+
 const LABEL: Record<string, string> = { online: 'Online', in_game: 'Im Spiel', away: 'Abwesend', offline: 'Offline', hidden: 'Verborgen' };
 const ORDER: Record<string, number> = { in_game: 0, online: 1, away: 2, offline: 3, hidden: 4 };
 const heads = new Map<string, Promise<string>>();
@@ -72,7 +102,7 @@ export async function friendsPage(el: HTMLElement, chatWith?: Friend): Promise<v
             : html`<p class="muted small">Keine Party.</p><button class="btn sm primary" id="create">${icon('plus', 'sm')} Party erstellen</button>`}
           ${p.invites.map((i) => html`<div class="row gap"><span class="grow">Einladung von <b>${i.from.name}</b></span><button class="btn sm primary" data-join="${i.partyId}">Beitreten</button></div>`)}
         </section>
-        <section class="card" id="chatCard">${chatWith ? html`<div class="row between"><h3 class="row"><span class="av" data-uuid="${chatWith.uuid}"></span> ${chatWith.name}</h3><span class="small muted">${LABEL[chatWith.status] ?? ''}</span></div><div class="chat" id="chat"></div><form class="row gap" id="send"><input name="body" class="grow" maxlength="1000" required placeholder="Nachricht …"><button class="btn primary">${icon('chevronRight', 'sm')}</button></form>`
+        <section class="card" id="chatCard">${chatWith ? html`<div class="row between"><h3 class="row"><span class="av" data-uuid="${chatWith.uuid}"></span> ${chatWith.name}</h3><span class="small muted">${LABEL[chatWith.status] ?? ''}</span></div><div class="chat" id="chat"></div><form class="row gap" id="send"><button type="button" class="icon-btn" id="attach" title="Bild anhängen (auch Strg+V oder hineinziehen)">${icon('image', 'sm')}</button><input type="file" id="attachFile" accept="image/png,image/jpeg,image/webp" hidden><input name="body" class="grow" maxlength="1000" placeholder="Nachricht …" autocomplete="off"><button class="btn primary" title="Senden">${icon('chevronRight', 'sm')}</button></form>`
           : html`<p class="muted small">Wähle einen Freund zum Chatten.</p>`}</section>
       </div>
     </div>`);
@@ -124,32 +154,67 @@ export async function friendsPage(el: HTMLElement, chatWith?: Friend): Promise<v
   };
 
   const box = el.querySelector<HTMLElement>('#chat');
-  const addMsg = (body: string, mine: boolean) => {
+  const addMsg = (m: ChatMsg, mine: boolean) => {
     if (!box) return;
     const div = document.createElement('div');
-    div.className = `msg ${mine ? 'mine' : ''}`;
-    div.textContent = body;
+    div.className = `msg ${mine ? 'mine' : ''}${m.image_id ? ' pic' : ''}`;
+    if (m.image_id) {
+      const img = new Image();
+      img.alt = 'Bild';
+      img.className = 'chat-pic';
+      img.title = 'Klicken zum Vergrößern';
+      void chatPicture(m.image_id).then((src) => { img.src = src; box.scrollTop = box.scrollHeight; }).catch(() => { img.alt = 'Bild nicht verfügbar'; });
+      img.addEventListener('click', () => { if (img.src) dialog(html`<img class="chat-pic-big" src="${img.src}" alt="Bild">`); });
+      div.append(img);
+    }
+    if (m.body) { const t = document.createElement('span'); t.textContent = m.body; div.append(t); }
     box.append(div);
     box.scrollTop = box.scrollHeight;
   };
   if (chatWith && box) {
-    const msgs = await lego<{ messages: { from_id: string; body: string }[] }>('GET', `/api/messages/${chatWith.id}`);
-    for (const m of msgs.messages) addMsg(m.body, m.from_id === me);
-    el.querySelector('#send')!.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const input = (e.target as HTMLFormElement).elements.namedItem('body') as HTMLInputElement;
+    const msgs = await lego<{ messages: ChatMsg[] }>('GET', `/api/messages/${chatWith.id}`);
+    for (const m of msgs.messages) addMsg(m, m.from_id === me);
+    const form = el.querySelector<HTMLFormElement>('#send')!;
+    const input = form.elements.namedItem('body') as HTMLInputElement;
+    const sendPicture = async (file: Blob) => {
       try {
-        const m = await lego<{ body: string }>('POST', `/api/messages/${chatWith.id}`, { body: input.value });
+        toast('Bild wird gesendet …', 'info');
+        const m = await lego<ChatMsg>('POST', `/api/messages/${chatWith.id}`, { image: { data: await pictureBase64(file) }, ...(input.value.trim() ? { body: input.value.trim() } : {}) });
         input.value = '';
-        addMsg(m.body, true);
+        addMsg(m, true);
       } catch (err) { errorToast(err); }
+    };
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!input.value.trim()) return;
+      try {
+        const m = await lego<ChatMsg>('POST', `/api/messages/${chatWith.id}`, { body: input.value });
+        input.value = '';
+        addMsg(m, true);
+      } catch (err) { errorToast(err); }
+    });
+    const file = el.querySelector<HTMLInputElement>('#attachFile')!;
+    el.querySelector('#attach')!.addEventListener('click', () => file.click());
+    file.addEventListener('change', () => { const f0 = file.files?.[0]; file.value = ''; if (f0) void sendPicture(f0); });
+    input.addEventListener('paste', (e) => {
+      const it = [...(e.clipboardData?.items ?? [])].find((x) => x.type.startsWith('image/'));
+      const blob = it?.getAsFile();
+      if (blob) { e.preventDefault(); void sendPicture(blob); }
+    });
+    const card = el.querySelector<HTMLElement>('#chatCard')!;
+    card.addEventListener('dragover', (e) => { if ([...(e.dataTransfer?.items ?? [])].some((x) => x.type.startsWith('image/'))) { e.preventDefault(); e.stopPropagation(); card.classList.add('drop'); } });
+    card.addEventListener('dragleave', () => card.classList.remove('drop'));
+    card.addEventListener('drop', (e) => {
+      const f0 = [...(e.dataTransfer?.files ?? [])].find((x) => x.type.startsWith('image/'));
+      card.classList.remove('drop');
+      if (f0) { e.preventDefault(); e.stopPropagation(); void sendPicture(f0); }
     });
   }
 
   // Live updates while this page is open.
   let reloadTimer = 0;
   const off = api.on('lego-event', (ev: { type: string; data: Record<string, unknown> }) => {
-    if (ev.type === 'message' && chatWith && ev.data.from_id === chatWith.id) return addMsg(String(ev.data.body ?? ''), false);
+    if (ev.type === 'message' && chatWith && ev.data.from_id === chatWith.id) return addMsg(ev.data as unknown as ChatMsg, false);
     if (['friend_request', 'friend_accepted', 'presence', 'party_invite', 'party_update'].includes(ev.type)) {
       clearTimeout(reloadTimer);
       reloadTimer = window.setTimeout(() => { if (el.isConnected) void reload(); }, 400);
