@@ -488,7 +488,7 @@ async function boot(): Promise<void> {
   await go('play');
   await intro;
   bg?.start();
-  if (!state.auth.signedIn && !state.settings.guest && !state.info.e2e) welcome();
+  if (!state.auth.signedIn && !state.settings.guest && (!state.info.e2e || state.info.e2eWelcome)) welcome();
 }
 
 /** Logo click: credits and licence (the UI is based on the NoRisk Client launcher, GPL-3.0). */

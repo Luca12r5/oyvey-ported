@@ -5,7 +5,7 @@
 import { go, state } from '../app.ts';
 import { api, errorToast, html, mount, toast } from '../ui.ts';
 import { icon } from '../icons.ts';
-import { enterVr, vrRequirements, xrSupported } from '../vr/lobby.ts';
+import { enterVr, passthroughSupported, vrRequirements, xrSupported } from '../vr/lobby.ts';
 
 export async function vrPage(el: HTMLElement): Promise<void> {
   const prof = state.settings.profiles.find((p) => p.id === state.settings.selectedProfile) ?? state.settings.profiles[0];
@@ -45,8 +45,17 @@ export async function vrPage(el: HTMLElement): Promise<void> {
   </div>`);
   const status = el.querySelector<HTMLElement>('#vrStatus')!;
   const start = el.querySelector<HTMLButtonElement>('#vrStart')!;
-  const run = (xr: boolean) => void enterVr({ xr, sound: state.settings.introSound, quality: state.settings.backgroundQuality });
+  const run = (xr: boolean, passthrough = false) => void enterVr({ xr, passthrough, sound: state.settings.introSound, quality: state.settings.backgroundQuality });
   start.addEventListener('click', () => run(true));
+  // Passthrough (real room) only appears when the headset/runtime offers it.
+  const ar = document.createElement('button');
+  ar.className = 'btn';
+  ar.id = 'vrAr';
+  ar.hidden = true;
+  ar.textContent = 'Im echten Raum (Passthrough)';
+  start.after(ar);
+  ar.addEventListener('click', () => run(true, true));
+  void passthroughSupported().then((ok) => { if (el.isConnected) ar.hidden = !ok; });
   el.querySelector('#vrPreview')!.addEventListener('click', () => run(false));
   void xrSupported().then((ok) => {
     if (!el.isConnected) return;

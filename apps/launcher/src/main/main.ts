@@ -503,6 +503,7 @@ function registerIpc(): void {
     totalMemMb: Math.round(totalmem() / 1048576), freeMemMb: Math.round(freemem() / 1048576),
     cpus: cpus().length, cpuModel: cpus()[0]?.model ?? '', msClientConfigured: !!clientId(), msClientBuiltIn: !!MS_CLIENT_ID, gameDir: paths.game(),
     ...(process.env.LEGO_E2E === '1' && { e2e: true }),
+    ...(process.env.LEGO_E2E_WELCOME === '1' && { e2eWelcome: true }),
   }));
   ipcMain.on('window', (_e, action: string) => windowAction(action));
   // VR lobby browser (offscreen Chromium) and client module config.

@@ -32,6 +32,8 @@ export interface AppInfo {
   msClientConfigured: boolean; msClientBuiltIn: boolean;
   gameDir: string;
   e2e?: boolean;
+  /** e2e: show the first-start welcome anyway. */
+  e2eWelcome?: boolean;
 }
 
 export interface VrbState { url: string; title: string; canBack: boolean; canForward: boolean; loading: boolean; zoom?: number; tabs?: { title: string; url: string }[]; active?: number }

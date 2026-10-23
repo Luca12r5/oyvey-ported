@@ -404,6 +404,42 @@ if (!thread.messages.some((m) => m.body === 'Antwort aus dem Launcher')) problem
 if (shots) await win.screenshot({ path: join(shots, 'launcher-chat.png') });
 
 await eapp.close();
+
+// Fresh first start: no settings, no account. Welcome → guest mode, NoRisk layout, LEGO Client
+// profile ready, a new profile can be created, no errors.
+{
+  const freshData = mkdtempSync(join(tmpdir(), 'lego-launcher-fresh-'));
+  const fresh = await electron.launch({
+    args: ['--no-sandbox', '.'],
+    cwd: new URL('..', import.meta.url).pathname,
+    env: { ...process.env, LEGO_USER_DATA: freshData, LEGO_E2E: '1', LEGO_E2E_WELCOME: '1', ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
+  });
+  const fw = await fresh.firstWindow();
+  const fp = [];
+  fw.on('pageerror', (e) => fp.push(`fresh pageerror: ${e.message}`));
+  fw.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|net::ERR/.test(m.text())) fp.push(`fresh console: ${m.text()}`); });
+  await fw.setViewportSize?.({ width: 1280, height: 800 });
+  await fw.waitForSelector('#guestGo', { timeout: 20_000 }).catch(() => fp.push('fresh start: welcome dialog missing'));
+  if (await fw.locator('#guestGo').count()) await fw.click('#guestGo');
+  await fw.waitForSelector('#sidebar [data-page=play]');
+  const layout = await fw.getAttribute('[data-layout]', 'data-layout');
+  if (layout !== 'classic') fp.push(`fresh start: layout is ${layout}, expected the NoRisk layout`);
+  await fw.click('#sidebar [data-page=profiles]');
+  await fw.waitForTimeout(600);
+  if (!(await fw.locator('#view').innerText()).includes('LEGO Client')) fp.push('fresh start: LEGO Client profile missing');
+  await fw.click('#new');
+  await fw.waitForSelector('#f [name=name]');
+  await fw.fill('#f [name=name]', 'Erster Start');
+  await fw.locator('#f button.btn.primary').first().click();
+  await fw.waitForTimeout(800);
+  const st = await fw.evaluate(() => window.lego.getSettings());
+  if (!st.guest) fp.push('fresh start: guest mode not stored');
+  if (!st.profiles.some((p) => p.name === 'Erster Start')) fp.push('fresh start: new profile not saved');
+  if (shots) await fw.screenshot({ path: join(shots, 'launcher-fresh-start.png') });
+  await fresh.close();
+  rmSync(freshData, { recursive: true, force: true });
+  problems.push(...fp);
+}
 srv.closeAllConnections(); srv.close(); session.close(); app.events.close(); app.db.close();
 rmSync(dataDir, { recursive: true, force: true });
 rmSync(userData, { recursive: true, force: true });

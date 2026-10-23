@@ -31,7 +31,17 @@ export async function xrSupported(): Promise<boolean> {
   }
 }
 
-export interface VrOptions { xr: boolean; sound: boolean; quality: number }
+/** Passthrough: the headset shows the real room (WebXR immersive-ar, e.g. Quest over Link). */
+export async function passthroughSupported(): Promise<boolean> {
+  try {
+    const xr = (navigator as Navigator & { xr?: { isSessionSupported(m: string): Promise<boolean> } }).xr;
+    return !!xr && (await xr.isSessionSupported('immersive-ar'));
+  } catch {
+    return false;
+  }
+}
+
+export interface VrOptions { xr: boolean; sound: boolean; quality: number; passthrough?: boolean }
 
 /** Something pointers can hit and grab. */
 interface Spatial { name: string; root: THREE.Group; targets: THREE.Mesh[]; home: () => void }
@@ -217,7 +227,7 @@ export function enterVr(opts: VrOptions): Promise<void> {
     document.body.append(root);
 
     const q = opts.quality;
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', alpha: !!opts.passthrough });
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, q >= 0.9 ? 2 : 1.5));
     renderer.setSize(innerWidth, innerHeight, false);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -233,7 +243,15 @@ export function enterVr(opts: VrOptions): Promise<void> {
     rig.add(camera);
     scene.add(rig);
     renderer.toneMappingExposure = 1.0;
+    const before = new Set(scene.children);
     const world = buildWorld(scene, renderer.shadowMap.enabled);
+    if (opts.passthrough) {
+      // Real room instead of the landscape: hide everything the world builder added, keep panels/hands/props.
+      for (const o of scene.children) if (!before.has(o) && !(o as THREE.Light).isLight) o.visible = false;
+      scene.background = null;
+      scene.fog = null;
+      renderer.setClearColor(0x000000, 0);
+    }
 
     // ---- sound
     const listener = new THREE.AudioListener();
@@ -1084,7 +1102,8 @@ export function enterVr(opts: VrOptions): Promise<void> {
 
     if (opts.xr) {
       const xr = (navigator as Navigator & { xr?: { requestSession(m: string, o: object): Promise<XRSession> } }).xr!;
-      xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'] }).then(async (session) => {
+      const mode = opts.passthrough ? 'immersive-ar' : 'immersive-vr';
+      xr.requestSession(mode, { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking', ...(opts.passthrough ? ['plane-detection', 'hit-test'] : [])] }).then(async (session) => {
         renderer.xr.setReferenceSpaceType('local-floor');
         await renderer.xr.setSession(session);
         session.addEventListener('end', () => exit());
