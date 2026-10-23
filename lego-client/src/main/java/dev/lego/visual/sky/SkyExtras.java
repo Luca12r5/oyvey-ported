@@ -442,7 +442,7 @@ public final class SkyExtras {
                double var4 = 256.0;
 
                try {
-                  var4 = Mc.mc().gameRenderer.getDepthFar();
+                  var4 = dev.lego.compat.McCompat.depthFar(Mc.mc().gameRenderer);
                } catch (Throwable var31) {
                }
 

@@ -26,4 +26,18 @@ public final class McCompat {
    public static InputConstants.Key boundKey(KeyMapping key) {
       return KeyBindingHelper.getBoundKeyOf(key);
    }
+
+   /** The game's current full-screen post effect (or null). */
+   public static net.minecraft.resources.Identifier currentPostEffect(net.minecraft.client.renderer.GameRenderer gr) {
+      return gr.currentPostEffect();
+   }
+
+   public static void clearPostEffect(net.minecraft.client.renderer.GameRenderer gr) {
+      gr.clearPostEffect();
+   }
+
+   /** Far plane of the world camera in blocks. */
+   public static float depthFar(net.minecraft.client.renderer.GameRenderer gr) {
+      return gr.getDepthFar();
+   }
 }

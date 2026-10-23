@@ -363,7 +363,7 @@ public final class CustomSky extends Module {
          double var1 = 256.0;
 
          try {
-            var1 = Mc.mc().gameRenderer.getDepthFar();
+            var1 = dev.lego.compat.McCompat.depthFar(Mc.mc().gameRenderer);
          } catch (Throwable var35) {
          }
 

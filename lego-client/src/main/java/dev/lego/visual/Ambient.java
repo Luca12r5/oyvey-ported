@@ -155,7 +155,7 @@ public final class Ambient {
             double var11 = 160.0;
 
             try {
-               var11 = Math.min(var11, Mc.mc().gameRenderer.getDepthFar() * 0.45);
+               var11 = Math.min(var11, dev.lego.compat.McCompat.depthFar(Mc.mc().gameRenderer) * 0.45);
             } catch (Throwable var50) {
             }
 
@@ -585,7 +585,7 @@ public final class Ambient {
                double var11 = 180.0;
 
                try {
-                  var11 = Math.min(var11, Mc.mc().gameRenderer.getDepthFar() * 0.45);
+                  var11 = Math.min(var11, dev.lego.compat.McCompat.depthFar(Mc.mc().gameRenderer) * 0.45);
                } catch (Throwable var29) {
                }
 

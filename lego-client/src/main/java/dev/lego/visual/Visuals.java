@@ -323,7 +323,7 @@ public final class Visuals {
 
          try {
             GameRenderer var2 = Mc.mc().gameRenderer;
-            Identifier var3 = var2.currentPostEffect();
+            Identifier var3 = dev.lego.compat.McCompat.currentPostEffect(var2);
             if (!var1.equals(var3)) {
                setPost(var2, var1);
             }
@@ -346,9 +346,9 @@ public final class Visuals {
       public void onDisable() {
          try {
             GameRenderer var1 = Mc.mc().gameRenderer;
-            Identifier var2 = var1.currentPostEffect();
+            Identifier var2 = dev.lego.compat.McCompat.currentPostEffect(var1);
             if (var2 != null && "legoclient".equals(var2.getNamespace())) {
-               var1.clearPostEffect();
+               dev.lego.compat.McCompat.clearPostEffect(var1);
             }
          } catch (Throwable var3) {
          }

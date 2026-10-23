@@ -7,7 +7,7 @@
 \.renderItem\( ==> .item(
 \bctx\.drawString\( ==> ctx.text(
 \bctx\.drawCenteredString\( ==> ctx.centeredText(
-(Mc\.mc\(\)|Minecraft\.getInstance\(\)|\bmc|\bvar\d+x*|\bclient|\bminecraft)\.screen\b(?!\s*=[^=]) ==> $1.gui.screen()
+(Mc\.mc\(\)|Minecraft\.getInstance\(\)|\bmc|\bvar\d+x*|\bclient|\bminecraft)\.screen\b(?!\s*=[^=])(?!\.v\d) ==> $1.gui.screen()
 (Mc\.mc\(\)|Minecraft\.getInstance\(\)|\bmc|\bvar\d+x*|\bclient|\bminecraft)\.setScreen\( ==> $1.gui.setScreen(
 \.getOverlay\(\) ==> .gui.overlay()
 gameRenderer\.getMainCamera\(\) ==> gameRenderer.mainCamera()
@@ -19,3 +19,6 @@ if extends Screen :: public void render\(GuiGraphicsExtractor ==> public void ex
 if extends Screen :: public void renderBackground\(GuiGraphicsExtractor ==> public void extractBackground(GuiGraphicsExtractor
 if extends Screen :: super\.render\( ==> super.extractRenderState(
 if extends Screen :: super\.renderBackground\( ==> super.extractBackground(
+(Mc\.mc\(\)|Minecraft\.getInstance\(\)|\bmc|\bvar\d+x*|\bclient|\bminecraft)\.options\.hideGui\b ==> $1.gui.hud.isHidden()
+import net\.minecraft\.Util; ==> import net.minecraft.util.Util;
+Mc\.mc\(\)\.renderBuffers\(\)\.bufferSource\(\) ==> null

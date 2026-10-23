@@ -22,4 +22,21 @@ public final class McCompat {
    public static InputConstants.Key boundKey(KeyMapping key) {
       return KeyMappingHelper.getBoundKeyOf(key);
    }
+
+   /** 26.3: post effects are requested per frame through the render state; the LEGO filters are off for now. */
+   public static net.minecraft.resources.Identifier currentPostEffect(net.minecraft.client.renderer.GameRenderer gr) {
+      return null;
+   }
+
+   public static void clearPostEffect(net.minecraft.client.renderer.GameRenderer gr) {
+   }
+
+   /** Render distance in blocks times four, like the old far plane. */
+   public static float depthFar(net.minecraft.client.renderer.GameRenderer gr) {
+      try {
+         return net.minecraft.client.Minecraft.getInstance().options.renderDistance().get() * 64.0F;
+      } catch (Throwable e) {
+         return 512.0F;
+      }
+   }
 }

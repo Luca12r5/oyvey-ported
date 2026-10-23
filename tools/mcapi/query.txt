@@ -1,17 +1,20 @@
 # API explorer for the 26.3 port (see mc-api.yml).
-classgrep net.minecraft.client.gui.Hud public
-classgrep net.minecraft.client.MouseHandler public
-classgrep net.minecraft.world.level.Level daytime|gametime|clock
-classgrep net.minecraft.client.multiplayer.ClientLevel public
-pkg (?i)WorldClock|ClockManager|DayTime
-classgrep net.minecraft.client.renderer.state.GameRenderState public
-pkg (?i)LightCoords|LightTexture|Lightmap
-classgrep net.minecraft.util.Util public static
-classgrep net.minecraft.client.renderer.GameRenderer PostEffect|post
-class net.fabricmc.fabric.api.client.screen.v1.ScreenEvents
-class net.fabricmc.fabric.api.client.screen.v1.ScreenEvents$AfterExtract
-classgrep net.minecraft.client.renderer.entity.player.AvatarRenderer public
-class net.minecraft.client.renderer.rendertype.RenderTypes
-classgrep net.minecraft.client.renderer.texture.TextureManager public
-classgrep net.minecraft.client.gui.Font public
-classgrep org.joml.Matrix3x2fStack push|pop|translate|scale|rotate
+pkg (?i)fabric/api/client/rendering/v1/level/
+class net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext
+class net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
+classgrep net.minecraft.client.renderer.state.level.CameraRenderState public
+pkg (?i)CameraRenderState|LevelRenderState
+class net.minecraft.util.LightCoordsUtil
+classgrep net.minecraft.client.renderer.SubmitNodeCollector submit
+class net.minecraft.client.renderer.SubmitNodeCollector$CustomGeometryRenderer
+pkg (?i)fabric/api/client/rendering/v1/hud/
+class net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
+class net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements
+pkg (?i)LivingEntityRenderLayerRegistrationCallback|RenderLayer\.class
+class net.fabricmc.fabric.api.client.rendering.v1.LivingEntityRenderLayerRegistrationCallback
+class net.minecraft.client.renderer.entity.layers.RenderLayer
+classgrep net.minecraft.client.Screenshot public static
+classgrep net.minecraft.client.renderer.LevelRenderer public
+classgrep net.minecraft.client.gui.GuiGraphicsExtractor public
+pkg (?i)FirstPersonHandsAndItemsRenderer|ScreenEffectRenderer
+classgrep net.minecraft.client.renderer.ScreenEffectRenderer public|private

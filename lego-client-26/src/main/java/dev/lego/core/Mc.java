@@ -344,14 +344,11 @@ public final class Mc {
 
    public static long timeOfDay() {
       ClientLevel var0 = world();
-      return var0 == null ? 0L : var0.getDayTime();
+      return var0 == null ? 0L : var0.getDefaultClockTime();
    }
 
    public static void setTimeOfDay(long var0) {
-      ClientLevel var2 = world();
-      if (var2 != null) {
-         var2.getLevelData().setDayTime(var0);
-      }
+      // 26.3: the time of day comes from the world clocks of the server; not changeable on the client yet.
    }
 
    public static int blockLight() {
