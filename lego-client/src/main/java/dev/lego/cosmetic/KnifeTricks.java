@@ -226,31 +226,31 @@ public final class KnifeTricks {
       if (drawT >= 0.0F) {
          float k = smooth(drawT / DRAW_TIME);
          pose.translate(0.0F, 6.0F * (1.0F - k), 0.0F);
-         pose.mulPose(Axis.XP.rotationDegrees(-70.0F * (1.0F - k)));
-         pose.mulPose(Axis.ZP.rotationDegrees(25.0F * (1.0F - k)));
+         dev.lego.compat.McCompat.rotate(pose, Axis.XP.rotationDegrees(-70.0F * (1.0F - k)));
+         dev.lego.compat.McCompat.rotate(pose, Axis.ZP.rotationDegrees(25.0F * (1.0F - k)));
       }
       if (inspect >= 0.0F) {
          float t = inspect, total = inspectTime();
          float in = smooth(t / 0.35F) * (1.0F - smooth((t - (total - 0.35F)) / 0.35F));
          switch (type) {
-            case "karambit" -> pose.mulPose(Axis.XP.rotationDegrees(-smooth((t - 0.2F) / (total - 0.5F)) * 720.0F));
-            case "daggers" -> pose.mulPose(Axis.YP.rotationDegrees(smooth(t / total) * 360.0F));
+            case "karambit" -> dev.lego.compat.McCompat.rotate(pose, Axis.XP.rotationDegrees(-smooth((t - 0.2F) / (total - 0.5F)) * 720.0F));
+            case "daggers" -> dev.lego.compat.McCompat.rotate(pose, Axis.YP.rotationDegrees(smooth(t / total) * 360.0F));
             case "butterfly" -> {
-               pose.mulPose(Axis.ZP.rotationDegrees(-35.0F * in));
-               pose.mulPose(Axis.YP.rotationDegrees(40.0F * in));
+               dev.lego.compat.McCompat.rotate(pose, Axis.ZP.rotationDegrees(-35.0F * in));
+               dev.lego.compat.McCompat.rotate(pose, Axis.YP.rotationDegrees(40.0F * in));
             }
             default -> {
-               pose.mulPose(Axis.YP.rotationDegrees(65.0F * in));
-               pose.mulPose(Axis.ZP.rotationDegrees(-28.0F * in));
+               dev.lego.compat.McCompat.rotate(pose, Axis.YP.rotationDegrees(65.0F * in));
+               dev.lego.compat.McCompat.rotate(pose, Axis.ZP.rotationDegrees(-28.0F * in));
                if (!folding()) {
-                  pose.mulPose(Axis.XP.rotationDegrees(-smooth((t - 1.05F) / 0.5F) * 360.0F));
+                  dev.lego.compat.McCompat.rotate(pose, Axis.XP.rotationDegrees(-smooth((t - 1.05F) / 0.5F) * 360.0F));
                }
             }
          }
       }
       if (angle != 0.0F) {
          // Around the axis through the hand, across the blade: the blade circles the fingers.
-         pose.mulPose(Axis.XP.rotationDegrees(-angle));
+         dev.lego.compat.McCompat.rotate(pose, Axis.XP.rotationDegrees(-angle));
       }
       pose.translate(-GRIP_X, -GRIP_Y, -pz);
    }

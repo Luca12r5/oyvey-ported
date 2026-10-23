@@ -39,7 +39,6 @@ import dev.spotifyhud.PlayerState;
 import dev.spotifyhud.SpotifyHudMod;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
@@ -126,16 +125,16 @@ public final class LegoClient implements ClientModInitializer {
       net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING.register(c -> Modules.save());
       spotify.sync();
       Category var2 = Category.register(Identifier.fromNamespaceAndPath("legoclient", "main"));
-      guiKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.gui", 345, var2));
-      zoomKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.zoom", 67, var2));
-      emoteKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.emotes", 66, var2));
-      invseeKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.invsee", 86, var2));
-      ecseeKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.ecsee", 71, var2));
-      waypointKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.waypoint", 78, var2));
-      hudKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.hud", -1, var2));
-      consoleKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.console", 299, var2));
-      perfKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.perf", 301, var2));
-      knifeKey = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.legoclient.knife", 82, var2));
+      guiKey = dev.lego.compat.McCompat.registerKey(new KeyMapping("key.legoclient.gui", 345, var2));
+      zoomKey = dev.lego.compat.McCompat.registerKey(new KeyMapping("key.legoclient.zoom", 67, var2));
+      emoteKey = dev.lego.compat.McCompat.registerKey(new KeyMapping("key.legoclient.emotes", 66, var2));
+      invseeKey = dev.lego.compat.McCompat.registerKey(new KeyMapping("key.legoclient.invsee", 86, var2));
+      ecseeKey = dev.lego.compat.McCompat.registerKey(new KeyMapping("key.legoclient.ecsee", 71, var2));
+      waypointKey = dev.lego.compat.McCompat.registerKey(new KeyMapping("key.legoclient.waypoint", 78, var2));
+      hudKey = dev.lego.compat.McCompat.registerKey(new KeyMapping("key.legoclient.hud", -1, var2));
+      consoleKey = dev.lego.compat.McCompat.registerKey(new KeyMapping("key.legoclient.console", 299, var2));
+      perfKey = dev.lego.compat.McCompat.registerKey(new KeyMapping("key.legoclient.perf", 301, var2));
+      knifeKey = dev.lego.compat.McCompat.registerKey(new KeyMapping("key.legoclient.knife", 82, var2));
       setupEnv();
       ClientTickEvents.END_CLIENT_TICK.register(LegoClient::tick);
       ScreenEvents.AFTER_INIT.register((var0, var1x, var2x, var3x) -> {
@@ -421,7 +420,7 @@ public final class LegoClient implements ClientModInitializer {
                int var1 = -1;
 
                try {
-                  var1 = KeyBindingHelper.getBoundKeyOf(emoteKey).getValue();
+                  var1 = dev.lego.compat.McCompat.boundKey(emoteKey).getValue();
                } catch (Throwable var10) {
                }
 

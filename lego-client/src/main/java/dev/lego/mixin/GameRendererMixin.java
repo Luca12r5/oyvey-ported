@@ -51,7 +51,7 @@ public abstract class GameRendererMixin {
          if (Visuals2.camera != null) {
             float var4 = Visuals2.camera.roll();
             if (Math.abs(var4) > 0.001F) {
-               var1.mulPose(new Quaternionf().rotateZ((float)Math.toRadians(var4)));
+               dev.lego.compat.McCompat.rotate(var1, new Quaternionf().rotateZ((float)Math.toRadians(var4)));
             }
          }
 
