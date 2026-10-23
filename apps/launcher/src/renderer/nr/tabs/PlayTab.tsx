@@ -68,18 +68,19 @@ export function PlayTab(p: PlayTabProps) {
           <CoinsBanner key={String(coinsKey)} connected={p.connected} onChanged={p.onRefresh} />
         </div>
 
-        <div className="absolute top-6 right-6 z-20 flex flex-col items-end gap-3">
+        {/* Top right, mirroring the coins banner on the left (NoRisk: ad button + toggle). */}
+        <div className="absolute top-3 right-3 z-30 flex flex-col items-end gap-3">
           <div className="flex items-center gap-2">
             <span className="text-sm text-white/70 font-minecraft">Skin Animation</span>
             <ToggleSwitch checked={anim && !p.reducedMotion} disabled={p.reducedMotion} size="sm" onChange={(v) => { setAnim(v); try { localStorage.setItem('lego.skinAnim', v ? '1' : '0'); } catch { /* storage blocked */ } }} />
           </div>
+          <EmoteBar />
         </div>
 
         {/* The figure stands free on the whole stage (no box around it). */}
         <div className="absolute inset-0 z-10">
           <PlayerRig fill zoom={rigScale} playerName={p.playerName} skin={p.skin.skin} variant={p.skin.variant} cape={p.skin.cape} animated={anim && !p.reducedMotion} reducedMotion={p.reducedMotion} height={rigH} showTag={nametag} cosmetics={p.cosmetics} />
         </div>
-        <EmoteBar />
         <div className="absolute left-0 right-0 flex justify-center px-4 bottom-6 z-30 pointer-events-none">
           <div className="pointer-events-auto" style={{ width: `${Math.round(Math.min(520, 330 * Math.min(1.5, k)))}px` }}>
             <MainLaunchButton
@@ -96,7 +97,7 @@ export function PlayTab(p: PlayTabProps) {
         {consoleOpen && p.profile && <GameConsole profileId={p.profile.id} />}
       </div>
 
-      <NewsSection onOpenAll={p.onOpenNews} className="border-l-2 border-white/40 bg-black/10 backdrop-blur-lg p-5 overflow-hidden flex flex-col relative z-10" />
+      <NewsSection onOpenAll={p.onOpenNews} className="w-1/3 border-l-2 border-white/40 bg-black/10 backdrop-blur-lg p-5 overflow-hidden flex flex-col relative z-10" />
     </div>
   );
 }

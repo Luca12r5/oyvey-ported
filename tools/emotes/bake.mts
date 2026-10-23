@@ -3,7 +3,7 @@
 // part, the final transform (with the engine's blend in/out) is stored in Minecraft's model
 // space. The client then plays exactly the same motion (moved, turned and scaled parts).
 //
-//   node --experimental-strip-types tools/emotes/bake.ts
+//   node --experimental-strip-types tools/emotes/bake.mts
 //
 // Output: lego-client/src/main/resources/assets/legoclient/emotes/baked.json + baked.bin
 //   bin: per frame and part (head, body, rightArm, leftArm, rightLeg, leftLeg) 9 int16:

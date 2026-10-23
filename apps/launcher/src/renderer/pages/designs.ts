@@ -259,7 +259,7 @@ function wireLook(box: HTMLElement, rerender: () => void): void {
 
 function layoutSection(l: LookSettings): Raw {
   return html`<section class="set-sec"><h2>Rahmen & Leiste</h2><div class="glass rows">
-      ${lookRow('Aufbau', 'Studio: Navigation als Dock unten. Klassisch: Leiste links.', html`<div class="seg" data-seg-look="layout" id="layoutSeg">${([['studio', 'Studio'], ['classic', 'Klassisch']] as [LookSettings['layout'], string][]).map(([v, n]) => html`<button data-v="${v}" class="${l.layout === v ? 'on' : ''}">${n}</button>`)}</div>`)}
+      ${lookRow('Aufbau', 'Klassisch: Leiste links wie im NoRisk-Launcher. Studio: Navigation als Dock unten.', html`<div class="seg" data-seg-look="layout" id="layoutSeg">${([['classic', 'Klassisch'], ['studio', 'Studio']] as [LookSettings['layout'], string][]).map(([v, n]) => html`<button data-v="${v}" class="${l.layout === v ? 'on' : ''}">${n}</button>`)}</div>`)}
       ${lookRow('Ecken', 'Eckig wie NoRisk (0) bis stark abgerundet.', lookRange('look', 'radius', l.radius, 0, 24, ' px'))}
       ${lookRow('Durchsicht', 'Wie deckend der Launcher über einem animierten Hintergrund ist.', lookRange('look', 'shellAlpha', l.shellAlpha, 20, 100, ' %'))}
       ${lookRow('Leuchtlinien', 'Linien in der Akzentfarbe am Fensterrand.', lookSwitch('look', 'glowLines', l.glowLines))}

@@ -11,7 +11,7 @@ import net.minecraft.client.model.geom.ModelPart;
 
 /**
  * The launcher's emotes (car, chair, rocket, dances …) in the client. They are baked by
- * tools/emotes/bake.ts from apps/launcher/src/renderer/emotes.ts: 20 frames per second, and per
+ * tools/emotes/bake.mts from apps/launcher/src/renderer/emotes.ts: 20 frames per second, and per
  * frame for each body part its pivot, rotation and scale in Minecraft's model space. Playing them
  * moves, turns and scales the parts exactly like on the launcher's play screen; the second skin
  * layer is a child of each part and follows.

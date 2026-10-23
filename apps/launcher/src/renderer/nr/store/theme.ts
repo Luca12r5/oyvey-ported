@@ -67,7 +67,7 @@ export interface ThemeState {
   layout: 'studio' | 'classic';
 }
 
-export const themeStore = createStore<ThemeState>({ accentColor: accentFrom(null), showNavLabels: true, borderRadius: 0, isBackgroundAnimationEnabled: true, titleColors: ['red', 'yellow', 'blue', 'white'], titleSub: true, rigScale: 1, nametag: true, glowLines: true, layout: 'studio' });
+export const themeStore = createStore<ThemeState>({ accentColor: accentFrom(null), showNavLabels: true, borderRadius: 0, isBackgroundAnimationEnabled: true, titleColors: ['red', 'yellow', 'blue', 'white'], titleSub: true, rigScale: 1, nametag: true, glowLines: true, layout: 'classic' });
 
 /** Same CSS variables the NoRisk launcher writes (scrollbars, glows). */
 export function applyAccentToDOM(): void {

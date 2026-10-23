@@ -45,16 +45,14 @@ export function EmoteBar() {
 
   return (
     <>
-      <div id="emoteQuick" className="absolute left-5 bottom-6 z-30">
+      <div id="emoteQuick" className="relative">
         <button id="emoteOpen" className={`lx-emote-open ${open ? 'is-on' : ''}`} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
           <span className="lx-emote-ic" dangerouslySetInnerHTML={{ __html: icon('wave').__raw }} />
           <span>Emotes</span>
           {playing && <span className="lx-emote-now">{byId.get(playing)?.name}</span>}
         </button>
-      </div>
-
       {open && (
-        <div id="emotePanel" className="lx-emote-panel absolute left-5 top-[112px] bottom-[84px] z-40 flex flex-col" onMouseDown={(e) => e.stopPropagation()}>
+        <div id="emotePanel" className="lx-emote-panel absolute right-0 top-full mt-2 h-[min(520px,62vh)] z-40 flex flex-col text-left" onMouseDown={(e) => e.stopPropagation()}>
           <div className="flex items-center gap-2 mb-3">
             <h3 className="text-white text-xl m-0 flex-1">Emotes</h3>
             <button className="lx-emote-x" aria-label="Schließen" onClick={() => setOpen(false)} dangerouslySetInnerHTML={{ __html: icon('close').__raw }} />
@@ -79,6 +77,7 @@ export function EmoteBar() {
           {playing && <p className="text-white/80 text-sm mt-2 mb-0">Esc stoppt das Emote.</p>}
         </div>
       )}
+      </div>
     </>
   );
 }

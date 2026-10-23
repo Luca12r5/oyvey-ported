@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Quaternion, Vector3 } from 'three';
-import { toMc, bake } from '../../../tools/emotes/bake.ts';
+import { toMc, bake } from '../../../tools/emotes/bake.mts';
 import { EMOTES } from '../src/renderer/emotes.ts';
 
 const close = (a: number[], b: number[]) => a.forEach((v, i) => assert.ok(Math.abs(v - b[i]!) < 1e-6, `${a} vs ${b}`));
@@ -31,7 +31,7 @@ test('baking is deterministic and covers every emote', () => {
   assert.deepEqual(Array.from(a.data.slice(0, 2000)), Array.from(b.data.slice(0, 2000)));
 });
 
-test('the client\'s baked emotes are up to date (run: node --experimental-strip-types tools/emotes/bake.ts)', async () => {
+test('the client\'s baked emotes are up to date (run: node --experimental-strip-types tools/emotes/bake.mts)', async () => {
   const { readFileSync } = await import('node:fs');
   const dir = new URL('../../../lego-client/src/main/resources/assets/legoclient/emotes/', import.meta.url);
   const meta = JSON.parse(readFileSync(new URL('baked.json', dir), 'utf8')) as { emotes: { id: string; frames: number }[] };

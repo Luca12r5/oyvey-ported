@@ -128,7 +128,7 @@ export function migrateProfile(p: Partial<GameProfile> & { loader?: string | nul
   } as GameProfile;
 }
 
-export const SETTINGS_VERSION = 12;
+export const SETTINGS_VERSION = 13;
 
 /** Settings saved by older launcher versions: adopt the new default look once. */
 export function migrateSettings(s: Partial<Settings>): Partial<Settings> {
@@ -154,13 +154,14 @@ export function migrateSettings(s: Partial<Settings>): Partial<Settings> {
   if (v < 10) s = { ...s, themeId: 'nacht', accentColor: null, background: 'plain', uiFont: 'pixel', headFont: 'pixel', buttonStyle: 'crypt', introEnabled: false };
   // v11: rounder, more modern corners by default (Designs → Stil can set 0 again).
   if (v < 11) s = { ...s, look: { ...(s.look ?? DEFAULT_LOOK), radius: 12 } };
-  // Round 11: the new "Studio" layout once for everybody (Klassisch stays selectable).
   if (v < 12) {
     const look = s.look ?? DEFAULT_LOOK;
     // The plain wordmark uses the first title colour for its brick: white like the app icon, unless chosen.
     const tc = look.titleColors?.[0] === '#d01012' ? ['#ffffff', ...look.titleColors.slice(1)] : look.titleColors;
-    s = { ...s, look: { ...look, titleColors: tc, layout: 'studio' } };
+    s = { ...s, look: { ...look, titleColors: tc } };
   }
+  // The NoRisk layout (rail on the left) is the default again; Studio stays selectable.
+  if (v < 13) s = { ...s, look: { ...(s.look ?? DEFAULT_LOOK), layout: 'classic' } };
   return { ...s, settingsVersion: SETTINGS_VERSION };
 }
 

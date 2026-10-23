@@ -84,7 +84,7 @@ function HeaderBar({ studio }: { studio: boolean }) {
         <div className="flex flex-col items-start min-w-0">
           {/* Plain wordmark like the NoRisk header: small brick mark + name in the heading font. */}
           <h1 className="lx-title lx-wordmark m-0 whitespace-nowrap flex items-center gap-2.5" aria-label="LEGO Launcher">
-            <span className="lx-wordmark-mark" style={{ color: titleColors[0] }} dangerouslySetInnerHTML={{ __html: appMark().__raw }} />
+            {studio && <span className="lx-wordmark-mark" style={{ color: titleColors[0] }} dangerouslySetInnerHTML={{ __html: appMark().__raw }} />}
             <span className="lx-wordmark-text">LEGO{titleSub && <span className="lx-wordmark-sub"> Launcher</span>}</span>
           </h1>
           <HeaderInfoCarousel />
