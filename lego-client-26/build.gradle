@@ -41,6 +41,8 @@ def mergeSources = tasks.register('mergeSources', Sync) {
             exclude { FileTreeElement e -> !e.directory && new File(overlay, "$kind/${e.relativePath.pathString}").exists() }
             // Not ported to 26.3 yet: the Visor headset (own GPU pipelines and shaders).
             exclude 'dev/visor/**', 'visor.mixins.json', 'assets/visor/**'
+            // First-person knife and fire overlay mixins target classes 26.3 replaced.
+            exclude 'dev/lego/mixin/FirstPersonKnifeMixin.java', 'dev/lego/mixin/ItemInHandKnifeMixin.java', 'dev/lego/mixin/FireOverlayMixin.java'
         }
         from(new File(overlay, kind)) { into kind }
     }

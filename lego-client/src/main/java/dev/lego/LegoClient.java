@@ -40,10 +40,6 @@ import dev.spotifyhud.SpotifyHudMod;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
@@ -56,7 +52,6 @@ import net.minecraft.client.KeyMapping.Category;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
-import net.minecraft.client.renderer.entity.player.AvatarRenderer;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -148,32 +143,7 @@ public final class LegoClient implements ClientModInitializer {
             });
          }
       });
-      HudElementRegistry.attachElementAfter(
-         VanillaHudElements.MISC_OVERLAYS, Identifier.fromNamespaceAndPath("legoclient", "overlays"), (var0, var1x) -> {
-            // Full-screen overlays make no sense on a VR GUI plane (Vivecraft).
-            if (!dev.lego.compat.VrMixinPlugin.vr()) renderOverlays(var0);
-         }
-      );
-      HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("legoclient", "hud"), (var0, var1x) -> renderHud(var0));
-      HudElementRegistry.replaceElement(VanillaHudElements.CROSSHAIR, var0 -> (var1x, var2x) -> {
-         if (!Cutscenes.active()) {
-            if (!dev.lego.compat.VrMixinPlugin.vr() && Visuals.crosshair != null && Visuals.crosshair.enabled && Mc.firstPerson() && !Mc.mc().options.hideGui) {
-               try {
-                  Visuals.crosshair.draw(var1x);
-               } catch (Throwable var4) {
-                  var0.render(var1x, var2x);
-               }
-            } else {
-               var0.render(var1x, var2x);
-            }
-         }
-      });
-      // In real VR Vivecraft draws the world once per eye with its own cameras: no own world effects there.
-      WorldRenderEvents.BEFORE_TRANSLUCENT.register(var0 -> {
-         if (!dev.lego.compat.VrMixinPlugin.vr()) Visuals.render(var0);
-      });
-      WorldRenderEvents.BEFORE_BLOCK_OUTLINE
-         .register((var0, var1x) -> Visuals2.outline == null || !Visuals2.outline.enabled || !Visuals2.outline.replaceVanilla());
+      dev.lego.compat.RenderHooks.register(LegoClient::renderOverlays, LegoClient::renderHud);
       AttackEntityCallback.EVENT.register((var0, var1x, var2x, var3x, var4) -> {
          try {
             if (var0 == Mc.player()) {
@@ -188,15 +158,6 @@ public final class LegoClient implements ClientModInitializer {
       ClientReceiveMessageEvents.ALLOW_GAME.register((var0, var1x) -> Utility.allowMessage(var0, var1x));
       ClientReceiveMessageEvents.CHAT.register((var0, var1x, var2x, var3x, var4) -> Utility.onMessage(var0, false));
       ClientReceiveMessageEvents.GAME.register((var0, var1x) -> Utility.onMessage(var0, var1x));
-      LivingEntityFeatureRendererRegistrationCallback.EVENT.register((var0, var1x, var2x, var3x) -> {
-         if (var1x instanceof AvatarRenderer) {
-            try {
-               var2x.register(CosRender.feature(var1x));
-            } catch (Throwable var5) {
-               LOG("Kosmetik-Renderer: " + var5);
-            }
-         }
-      });
       ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
          @Override
          public Identifier getFabricId() {

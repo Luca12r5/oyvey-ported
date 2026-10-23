@@ -22,3 +22,10 @@ if extends Screen :: super\.renderBackground\( ==> super.extractBackground(
 (Mc\.mc\(\)|Minecraft\.getInstance\(\)|\bmc|\bvar\d+x*|\bclient|\bminecraft)\.options\.hideGui\b ==> $1.gui.hud.isHidden()
 import net\.minecraft\.Util; ==> import net.minecraft.util.Util;
 Mc\.mc\(\)\.renderBuffers\(\)\.bufferSource\(\) ==> null
+if GuiGraphicsExtractor :: \.drawString\( ==> .text(
+if GuiGraphicsExtractor :: \.drawCenteredString\( ==> .centeredText(
+RenderTypes\.entityCutoutNoCull\( ==> RenderTypes.entityCutout(
+import net\.fabricmc\.fabric\.api\.client\.rendering\.v1\.world\.WorldRenderContext; ==> import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+\bWorldRenderContext\b ==> LevelRenderContext
+\bLevelRenderer\.getLightColor\( ==> net.minecraft.util.LightCoordsUtil.getLightCoords(
+\.submitEntityRenderState\( ==> .entity(

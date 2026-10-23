@@ -1,20 +1,12 @@
 # API explorer for the 26.3 port (see mc-api.yml).
-pkg (?i)fabric/api/client/rendering/v1/level/
-class net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext
-class net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
-classgrep net.minecraft.client.renderer.state.level.CameraRenderState public
-pkg (?i)CameraRenderState|LevelRenderState
-class net.minecraft.util.LightCoordsUtil
-classgrep net.minecraft.client.renderer.SubmitNodeCollector submit
-class net.minecraft.client.renderer.SubmitNodeCollector$CustomGeometryRenderer
-pkg (?i)fabric/api/client/rendering/v1/hud/
-class net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
-class net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements
-pkg (?i)LivingEntityRenderLayerRegistrationCallback|RenderLayer\.class
-class net.fabricmc.fabric.api.client.rendering.v1.LivingEntityRenderLayerRegistrationCallback
-class net.minecraft.client.renderer.entity.layers.RenderLayer
-classgrep net.minecraft.client.Screenshot public static
-classgrep net.minecraft.client.renderer.LevelRenderer public
-classgrep net.minecraft.client.gui.GuiGraphicsExtractor public
-pkg (?i)FirstPersonHandsAndItemsRenderer|ScreenEffectRenderer
-classgrep net.minecraft.client.renderer.ScreenEffectRenderer public|private
+class net.fabricmc.fabric.api.client.rendering.v1.level.LevelTerrainRenderContext
+class net.fabricmc.fabric.api.client.rendering.v1.level.AbstractLevelRenderContext
+class net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents$AfterTranslucentFeatures
+class net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents$BeforeBlockOutline
+class net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents$CollectSubmits
+class net.fabricmc.fabric.api.client.rendering.v1.LivingEntityRenderLayerRegistrationCallback$RegistrationHelper
+class net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement
+classgrep net.minecraft.client.Camera public
+class net.minecraft.client.renderer.OrderedSubmitNodeCollector
+class net.minecraft.util.Util$OS
+classgrep net.minecraft.client.renderer.FirstPersonHandsAndItemsRenderer public|private

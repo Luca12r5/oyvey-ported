@@ -1,0 +1,28 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "dev.lego.mixin",
+  "plugin": "dev.lego.compat.VrMixinPlugin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "GameRendererMixin",
+    "NetworkHandlerMixin",
+    "PlayerModelMixin",
+    "PlayerRendererMixin",
+    "CameraMixin",
+    "EntityMixin",
+    "EntityRenderManagerMixin",
+    "ParticleManagerMixin",
+    "FpsLimiterMixin",
+    "MouseMixin",
+    "FogMixin",
+    "SkyRenderingMixin",
+    "ClientRenderMixin",
+    "BlockEntityCullMixin",
+    "WindowTitleMixin",
+    "FovRangeMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}
