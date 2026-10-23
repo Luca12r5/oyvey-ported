@@ -71,8 +71,8 @@ export function ProfileContent(p: ProfileContentProps) {
             Minecraft {p.profile.gameVersion}{p.profile.loaderType ? ` · ${p.profile.loaderType}` : ' · Vanilla'}{p.profile.legoClient ? ' · LEGO Client' : ''}
           </div>
         </div>
-        <Button variant="secondary" size="md" onClick={p.onEdit} icon={<Icon icon="solar:settings-bold" className="w-5 h-5" />}>BEARBEITEN</Button>
-        <Button variant="default" size="md" onClick={() => void launchProfile(p.profile.id)} icon={<Icon icon="solar:play-bold" className="w-5 h-5" />}>PLAY</Button>
+        <Button variant="secondary" size="sm" onClick={p.onEdit} icon={<Icon icon="solar:settings-bold" className="w-4 h-4" />}>BEARBEITEN</Button>
+        <Button variant="default" size="sm" onClick={() => void launchProfile(p.profile.id)} icon={<Icon icon="solar:play-bold" className="w-4 h-4" />}>PLAY</Button>
       </div>
       <GroupTabs id="pcTabs" groups={groups} activeGroup={kind} onGroupChange={(g) => { setKind(g as Kind); setQ(''); setFilter('all'); }} showAddButton={false} />
       <div className="flex items-center gap-3 mb-4">
@@ -84,8 +84,8 @@ export function ProfileContent(p: ProfileContentProps) {
             ))}
           </div>
         )}
-        <Button variant="secondary" size="md" onClick={() => void api.openFolder(kind, p.profile.id)} icon={<Icon icon="solar:folder-bold" className="w-5 h-5" />}>ORDNER</Button>
-        {k.add && <Button id="pcAdd" variant="default" size="md" onClick={() => p.onAdd(k.add!)} icon={<Icon icon="solar:add-circle-bold" className="w-5 h-5" />}>HINZUFÜGEN</Button>}
+        <Button variant="secondary" size="sm" onClick={() => void api.openFolder(kind, p.profile.id)} icon={<Icon icon="solar:folder-bold" className="w-4 h-4" />}>ORDNER</Button>
+        {k.add && <Button id="pcAdd" variant="default" size="sm" onClick={() => p.onAdd(k.add!)} icon={<Icon icon="solar:add-circle-bold" className="w-4 h-4" />}>HINZUFÜGEN</Button>}
       </div>
       <div className="flex-1 overflow-y-auto pr-1" id="pcBody">
         {kind === 'mods'
