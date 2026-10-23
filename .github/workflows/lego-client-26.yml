@@ -72,9 +72,15 @@ jobs:
       - name: Pick mod jar
         run: cp "$(ls jar/*.jar | grep -v -- '-sources' | head -1)" apps/launcher/legoclient.jar
       - name: Display libraries
+        # apt mirrors sometimes stall: each try gets 4 minutes, three tries.
+        timeout-minutes: 13
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-vulkan-drivers libvulkan1 x11-xserver-utils libxxf86vm1 libxrandr2 libxcursor1 libxi6 libxtst6 imagemagick > /dev/null
+          for i in 1 2 3; do
+            timeout 240 sh -c 'sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-vulkan-drivers libvulkan1 x11-xserver-utils libxxf86vm1 libxrandr2 libxcursor1 libxi6 libxtst6 imagemagick > /dev/null' && exit 0
+            echo "apt try $i failed, retrying"; sleep 5
+          done
+          exit 1
       - name: Install and start Minecraft
+        timeout-minutes: 15
         working-directory: apps/launcher
         run: xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX +render -noreset" node --disable-warning=ExperimentalWarning test/real-launch.ts ${{ matrix.args }}
