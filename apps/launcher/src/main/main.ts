@@ -26,7 +26,8 @@ import { createLogCleaner, diagnose, startGame } from '../core/launch.ts';
 import { classifyDrop, safeFileName } from '../core/dropimport.ts';
 import { CONTENT_KINDS, listContent, validContentName, type ContentKind } from '../core/content.ts';
 import { DEFAULT_PROFILE, fastJvmFlags, LEGO_CLIENT_GAME_VERSION, legoClientFits, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
-import { encryptionAvailable, loadAccounts, loadSettings, paths, saveAccounts, saveSettings, type Account, type AccountStore } from './store.ts';
+import { encryptionAvailable, loadAccounts, loadAiKey, loadSettings, paths, saveAccounts, saveAiKey, saveSettings, type Account, type AccountStore } from './store.ts';
+import { aiError, localCrashAi, testAiKey, validAiKey } from './crashai.ts';
 import { setupUpdater, checkForUpdate, installUpdate } from './updater.ts';
 import { VrBrowser } from './vrbrowser.ts';
 import { listModules, setModule } from '../core/clientcfg.ts';
@@ -895,7 +896,28 @@ function registerIpc(): void {
     return lastCrash;
   });
   // Cleaned-up excerpt for the AI check (sent to the LEGO server only when the player asks).
-  ipcMain.handle('crash:excerpt', async (_e, profileId: string) => {
+  // Crash doctor AI: with the player's own key directly at Claude, otherwise via the LEGO server.
+  ipcMain.handle('crash:ai', async (_e, profileId: string) => {
+    const input = await crashInput(profileId);
+    const key = await loadAiKey();
+    if (key) {
+      try {
+        return { ...(await localCrashAi(key, input)), left: null, via: 'own' as const };
+      } catch (e) { throw new Error(aiError(e)); }
+    }
+    if (!backendUrl()) throw new Error('NO_AI: Kein KI-Zugang: trag unter Optionen → KI einen Claude-API-Schlüssel ein.');
+    const r = await legoApi().call<{ summary: string; causes: unknown[]; left: number }>('POST', '/api/crash/ai', input);
+    return { ...r, via: 'server' as const };
+  });
+  ipcMain.handle('ai:status', async () => ({ ownKey: !!(await loadAiKey()), server: !!backendUrl(), persistent: encryptionAvailable() }));
+  ipcMain.handle('ai:setKey', async (_e, key: unknown) => {
+    if (key === null || key === '') { await saveAiKey(null); return { ok: true }; }
+    if (!validAiKey(key)) return { ok: false, error: 'Das sieht nicht wie ein Claude-API-Schlüssel aus (beginnt mit sk-ant-).' };
+    try { await testAiKey(key.trim()); } catch (e) { return { ok: false, error: aiError(e) }; }
+    await saveAiKey(key.trim());
+    return { ok: true };
+  });
+  const crashInput = async (profileId: string) => {
     const p = profileById(profileId);
     const dir = join(profileDir(p), 'crash-reports');
     const reports = (await readdir(dir).catch(() => [] as string[])).filter((n) => n.endsWith('.txt')).sort();
@@ -903,7 +925,8 @@ function registerIpc(): void {
     const log = await readFile(join(profileDir(p), 'logs', 'latest.log'), 'utf8').catch(() => '');
     const mods = (await modInfos(p).catch(() => [])).map((m) => ({ filename: m.filename, id: m.id ?? null, title: m.title ?? null, enabled: m.enabled }));
     return { log: crashExcerpt(report, log), mods, gameVersion: p.gameVersion, loader: p.loaderType, memoryMb: p.memoryMb, legoClient: !!p.legoClient };
-  });
+  };
+  ipcMain.handle('crash:excerpt', (_e, profileId: string) => crashInput(profileId));
   ipcMain.handle('crash:fix', async (_e, profileId: string, fix: Fix | { kind: 'enable-mod'; filename: string }) => {
     if (!fix || typeof fix !== 'object') throw new Error('invalid fix');
     if (fix.kind === 'enable-mod') {

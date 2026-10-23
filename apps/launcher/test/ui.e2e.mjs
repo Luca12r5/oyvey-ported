@@ -228,6 +228,14 @@ if (found !== 1) problems.push(`settings search for "geräusch" shows ${found} r
 if (await win.locator('[data-tab=rarity], [data-tab=appearance]').count()) problems.push('removed settings tabs are still there');
 if ((await win.locator('#introPlay').count()) > 1) problems.push('intro option appears twice');
 await win.fill('#sq', '');
+// Crash doctor AI: own key field; a wrong key format is refused before anything is sent.
+await win.click('.set-nav [data-tab=ai]');
+await win.waitForSelector('#aiKey', { timeout: 5000 }).catch(() => problems.push('AI settings did not open'));
+await win.fill('#aiKey', 'not-a-key');
+await win.click('#aiSave');
+await win.waitForTimeout(400);
+if (!(await win.locator('.toast.error').count())) problems.push('invalid AI key was not refused');
+if (shots) await win.screenshot({ path: join(shots, 'launcher-settings-ai.png') });
 // Designs studio: accent override, 3D scene, effects, presets.
 await page('designs', 'Designs');
 await win.click('[data-tab=colors]');
