@@ -37,6 +37,8 @@ const loaderType = arg('loader') as LoaderType | null;
 const legoJar = arg('lego');
 const fps = process.argv.includes('--fps');
 const shots = process.argv.includes('--shots');
+// Extra Modrinth projects for this loader/version, e.g. --mods vivecraft,lithium
+const extraMods = (arg('mods') ?? '').split(',').filter(Boolean);
 const timeoutMs = Number(arg('timeout', '600')) * 1000;
 const root = arg('dir') ?? mkdtempSync(join(tmpdir(), 'lego-real-'));
 
@@ -70,6 +72,14 @@ if (legoJar) {
   mods.push({ url: f.url, filename: f.filename, sha512: f.hashes.sha512, size: f.size });
 }
 if (fps && loaderType) for (const p of await performanceFiles(fetch, gameVersion, loaderType)) mods.push({ url: p.url, filename: p.filename, sha512: p.sha512, size: p.size });
+for (const slug of extraMods) {
+  const vs = await projectVersions(fetch, slug, gameVersion, loaderType ?? 'fabric');
+  const v = vs.find((x) => x.version_type === 'release') ?? vs[0];
+  const f = v?.files.find((x) => x.primary) ?? v?.files[0];
+  if (!f) throw new Error(`no ${slug} for ${gameVersion}`);
+  step(`Mod ${slug}: ${f.filename}`);
+  mods.push({ url: f.url, filename: f.filename, sha512: f.hashes.sha512, size: f.size });
+}
 if (mods.length) await syncMods(fetch, join(gameDir, 'mods'), mods, report);
 if (legoJar) {
   mkdirSync(join(gameDir, 'mods'), { recursive: true });

@@ -39,4 +39,13 @@ public final class McCompat {
          return 512.0F;
       }
    }
+
+   /** 26.3's Util.OS has no openUri any more: hand https links to the system opener. */
+   public static void openUri(String uri) throws java.io.IOException {
+      if (!uri.startsWith("https://")) throw new IllegalArgumentException("only https links");
+      String os = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT);
+      String[] cmd = os.contains("win") ? new String[]{"rundll32", "url.dll,FileProtocolHandler", uri}
+         : os.contains("mac") ? new String[]{"open", uri} : new String[]{"xdg-open", uri};
+      new ProcessBuilder(cmd).start();
+   }
 }

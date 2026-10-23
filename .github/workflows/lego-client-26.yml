@@ -8,6 +8,7 @@ on:
       - 'lego-client/src/main/**'
       - 'lego-client-26/**'
       - '.github/workflows/lego-client-26.yml'
+      - 'apps/launcher/test/real-launch.ts'
   workflow_dispatch:
 
 jobs:
@@ -43,3 +44,37 @@ jobs:
           path: lego-client-26/build/libs/
           if-no-files-found: error
           retention-days: 30
+
+  # Really starts 26.3 with the jar from this build (software GL under xvfb) and waits for the title screen.
+  launch:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 26.3 Fabric + LEGO Client
+            args: --version 26.3 --loader fabric --lego legoclient.jar
+          - name: 26.3 Fabric + LEGO Client + Vivecraft
+            args: --version 26.3 --loader fabric --lego legoclient.jar --mods vivecraft
+    name: ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: legoclient-26.3
+          path: jar
+      - name: Pick mod jar
+        run: cp "$(ls jar/*.jar | grep -v -- '-sources' | head -1)" apps/launcher/legoclient.jar
+      - name: Display libraries
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-vulkan-drivers libvulkan1 x11-xserver-utils libxxf86vm1 libxrandr2 libxcursor1 libxi6 libxtst6 imagemagick > /dev/null
+      - name: Install and start Minecraft
+        working-directory: apps/launcher
+        run: xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX +render -noreset" node --disable-warning=ExperimentalWarning test/real-launch.ts ${{ matrix.args }}
