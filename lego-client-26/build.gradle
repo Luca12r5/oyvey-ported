@@ -1,0 +1,59 @@
+// LEGO Client for Minecraft 26.3 (Fabric, unobfuscated game, Java 25).
+// The code is shared with ../lego-client (1.21.11): this build merges ../lego-client/src/main
+// with this project's src/main, where a file here replaces the shared one of the same path.
+// Only what really differs between the versions lives here.
+// Build: gradle -p lego-client-26 build   (Gradle 9.7+, JDK 25)
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+version = project.mod_version
+group = project.maven_group
+base { archivesName = project.archives_base_name }
+
+def shared = file('../lego-client/src/main')
+def overlay = file('src/main')
+def merged = layout.buildDirectory.dir('merged').get().asFile
+
+def mergeSources = tasks.register('mergeSources', Sync) {
+    into merged
+    ['java', 'resources'].each { kind ->
+        from(new File(shared, kind)) {
+            into kind
+            exclude { FileTreeElement e -> !e.directory && new File(overlay, "$kind/${e.relativePath.pathString}").exists() }
+        }
+        from(new File(overlay, kind)) { into kind }
+    }
+}
+
+sourceSets {
+    main {
+        java.srcDirs = [new File(merged, 'java')]
+        resources.srcDirs = [new File(merged, 'resources')]
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+tasks.named('compileJava') { dependsOn mergeSources }
+tasks.named('processResources') {
+    dependsOn mergeSources
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand 'version': project.version }
+}
+tasks.matching { it.name == 'sourcesJar' }.configureEach { dependsOn mergeSources }
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = 'UTF-8'
+    it.options.release = 25
+    it.options.compilerArgs += ['-Xmaxerrs', '5000']
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}

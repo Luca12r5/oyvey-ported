@@ -1,0 +1,42 @@
+# LEGO Client for Minecraft 26.3: shared code from lego-client/ plus the 26.3 overlay in
+# lego-client-26/. The compile errors are summarised in the log (this is the port's loop).
+name: LEGO client 26.3
+
+on:
+  push:
+    paths:
+      - 'lego-client/src/main/**'
+      - 'lego-client-26/**'
+      - '.github/workflows/lego-client-26.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.7.1'
+      - name: Build
+        run: |
+          set -o pipefail
+          gradle -p lego-client-26 build -x test --no-daemon --console=plain 2>&1 | tee build.log || {
+            echo "::group::error summary"
+            grep -E '^/.+\.java:[0-9]+: error:' build.log | sed -E 's#.*/merged/java/##' | sed -E 's/:[0-9]+: error:/: /' | sort | uniq -c | sort -rn | head -150
+            echo "::endgroup::"
+            echo "ERRORS: $(grep -cE '\.java:[0-9]+: error:' build.log)"
+            exit 1
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: legoclient-26.3
+          path: lego-client-26/build/libs/
+          if-no-files-found: error
+          retention-days: 30
