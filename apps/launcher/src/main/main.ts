@@ -30,6 +30,8 @@ import { encryptionAvailable, loadAccounts, loadSettings, paths, saveAccounts, s
 import { crashSignature, parseDb, prune, rank, recordApplied, recordCrash, recordOutcome, recordUndo, type LearnDb } from '../core/crashlearn.ts';
 import { setupUpdater, checkForUpdate, installUpdate } from './updater.ts';
 import { VrBrowser } from './vrbrowser.ts';
+import { DiscordPresence } from './discord.ts';
+import { validAppId } from '../core/discordrpc.ts';
 import { listModules, setModule } from '../core/clientcfg.ts';
 import type { AuthState, LaunchProgress, ModEntry, SkinData } from '../ipc-types.ts';
 import { validateTheme } from '@lego/shared';
@@ -61,6 +63,8 @@ const env = currentEnv(process.platform, process.arch, release());
 
 /** The console window (opened from the launcher, like the NoRisk launcher's) and its log buffer. */
 let consoleWin: BrowserWindow | null = null;
+const discord = new DiscordPresence();
+const idlePresence = () => discord.set({ details: 'Im LEGO Launcher' });
 let consoleBuf: { line: string; stream: string }[] = [];
 
 function send(channel: string, data: unknown): void {
@@ -360,11 +364,13 @@ async function launch(profileId: string): Promise<{ ok: boolean; error?: string 
     });
     running = profile;
     profile.lastPlayed = Date.now();
+    discord.set({ details: `Spielt Minecraft ${profile.gameVersion}${profile.legoClient ? ' mit LEGO Client' : ''}`, state: `Profil: ${profile.name}`, startedAt: Date.now() });
     await saveSettings(settings);
     if (active()?.lego) void legoApi().call('POST', '/api/me/metrics', { metric: 'launches', amount: 1 }).catch(() => {});
     if (settings.closeOnLaunch) win?.minimize();
     void game.exited.then(async (r) => {
       running = null;
+      idlePresence();
       let hint: string | null = null;
       let diagnoses: Diagnosis[] = [];
       if (r.code !== 0) {
@@ -590,7 +596,7 @@ function registerIpc(): void {
     const allowed: (keyof Settings)[] = [
       'themeId', 'customThemes', 'language', 'backendUrl', 'selectedProfile', 'closeOnLaunch', 'reducedMotion', 'uiScale', 'autoUpdate',
       'accentColor', 'background', 'backgroundQuality', 'snow', 'showSnapshots', 'showHistorical', 'curseforgeKey', 'msClientId',
-      'introEnabled', 'introSound', 'uiSounds', 'autoConsole', 'fx', 'surface', 'stage', 'designPresets', 'bgImage', 'look', 'guest', 'uiFont', 'headFont', 'customFont', 'buttonStyle', 'customLanguage', 'transition', 'jumpscares', 'skinLibrary', 'guestName',
+      'introEnabled', 'introSound', 'uiSounds', 'autoConsole', 'discordAppId', 'fx', 'surface', 'stage', 'designPresets', 'bgImage', 'look', 'guest', 'uiFont', 'headFont', 'customFont', 'buttonStyle', 'customLanguage', 'transition', 'jumpscares', 'skinLibrary', 'guestName',
     ];
     for (const k of allowed) if (k in patch) (settings as unknown as Record<string, unknown>)[k] = patch[k];
     // Never trust the renderer: re-validate imported themes and clamp numbers.
@@ -611,6 +617,8 @@ function registerIpc(): void {
     for (const k of ['snow', 'showSnapshots', 'showHistorical', 'closeOnLaunch', 'reducedMotion', 'introEnabled', 'introSound', 'uiSounds', 'autoConsole', 'guest', 'jumpscares'] as const) settings[k] = !!settings[k];
     settings.msClientId = typeof settings.msClientId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(settings.msClientId.trim()) ? settings.msClientId.trim().toLowerCase() : '';
     settings.curseforgeKey = typeof settings.curseforgeKey === 'string' ? settings.curseforgeKey.trim().slice(0, 200) : '';
+    settings.discordAppId = validAppId(settings.discordAppId) ? settings.discordAppId.trim() : '';
+    discord.configure(settings.discordAppId || null);
     if (!['ask', 'auto', 'off'].includes(settings.autoUpdate)) settings.autoUpdate = 'ask';
     settings.fx = sanitizeFx(settings.fx);
     if (!(SURFACES as readonly string[]).includes(settings.surface)) settings.surface = 'glass';
@@ -1145,6 +1153,8 @@ if (!app.requestSingleInstanceLock()) {
     // Only WebXR (VR mode) may be granted; everything else is denied.
     session.defaultSession.setPermissionRequestHandler((_wc, perm, cb) => cb(/^(xr|vr|ar)|xr-spatial|spatial-tracking/i.test(String(perm))));
     settings = await loadSettings();
+    discord.configure(settings.discordAppId || null);
+    idlePresence();
     store = await loadAccounts();
     if (!app.isPackaged && process.env.LEGO_E2E === '1' && process.env.LEGO_E2E_ACCOUNT) {
       const acc = JSON.parse(process.env.LEGO_E2E_ACCOUNT) as Account;

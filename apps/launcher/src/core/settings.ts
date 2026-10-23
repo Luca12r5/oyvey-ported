@@ -81,6 +81,8 @@ export interface Settings {
   uiSounds: boolean;
   /** Open the console panel automatically when a game starts. */
   autoConsole: boolean;
+  /** Discord Rich Presence: the player's own Discord application id ('' = off). */
+  discordAppId: string;
   /** Design editor: effects, panel style, character stage, saved presets, custom image. */
   fx: DesignFx;
   surface: SurfaceStyle;
@@ -179,7 +181,7 @@ export function defaultSettings(): Settings {
     selectedProfile: DEFAULT_PROFILE.id, profiles: [{ ...DEFAULT_PROFILE, createdAt: Date.now() }],
     closeOnLaunch: false, reducedMotion: false, uiScale: 1, autoUpdate: 'ask',
     accentColor: null, background: 'plain', backgroundQuality: 0.6, snow: false, showSnapshots: false, showHistorical: false, curseforgeKey: '', msClientId: '',
-    introEnabled: false, introSound: true, uiSounds: true, autoConsole: true,
+    introEnabled: false, introSound: true, uiSounds: true, autoConsole: true, discordAppId: '',
     fx: { ...DEFAULT_FX }, surface: 'glass', stage: 'portal', designPresets: [], bgImage: '', look: structuredClone(DEFAULT_LOOK), guest: false,
     uiFont: 'pixel', headFont: 'pixel', customFont: null, buttonStyle: 'crypt', customLanguage: null, transition: 'lego', jumpscares: false, skinLibrary: [], guestName: '',
   };

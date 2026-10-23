@@ -98,6 +98,7 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
       ${row(t('set.autoConsole'), t('set.autoConsole.d'), sw('autoConsole', s.autoConsole))}
       ${row(t('set.snapshots'), t('set.snapshots.d'), sw('showSnapshots', s.showSnapshots))}
       ${row(t('set.historical'), t('set.historical.d'), sw('showHistorical', s.showHistorical))}
+      ${row('Discord-Status', 'Zeigt in Discord „Im LEGO Launcher“ bzw. „Spielt Minecraft …“ mit LEGO-Icon. Dafür deine eigene Discord-App anlegen (discord.com/developers → New Application, unter Rich Presence → Art Assets ein Bild mit dem Namen „lego“ hochladen) und hier die Application ID eintragen. Leer = aus.', html`<input data-key="discordAppId" value="${s.discordAppId ?? ''}" placeholder="Application ID (Zahl)" inputmode="numeric" autocomplete="off" class="compact wide">`)}
       ${row(t('set.cfKey'), t('set.cfKey.d'), html`<input type="password" data-key="curseforgeKey" value="${s.curseforgeKey}" placeholder="$2a$10$…" autocomplete="off" class="compact wide">`)}`,
     advanced: html`
       ${row(t('set.backend'), t('set.backend.d'), html`<input data-key="backendUrl" value="${s.backendUrl}" placeholder="https://…" class="compact wide">`)}
