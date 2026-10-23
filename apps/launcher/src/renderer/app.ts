@@ -4,6 +4,8 @@
 import type { AppInfo, AuthState } from '../ipc-types.ts';
 import type { Settings } from '../core/settings.ts';
 import { api, dialog, html, mount, toast, errorToast, fmtNum, lego } from './ui.ts';
+import { classifyDrop } from '../core/dropimport.ts';
+import { sanitizePreset } from '../core/design.ts';
 import { applyTheme, findTheme } from './theme.ts';
 import { icon } from './icons.ts';
 import { Background } from './bg.ts';
@@ -519,4 +521,47 @@ function startIntro(): Promise<void> {
   return playIntroCave({ sound: s.introSound, quality: s.backgroundQuality, skipLabel: t('intro.skip') }).catch((e) => console.warn('intro failed', e));
 }
 
+// Drop files anywhere: modpacks, mods, resource/shader packs go into profiles, a PNG opens the
+// skin preview, a .json is imported as design preset. Pages with their own drop area handle it first.
+function installDropImport(): void {
+  const hasFiles = (e: DragEvent) => !!e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+  let depth = 0;
+  addEventListener('dragenter', (e) => { if (hasFiles(e)) { depth++; document.body.classList.add('drop-hover'); } });
+  addEventListener('dragleave', (e) => { if (hasFiles(e) && --depth <= 0) { depth = 0; document.body.classList.remove('drop-hover'); } });
+  addEventListener('dragover', (e) => { if (hasFiles(e)) e.preventDefault(); });
+  addEventListener('drop', (e) => {
+    depth = 0;
+    document.body.classList.remove('drop-hover');
+    if (!hasFiles(e) || e.defaultPrevented) return; // a page's own drop area took it
+    e.preventDefault();
+    const f = e.dataTransfer!.files[0];
+    if (!f) return;
+    void (async () => {
+      try {
+        const kind = classifyDrop(f.name);
+        if (kind === 'skin') { if (state.page !== 'skins') { const { openSkinFile } = await import('./pages/skins.ts'); openSkinFile(f); } return; }
+        if (kind === 'design') {
+          if (f.size > 200_000) throw new Error('Datei zu groß.');
+          const p = sanitizePreset({ ...JSON.parse(await f.text()), id: `p-${Date.now().toString(36)}` });
+          if (!p) throw new Error('Das ist kein gültiges Design-Preset.');
+          state.settings = await api.setSettings({ designPresets: [...(state.settings.designPresets ?? []), p].slice(-30) });
+          toast(`Design „${p.name}“ importiert (Optionen → Designs → Presets)`, 'ok');
+          return;
+        }
+        toast(`Importiere ${f.name} …`);
+        const r = await api.importDrop(f.name, new Uint8Array(await f.arrayBuffer()));
+        if (r.kind === 'modpack') {
+          state.settings = await api.setSettings({ selectedProfile: r.profileId });
+          toast(`Modpack importiert${r.missing?.length ? ` (fehlt: ${r.missing.join(', ')})` : ''}`, 'ok');
+          void go('profiles');
+        } else {
+          const what = r.kind === 'mod' ? 'Mod' : r.kind === 'shaderpack' ? 'Shaderpaket' : 'Ressourcenpaket';
+          toast(`${what} „${r.file}“ in „${r.profileName}“ importiert`, 'ok');
+        }
+      } catch (err) { errorToast(err); }
+    })();
+  });
+}
+
+installDropImport();
 void boot();

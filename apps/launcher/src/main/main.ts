@@ -23,6 +23,7 @@ import { listEntries, readEntry } from '../core/zip.ts';
 import { exportToOfficial, officialLauncherPresent, officialMinecraftDir, openOfficialLauncher } from '../core/official.ts';
 import { fetchJson } from '../core/net.ts';
 import { createLogCleaner, diagnose, startGame } from '../core/launch.ts';
+import { classifyDrop, safeFileName } from '../core/dropimport.ts';
 import { DEFAULT_PROFILE, fastJvmFlags, LEGO_CLIENT_GAME_VERSION, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
 import { encryptionAvailable, loadAccounts, loadSettings, paths, saveAccounts, saveSettings, type Account, type AccountStore } from './store.ts';
 import { setupUpdater, checkForUpdate, installUpdate } from './updater.ts';
@@ -836,6 +837,26 @@ function registerIpc(): void {
     if (r.canceled || !file) return null;
     if ((await stat(file)).size > 1024 * 1024 * 1024) throw new Error('Datei ist größer als 1 GB.');
     return importZip(await readFile(file), file.split(/[\\/]/).pop()!.replace(/\.(mrpack|zip)$/i, ''));
+  });
+  // Files dropped onto the launcher window: modpacks, mods, resource and shader packs.
+  ipcMain.handle('import:drop', async (_e, name: unknown, data: unknown) => {
+    if (typeof name !== 'string' || !(data instanceof Uint8Array)) throw new Error('Ungültige Datei');
+    if (data.byteLength > 1024 * 1024 * 1024) throw new Error('Datei ist größer als 1 GB.');
+    const buf = Buffer.from(data);
+    const file = safeFileName(name);
+    const kind = classifyDrop(file, /\.zip$/i.test(file) ? listEntries(buf).map((x) => x.name) : []);
+    if (kind === 'modpack') {
+      const r = await importZip(buf, file.replace(/\.(mrpack|zip)$/i, ''));
+      return { kind, profileId: r.profileId, missing: r.missing };
+    }
+    const p = settings.profiles.find((x) => x.id === settings.selectedProfile) ?? settings.profiles[0]!;
+    const folder = kind === 'mod' ? 'mods' : kind === 'resourcepack' ? 'resourcepacks' : kind === 'shaderpack' ? 'shaderpacks' : null;
+    if (!folder) throw new Error('Diese Datei kann der Launcher nicht importieren (erwartet: .mrpack, Modpack-.zip, .jar, Ressourcen- oder Shaderpaket).');
+    if (kind === 'mod' && !p.loaderType) throw new Error(`Das Profil „${p.name}“ ist Vanilla. Wähle ein Profil mit Mod-Loader (z. B. Fabric).`);
+    const dir = join(profileDir(p), folder);
+    await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, file), buf);
+    return { kind, profileId: p.id, profileName: p.name, file };
   });
   ipcMain.handle('import:scan', async () => (await scanInstances()).map(rememberInstance));
   ipcMain.handle('import:folder', async () => {

@@ -1,7 +1,7 @@
 // Skins tab: the account's real Minecraft skin in 3D (zoom, rotate, poses),
 // upload a new one through the official API, and a local skin library.
 
-import { loadIdentity, onLeave, state } from '../app.ts';
+import { go, loadIdentity, onLeave, state } from '../app.ts';
 import { openSkinDialog, renderSkins } from '../nr/mount.tsx';
 import { sanitizeSkinSpec, type SkinSpec } from '@lego/shared';
 import { api, confirm, dialog, errorToast, html, lego, toast, type Raw } from '../ui.ts';
@@ -22,6 +22,14 @@ function readPng(file: File): Promise<string> {
     r.onerror = () => rej(new Error('Datei konnte nicht gelesen werden.'));
     r.readAsDataURL(file);
   });
+}
+
+let pendingSkin: File | null = null;
+
+/** A skin PNG dropped anywhere: open the skins page and show it in the 3D preview. */
+export function openSkinFile(f: File): void {
+  pendingSkin = f;
+  void go('skins');
 }
 
 /** Skins: the NoRisk-launcher skins grid (React, nr/tabs/SkinsTab.tsx). Click = use in Minecraft. */
@@ -116,6 +124,7 @@ export function skinsPage(el: HTMLElement): void {
     rerender();
   };
   rerender();
+  if (pendingSkin) { const f = pendingSkin; pendingSkin = null; void take(f); }
   onLeave(() => { unmount?.(); closeDialog?.(); });
 }
 

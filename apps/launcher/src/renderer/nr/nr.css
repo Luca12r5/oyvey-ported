@@ -344,3 +344,8 @@ body.lx-studio .lx-dock-btn:hover .lx-dock-tip { display: block; }
 .lx-dock-btn.is-on::before, .lx-dock-btn.is-on::after { content: none; }
 .lx-dock-btn:hover { transform: translateY(-2px); }
 .lx-dock-btn.is-on { background: color-mix(in srgb, var(--accent) 75%, #000 10%); box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 35%, transparent); }
+
+/* Drop files anywhere: a calm frame while dragging. */
+body.drop-hover::after { content: "Datei ablegen: Modpack, Mod, Ressourcen-/Shaderpaket, Skin (PNG) oder Design (JSON)"; position: fixed; inset: 10px; z-index: 9999;
+  display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; font-size: 18px; color: #fff; pointer-events: none;
+  border: 2px dashed var(--accent); border-radius: 16px; background: rgba(5, 8, 14, .72); backdrop-filter: blur(4px); }

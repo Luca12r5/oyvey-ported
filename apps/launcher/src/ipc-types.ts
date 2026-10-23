@@ -93,6 +93,8 @@ export interface LauncherApi {
   toggleMod(profileId: string, filename: string, enabled: boolean): Promise<void>;
   installModpack(projectId: string, title: string): Promise<{ profileId: string }>;
   importFile(): Promise<{ profileId: string; missing: string[] } | null>;
+  /** A file dropped onto the window (bytes read in the renderer). */
+  importDrop(name: string, data: Uint8Array): Promise<{ kind: string; profileId: string; profileName?: string; file?: string; missing?: string[] }>;
   scanInstances(): Promise<FoundInstance[]>;
   pickFolder(): Promise<FoundInstance | null>;
   importInstance(inst: FoundInstance, includeWorlds: boolean): Promise<{ profileId: string; copied: string[] }>;

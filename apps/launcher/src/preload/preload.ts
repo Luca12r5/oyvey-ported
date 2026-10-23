@@ -50,6 +50,7 @@ const api: LauncherApi = {
   toggleMod: (id, f, e) => ipcRenderer.invoke('mods:toggle', id, f, e),
   installModpack: (pid, title) => ipcRenderer.invoke('modpack:install', pid, title),
   importFile: () => ipcRenderer.invoke('import:file'),
+  importDrop: (name, data) => ipcRenderer.invoke('import:drop', name, data),
   scanInstances: () => ipcRenderer.invoke('import:scan'),
   pickFolder: () => ipcRenderer.invoke('import:folder'),
   importInstance: (inst, w) => ipcRenderer.invoke('import:instance', inst, w),
