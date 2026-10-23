@@ -1,3 +1,4 @@
+// Minecraft 26.3 version of dev/lego/core/Mc.java (input over SDL3, screens in Gui, chat messages).
 package dev.lego.core;
 
 import com.mojang.blaze3d.platform.InputConstants;
@@ -34,7 +35,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.phys.Vec3;
-import org.lwjgl.glfw.GLFW;
 
 public final class Mc {
    private static final Map<String, ItemStack> ICONS = new HashMap<>();
@@ -102,14 +102,14 @@ public final class Mc {
    public static void actionBar(String var0) {
       LocalPlayer var1 = player();
       if (var1 != null) {
-         var1.displayClientMessage(Component.literal(var0), true);
+         var1.sendOverlayMessage(Component.literal(var0));
       }
    }
 
    public static void chat(String var0) {
       LocalPlayer var1 = player();
       if (var1 != null) {
-         var1.displayClientMessage(Component.literal(var0), false);
+         var1.sendSystemMessage(Component.literal(var0));
       }
    }
 
@@ -449,7 +449,7 @@ public final class Mc {
          return false;
       } else {
          try {
-            return var0 <= 7 ? GLFW.glfwGetMouseButton(window().handle(), var0) == 1 : InputConstants.isKeyDown(window(), var0);
+            return var0 <= 7 ? mouseDown(var0) : InputConstants.isKeyDown(var0);
          } catch (Throwable var2) {
             return false;
          }
@@ -458,7 +458,13 @@ public final class Mc {
 
    public static boolean mouseDown(int var0) {
       try {
-         return GLFW.glfwGetMouseButton(window().handle(), var0) == 1;
+         // 26.3 (SDL3): the game keeps the button state in the mouse handler.
+         return switch (var0) {
+            case 0 -> mc().mouseHandler.isLeftPressed();
+            case 1 -> mc().mouseHandler.isRightPressed();
+            case 2 -> mc().mouseHandler.isMiddlePressed();
+            default -> false;
+         };
       } catch (Throwable var2) {
          return false;
       }
@@ -478,7 +484,7 @@ public final class Mc {
    }
 
    public static boolean screenOpen() {
-      return mc().screen != null;
+      return mc().gui.screen() != null;
    }
 
    public static boolean pressed(KeyMapping var0) {

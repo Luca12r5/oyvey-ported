@@ -1,0 +1,21 @@
+# Mechanical 1.21.11 -> 26.3 renames, applied to the shared sources while merging (build.gradle).
+# Format:  <java regex> ==> <replacement>      (optional prefix "if <regex> :: " = only files that contain it)
+# Keep these to plain renames; anything with logic belongs in an overlay file under src/main.
+\bGuiGraphics\b ==> GuiGraphicsExtractor
+\.renderItemDecorations\( ==> .itemDecorations(
+\.renderFakeItem\( ==> .fakeItem(
+\.renderItem\( ==> .item(
+\bctx\.drawString\( ==> ctx.text(
+\bctx\.drawCenteredString\( ==> ctx.centeredText(
+(Mc\.mc\(\)|Minecraft\.getInstance\(\)|\bmc|\bvar\d+x*|\bclient|\bminecraft)\.screen\b(?!\s*=[^=]) ==> $1.gui.screen()
+(Mc\.mc\(\)|Minecraft\.getInstance\(\)|\bmc|\bvar\d+x*|\bclient|\bminecraft)\.setScreen\( ==> $1.gui.setScreen(
+\.getOverlay\(\) ==> .gui.overlay()
+gameRenderer\.getMainCamera\(\) ==> gameRenderer.mainCamera()
+\.getMainRenderTarget\(\) ==> .gameRenderer.mainRenderTarget()
+ScreenEvents\.afterRender\( ==> ScreenEvents.afterExtract(
+\.displayClientMessage\(([^;]*?), true\) ==> .sendOverlayMessage($1)
+\.displayClientMessage\(([^;]*?), false\) ==> .sendSystemMessage($1)
+if extends Screen :: public void render\(GuiGraphicsExtractor ==> public void extractRenderState(GuiGraphicsExtractor
+if extends Screen :: public void renderBackground\(GuiGraphicsExtractor ==> public void extractBackground(GuiGraphicsExtractor
+if extends Screen :: super\.render\( ==> super.extractRenderState(
+if extends Screen :: super\.renderBackground\( ==> super.extractBackground(

@@ -15,7 +15,25 @@ def shared = file('../lego-client/src/main')
 def overlay = file('src/main')
 def merged = layout.buildDirectory.dir('merged').get().asFile
 
+// Mechanical renames for the shared sources (see rewrite.rules).
+def rules = file('rewrite.rules').readLines().findAll { it.trim() && !it.trim().startsWith('#') }.collect { line ->
+    def cond = null
+    def rest = line
+    if (line.startsWith('if ')) {
+        def i = line.indexOf(' :: ')
+        cond = java.util.regex.Pattern.compile(line.substring(3, i))
+        rest = line.substring(i + 4)
+    }
+    def parts = rest.split(' ==> ', 2)
+    [cond: cond, re: java.util.regex.Pattern.compile(parts[0].trim()), to: parts[1]]
+}
+def rewrite = { String text ->
+    rules.each { r -> if (r.cond == null || r.cond.matcher(text).find()) text = r.re.matcher(text).replaceAll(r.to) }
+    text
+}
+
 def mergeSources = tasks.register('mergeSources', Sync) {
+    inputs.file('rewrite.rules')
     into merged
     ['java', 'resources'].each { kind ->
         from(new File(shared, kind)) {
@@ -25,6 +43,20 @@ def mergeSources = tasks.register('mergeSources', Sync) {
             exclude 'dev/visor/**', 'visor.mixins.json', 'assets/visor/**'
         }
         from(new File(overlay, kind)) { into kind }
+    }
+    // Shared files (not the overlay's own) get the mechanical renames.
+    doLast {
+        def javaDir = new File(merged, 'java')
+        def changed = 0
+        javaDir.eachFileRecurse(groovy.io.FileType.FILES) { f ->
+            if (!f.name.endsWith('.java')) return
+            def rel = javaDir.toPath().relativize(f.toPath()).toString()
+            if (new File(overlay, "java/$rel").exists()) return
+            def t = f.getText('UTF-8')
+            def n = rewrite(t)
+            if (n != t) { f.setText(n, 'UTF-8'); changed++ }
+        }
+        println "rewrite.rules changed ${changed} shared files"
     }
 }
 
