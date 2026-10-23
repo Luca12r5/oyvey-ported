@@ -291,12 +291,14 @@ public final class Visuals {
 
    public static final class ColorFilter extends Module {
       public static final String[] MODES = new String[]{
-         "Kräftig", "Extrem", "Pastell", "Schwarz-Weiß", "Warm", "Kalt", "Vintage", "Lila", "Kino", "Dramatisch", "Traum", "Matrix"
+         "Kräftig", "Extrem", "Pastell", "Schwarz-Weiß", "Warm", "Kalt", "Vintage", "Lila", "Kino", "Dramatisch", "Traum", "Matrix", "Eigene Sättigung"
       };
       public static final String[] IDS = new String[]{
-         "vivid", "extreme", "pastel", "grayscale", "warm", "cold", "vintage", "purple", "cinematic", "dramatic", "dream", "matrix"
+         "vivid", "extreme", "pastel", "grayscale", "warm", "cold", "vintage", "purple", "cinematic", "dramatic", "dream", "matrix", "custom"
       };
       final Setting.Mode mode = this.add(new Setting.Mode("Filter", 0, MODES));
+      /** Used by "Eigene Sättigung": 0 % grey … 100 % normal … 200 % very colourful, in 10 % steps. */
+      final Setting.Num saturation = this.add(new Setting.Num("Sättigung", 0.0, 200.0, 10.0, 130.0, "%"));
       private static Method setPost;
 
       ColorFilter() {
@@ -306,7 +308,14 @@ public final class Visuals {
 
       @Override
       public void tick() {
-         Identifier var1 = Identifier.fromNamespaceAndPath("legoclient", "filter_" + IDS[Math.max(0, Math.min(IDS.length - 1, this.mode.index))]);
+         String id = IDS[Math.max(0, Math.min(IDS.length - 1, this.mode.index))];
+         if (id.equals("custom")) {
+            int sat = (int)Math.round(Math.max(0.0, Math.min(200.0, this.saturation.get())) / 10.0) * 10;
+            id = "sat_" + sat;
+         } else {
+            id = "filter_" + id;
+         }
+         Identifier var1 = Identifier.fromNamespaceAndPath("legoclient", id);
 
          try {
             GameRenderer var2 = Mc.mc().gameRenderer;

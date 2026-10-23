@@ -30,3 +30,6 @@ export function brickClick(brick: boolean): void {
     if (brick) hit(0.045, 1700, 0.16);
   } catch { /* audio not available */ }
 }
+
+/** Whether UI/emote sounds are on. */
+export function uiSoundsOn(): boolean { return enabled; }

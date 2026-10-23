@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { RetroGridEffect } from '../effects/RetroGridEffect.tsx';
 import { ToggleSwitch } from '../ui/ToggleSwitch.tsx';
 import { PlayerRig } from '../launcher/PlayerRig.tsx';
+import { EmoteBar } from '../launcher/EmoteBar.tsx';
 import { MainLaunchButton } from '../launcher/MainLaunchButton.tsx';
 import { NewsSection } from '../news/NewsSection.tsx';
 import { GameConsole } from '../launcher/GameConsole.tsx';
@@ -40,6 +41,7 @@ export function PlayTab(p: PlayTabProps) {
   const coinsKey = useShell((s) => s.coins);
   const rigScale = useThemeStore((s) => s.rigScale);
   const nametag = useThemeStore((s) => s.nametag);
+  const studio = useThemeStore((s) => s.layout) === 'studio';
   const [anim, setAnim] = useState(loadAnim);
   // Character and LAUNCH grow with the window (fullscreen on big screens).
   const stageRef = useRef<HTMLDivElement>(null);
@@ -58,7 +60,9 @@ export function PlayTab(p: PlayTabProps) {
   return (
     <div className="flex h-full relative">
       <div ref={stageRef} className="flex-grow flex flex-col items-center justify-center p-8 relative min-w-0">
-        <RetroGridEffect renderMode="both" isAnimationEnabled={!p.reducedMotion} customGridLineColor={`${accentColor.value}80`} />
+        {studio
+          ? <div className="lx-floor absolute inset-0 pointer-events-none" aria-hidden="true" />
+          : <RetroGridEffect renderMode="both" isAnimationEnabled={!p.reducedMotion} customGridLineColor={`${accentColor.value}80`} />}
 
         <div className="absolute top-3 left-3 z-20">
           <CoinsBanner key={String(coinsKey)} connected={p.connected} onChanged={p.onRefresh} />
@@ -71,24 +75,22 @@ export function PlayTab(p: PlayTabProps) {
           </div>
         </div>
 
-        <div className="relative z-10">
-          <div className="flex flex-col items-center">
-            <div className="relative w-full flex flex-col items-center" style={{ maxWidth: `${Math.round(500 * k)}px` }}>
-              <PlayerRig playerName={p.playerName} skin={p.skin.skin} variant={p.skin.variant} cape={p.skin.cape} animated={anim && !p.reducedMotion} reducedMotion={p.reducedMotion} height={rigH} showTag={nametag} cosmetics={p.cosmetics} />
-              <div className="absolute left-0 right-0 flex justify-center px-4 bottom-2 z-30">
-                <div style={{ width: `${Math.round(Math.min(520, 330 * Math.min(1.5, k)))}px` }}>
-                  <MainLaunchButton
-                    profileId={p.profile?.id ?? ''}
-                    selectedVersionLabel={p.profileLabel}
-                    signedIn={p.signedIn}
-                    onSignIn={p.onSignIn}
-                    onPickProfile={p.onPickProfile}
-                    maxWidth="none"
-                    scale={Math.min(1.4, k)}
-                  />
-                </div>
-              </div>
-            </div>
+        {/* The figure stands free on the whole stage (no box around it). */}
+        <div className="absolute inset-0 z-10">
+          <PlayerRig fill zoom={rigScale} playerName={p.playerName} skin={p.skin.skin} variant={p.skin.variant} cape={p.skin.cape} animated={anim && !p.reducedMotion} reducedMotion={p.reducedMotion} height={rigH} showTag={nametag} cosmetics={p.cosmetics} />
+        </div>
+        <EmoteBar />
+        <div className="absolute left-0 right-0 flex justify-center px-4 bottom-6 z-30 pointer-events-none">
+          <div className="pointer-events-auto" style={{ width: `${Math.round(Math.min(520, 330 * Math.min(1.5, k)))}px` }}>
+            <MainLaunchButton
+              profileId={p.profile?.id ?? ''}
+              selectedVersionLabel={p.profileLabel}
+              signedIn={p.signedIn}
+              onSignIn={p.onSignIn}
+              onPickProfile={p.onPickProfile}
+              maxWidth="none"
+              scale={Math.min(1.4, k)}
+            />
           </div>
         </div>
         {consoleOpen && p.profile && <GameConsole profileId={p.profile.id} />}

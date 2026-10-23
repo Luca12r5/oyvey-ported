@@ -123,7 +123,7 @@ const game = await startGame(javaPath, args, gameDir, join(root, 'logs'), (raw) 
   lines.push(line);
   if (lines.length > 4000) lines.splice(0, 1000);
   if (/\[LegoClient\] geladen/.test(line)) { legoLoaded = true; step(`LEGO: ${line.trim()}`); }
-  const shot = /\[LegoClient\] CI shot ([a-z-]+)$/.exec(line.trim());
+  const shot = /\[LegoClient\] CI shot ([a-z0-9-]+)$/.exec(line.trim());
   if (shot) { shotNames.push(shot[1]!); step(`shot ${shot[1]}`); }
   if (/\[LegoClient\] CI (in world|shots done)/.test(line)) step(line.trim());
   if (/\[LegoClient\] CI shots done/.test(line)) shotsDone = true;
@@ -151,6 +151,16 @@ const outcome = await new Promise<{ ok: boolean; why: string }>((resolve) => {
   }, 500);
 });
 
+if (!outcome.ok && /timeout/.test(outcome.why) && game.child.pid) {
+  // Hung: ask the JVM for a thread dump (goes to the game's stdout) and print the render thread.
+  const mark = lines.length;
+  try { process.kill(game.child.pid, 'SIGQUIT'); } catch { /* gone */ }
+  await new Promise((r) => setTimeout(r, 4000));
+  const dump = lines.slice(mark);
+  const at = dump.findIndex((l) => /"Render thread"/.test(l));
+  console.log('--- thread dump: render thread ---');
+  console.log((at >= 0 ? dump.slice(at, at + 60) : dump.slice(0, 80)).join('\n'));
+}
 game.child.kill('SIGTERM');
 setTimeout(() => game.child.kill('SIGKILL'), 10_000).unref();
 await game.exited.catch(() => {});

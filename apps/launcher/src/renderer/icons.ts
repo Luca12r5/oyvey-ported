@@ -76,12 +76,29 @@ const P: Record<string, string> = {
   rotate: '<path d="M4.5 12a7.5 7.5 0 0 1 13-5.1M19.5 12a7.5 7.5 0 0 1-13 5.1M17.5 3.5v3.4h-3.4M6.5 20.5v-3.4h3.4"/>',
   memory: '<rect x="4" y="7" width="16" height="10" rx="1"/><path d="M7.5 10v4M11 10v4M14.5 10v4M7 17v2.5M12 17v2.5M17 17v2.5"/>',
   shield: '<path d="M12 3.5 19 6v5.5c0 4.4-3 7.8-7 9-4-1.2-7-4.6-7-9V6z"/><path d="m9 12 2 2 4-4"/>',
+  car: '<path d="M3 16v-3l2-5h14l2 5v3"/><path d="M3 16h18"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/><path d="M7 8l1.5 4h7L17 8"/>',
+  rocket: '<path d="M12 3c3 2 4.5 5.5 4.5 9v4h-9v-4c0-3.5 1.5-7 4.5-9z"/><circle cx="12" cy="10" r="1.6"/><path d="M7.5 13L5 16v2l2.5-1.5M16.5 13l2.5 3v2l-2.5-1.5M10 19l2 2.5 2-2.5"/>',
+  chair: '<path d="M7 3h10v9H7z"/><path d="M5 12h14v3H5z"/><path d="M7 15v6M17 15v6"/>',
+  brick: '<rect x="3" y="9" width="18" height="10" rx="1.5"/><rect x="6" y="5.5" width="4" height="3.5" rx="1"/><rect x="14" y="5.5" width="4" height="3.5" rx="1"/>',
+  sparkle: '<path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/><path d="M19 3v3M17.5 4.5h3"/>',
+  trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4"/><path d="M12 13v4M8.5 20h7M10 17h4v3h-4z"/>',
+  bomb: '<circle cx="11" cy="14" r="6"/><path d="M15 9.5l2-2M17 7.5l1.5 1.5"/><path d="M19 4l.6 1.6L21 6l-1.4.5L19 8l-.6-1.5L17 6l1.4-.4z"/>',
+  sword: '<path d="M14.5 3H21v6.5L10 20.5 3.5 14z"/><path d="M6 17l-3 3M8 13l3 3"/>',
 };
 
 /** Line icon. `cls` adds classes (e.g. size modifiers). */
 export function icon(name: string, cls = ''): Raw {
   const body = P[name] ?? P.cube!;
   return { __raw: `<svg class="i ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>` };
+}
+
+/** App mark like the app icon: a two-stud brick (currentColor) on a dark rounded tile. */
+export function appMark(cls = ''): Raw {
+  return { __raw: `<svg class="app-mark ${cls}" viewBox="0 0 40 40" aria-hidden="true">
+    <rect x="1" y="1" width="38" height="38" rx="10" fill="#15161c" stroke="rgba(255,255,255,.14)"/>
+    <rect x="11" y="10" width="7" height="5" rx="1.6" fill="currentColor"/><rect x="22" y="10" width="7" height="5" rx="1.6" fill="currentColor"/>
+    <rect x="7" y="14" width="26" height="16" rx="3" fill="currentColor"/><rect x="7" y="26" width="26" height="4" rx="2" fill="#000" opacity=".22"/>
+    <rect x="9" y="16.5" width="22" height="1.4" rx=".7" fill="#fff" opacity=".35"/></svg>` };
 }
 
 /** The LEGO brick logo (two studs). */

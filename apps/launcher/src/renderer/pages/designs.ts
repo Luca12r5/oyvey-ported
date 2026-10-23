@@ -250,6 +250,7 @@ function wireLook(box: HTMLElement, rerender: () => void): void {
   box.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!b) return;
+    if (b.parentElement?.dataset.segLook) { lookLive({ layout: b.dataset.v as LookSettings['layout'] }); b.parentElement.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); }
     if (b.parentElement?.dataset.segFit) { fitLive({ mode: b.dataset.v as ImageFit['mode'] }); b.parentElement.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); }
     if (b.id === 'fitReset') { lookLive({ imageFit: { ...DEFAULT_IMAGE_FIT } }); rerender(); }
     if (b.id === 'lookReset') { lookLive({ ...DEFAULT_LOOK, imageFit: state.settings.look.imageFit }); rerender(); }
@@ -258,13 +259,14 @@ function wireLook(box: HTMLElement, rerender: () => void): void {
 
 function layoutSection(l: LookSettings): Raw {
   return html`<section class="set-sec"><h2>Rahmen & Leiste</h2><div class="glass rows">
+      ${lookRow('Aufbau', 'Studio: Navigation als Dock unten. Klassisch: Leiste links.', html`<div class="seg" data-seg-look="layout" id="layoutSeg">${([['studio', 'Studio'], ['classic', 'Klassisch']] as [LookSettings['layout'], string][]).map(([v, n]) => html`<button data-v="${v}" class="${l.layout === v ? 'on' : ''}">${n}</button>`)}</div>`)}
       ${lookRow('Ecken', 'Eckig wie NoRisk (0) bis stark abgerundet.', lookRange('look', 'radius', l.radius, 0, 24, ' px'))}
       ${lookRow('Durchsicht', 'Wie deckend der Launcher über einem animierten Hintergrund ist.', lookRange('look', 'shellAlpha', l.shellAlpha, 20, 100, ' %'))}
       ${lookRow('Leuchtlinien', 'Linien in der Akzentfarbe am Fensterrand.', lookSwitch('look', 'glowLines', l.glowLines))}
-      ${lookRow('Beschriftung der Leiste', 'Text unter den Icons links.', lookSwitch('look', 'navLabels', l.navLabels))}</div></section>
+      ${lookRow('Beschriftung der Leiste', 'Text unter den Icons der Navigation.', lookSwitch('look', 'navLabels', l.navLabels))}</div></section>
     <section class="set-sec"><h2>Titel</h2><div class="glass rows">
-      ${lookRow('Farben der Steine', 'Eine Farbe pro Buchstabe von „LEGO“.', html`<div class="row">${l.titleColors.map((c, i) => html`<input type="color" class="tc-pick" data-tc="${i}" value="${c}" title="${'LEGO'[i]!}">`)}</div>`)}
-      ${lookRow('„Launcher“ anzeigen', 'Das Wort neben den Steinen (in der Akzentfarbe).', lookSwitch('look', 'titleSub', l.titleSub))}</div></section>
+      ${lookRow('Farbe des Logos', 'Farbe des LEGO-Steins neben dem Namen.', html`<div class="row"><input type="color" class="tc-pick" data-tc="0" value="${l.titleColors[0]!}" title="Logo"></div>`)}
+      ${lookRow('„Launcher“ anzeigen', 'Das Wort hinter „LEGO“ im Titel.', lookSwitch('look', 'titleSub', l.titleSub))}</div></section>
     <section class="set-sec"><h2>Charakter</h2><div class="glass rows">
       ${lookRow('Größe', 'Größe deines Skins auf der Startseite.', lookRange('look', 'rigScale', l.rigScale, 70, 140, ' %'))}
       ${lookRow('Namensschild', 'Dein Name über dem Kopf.', lookSwitch('look', 'nametag', l.nametag))}

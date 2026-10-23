@@ -21,6 +21,9 @@ public final class CiShots {
    private static long joined;
    private static int step;
    private static boolean knifeKey;
+   private static long waitingSince;
+   private static long lastReport;
+   private static int stuckShots;
 
    private CiShots() {
    }
@@ -51,6 +54,17 @@ public final class CiShots {
       if (!ON) return;
       if (mc.player == null || mc.level == null) {
          joined = 0L;
+         // Not in the world yet: report which screen is open, and take a picture if it hangs.
+         long w = System.currentTimeMillis();
+         if (waitingSince == 0L) waitingSince = w;
+         if (w - lastReport > 15000L) {
+            lastReport = w;
+            LegoClient.LOG("CI waiting " + (w - waitingSince) / 1000L + "s, screen " + (mc.screen == null ? "none" : mc.screen.getClass().getName()) + (mc.getOverlay() == null ? "" : ", overlay " + mc.getOverlay().getClass().getName()));
+            if (w - waitingSince > 60000L && stuckShots < 3) {
+               stuckShots++;
+               shot(mc, "waiting-" + stuckShots);
+            }
+         }
          return;
       }
       long now = System.currentTimeMillis();
@@ -94,8 +108,13 @@ public final class CiShots {
          case 13 -> { if (t < 35.0F) return; shot(mc, "menu"); }
          case 14 -> { if (t < 36.0F) return; mc.setScreen(null); mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); }
          case 15 -> { if (t < 40.0F) return; shot(mc, "third-person"); }
-         case 16 -> {
-            if (t < 42.0F) return;
+         // Launcher emotes in the client: car and chair (third person, seen from the front).
+         case 16 -> { if (t < 41.0F) return; dev.lego.emote.Emotes.play(dev.lego.emote.EmoteLib.index("lx_car")); }
+         case 17 -> { if (t < 43.4F) return; shot(mc, "emote-car"); }
+         case 18 -> { if (t < 48.0F) return; dev.lego.emote.Emotes.play(dev.lego.emote.EmoteLib.index("lx_chair")); }
+         case 19 -> { if (t < 50.4F) return; shot(mc, "emote-chair"); }
+         case 20 -> {
+            if (t < 54.0F) return;
             LegoClient.LOG("CI shots done");
             mc.stop();
          }

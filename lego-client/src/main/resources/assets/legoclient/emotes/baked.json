@@ -1,0 +1,470 @@
+{
+ "fps": 20,
+ "values": 54,
+ "emotes": [
+  {
+   "id": "car",
+   "name": "Auto",
+   "cat": "transform",
+   "dur": 6,
+   "frames": 120,
+   "offset": 0
+  },
+  {
+   "id": "chair",
+   "name": "Stuhl",
+   "cat": "transform",
+   "dur": 5,
+   "frames": 100,
+   "offset": 120
+  },
+  {
+   "id": "table",
+   "name": "Tisch",
+   "cat": "transform",
+   "dur": 5,
+   "frames": 100,
+   "offset": 220
+  },
+  {
+   "id": "rocket",
+   "name": "Rakete",
+   "cat": "transform",
+   "dur": 6.5,
+   "frames": 130,
+   "offset": 320
+  },
+  {
+   "id": "plane",
+   "name": "Flugzeug",
+   "cat": "transform",
+   "dur": 6,
+   "frames": 120,
+   "offset": 450
+  },
+  {
+   "id": "heli",
+   "name": "Hubschrauber",
+   "cat": "transform",
+   "dur": 6,
+   "frames": 120,
+   "offset": 570
+  },
+  {
+   "id": "boat",
+   "name": "Boot",
+   "cat": "transform",
+   "dur": 6,
+   "frames": 120,
+   "offset": 690
+  },
+  {
+   "id": "train",
+   "name": "Zug",
+   "cat": "transform",
+   "dur": 6,
+   "frames": 120,
+   "offset": 810
+  },
+  {
+   "id": "tank",
+   "name": "Panzer",
+   "cat": "transform",
+   "dur": 6,
+   "frames": 120,
+   "offset": 930
+  },
+  {
+   "id": "scooter",
+   "name": "Roller",
+   "cat": "transform",
+   "dur": 5.5,
+   "frames": 110,
+   "offset": 1050
+  },
+  {
+   "id": "skateboard",
+   "name": "Skateboard",
+   "cat": "transform",
+   "dur": 6,
+   "frames": 120,
+   "offset": 1160
+  },
+  {
+   "id": "tower",
+   "name": "Turm",
+   "cat": "transform",
+   "dur": 5.5,
+   "frames": 110,
+   "offset": 1280
+  },
+  {
+   "id": "bridge",
+   "name": "Brücke",
+   "cat": "transform",
+   "dur": 6,
+   "frames": 120,
+   "offset": 1390
+  },
+  {
+   "id": "snake",
+   "name": "Schlange",
+   "cat": "transform",
+   "dur": 6,
+   "frames": 120,
+   "offset": 1510
+  },
+  {
+   "id": "ball",
+   "name": "Ball",
+   "cat": "transform",
+   "dur": 5.5,
+   "frames": 110,
+   "offset": 1630
+  },
+  {
+   "id": "spider",
+   "name": "Spinne",
+   "cat": "transform",
+   "dur": 6,
+   "frames": 120,
+   "offset": 1740
+  },
+  {
+   "id": "crab",
+   "name": "Krabbe",
+   "cat": "transform",
+   "dur": 6,
+   "frames": 120,
+   "offset": 1860
+  },
+  {
+   "id": "windmill",
+   "name": "Windrad",
+   "cat": "transform",
+   "dur": 6,
+   "frames": 120,
+   "offset": 1980
+  },
+  {
+   "id": "cube",
+   "name": "Würfel",
+   "cat": "transform",
+   "dur": 5,
+   "frames": 100,
+   "offset": 2100
+  },
+  {
+   "id": "arrow",
+   "name": "Pfeil",
+   "cat": "transform",
+   "dur": 5,
+   "frames": 100,
+   "offset": 2200
+  },
+  {
+   "id": "sofa",
+   "name": "Sofa",
+   "cat": "transform",
+   "dur": 5,
+   "frames": 100,
+   "offset": 2300
+  },
+  {
+   "id": "bed",
+   "name": "Bett",
+   "cat": "transform",
+   "dur": 6,
+   "frames": 120,
+   "offset": 2400
+  },
+  {
+   "id": "throne",
+   "name": "Thron",
+   "cat": "transform",
+   "dur": 5.5,
+   "frames": 110,
+   "offset": 2520
+  },
+  {
+   "id": "lamp",
+   "name": "Lampe",
+   "cat": "transform",
+   "dur": 6,
+   "frames": 120,
+   "offset": 2630
+  },
+  {
+   "id": "robot",
+   "name": "Roboter",
+   "cat": "transform",
+   "dur": 6,
+   "frames": 120,
+   "offset": 2750
+  },
+  {
+   "id": "star",
+   "name": "Stern",
+   "cat": "transform",
+   "dur": 5.5,
+   "frames": 110,
+   "offset": 2870
+  },
+  {
+   "id": "wave",
+   "name": "Winken",
+   "cat": "gesture",
+   "dur": 3,
+   "frames": 60,
+   "offset": 2980
+  },
+  {
+   "id": "dab",
+   "name": "Dab",
+   "cat": "dance",
+   "dur": 2.8,
+   "frames": 56,
+   "offset": 3040
+  },
+  {
+   "id": "floss",
+   "name": "Floss",
+   "cat": "dance",
+   "dur": 4,
+   "frames": 80,
+   "offset": 3096
+  },
+  {
+   "id": "moonwalk",
+   "name": "Moonwalk",
+   "cat": "dance",
+   "dur": 5,
+   "frames": 100,
+   "offset": 3176
+  },
+  {
+   "id": "breakdance",
+   "name": "Breakdance",
+   "cat": "dance",
+   "dur": 5,
+   "frames": 100,
+   "offset": 3276
+  },
+  {
+   "id": "backflip",
+   "name": "Salto",
+   "cat": "dance",
+   "dur": 3,
+   "frames": 60,
+   "offset": 3376
+  },
+  {
+   "id": "cartwheel",
+   "name": "Radschlag",
+   "cat": "dance",
+   "dur": 3.6,
+   "frames": 72,
+   "offset": 3436
+  },
+  {
+   "id": "pushups",
+   "name": "Liegestütze",
+   "cat": "gesture",
+   "dur": 5,
+   "frames": 100,
+   "offset": 3508
+  },
+  {
+   "id": "meditate",
+   "name": "Meditieren",
+   "cat": "gesture",
+   "dur": 6,
+   "frames": 120,
+   "offset": 3608
+  },
+  {
+   "id": "cheer",
+   "name": "Jubeln",
+   "cat": "gesture",
+   "dur": 3,
+   "frames": 60,
+   "offset": 3728
+  },
+  {
+   "id": "clap",
+   "name": "Applaus",
+   "cat": "gesture",
+   "dur": 3,
+   "frames": 60,
+   "offset": 3788
+  },
+  {
+   "id": "bow",
+   "name": "Verbeugung",
+   "cat": "gesture",
+   "dur": 3,
+   "frames": 60,
+   "offset": 3848
+  },
+  {
+   "id": "guitar",
+   "name": "Gitarre",
+   "cat": "dance",
+   "dur": 5,
+   "frames": 100,
+   "offset": 3908
+  },
+  {
+   "id": "drums",
+   "name": "Schlagzeug",
+   "cat": "dance",
+   "dur": 5,
+   "frames": 100,
+   "offset": 4008
+  },
+  {
+   "id": "dj",
+   "name": "DJ",
+   "cat": "dance",
+   "dur": 5,
+   "frames": 100,
+   "offset": 4108
+  },
+  {
+   "id": "zombie",
+   "name": "Zombie",
+   "cat": "gesture",
+   "dur": 5,
+   "frames": 100,
+   "offset": 4208
+  },
+  {
+   "id": "ninja",
+   "name": "Ninja",
+   "cat": "dance",
+   "dur": 4.5,
+   "frames": 90,
+   "offset": 4308
+  },
+  {
+   "id": "karate",
+   "name": "Karate",
+   "cat": "dance",
+   "dur": 4.5,
+   "frames": 90,
+   "offset": 4398
+  },
+  {
+   "id": "superhero",
+   "name": "Superheld",
+   "cat": "dance",
+   "dur": 5,
+   "frames": 100,
+   "offset": 4488
+  },
+  {
+   "id": "headless",
+   "name": "Kopf-ab-Trick",
+   "cat": "gesture",
+   "dur": 5,
+   "frames": 100,
+   "offset": 4588
+  },
+  {
+   "id": "explode",
+   "name": "Explosion",
+   "cat": "dance",
+   "dur": 4.5,
+   "frames": 90,
+   "offset": 4688
+  },
+  {
+   "id": "jelly",
+   "name": "Wackelpudding",
+   "cat": "dance",
+   "dur": 4,
+   "frames": 80,
+   "offset": 4778
+  },
+  {
+   "id": "robotdance",
+   "name": "Roboter-Tanz",
+   "cat": "dance",
+   "dur": 5,
+   "frames": 100,
+   "offset": 4858
+  },
+  {
+   "id": "hop",
+   "name": "Hüpfen",
+   "cat": "gesture",
+   "dur": 3.5,
+   "frames": 70,
+   "offset": 4958
+  },
+  {
+   "id": "sleep",
+   "name": "Schlafen",
+   "cat": "gesture",
+   "dur": 6,
+   "frames": 120,
+   "offset": 5028
+  },
+  {
+   "id": "salute",
+   "name": "Salutieren",
+   "cat": "gesture",
+   "dur": 3,
+   "frames": 60,
+   "offset": 5148
+  },
+  {
+   "id": "think",
+   "name": "Nachdenken",
+   "cat": "gesture",
+   "dur": 4,
+   "frames": 80,
+   "offset": 5208
+  },
+  {
+   "id": "facepalm",
+   "name": "Facepalm",
+   "cat": "gesture",
+   "dur": 3.4,
+   "frames": 68,
+   "offset": 5288
+  },
+  {
+   "id": "disco",
+   "name": "Disco",
+   "cat": "dance",
+   "dur": 5,
+   "frames": 100,
+   "offset": 5356
+  },
+  {
+   "id": "jumpingjack",
+   "name": "Hampelmann",
+   "cat": "dance",
+   "dur": 4,
+   "frames": 80,
+   "offset": 5456
+  },
+  {
+   "id": "point",
+   "name": "Zeigen",
+   "cat": "gesture",
+   "dur": 3,
+   "frames": 60,
+   "offset": 5536
+  },
+  {
+   "id": "chicken",
+   "name": "Ententanz",
+   "cat": "dance",
+   "dur": 4.5,
+   "frames": 90,
+   "offset": 5596
+  }
+ ]
+}

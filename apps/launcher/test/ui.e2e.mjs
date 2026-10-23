@@ -112,6 +112,28 @@ if (bgColor !== '#070e19') problems.push(`old settings were not migrated to Nach
 await win.waitForSelector('#avatar[data-cos]', { timeout: 8000 }).catch(() => problems.push('equipped cosmetics not shown in 3D on the play screen'));
 await win.waitForTimeout(800);
 if (shots) await win.screenshot({ path: join(shots, 'launcher-play-default.png') });
+// Emotes: the panel lists 50+ emotes; each one starts on the figure without errors.
+{
+  if (!(await win.locator('#emoteOpen').count())) problems.push('emote button missing');
+  await win.click('#emoteOpen');
+  await win.waitForSelector('#emotePanel');
+  const ids = await win.$$eval('#emotePanel .lx-emote-tile', (els) => els.map((e) => e.getAttribute('data-emote')));
+  if (ids.length < 50) problems.push(`only ${ids.length} emotes`);
+  for (const id of ids) {
+    await win.click(`#emotePanel .lx-emote-tile[data-emote="${id}"]`);
+    const on = await win.waitForFunction((x) => document.querySelector('#avatar')?.getAttribute('data-emote') === x, id, { timeout: 3000 }).then(() => true, () => false);
+    if (!on) { problems.push(`emote ${id} did not start`); continue; }
+    await win.waitForTimeout(['car', 'chair', 'rocket'].includes(id) ? 2200 : 350);
+    if (shots && ['car', 'chair', 'rocket', 'explode'].includes(id)) await win.screenshot({ path: join(shots, `launcher-emote-${id}.png`) });
+  }
+  await win.fill('#emoteSearch', 'auto');
+  if ((await win.locator('#emotePanel .lx-emote-tile').count()) !== 1) problems.push('emote search does not filter');
+  await win.keyboard.press('Escape');
+  await win.keyboard.press('Escape');
+  const stopped = await win.waitForFunction(() => !document.querySelector('#avatar')?.getAttribute('data-emote'), null, { timeout: 4000 }).then(() => true, () => false);
+  if (!stopped) problems.push('Esc did not stop the emote');
+  if (await win.locator('#emotePanel').count()) problems.push('Esc did not close the emote panel');
+}
 for (const id of ['play', 'profiles', 'mods', 'skins', 'capes']) if (!(await win.locator(`#sidebar [data-page=${id}]`).count())) problems.push(`${id} tab missing`);
 if (await win.locator('#sidebar [data-page=designs]').count()) problems.push('designs should live under Optionen');
 // Custom window controls: minimize, fullscreen, close (maximize = double-click on the header).

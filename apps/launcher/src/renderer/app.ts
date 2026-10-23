@@ -182,7 +182,8 @@ export function retheme(): void {
   bg.configure({ id: s.background, quality: s.backgroundQuality, snow: s.snow, still: s.reducedMotion, fx: s.fx, image: s.bgImage, imageFit: s.look.imageFit });
   // Free customisation (Designs → Stil): frame, title, character.
   const look = s.look;
-  themeStore.set({ borderRadius: look.radius, showNavLabels: look.navLabels, titleColors: look.titleColors, titleSub: look.titleSub, rigScale: look.rigScale / 100, nametag: look.nametag, glowLines: look.glowLines });
+  themeStore.set({ borderRadius: look.radius, showNavLabels: look.navLabels, titleColors: look.titleColors, titleSub: look.titleSub, rigScale: look.rigScale / 100, nametag: look.nametag, glowLines: look.glowLines, layout: look.layout });
+  document.body.classList.toggle('lx-studio', look.layout === 'studio');
   applyAccentToDOM();
   document.documentElement.style.setProperty('--shell-alpha', String(look.shellAlpha / 100));
   document.body.classList.toggle('no-blur', !s.fx.blur);

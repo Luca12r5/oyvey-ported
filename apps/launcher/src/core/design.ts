@@ -93,11 +93,13 @@ export interface LookSettings {
   /** Name tag above the character. */
   nametag: boolean;
   imageFit: ImageFit;
+  /** Window layout: "studio" (floating dock at the bottom) or "classic" (rail on the left). */
+  layout: 'studio' | 'classic';
 }
 
 export const DEFAULT_IMAGE_FIT: ImageFit = { mode: 'cover', zoom: 100, x: 0, y: 0, blur: 0, dim: 20, motion: true };
 export const DEFAULT_LOOK: LookSettings = {
-  shellAlpha: 55, radius: 12, glowLines: true, navLabels: true, titleColors: ['#d01012', '#f2cd37', '#0055bf', '#e9ecef'], titleSub: true, rigScale: 100, nametag: true, imageFit: DEFAULT_IMAGE_FIT,
+  shellAlpha: 55, radius: 12, glowLines: true, navLabels: true, titleColors: ['#ffffff', '#f2cd37', '#0055bf', '#e9ecef'], titleSub: true, rigScale: 100, nametag: true, imageFit: DEFAULT_IMAGE_FIT, layout: 'studio',
 };
 
 export function sanitizeLook(x: unknown): LookSettings {
@@ -114,6 +116,7 @@ export function sanitizeLook(x: unknown): LookSettings {
     titleSub: bool(o.titleSub, d.titleSub),
     rigScale: num(o.rigScale, 70, 140, d.rigScale),
     nametag: bool(o.nametag, d.nametag),
+    layout: o.layout === 'classic' ? 'classic' : 'studio',
     imageFit: {
       mode: f.mode === 'contain' || f.mode === 'stretch' ? f.mode : 'cover',
       zoom: num(f.zoom, 50, 300, df.zoom),

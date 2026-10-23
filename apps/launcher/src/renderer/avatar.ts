@@ -10,6 +10,7 @@ import { AmbientLight, CanvasTexture, DirectionalLight, Mesh, MeshBasicMaterial,
 import minifig from './assets/minifig.png';
 import { wearCosmetics } from './cosmetics3d.ts';
 import { capeSheetFrames } from './capeart.ts';
+import { EmoteAnimation, emoteById } from './emotes.ts';
 
 export const DEFAULT_SKIN: string = minifig;
 export type Anim = 'idle' | 'walk' | 'wave' | 'spin';
@@ -20,6 +21,10 @@ export interface Avatar {
   play(a: Anim): void;
   /** One-off gesture on top of the living idle. */
   react(r: Reaction): void;
+  /** Plays an emote (see emotes.ts); null stops the current one. */
+  emote(id: string | null): void;
+  /** Called when an emote starts (id) or ends (null). */
+  onEmote(fn: (id: string | null) => void): void;
   /** Freezes or resumes the animation ("Skin-Animation" switch). */
   setPaused(paused: boolean): void;
   /** Zoom step (+1 closer, -1 further); the mouse wheel zooms as well. */
@@ -124,16 +129,30 @@ function shadowTexture(): CanvasTexture {
   return new CanvasTexture(c);
 }
 
-export function createAvatar(canvas: HTMLCanvasElement, reducedMotion: boolean): Avatar {
+export interface AvatarOpts {
+  /** Figure size factor (camera distance; 1 = default). */
+  zoom?: number;
+  /** Moves the figure up by this share of the view height (room for buttons below). */
+  lift?: number;
+}
+
+export function createAvatar(canvas: HTMLCanvasElement, reducedMotion: boolean, opts: AvatarOpts = {}): Avatar {
   if (!webglAvailable()) return flatAvatar(canvas);
   // Create the context ourselves with alpha so the stage glow shows through.
   canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: true });
   const box = () => canvas.parentElement!.getBoundingClientRect();
-  const viewer = new SkinViewer({ canvas, width: box().width, height: box().height, pixelRatio: 'match-device', skin: DEFAULT_SKIN, model: 'default', zoom: 0.8, fov: 40 });
+  const viewer = new SkinViewer({ canvas, width: box().width, height: box().height, pixelRatio: 'match-device', skin: DEFAULT_SKIN, model: 'default', zoom: 0.8 * (opts.zoom ?? 1), fov: 40 });
   viewer.renderer.setClearColor(0x000000, 0);
   // Three-quarter view like a character select screen.
   viewer.playerWrapper.rotation.y = 0.5;
   viewer.playerObject.position.y = -1;
+  if (opts.lift) {
+    // Aim the camera lower, so the figure stands higher in the picture.
+    const dy = -Math.tan((40 * Math.PI) / 360) * viewer.camera.position.length() * 2 * opts.lift;
+    viewer.controls.target.set(0, dy, 0);
+    viewer.camera.position.y += dy;
+    viewer.controls.update();
+  }
   // Wheel zoom within limits (close-up of the face … whole body).
   viewer.controls.enableZoom = true;
   viewer.controls.zoomSpeed = 0.6;
@@ -188,7 +207,17 @@ export function createAvatar(canvas: HTMLCanvasElement, reducedMotion: boolean):
     living = new LivingAnimation(look);
     return living;
   };
+  let emoteAnim: EmoteAnimation | null = null;
+  let emoteListener: (id: string | null) => void = () => {};
+  const endEmote = () => {
+    if (!emoteAnim) return;
+    emoteAnim.dispose(viewer.playerObject);
+    emoteAnim = null;
+    canvas.dataset.emote = '';
+    emoteListener(null);
+  };
   const play = (a: Anim) => {
+    endEmote();
     current = a;
     viewer.animation = make(a);
     viewer.autoRotate = a === 'spin' && !paused;
@@ -229,18 +258,38 @@ export function createAvatar(canvas: HTMLCanvasElement, reducedMotion: boolean):
           }, 100);
         }
       } else viewer.resetCape();
-      play(current);
+      if (!emoteAnim) play(current);
       placeShadow();
     },
     play,
+    emote(id) {
+      if (!id) { emoteAnim?.stop(); return; }
+      const e = emoteById(id);
+      if (!e) return;
+      endEmote();
+      viewer.autoRotate = false;
+      const a: EmoteAnimation = new EmoteAnimation(e, () => {
+        if (emoteAnim !== a) return;
+        emoteAnim = null;
+        canvas.dataset.emote = '';
+        emoteListener(null);
+        // Back to the normal animation (deferred: we are inside the viewer's update).
+        queueMicrotask(() => { if (!emoteAnim) play(current); });
+      });
+      emoteAnim = a;
+      viewer.animation = a;
+      canvas.dataset.emote = id;
+      emoteListener(id);
+    },
+    onEmote(fn) { emoteListener = fn; },
     react(r) {
-      if (paused) return;
+      if (paused || emoteAnim) return;
       if (current !== 'idle' && current !== 'spin') play('idle');
       living.trigger(r === 'greet' ? 'wave' : r === 'launch' ? 'cheer' : r === 'success' ? 'wave' : 'nod');
     },
     setPaused(p) {
       paused = p || reducedMotion;
-      if (viewer.animation) viewer.animation.paused = paused;
+      if (viewer.animation && !emoteAnim) viewer.animation.paused = paused;
       viewer.autoRotate = current === 'spin' && !paused;
     },
     resize() { const b = box(); viewer.setSize(b.width, b.height); },
@@ -256,6 +305,7 @@ export function createAvatar(canvas: HTMLCanvasElement, reducedMotion: boolean):
       takeOff = ids.length ? wearCosmetics(viewer, ids) : null;
     },
     dispose() {
+      endEmote();
       clearInterval(capeTimer);
       takeOff?.();
       removeEventListener('mousemove', onMove);
@@ -303,6 +353,8 @@ function flatAvatar(canvas: HTMLCanvasElement): Avatar {
     zoom() { /* static */ },
     play() { /* static */ },
     react() { /* static */ },
+    emote() { /* static */ },
+    onEmote() { /* static */ },
     setPaused() { /* static */ },
     resize: draw,
     headTop: () => null,

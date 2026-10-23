@@ -846,6 +846,7 @@ public final class EmoteLib {
          set(var1, 3, -0.12 * var2, 0.0, 0.0);
       });
       EmotePack.addAll();
+      BakedEmotes.addAll();
    }
 
    public static final class Emote {
@@ -857,6 +858,8 @@ public final class EmoteLib {
       public final EmoteLib.PoseFn fn;
       public final String bubble;
       public final float spin;
+      /** Baked launcher emote (moves, turns and scales the parts), or null. */
+      public BakedEmotes.Clip clip;
 
       Emote(String var1, String var2, String var3, float var4, boolean var5, String var6, float var7, EmoteLib.PoseFn var8) {
          this.id = var1;

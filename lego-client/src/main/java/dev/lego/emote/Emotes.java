@@ -25,6 +25,8 @@ public final class Emotes {
    private static double startX;
    private static double startZ;
    private static float[] fading;
+   /** A baked emote that was stopped early plays its last 0.8 s, so the parts go back smoothly. */
+   private static boolean stopping;
    private static final Map<String, Identifier> BUBBLES = new HashMap<>();
 
    private Emotes() {
@@ -53,6 +55,8 @@ public final class Emotes {
             fading = null;
             current = var2;
             startMs = System.currentTimeMillis();
+            stopping = false;
+            if (var2.clip != null) BakedEmotes.started(var2);
             // Other LEGO players see it via the server (cosmetics lookup).
             String eid = var2.id.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9_]", "_");
             dev.lego.net.LegoAuth.session().thenAcceptAsync(t -> {
@@ -86,6 +90,26 @@ public final class Emotes {
    }
 
    public static void stop() {
+      if (current != null && current.clip != null && !stopping) {
+         stopping = true;
+         float tail = current.duration - 0.8F;
+         if (time() < tail) startMs = System.currentTimeMillis() - (long)(tail / Math.max(0.1F, module == null ? 1.0F : module.speed.getF()) * 1000.0F);
+         return;
+      }
+      if (current != null && current.clip != null) {
+         if (time() < current.duration) return; // still building back
+         current = null;
+         stopping = false;
+         fading = null;
+         if (savedPerspective != null) {
+            try {
+               Mc.perspective(savedPerspective);
+            } catch (Throwable ignored) {
+            }
+            savedPerspective = null;
+         }
+         return;
+      }
       if (current != null) {
          Cutscenes.end();
          fading = current.pose(time());
@@ -143,6 +167,10 @@ public final class Emotes {
    public static void pose(ModelPart var0, ModelPart var1, ModelPart var2, ModelPart var3, ModelPart var4, ModelPart var5) {
       float[] var6;
       float var7;
+      if (current != null && current.clip != null) {
+         BakedEmotes.apply(current.clip, time(), var0, var1, var2, var3, var4, var5);
+         return;
+      }
       if (current != null) {
          float var8 = time();
          var6 = current.pose(var8);
@@ -184,6 +212,10 @@ public final class Emotes {
       EmoteLib.Emote e = EmoteLib.get(emoteId);
       if (e == null) return;
       float t = ageMs / 1000.0F;
+      if (e.clip != null) {
+         if (t <= e.duration) BakedEmotes.apply(e.clip, t, head, body, rArm, lArm, rLeg, lLeg);
+         return;
+      }
       if (!e.loop && t > e.duration) return;
       if (e.loop && t > 10.0F) return;
       float[] p = e.pose(t);

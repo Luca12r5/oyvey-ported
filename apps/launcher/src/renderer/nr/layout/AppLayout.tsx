@@ -4,10 +4,11 @@
 import { useEffect, useRef } from 'react';
 import { Icon } from '../lib/iconify.tsx';
 import { VerticalNavbar } from '../navigation/VerticalNavbar.tsx';
+import { DockNav } from '../navigation/DockNav.tsx';
 import { UserProfileBar } from '../header/UserProfileBar.tsx';
 import { NavigationHistory } from '../header/NavigationHistory.tsx';
 import { HeaderInfoCarousel } from '../header/HeaderInfoCarousel.tsx';
-import { LegoText } from '../ui/LegoText.tsx';
+import { appMark } from '../../icons.ts';
 import { useThemeStore } from '../store/theme.ts';
 import { actions, useShell } from '../store/shell.ts';
 import { rgbOf } from '../lib/utils.ts';
@@ -15,6 +16,7 @@ import { rgbOf } from '../lib/utils.ts';
 export function AppLayout({ onView }: { onView: (el: HTMLElement) => void }) {
   const themeAccentColor = useThemeStore((s) => s.accentColor);
   const glowLines = useThemeStore((s) => s.glowLines);
+  const studio = useThemeStore((s) => s.layout) === 'studio';
   const nav = useShell((s) => s.nav);
   const activeTab = useShell((s) => s.page);
   const viewRef = useRef<HTMLElement>(null);
@@ -30,7 +32,8 @@ export function AppLayout({ onView }: { onView: (el: HTMLElement) => void }) {
 
   return (
     <div
-      className="nr-launcher h-screen w-full backdrop-blur-lg border-2 border-solid overflow-hidden relative flex shadow-[0_0_25px_rgba(0,0,0,0.4)]"
+      className={`nr-launcher ${studio ? 'lx-studio-shell' : ''} h-screen w-full backdrop-blur-lg border-2 border-solid overflow-hidden relative flex shadow-[0_0_25px_rgba(0,0,0,0.4)]`}
+      data-layout={studio ? 'studio' : 'classic'}
       style={{
         borderColor: `${themeAccentColor.value}30`,
         boxShadow: `0 0 15px ${themeAccentColor.value}30, inset 0 0 10px ${themeAccentColor.value}20`,
@@ -43,10 +46,11 @@ export function AppLayout({ onView }: { onView: (el: HTMLElement) => void }) {
         style={{ backgroundColor, backgroundImage: `linear-gradient(to bottom right, ${backgroundColor}, rgba(0,0,0,0.9))` }}
       />
       {glowLines && <BorderGlowEffects accentColor={themeAccentColor.value} />}
-      <VerticalNavbar items={nav} activeItem={activeTab} onItemClick={(id) => actions.go(id)} onLogoClick={() => actions.credits()} className="h-full border-r-2 z-10" />
+      {studio && <DockNav items={nav} activeItem={activeTab} onItemClick={(id) => actions.go(id)} onLogoClick={() => actions.credits()} />}
+      {!studio && <VerticalNavbar items={nav} activeItem={activeTab} onItemClick={(id) => actions.go(id)} onLogoClick={() => actions.credits()} className="h-full border-r-2 z-10" />}
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
-        <HeaderBar />
-        <div className="flex-1 relative overflow-hidden">
+        <HeaderBar studio={studio} />
+        <div className={`flex-1 relative overflow-hidden ${studio ? 'lx-studio-body' : ''}`}>
           <main ref={viewRef} id="view" className="relative z-10 h-full overflow-hidden custom-scrollbar" tabIndex={-1} />
         </div>
       </div>
@@ -65,23 +69,23 @@ function BorderGlowEffects({ accentColor }: { accentColor: string }) {
   );
 }
 
-function HeaderBar() {
+function HeaderBar({ studio }: { studio: boolean }) {
   const accentColor = useThemeStore((s) => s.accentColor);
   const titleColors = useThemeStore((s) => s.titleColors);
   const titleSub = useThemeStore((s) => s.titleSub);
   const c = rgbOf(accentColor.value);
   return (
     <header
-      className="nr nr-titlebar nr-drag h-20 flex-shrink-0 border-b-2 backdrop-blur-lg flex items-center justify-between px-8 z-10"
+      className={`nr nr-titlebar nr-drag ${studio ? 'h-16 lx-studio-head' : 'h-20'} flex-shrink-0 border-b-2 backdrop-blur-lg flex items-center justify-between px-8 z-10`}
       style={{ borderColor: `${accentColor.value}40`, backgroundColor: `rgba(${c.r}, ${c.g}, ${c.b}, 0.01)` }}
     >
       <div className="flex items-center gap-4 min-w-0">
         <NavigationHistory />
         <div className="flex flex-col items-start min-w-0">
-          <h1 className="lx-title m-0 whitespace-nowrap flex items-center gap-3" aria-label="LEGO Launcher">
-            {/* LEGO logo tile: red rounded badge with a yellow rim, the letters built from bricks. */}
-            <span className="lx-logo-tile"><LegoText text="LEGO" colors={titleColors} height={24} /></span>
-            {titleSub && <span className="lx-title-word">Launcher</span>}
+          {/* Plain wordmark like the NoRisk header: small brick mark + name in the heading font. */}
+          <h1 className="lx-title lx-wordmark m-0 whitespace-nowrap flex items-center gap-2.5" aria-label="LEGO Launcher">
+            <span className="lx-wordmark-mark" style={{ color: titleColors[0] }} dangerouslySetInnerHTML={{ __html: appMark().__raw }} />
+            <span className="lx-wordmark-text">LEGO{titleSub && <span className="lx-wordmark-sub"> Launcher</span>}</span>
           </h1>
           <HeaderInfoCarousel />
         </div>
