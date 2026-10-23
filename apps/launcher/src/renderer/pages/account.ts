@@ -3,6 +3,8 @@ import { NAME_TAGS } from '@lego/shared';
 import { go, refreshChrome, state } from '../app.ts';
 import { api, confirm, dialog, errorToast, fmtDate, fmtNum, html, lego, mount, toast } from '../ui.ts';
 import { tagHtml } from './cosmetics.ts';
+import { headFromSkin } from '../avatar.ts';
+import { loadIdentity } from '../app.ts';
 
 /** Microsoft sign-in: opens Microsoft's login page in a launcher window. */
 export async function signInFlow(): Promise<void> {
@@ -59,7 +61,19 @@ export async function accountPage(el: HTMLElement): Promise<void> {
   const { me, stats, inv } = data;
   const tag = NAME_TAGS.find((t) => t.id === inv?.equipped.nametag) ?? NAME_TAGS[0]!;
   const t = stats?.totals ?? {};
-  mount(el, html`<h1>Konto</h1><div class="grid g2">
+  const usedBy = (uuid: string) => state.settings.profiles.filter((p) => p.account === uuid).map((p) => p.name);
+  mount(el, html`<h1>Konto</h1>
+  <div class="card acc-list"><div class="row between"><h2>Konten (${a.accounts.length})</h2><button class="btn primary" id="addAcc">${icon('plus', 'sm')} Konto hinzufügen</button></div>
+    <p class="small muted">Mehrere Microsoft-Konten: oben rechts wechseln, oder einem Profil ein festes Konto geben (Profil bearbeiten → Konto) und zwei Spiele gleichzeitig spielen. Im Spiel geht der Wechsel über das Modul „Konto &amp; Sitzung“.</p>
+    ${a.accounts.map((x) => html`<div class="acc-row ${x.active ? 'on' : ''}">
+      <span class="av" data-uuid="${x.uuid}"></span>
+      <div class="grow"><b>${x.name}</b>${x.active ? html` <span class="badge">Aktiv</span>` : ''}
+        <div class="tiny muted">${usedBy(x.uuid).length ? `Fest für: ${usedBy(x.uuid).join(', ')}` : 'Für Profile mit „Aktives Konto“'}</div></div>
+      ${x.active ? '' : html`<button class="btn" data-use="${x.uuid}">Wechseln</button>`}
+      <button class="btn danger" data-remove="${x.uuid}" data-name="${x.name}">Entfernen</button>
+    </div>`)}
+  </div>
+  <div class="grid g2">
     <div class="card"><h2>${a.name}</h2><div class="row">${tagHtml(tag, me?.customTag ? `${a.name} · ${me.customTag}` : a.name!)}</div>
       <p class="small muted gap mono">${a.uuid}</p>
       <p class="small">LEGO-Server: ${a.lego.connected ? html`${icon('check', 'xs')} verbunden` : html`${icon('close', 'xs')} ${a.lego.error ?? 'nicht verbunden'}`}${a.lego.roles.length ? ` · Rollen: ${a.lego.roles.join(', ')}` : ''}</p>
@@ -71,6 +85,28 @@ export async function accountPage(el: HTMLElement): Promise<void> {
       <div><div class="kpi">${fmtNum(t.minigame_wins)}</div><div class="small muted">Siege</div></div></div>
       <p class="small muted gap">Spielzeit misst der Server anhand der Online-Signale des Launchers.</p></div>
   </div>`);
+  el.querySelectorAll<HTMLElement>('.acc-row .av').forEach((av) => {
+    void api.skin(av.dataset.uuid).then((sk) => headFromSkin(sk.skin, 40)).then((src) => { if (src) { const i = new Image(); i.src = src; av.append(i); } }).catch(() => {});
+  });
+  el.querySelector('#addAcc')!.addEventListener('click', () => void signInFlow());
+  el.querySelectorAll<HTMLButtonElement>('[data-use]').forEach((b) => b.addEventListener('click', async () => {
+    try {
+      state.auth = await api.switchAccount(b.dataset.use!);
+      await loadIdentity();
+      refreshChrome();
+      toast(`Aktiv: ${state.auth.name}`, 'ok');
+      void accountPage(el);
+    } catch (e) { errorToast(e); }
+  }));
+  el.querySelectorAll<HTMLButtonElement>('[data-remove]').forEach((b) => b.addEventListener('click', async () => {
+    if (!(await confirm(`${b.dataset.name} entfernen?`, 'Die gespeicherte Anmeldung dieses Kontos wird gelöscht. Profile mit diesem festen Konto nehmen danach das aktive Konto.', 'Entfernen', true))) return;
+    try {
+      state.auth = await api.signOut(b.dataset.remove);
+      await loadIdentity();
+      refreshChrome();
+      if (state.auth.signedIn) void accountPage(el); else void go('play');
+    } catch (e) { errorToast(e); }
+  }));
   el.querySelector('#signout')!.addEventListener('click', async () => {
     if (!(await confirm('Abmelden?', 'Gespeicherte Anmeldedaten werden gelöscht.', 'Abmelden', true))) return;
     state.auth = await api.signOut();
