@@ -12,13 +12,11 @@
   "environment": "client",
   "entrypoints": {
     "client": [
-      "dev.lego.LegoClient",
-      "dev.visor.VisorClient"
+      "dev.lego.LegoClient"
     ]
   },
   "mixins": [
-    "legoclient.mixins.json",
-    "visor.mixins.json"
+    "legoclient.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.19.5",

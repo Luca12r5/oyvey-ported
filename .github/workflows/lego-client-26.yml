@@ -31,6 +31,9 @@ jobs:
             echo "::group::error summary"
             grep -E '^/.+\.java:[0-9]+: error:' build.log | sed -E 's#.*/merged/java/##' | sed -E 's/:[0-9]+: error:/: /' | sort | uniq -c | sort -rn | head -150
             echo "::endgroup::"
+            echo "==== ERROR LIST"
+            # file:line: message | source line (each error once)
+            awk '/\.java:[0-9]+: error:/ { sub(/.*\/merged\/java\//, ""); e=$0; getline src; gsub(/^[ \t]+/, "", src); if (!(e in seen)) { seen[e]=1; print e " | " src } }' build.log | head -900
             echo "ERRORS: $(grep -cE '\.java:[0-9]+: error:' build.log)"
             exit 1
           }

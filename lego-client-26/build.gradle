@@ -21,6 +21,8 @@ def mergeSources = tasks.register('mergeSources', Sync) {
         from(new File(shared, kind)) {
             into kind
             exclude { FileTreeElement e -> !e.directory && new File(overlay, "$kind/${e.relativePath.pathString}").exists() }
+            // Not ported to 26.3 yet: the Visor headset (own GPU pipelines and shaders).
+            exclude 'dev/visor/**', 'visor.mixins.json', 'assets/visor/**'
         }
         from(new File(overlay, kind)) { into kind }
     }
