@@ -207,3 +207,32 @@ jobs:
             apps/launcher/release/latest-linux.yml
           if-no-files-found: error
           retention-days: 30
+
+  # Newest build of the development branch as a public pre-release, so the exe can be
+  # downloaded without a GitHub login (artifacts need one). Always the same link:
+  # https://github.com/<owner>/<repo>/releases/tag/launcher-nightly
+  nightly:
+    needs: [windows]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/claude/lego-launcher-overhaul-ibsf6r'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: launcher-nightly
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: lego-launcher-windows
+          path: win
+      - name: Publish pre-release launcher-nightly
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          ls -la win
+          gh release delete launcher-nightly --yes --cleanup-tag || true
+          gh release create launcher-nightly win/*.exe \
+            --prerelease --target "$GITHUB_SHA" \
+            --title "LEGO Launcher (neueste Version)" \
+            --notes "Automatisch gebaut aus ${GITHUB_SHA::7} am $(date -u '+%d.%m.%Y %H:%M') UTC. Windows: die .exe herunterladen und starten."
