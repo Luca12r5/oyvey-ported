@@ -192,12 +192,26 @@ export const VULKAN_PACK: { slug: string; title: string }[] = [
   { slug: 'dynamic-fps', title: 'Dynamic FPS' },
 ];
 
+/**
+ * FPS pack mods that work together with Vivecraft (real VR). The others are left out there:
+ * Dynamic FPS throttles the game when the desktop window loses focus (it does as soon as the
+ * headset is on), ImmediatelyFast, EntityCulling and ModernFix change rendering/loading in ways
+ * Vivecraft does not support. Sodium is left out too: Vivecraft only works with certain Sodium
+ * versions, and a mismatch crashes the game when the headset starts.
+ */
+export const VR_SAFE_PACK = new Set(['lithium', 'ferrite-core']);
+
+/** Whether a mod list contains Vivecraft (by Modrinth id, title or file name). */
+export function hasVivecraft(mods: { projectId?: string | null; title?: string; filename: string }[]): boolean {
+  return mods.some((m) => /vivecraft/i.test(m.title ?? '') || /vivecraft/i.test(m.filename));
+}
+
 /** Resolves the performance pack files that exist for this game version/loader. */
 export interface PerfFile { projectId: string; title: string; url: string; filename: string; sha512: string; size: number }
 
-export async function performanceFiles(f: FetchLike, gameVersion: string, loader: LoaderType): Promise<PerfFile[]> {
+export async function performanceFiles(f: FetchLike, gameVersion: string, loader: LoaderType, vr = false): Promise<PerfFile[]> {
   const out: PerfFile[] = [];
-  for (const m of PERFORMANCE_PACK) {
+  for (const m of PERFORMANCE_PACK.filter((x) => !vr || VR_SAFE_PACK.has(x.slug))) {
     try {
       const v = pick(await projectVersions(f, m.slug, gameVersion, loader));
       const file = v?.files.find((x) => x.primary) ?? v?.files[0];

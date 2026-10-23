@@ -1,6 +1,6 @@
 // The NoRisk Client launcher's mods tab (GPL-3.0: components/tabs/ModrinthTabV2.tsx,
 // modrinth/v2/ModrinthSearchV2.tsx + ModrinthSearchControlsV2.tsx), rebuilt on the
-// LEGO launcher's Modrinth search and installer. "Installiert" manages one profile's files.
+// LEGO launcher's Modrinth search and installer. What is installed is shown per profile (ProfileContent).
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '../lib/iconify.tsx';
 import { cn } from '../lib/utils.ts';
@@ -10,24 +10,21 @@ import { CustomDropdown } from '../ui/CustomDropdown.tsx';
 import { TagBadge } from '../ui/TagBadge.tsx';
 import { EmptyState } from '../ui/EmptyState.tsx';
 import { Button } from '../ui/buttons/Button.tsx';
-import { ActionButton } from '../ui/ActionButton.tsx';
-import { ToggleSwitch } from '../ui/ToggleSwitch.tsx';
 import { ModrinthProjectCardV2 } from '../modrinth/ModrinthProjectCardV2.tsx';
 import { ModrinthFilterSidebarV2 } from '../modrinth/ModrinthFilterSidebarV2.tsx';
 import { useThemeStore } from '../store/theme.ts';
 import { createStore, useStore } from '../store/store.ts';
-import { api, confirm, errorToast, toast } from '../../ui.ts';
+import { api, errorToast, toast } from '../../ui.ts';
 import type { ProjectType, SearchFilters, SearchHit } from '../../../core/modrinth.ts';
 import type { GameProfile } from '../../../core/settings.ts';
-import type { ModEntry } from '../../../ipc-types.ts';
 
-export type ModsTabId = 'installed' | ProjectType;
+export type ModsTabId = ProjectType;
 type Sort = NonNullable<SearchFilters['sort']>;
 
 interface ModsState { tab: ModsTabId; profileId: string | null; versions: string[]; categories: string[]; loaders: string[]; env: 'client' | 'server' | null; sort: Sort; sidebar: boolean }
 export const modsStore = createStore<ModsState>({ tab: 'mod', profileId: null, versions: [], categories: [], loaders: [], env: null, sort: 'downloads', sidebar: true });
 
-const TABS: [ModsTabId, string][] = [['modpack', 'Modpacks'], ['mod', 'Mods'], ['resourcepack', 'Resourcepacks'], ['shader', 'Shaders'], ['datapack', 'Datapacks'], ['installed', 'Installiert']];
+const TABS: [ModsTabId, string][] = [['modpack', 'Modpacks'], ['mod', 'Mods'], ['resourcepack', 'Resourcepacks'], ['shader', 'Shaders'], ['datapack', 'Datapacks']];
 const CATEGORIES: Record<ProjectType, string[]> = {
   mod: ['adventure', 'decoration', 'economy', 'equipment', 'food', 'game-mechanics', 'library', 'magic', 'management', 'minigame', 'mobs', 'optimization', 'social', 'storage', 'technology', 'transportation', 'utility', 'worldgen'],
   modpack: ['adventure', 'challenging', 'combat', 'kitchen-sink', 'lightweight', 'magic', 'multiplayer', 'optimization', 'quests', 'technology'],
@@ -68,7 +65,6 @@ export function ModsTab(p: ModsTabProps) {
   }, []);
 
   const groups: GroupTab[] = TABS.map(([id, name]) => ({ id, name, count: 0 }));
-  const isSearch = st.tab !== 'installed';
   const type = st.tab as ProjectType;
   const totalFilters = st.versions.length + st.loaders.length + st.categories.length + (st.env ? 1 : 0);
   const toggle = (k: 'versions' | 'loaders' | 'categories', v: string) => set({ [k]: st[k].includes(v) ? st[k].filter((x) => x !== v) : [...st[k], v] } as Partial<ModsState>);
@@ -83,20 +79,20 @@ export function ModsTab(p: ModsTabProps) {
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <SearchWithFilters
                   className="flex-1 min-w-0"
-                  placeholder={isSearch ? `${TABS.find(([i]) => i === st.tab)![1]} durchsuchen …` : 'Installierte durchsuchen …'}
+                  placeholder={`${TABS.find(([i]) => i === st.tab)![1]} durchsuchen …`}
                   searchValue={q}
                   onSearchChange={setQ}
-                  sortOptions={isSearch ? SORTS : []}
+                  sortOptions={SORTS}
                   sortValue={st.sort}
                   onSortChange={(v) => set({ sort: v as Sort })}
                 />
-                {isSearch && (
+                {(
                   <button id="filt" onClick={() => set({ sidebar: !st.sidebar })} className="flex items-center gap-2 px-4 py-2 bg-black/30 hover:bg-black/40 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-lg font-smallcaps text-base transition-all duration-200 min-h-[2.5rem]" title={st.sidebar ? 'Filter ausblenden' : 'Filter einblenden'}>
                     <div className="w-4 h-8 flex items-center justify-center"><Icon icon="solar:filter-bold" className="w-6 h-6" /></div>
                   </button>
                 )}
               </div>
-              {isSearch && (
+              {(
                 <div className="flex items-center gap-1 border border-white/10 rounded-lg p-0.5">
                   <button className="flex items-center gap-1.5 px-2 py-1 rounded-md font-smallcaps text-base transition-all duration-200 min-h-[2.5rem] bg-green-400/40 text-white border border-green-300/30" title="Modrinth">
                     <Icon icon="solar:box-bold" className="w-5 h-5" /><span className="hidden sm:inline">Modrinth</span>
@@ -110,7 +106,7 @@ export function ModsTab(p: ModsTabProps) {
                 <CustomDropdown label="" variant="search" size="sm" value={profile.id} onChange={(v) => set({ profileId: v })} options={p.profiles.map((x) => ({ value: x.id, label: `${x.name} · ${x.gameVersion}`, icon: 'solar:user-id-bold' }))} />
               </div>
             </div>
-            {isSearch && totalFilters > 0 && (
+            {totalFilters > 0 && (
               <div className="flex items-center gap-2 mt-4 flex-wrap">
                 <TagBadge variant="destructive" size="md" className="cursor-pointer hover:brightness-110 transition-all flex-shrink-0 flex items-center" onClick={() => set({ versions: [], loaders: [], categories: [], env: null })}>
                   <Icon icon="solar:trash-bin-trash-bold" className="w-4 h-4 mr-1" /><span>Alle Filter löschen</span>
@@ -125,12 +121,10 @@ export function ModsTab(p: ModsTabProps) {
             )}
           </div>
           <div className="search-results-area flex-1 overflow-y-auto pr-1" id="body">
-            {isSearch
-              ? <SearchResults key={`${type}|${profile.id}`} type={type} profile={profile} profiles={p.profiles} q={q} filters={st} onEditProfile={p.onEditProfile} onModpackInstalled={p.onModpackInstalled} />
-              : <InstalledList key={profile.id} profile={profile} q={q} />}
+            <SearchResults key={`${type}|${profile.id}`} type={type} profile={profile} profiles={p.profiles} q={q} filters={st} onEditProfile={p.onEditProfile} onModpackInstalled={p.onModpackInstalled} />
           </div>
         </div>
-        {isSearch && st.sidebar && (
+        {st.sidebar && (
           <ModrinthFilterSidebarV2
             accentColor={accentColor}
             versions={versions}
@@ -234,37 +228,5 @@ function SearchResults({ type, profile, profiles, q, filters, onEditProfile, onM
         </div>
       )}
     </>
-  );
-}
-
-function InstalledList({ profile, q }: { profile: GameProfile; q: string }) {
-  const accentColor = useThemeStore((s) => s.accentColor);
-  const [mods, setMods] = useState<ModEntry[] | null>(null);
-  const reload = useCallback(() => { api.mods(profile.id).then(setMods).catch((e) => { errorToast(e); setMods([]); }); }, [profile.id]);
-  useEffect(reload, [reload]);
-  if (mods === null) return <div className="space-y-1">{[0, 1, 2].map((i) => <div key={i} className="h-[74px] rounded-lg bg-black/20 border border-white/10 animate-skeleton-pulse" />)}</div>;
-  if (mods.length === 0) return <EmptyState icon="solar:box-bold" message={profile.loaderType ? 'Noch keine Mods in diesem Profil' : 'Vanilla-Profil ohne Mods'} />;
-  const f = q.trim().toLowerCase();
-  return (
-    <div className="space-y-1">
-      {mods.filter((m) => !f || (m.title ?? '').toLowerCase().includes(f) || m.filename.toLowerCase().includes(f)).map((m) => (
-        <div key={m.filename} className={cn('nr-mod-row relative flex items-center gap-4 p-3 rounded-lg bg-black/20 border border-white/10 hover:border-white/20 transition-all duration-200', !m.enabled && 'opacity-60')}>
-          <div className="relative w-12 h-12 flex-shrink-0 rounded-md overflow-hidden border" style={{ borderColor: `${accentColor.value}30`, backgroundColor: `${accentColor.value}10` }}>
-            {m.iconUrl ? <img src={m.iconUrl} alt="" loading="lazy" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Icon icon="solar:box-bold" className="w-6 h-6 text-white/40" /></div>}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-white font-minecraft text-base truncate normal-case">{m.title ?? m.filename}</div>
-            <div className="text-xs text-gray-400 font-mono truncate">{m.filename}</div>
-            {m.managedByLauncher && <TagBadge variant="info" size="sm" className="mt-1">vom Launcher verwaltet</TagBadge>}
-          </div>
-          {!m.managedByLauncher && (
-            <div className="flex items-center gap-3">
-              <ToggleSwitch checked={m.enabled} size="sm" onChange={async (v) => { try { await api.toggleMod(profile.id, m.filename, v); reload(); } catch (e) { errorToast(e); } }} />
-              <ActionButton icon="solar:trash-bin-trash-bold" variant="destructive" tooltip="Entfernen" size="sm" onClick={async () => { if (!(await confirm('Entfernen', `${m.filename} wird gelöscht.`, 'Entfernen', true))) return; try { await api.removeMod(profile.id, m.filename); reload(); } catch (e) { errorToast(e); } }} />
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
   );
 }

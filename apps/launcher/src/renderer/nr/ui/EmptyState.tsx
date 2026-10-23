@@ -121,7 +121,7 @@ export function EmptyState({
           <Icon icon={icon} className={compact ? "w-12 h-12" : "w-20 h-20"} />
         </div>        <p
           className={cn(
-            "text-white lowercase text-center mb-2",
+            "text-white text-center mb-2",
             compact ? "text-xl" : "text-2xl",
           )}
         >
@@ -131,7 +131,7 @@ export function EmptyState({
         {description && (
           <p
             className={cn(
-              "text-white/70 lowercase text-center max-w-md",
+              "text-white/80 text-center max-w-md",
               smallDescription
                 ? (compact ? "text-base mb-4" : "text-lg mb-6")
                 : (compact ? "text-2xl mb-4" : "text-2xl mb-6"),

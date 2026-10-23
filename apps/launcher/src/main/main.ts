@@ -1,7 +1,7 @@
 // Electron main process: window, IPC, sign-in (multiple accounts), version and
 // loader installation, mods/modpacks/imports and launching.
 
-import { app, BrowserWindow, ipcMain, shell, session, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeImage, shell, session, dialog } from 'electron';
 import { cpus, freemem, release, totalmem } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
@@ -15,7 +15,7 @@ import {
 } from '../core/install.ts';
 import { loaderSupports } from '../core/loaders.ts';
 import {
-  installedMods, installMrPack, installProject, type SearchFilters, packLoader, performanceFiles, projectVersions, readPackIndex, VULKAN_PACK, removeMod, search, toggleMod,
+  installedMods, installMrPack, installProject, type SearchFilters, packLoader, performanceFiles, projectVersions, readPackIndex, VULKAN_PACK, hasVivecraft, removeMod, search, toggleMod,
   type ProjectType,
 } from '../core/modrinth.ts';
 import { cfLoader, copyInstance, installCfPack, readCfManifest, readFolder, scanInstances, type FoundInstance } from '../core/importers.ts';
@@ -24,7 +24,8 @@ import { exportToOfficial, officialLauncherPresent, officialMinecraftDir, openOf
 import { fetchJson } from '../core/net.ts';
 import { createLogCleaner, diagnose, startGame } from '../core/launch.ts';
 import { classifyDrop, safeFileName } from '../core/dropimport.ts';
-import { DEFAULT_PROFILE, fastJvmFlags, LEGO_CLIENT_GAME_VERSION, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
+import { CONTENT_KINDS, listContent, validContentName, type ContentKind } from '../core/content.ts';
+import { DEFAULT_PROFILE, fastJvmFlags, LEGO_CLIENT_GAME_VERSION, legoClientFits, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
 import { encryptionAvailable, loadAccounts, loadSettings, paths, saveAccounts, saveSettings, type Account, type AccountStore } from './store.ts';
 import { setupUpdater, checkForUpdate, installUpdate } from './updater.ts';
 import { VrBrowser } from './vrbrowser.ts';
@@ -32,7 +33,7 @@ import { listModules, setModule } from '../core/clientcfg.ts';
 import type { AuthState, LaunchProgress, ModEntry, SkinData } from '../ipc-types.ts';
 import { validateTheme } from '@lego/shared';
 import { LANG_CODES } from '../renderer/lang.ts';
-import { analyzeLog, type Diagnosis, type Fix, type ModInfo } from '../core/crashdoc.ts';
+import { analyzeLog, crashExcerpt, type Diagnosis, type Fix, type ModInfo } from '../core/crashdoc.ts';
 import { BUTTON_STYLES, TRANSITIONS, HEAD_FONTS, pick, sanitizeFont, sanitizeSkinLib, sanitizeFx, sanitizeImage, sanitizeLanguage, sanitizeLook, sanitizePreset, STAGES, SURFACES, UI_FONTS, type DesignPreset } from '../core/design.ts';
 
 declare const __MS_CLIENT_ID__: string;
@@ -57,8 +58,30 @@ let running: GameProfile | null = null;
 const offeredInstances = new Map<string, FoundInstance>();
 const env = currentEnv(process.platform, process.arch, release());
 
+/** The console window (opened from the launcher, like the NoRisk launcher's) and its log buffer. */
+let consoleWin: BrowserWindow | null = null;
+let consoleBuf: { line: string; stream: string }[] = [];
+
 function send(channel: string, data: unknown): void {
   win?.webContents.send(`lego:${channel}`, data);
+  if (channel === 'game-log') {
+    consoleBuf.push(data as { line: string; stream: string });
+    if (consoleBuf.length > 6000) consoleBuf = consoleBuf.slice(-5000);
+  }
+  if ((channel === 'game-log' || channel === 'game-exit') && consoleWin && !consoleWin.isDestroyed()) consoleWin.webContents.send(`lego:${channel}`, data);
+}
+
+function openConsole(): void {
+  if (consoleWin && !consoleWin.isDestroyed()) { if (consoleWin.isMinimized()) consoleWin.restore(); consoleWin.focus(); return; }
+  consoleWin = new BrowserWindow({
+    width: 1000, height: 620, minWidth: 640, minHeight: 360, title: 'LEGO Launcher · Konsole', autoHideMenuBar: true, backgroundColor: '#0b0b10',
+    icon: join(app.getAppPath(), 'buildres', 'icon.png'),
+    webPreferences: { preload: join(__dirname, 'preload.cjs'), contextIsolation: true, sandbox: true, nodeIntegration: false, webviewTag: false, spellcheck: false },
+  });
+  consoleWin.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  consoleWin.webContents.on('will-navigate', (e) => e.preventDefault());
+  consoleWin.on('closed', () => { consoleWin = null; });
+  void consoleWin.loadFile(join(__dirname, 'renderer', 'index.html'), { query: { console: '1' } });
 }
 
 function backendUrl(): string {
@@ -219,6 +242,8 @@ async function addProfile(name: string, gameVersion: string, loaderType: LoaderT
     ...DEFAULT_PROFILE, id: randomUUID(), name: name.slice(0, 40) || 'Import', gameVersion, loaderType, loader, icon,
     legoClient: false, performancePack: false, memoryMb: defaultMemory(), createdAt: Date.now(), lastPlayed: null,
   };
+  // New and imported profiles get the LEGO Client wherever it can run.
+  p.legoClient = legoClientFits(p);
   settings.profiles.push(p);
   settings.selectedProfile = p.id;
   await saveSettings(settings);
@@ -268,8 +293,10 @@ async function prepareMods(profile: GameProfile, gameDir: string, report: (step:
   }
   if (profile.performancePack && profile.loaderType) {
     report('FPS-Paket');
-    const user = new Set((await installedMods(gameDir)).map((m) => m.projectId));
-    for (const p of await performanceFiles(fetch, profile.gameVersion, profile.loaderType)) {
+    const installed = await installedMods(gameDir);
+    const user = new Set(installed.map((m) => m.projectId));
+    // With Vivecraft only the VR-safe part of the pack (see VR_SAFE_PACK).
+    for (const p of await performanceFiles(fetch, profile.gameVersion, profile.loaderType, hasVivecraft(installed))) {
       if (!user.has(p.projectId)) managed.push({ url: p.url, filename: p.filename, sha512: p.sha512, size: p.size });
     }
   }
@@ -277,6 +304,7 @@ async function prepareMods(profile: GameProfile, gameDir: string, report: (step:
 }
 
 async function launch(profileId: string): Promise<{ ok: boolean; error?: string }> {
+  consoleBuf = [];
   if (running) return { ok: false, error: 'Minecraft läuft bereits.' };
   const profile = settings.profiles.find((p) => p.id === profileId);
   if (!profile) return { ok: false, error: 'Profil nicht gefunden.' };
@@ -317,7 +345,7 @@ async function launch(profileId: string): Promise<{ ok: boolean; error?: string 
       player: { name: mc.name, uuid: mc.uuid, accessToken: mc.accessToken, xuid: mc.xuid, userType: 'msa' },
       launcherName: 'lego-launcher', launcherVersion: app.getVersion(),
       memoryMb: { min: Math.min(1024, profile.memoryMb), max: profile.memoryMb },
-      extraJvmArgs: [...(profile.performancePack ? fastJvmFlags(jvm.args) : []), ...jvm.args, ...(active()?.lego ? [`-Dlegoclient.api=${backendUrl()}`] : []), ...(profile.legoClient && settings.autoConsole ? ['-Dlegoclient.console=1'] : []), ...(profile.legoClient && !settings.introEnabled ? ['-Dlegoclient.intro=0'] : [])],
+      extraJvmArgs: [...(profile.performancePack ? fastJvmFlags(jvm.args) : []), ...jvm.args, ...(active()?.lego ? [`-Dlegoclient.api=${backendUrl()}`] : []), ...(profile.legoClient && !settings.introEnabled ? ['-Dlegoclient.intro=0'] : [])],
       resolution: profile.resolution ?? undefined, loggingConfigPath: installed.loggingConfig ?? undefined,
     });
     report('Starte Minecraft');
@@ -720,13 +748,54 @@ function registerIpc(): void {
   ipcMain.handle('game:running', () => !!running);
   ipcMain.handle('folder', async (_e, kind: string, profileId?: string) => {
     const gameDir = profileDir(profileById(profileId));
-    const sub: Record<string, string> = { mods: 'mods', screenshots: 'screenshots', resourcepacks: 'resourcepacks', shaderpacks: 'shaderpacks', datapacks: 'datapacks' };
+    const sub: Record<string, string> = { mods: 'mods', screenshots: 'screenshots', resourcepacks: 'resourcepacks', shaderpacks: 'shaderpacks', datapacks: 'datapacks', saves: 'saves' };
     const target = kind === 'logs' ? paths.logs() : sub[kind] ? join(gameDir, sub[kind]!) : gameDir;
     await mkdir(target, { recursive: true });
     await shell.openPath(target);
   });
 
   ipcMain.handle('mods:list', (_e, profileId: string) => listMods(profileById(profileId)));
+  // Profile content view: everything installed in a profile, by kind, with small previews.
+  const contentKind = (k: unknown): ContentKind => { if (!CONTENT_KINDS.includes(k as ContentKind)) throw new Error('invalid kind'); return k as ContentKind; };
+  const contentPath = (profileId: string, kind: unknown, name: unknown) => {
+    if (!validContentName(name)) throw new Error('invalid name');
+    return join(profileDir(profileById(profileId)), contentKind(kind), name);
+  };
+  const thumb = (file: string, width: number) => {
+    const img = nativeImage.createFromPath(file);
+    return img.isEmpty() ? null : img.resize({ width, quality: 'good' }).toDataURL();
+  };
+  ipcMain.handle('content:list', async (_e, profileId: string, kind: unknown) => {
+    const k = contentKind(kind);
+    const dir = join(profileDir(profileById(profileId)), k);
+    const list = await listContent(profileDir(profileById(profileId)), k);
+    return list.map((x, i) => ({
+      ...x,
+      // World icon.png (64×64) and the newest 120 screenshots get a preview.
+      preview: k === 'saves' ? thumb(join(dir, x.name, 'icon.png'), 64) : k === 'screenshots' && i < 120 ? thumb(join(dir, x.name), 320) : null,
+    }));
+  });
+  ipcMain.handle('content:counts', async (_e, profileId: string) => {
+    const p = profileById(profileId);
+    const out: Record<string, number> = { mods: (await listMods(p)).length };
+    for (const k of CONTENT_KINDS) out[k] = (await listContent(profileDir(p), k)).length;
+    return out;
+  });
+  ipcMain.handle('content:toggle', async (_e, profileId: string, kind: unknown, name: unknown, enabled: boolean) => {
+    const k = contentKind(kind);
+    if (k === 'saves' || k === 'screenshots') throw new Error('not toggleable');
+    const from = contentPath(profileId, k, name);
+    const base = (name as string).replace(/\.disabled$/, '');
+    const to = contentPath(profileId, k, enabled ? base : `${base}.disabled`);
+    if (from !== to) await rename(from, to);
+  });
+  // Deleting goes to the system trash, so a world removed by mistake can be restored.
+  ipcMain.handle('content:remove', async (_e, profileId: string, kind: unknown, name: unknown) => {
+    await shell.trashItem(contentPath(profileId, kind, name));
+  });
+  ipcMain.handle('content:open', async (_e, profileId: string, kind: unknown, name: unknown) => {
+    shell.showItemInFolder(contentPath(profileId, kind, name));
+  });
   ipcMain.handle('mods:search', async (_e, profileId: string, query: string, type: ProjectType, offset: number, filters?: unknown) => {
     if (!PROJECT_TYPES.includes(type)) throw new Error('invalid type');
     const p = profileById(profileId);
@@ -763,11 +832,29 @@ function registerIpc(): void {
     const gv = typeof gameVersion === 'string' && /^[\w.\-]{1,20}$/.test(gameVersion) ? gameVersion : '1.21.11';
     const lt = loader === 'neoforge' || loader === 'forge' ? loader : 'fabric';
     const p = await addProfile(`Vivecraft VR ${gv}`, gv, lt, null, 'glasses');
+    // FPS pack: only its VR-safe part is installed for Vivecraft (see VR_SAFE_PACK).
     p.performancePack = true;
+    // VR renders the world twice: give it enough memory.
+    p.memoryMb = Math.max(p.memoryMb, 4096);
+    // The LEGO Client runs in VR too (it switches to its VR-safe mode when it sees Vivecraft).
+    p.legoClient = lt === 'fabric' && gv === LEGO_CLIENT_GAME_VERSION;
     await saveSettings(settings);
     await installProject(fetch, profileDir(p), 'vivecraft', gv, lt, 'mod', { title: 'Vivecraft', iconUrl: null });
     if (lt === 'fabric') await installProject(fetch, profileDir(p), 'fabric-api', gv, lt, 'mod', { title: 'Fabric API', iconUrl: null }).catch(() => []);
     return { profileId: p.id };
+  });
+  // Adds Vivecraft (real VR) to an existing profile, e.g. one just made in the profile editor.
+  ipcMain.handle('vr:addVivecraft', async (_e, profileId: string) => {
+    const p = profileById(profileId);
+    const lt = p.loaderType;
+    if (!lt) throw new Error('Vivecraft braucht einen Mod-Loader (Fabric, NeoForge oder Forge).');
+    const v = await projectVersions(fetch, 'vivecraft', p.gameVersion, lt).catch(() => []);
+    if (!v.length) throw new Error(`Vivecraft gibt es (noch) nicht für Minecraft ${p.gameVersion} mit ${lt}.`);
+    p.memoryMb = Math.max(p.memoryMb, 4096);
+    await saveSettings(settings);
+    await installProject(fetch, profileDir(p), 'vivecraft', p.gameVersion, lt, 'mod', { title: 'Vivecraft', iconUrl: null });
+    if (lt === 'fabric') await installProject(fetch, profileDir(p), 'fabric-api', p.gameVersion, lt, 'mod', { title: 'Fabric API', iconUrl: null }).catch(() => []);
+    return { profileId: p.id, settings };
   });
   // Max FPS with the Vulkan renderer (VulkanMod, Fabric): checked live on Modrinth for the version.
   ipcMain.handle('perf:vulkan', async (_e, gameVersion: unknown) => {
@@ -794,6 +881,8 @@ function registerIpc(): void {
     if (!added.includes('VulkanMod')) throw new Error(`VulkanMod gibt es (noch) nicht für Minecraft ${gv}.`);
     return { profileId: p.id, mods: added };
   });
+  ipcMain.handle('console:open', () => openConsole());
+  ipcMain.handle('console:history', () => consoleBuf);
   ipcMain.handle('crash:last', () => lastCrash);
   ipcMain.handle('crash:analyze', async (_e, profileId: string) => {
     const p = profileById(profileId);
@@ -804,6 +893,16 @@ function registerIpc(): void {
     const diagnoses = analyzeLog(`${report}\n${log.slice(-400_000)}`, { mods: await modInfos(p).catch(() => []), memoryMb: p.memoryMb });
     lastCrash = { profileId, diagnoses };
     return lastCrash;
+  });
+  // Cleaned-up excerpt for the AI check (sent to the LEGO server only when the player asks).
+  ipcMain.handle('crash:excerpt', async (_e, profileId: string) => {
+    const p = profileById(profileId);
+    const dir = join(profileDir(p), 'crash-reports');
+    const reports = (await readdir(dir).catch(() => [] as string[])).filter((n) => n.endsWith('.txt')).sort();
+    const report = reports.length ? await readFile(join(dir, reports[reports.length - 1]!), 'utf8').catch(() => '') : '';
+    const log = await readFile(join(profileDir(p), 'logs', 'latest.log'), 'utf8').catch(() => '');
+    const mods = (await modInfos(p).catch(() => [])).map((m) => ({ filename: m.filename, id: m.id ?? null, title: m.title ?? null, enabled: m.enabled }));
+    return { log: crashExcerpt(report, log), mods, gameVersion: p.gameVersion, loader: p.loaderType, memoryMb: p.memoryMb, legoClient: !!p.legoClient };
   });
   ipcMain.handle('crash:fix', async (_e, profileId: string, fix: Fix | { kind: 'enable-mod'; filename: string }) => {
     if (!fix || typeof fix !== 'object') throw new Error('invalid fix');

@@ -1,6 +1,7 @@
 // Contract between renderer (via preload) and main process.
 
 import type { GameProfile, LoaderType, Settings } from './core/settings.ts';
+import type { ContentEntry, ContentKind } from './core/content.ts';
 import type { InstalledMod, ProjectType, SearchHit } from './core/modrinth.ts';
 import type { Diagnosis, Fix } from './core/crashdoc.ts';
 import type { FoundInstance } from './core/importers.ts';
@@ -77,18 +78,29 @@ export interface LauncherApi {
   resetSkin(): Promise<SkinData>;
   vivecraft(gameVersion?: string): Promise<{ available: boolean; gameVersion: string; loader: string | null; suggestion?: string | null }>;
   vivecraftProfile(gameVersion: string, loader: string): Promise<{ profileId: string }>;
+  addVivecraft(profileId: string): Promise<{ profileId: string; settings: Settings }>;
   vulkan(gameVersion?: string): Promise<{ available: boolean; gameVersion: string; suggestion?: string | null }>;
   vulkanProfile(gameVersion: string): Promise<{ profileId: string; mods: string[] }>;
   crashLast(): Promise<{ profileId: string; diagnoses: Diagnosis[] } | null>;
   crashAnalyze(profileId: string): Promise<{ profileId: string; diagnoses: Diagnosis[] }>;
+  /** Cleaned-up crash excerpt + mod list for the AI check. */
+  crashExcerpt(profileId: string): Promise<{ log: string; mods: { filename: string; id: string | null; title: string | null; enabled: boolean }[]; gameVersion: string; loader: string | null; memoryMb: number; legoClient: boolean }>;
   crashFix(profileId: string, fix: Fix | { kind: 'enable-mod'; filename: string }): Promise<{ undo: Fix | { kind: 'enable-mod'; filename: string } | null; message: string }>;
   versions(): Promise<{ id: string; type: string; releaseTime: string }[]>;
   loaderVersions(type: LoaderType, gameVersion: string): Promise<{ version: string; stable: boolean }[]>;
   launch(profileId: string): Promise<{ ok: boolean; error?: string }>;
   cancelLaunch(): void;
   gameRunning(): Promise<boolean>;
-  openFolder(kind: 'game' | 'logs' | 'mods' | 'screenshots' | 'resourcepacks' | 'shaderpacks', profileId?: string): Promise<void>;
+  openFolder(kind: 'game' | 'logs' | 'mods' | 'screenshots' | 'resourcepacks' | 'shaderpacks' | 'datapacks' | 'saves', profileId?: string): Promise<void>;
   mods(profileId: string): Promise<ModEntry[]>;
+  /** Opens (or focuses) the separate console window. */
+  openConsole(): Promise<void>;
+  consoleHistory(): Promise<{ line: string; stream: string }[]>;
+  content(profileId: string, kind: ContentKind): Promise<(ContentEntry & { preview: string | null })[]>;
+  contentCounts(profileId: string): Promise<Record<'mods' | ContentKind, number>>;
+  toggleContent(profileId: string, kind: ContentKind, name: string, enabled: boolean): Promise<void>;
+  removeContent(profileId: string, kind: ContentKind, name: string): Promise<void>;
+  showContent(profileId: string, kind: ContentKind, name: string): Promise<void>;
   searchProjects(profileId: string, query: string, type: ProjectType, offset: number, filters?: import('./core/modrinth.ts').SearchFilters): Promise<{ hits: SearchHit[]; total: number }>;
   installProject(profileId: string, projectId: string, type: ProjectType, title: string, iconUrl: string | null): Promise<string[]>;
   removeMod(profileId: string, filename: string): Promise<void>;

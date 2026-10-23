@@ -6,6 +6,8 @@ import { AppLayout } from './layout/AppLayout.tsx';
 import { PlayTab, type PlayTabProps } from './tabs/PlayTab.tsx';
 import { ProfilesTab, type ProfilesTabProps } from './tabs/ProfilesTab.tsx';
 import { ModsTab, type ModsTabProps } from './tabs/ModsTab.tsx';
+import { GameConsole } from './launcher/GameConsole.tsx';
+import { ProfileContent, type ProfileContentProps } from './tabs/ProfileContent.tsx';
 import { SkinsTab, type SkinsTabProps } from './tabs/SkinsTab.tsx';
 import { CapesTab, type CapesTabProps } from './tabs/CapesTab.tsx';
 import { CapeEditor, type CapeEditorProps } from './capes/CapeEditor.tsx';
@@ -15,7 +17,7 @@ export { modsStore } from './tabs/ModsTab.tsx';
 import { applyAccentToDOM, accentFrom, themeStore } from './store/theme.ts';
 
 export { shellStore, actions, NAV_ICONS } from './store/shell.ts';
-export { gameStore, initGame, launchProfile } from './store/game.ts';
+export { gameStore, initConsoleWindow, initGame, launchProfile } from './store/game.ts';
 
 /** Mounts the NoRisk-style frame (rail, header, content area); resolves with the content element. */
 export function mountShell(host: HTMLElement): Promise<HTMLElement> {
@@ -53,6 +55,14 @@ function renderInto(el: HTMLElement, node: React.ReactNode): () => void {
 
 export function renderProfiles(el: HTMLElement, props: ProfilesTabProps): () => void {
   return renderInto(el, <ProfilesTab {...props} />);
+}
+
+export function renderProfileContent(el: HTMLElement, props: ProfileContentProps): () => void {
+  return renderInto(el, <ProfileContent {...props} />);
+}
+
+export function renderConsoleWindow(el: HTMLElement, profileId: string): () => void {
+  return renderInto(el, <GameConsole profileId={profileId} windowed />);
 }
 
 export function renderMods(el: HTMLElement, props: ModsTabProps): () => void {

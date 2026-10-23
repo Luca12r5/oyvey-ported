@@ -14,6 +14,8 @@ import { registerDuels } from './routes/duels.ts';
 import { registerSocial } from './routes/social.ts';
 import { registerCosmetics } from './routes/cosmetics.ts';
 import { registerCapes } from './routes/capes.ts';
+import { registerCrash } from './routes/crash.ts';
+import { claudeCrashAi, type CrashAi } from './services/crashai.ts';
 import { claudeCapeAi, type CapeAi } from './services/capeai.ts';
 import { claudeSkinAi, type SkinAi } from './services/skinai.ts';
 import { registerProgression } from './routes/progression.ts';
@@ -46,6 +48,7 @@ export interface App {
   capeAi: CapeAi | null;
   /** Photo → skin designer, or null without an API key (injected in tests). */
   skinAi: SkinAi | null;
+  crashAi: CrashAi | null;
   handle(req: IncomingMessage, res: ServerResponse): Promise<void>;
 }
 
@@ -92,7 +95,7 @@ interface SessionRow {
   banned_until: number | null;
 }
 
-export function createApp(config: Config, opts: { db?: Db; fetch?: typeof fetch; capeAi?: CapeAi | null; skinAi?: SkinAi | null } = {}): App {
+export function createApp(config: Config, opts: { db?: Db; fetch?: typeof fetch; capeAi?: CapeAi | null; skinAi?: SkinAi | null; crashAi?: CrashAi | null } = {}): App {
   const db = opts.db ?? new Db(join(config.dataDir, 'lego.sqlite'));
   db.migrate();
   const router = new Router<AuthUser>();
@@ -105,6 +108,7 @@ export function createApp(config: Config, opts: { db?: Db; fetch?: typeof fetch;
     fetch: opts.fetch ?? fetch,
     capeAi: opts.capeAi !== undefined ? opts.capeAi : config.anthropicApiKey ? claudeCapeAi(config.anthropicApiKey, config.capeAiModel) : null,
     skinAi: opts.skinAi !== undefined ? opts.skinAi : config.anthropicApiKey ? claudeSkinAi(config.anthropicApiKey, config.capeAiModel) : null,
+    crashAi: opts.crashAi !== undefined ? opts.crashAi : config.anthropicApiKey ? claudeCrashAi(config.anthropicApiKey, config.capeAiModel) : null,
     async handle(req, res) {
       const ip = clientIp(req, config.trustProxy);
       await router.handle(req, res, ip, (ctx) => !ctx.path.startsWith('/api/') && serveStatic(config.websiteDir, ctx));
@@ -176,6 +180,7 @@ export function createApp(config: Config, opts: { db?: Db; fetch?: typeof fetch;
   registerDuels(app);
   registerCosmetics(app);
   registerCapes(app);
+  registerCrash(app);
   registerProgression(app);
   registerFeedback(app);
   registerAdmin(app);

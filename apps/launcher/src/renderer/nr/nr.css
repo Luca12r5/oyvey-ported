@@ -245,9 +245,16 @@ body.reduced-motion .nr-skin-anim { animation: none; }
 .lx-winbtn-close:hover { background: #e11d48 !important; color: #fff !important; }
 /* Readable text: larger small sizes, brighter helper text, nothing below 12 px. */
 .nr { font-size: 15px; }
-.nr .text-xs { font-size: 13px !important; line-height: 1.35 !important; }
+.nr .text-xs { font-size: 14px !important; line-height: 1.4 !important; }
+.nr .text-sm { font-size: 15px !important; line-height: 1.45 !important; }
 .nr .text-sm { font-size: 14.5px !important; }
-.nr [class*="text-[9px]"], .nr [class*="text-[10px]"], .nr [class*="text-[11px]"] { font-size: 12px !important; }
+.nr [class*="text-[9px]"], .nr [class*="text-[10px]"], .nr [class*="text-[11px]"], .nr [class*="text-[12px]"] { font-size: 13px !important; }
+/* Muted grey text stays readable on the dark panels. */
+.nr .text-gray-400, .nr .text-gray-500 { color: #c9cbd3 !important; }
+/* Crisp text and icons: no blurred shadows, whole-pixel font smoothing. */
+.nr, .nr * { -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision; }
+.nr .text-shadow-sm { text-shadow: 0 1px 0 rgba(0,0,0,.55) !important; }
+.nr svg.i, .nr .lx-ic svg { shape-rendering: geometricPrecision; filter: none !important; }
 .nr .text-white\/20, .nr .text-white\/30 { color: rgba(255,255,255,.6) !important; }
 .nr .text-white\/40 { color: rgba(255,255,255,.72) !important; }
 .nr .text-white\/50 { color: rgba(255,255,255,.78) !important; }

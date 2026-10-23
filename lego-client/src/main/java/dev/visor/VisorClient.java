@@ -61,7 +61,10 @@ public final class VisorClient implements ClientModInitializer {
 			SettingsStore.tick();
 			BrowserSession.get().tick();
 		});
-		WorldRenderEvents.BEFORE_TRANSLUCENT.register(context -> DrDonutt.get().renderWorld());
+		// In real VR (Vivecraft) the world is drawn per eye by Vivecraft: no own world rendering there.
+		WorldRenderEvents.BEFORE_TRANSLUCENT.register(context -> {
+			if (!dev.lego.compat.VrMixinPlugin.vr()) DrDonutt.get().renderWorld();
+		});
 		// The headset browser belongs to the world: leaving it (or quitting) closes the browser.
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(() -> VisorController.get().closeBrowser(false)));
 		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
@@ -69,7 +72,7 @@ public final class VisorClient implements ClientModInitializer {
 			BrowserSession.get().shutdown();
 		});
 		LivingEntityFeatureRendererRegistrationCallback.EVENT.register((type, renderer, helper, context) -> {
-			if (renderer instanceof AvatarRenderer<?> avatar) {
+			if (renderer instanceof AvatarRenderer<?> avatar && !dev.lego.compat.VrMixinPlugin.vr()) {
 				helper.register(new HeadsetLayer(avatar));
 			}
 		});

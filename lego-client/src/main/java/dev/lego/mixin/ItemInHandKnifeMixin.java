@@ -30,7 +30,7 @@ public abstract class ItemInHandKnifeMixin {
          float equip, PoseStack pose, SubmitNodeCollector out, int light, CallbackInfo ci) {
       try {
          if (hand != InteractionHand.MAIN_HAND || stack.isEmpty() || player.getMainArm() != HumanoidArm.RIGHT || !KnifeView.replaces(stack)) return;
-         if (dev.visor.VisorController.get().state() != dev.visor.VisorController.State.OFF) return;
+         if (dev.lego.core.Compat.vivecraft || dev.visor.VisorController.get().state() != dev.visor.VisorController.State.OFF) return;
          ci.cancel();
          // Vanilla's empty-hand arm pose (right arm).
          float g = Mth.sqrt(swing);

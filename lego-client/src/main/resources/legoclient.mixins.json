@@ -2,6 +2,7 @@
   "required": false,
   "minVersion": "0.8",
   "package": "dev.lego.mixin",
+  "plugin": "dev.lego.compat.VrMixinPlugin",
   "compatibilityLevel": "JAVA_21",
   "client": [
     "GameRendererMixin",
@@ -21,7 +22,8 @@
     "BlockEntityCullMixin",
     "WindowTitleMixin",
     "FirstPersonKnifeMixin",
-    "ItemInHandKnifeMixin"
+    "ItemInHandKnifeMixin",
+    "FovRangeMixin"
   ],
   "injectors": {
     "defaultRequire": 0

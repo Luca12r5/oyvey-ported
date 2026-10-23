@@ -37,7 +37,6 @@ function loadAnim(): boolean {
 
 export function PlayTab(p: PlayTabProps) {
   const accentColor = useThemeStore((s) => s.accentColor);
-  const consoleOpen = useGame((s) => s.consoleOpen);
   const coinsKey = useShell((s) => s.coins);
   const rigScale = useThemeStore((s) => s.rigScale);
   const nametag = useThemeStore((s) => s.nametag);
@@ -94,7 +93,6 @@ export function PlayTab(p: PlayTabProps) {
             />
           </div>
         </div>
-        {consoleOpen && p.profile && <GameConsole profileId={p.profile.id} />}
       </div>
 
       <NewsSection onOpenAll={p.onOpenNews} className="w-1/3 border-l-2 border-white/40 bg-black/10 backdrop-blur-lg p-5 overflow-hidden flex flex-col relative z-10" />

@@ -31,6 +31,27 @@ export function useGame<S>(pick: (s: GameState) => S): S {
 
 let hooks: { lowPower(on: boolean): void; refresh(): void; autoConsole(): boolean } = { lowPower() {}, refresh() {}, autoConsole: () => false };
 
+/** The separate console window: the log so far, then live lines. */
+export async function initConsoleWindow(): Promise<void> {
+  const hist = await api.consoleHistory().catch(() => []);
+  gameStore.set({ log: hist.map((l) => parseLine(l.line, l.stream)) });
+  let pending: LogEntry[] = [];
+  let queued = false;
+  api.on('game-log', (l: { line: string; stream: string }) => {
+    // A new launch starts with the launcher's command line: start a fresh log.
+    if (l.line.startsWith('[installer] ') && !pending.length && gameStore.get().log.some((e) => !e.text.startsWith('[installer]'))) gameStore.set({ log: [] });
+    pending.push(parseLine(l.line, l.stream));
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => {
+      queued = false;
+      const log = gameStore.get().log.concat(pending);
+      pending = [];
+      gameStore.set({ log: log.length > 5000 ? log.slice(-4000) : log, rev: gameStore.get().rev + 1 });
+    });
+  });
+}
+
 /** Wires the IPC events once (called from app.ts boot). */
 export function initGame(h: typeof hooks): void {
   hooks = h;
@@ -67,8 +88,10 @@ export function initGame(h: typeof hooks): void {
 export async function launchProfile(profileId: string): Promise<void> {
   const g = gameStore.get();
   if (g.launching) { api.cancelLaunch(); return; }
-  if (g.running) { gameStore.set({ consoleOpen: true }); return; }
-  gameStore.set({ launching: true, status: t('play.installing'), error: null, log: [], rev: g.rev + 1, react: { kind: 'launch', at: Date.now() }, consoleOpen: hooks.autoConsole() || g.consoleOpen });
+  if (g.running) { void api.openConsole(); return; }
+  gameStore.set({ launching: true, status: t('play.installing'), error: null, log: [], rev: g.rev + 1, react: { kind: 'launch', at: Date.now() } });
+  // The console is its own window (never inside the game).
+  if (hooks.autoConsole()) void api.openConsole();
   const r = await api.launch(profileId);
   if (!r.ok) {
     gameStore.set({ launching: false, status: null, pct: null, mb: null, error: r.error ?? 'Start fehlgeschlagen' });

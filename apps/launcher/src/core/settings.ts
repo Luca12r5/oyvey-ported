@@ -128,7 +128,12 @@ export function migrateProfile(p: Partial<GameProfile> & { loader?: string | nul
   } as GameProfile;
 }
 
-export const SETTINGS_VERSION = 13;
+/** The LEGO Client mod is built for Fabric 1.21.11 only. */
+export function legoClientFits(p: { gameVersion?: string; loaderType?: LoaderType | null }): boolean {
+  return p.gameVersion === LEGO_CLIENT_GAME_VERSION && p.loaderType === 'fabric';
+}
+
+export const SETTINGS_VERSION = 14;
 
 /** Settings saved by older launcher versions: adopt the new default look once. */
 export function migrateSettings(s: Partial<Settings>): Partial<Settings> {
@@ -162,6 +167,8 @@ export function migrateSettings(s: Partial<Settings>): Partial<Settings> {
   }
   // The NoRisk layout (rail on the left) is the default again; Studio stays selectable.
   if (v < 13) s = { ...s, look: { ...(s.look ?? DEFAULT_LOOK), layout: 'classic' } };
+  // v14: the LEGO Client in every profile where it can run (Fabric 1.21.11).
+  if (v < 14) s = { ...s, profiles: (s.profiles ?? []).map((p) => (legoClientFits(p) ? { ...p, legoClient: true } : p)) };
   return { ...s, settingsVersion: SETTINGS_VERSION };
 }
 

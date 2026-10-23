@@ -1,6 +1,7 @@
 {
-	"required": true,
+	"required": false,
 	"package": "dev.visor.mixin",
+	"plugin": "dev.lego.compat.VrMixinPlugin",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
 		"ChannelAccessor",
@@ -16,6 +17,6 @@
 		"SoundManagerAccessor"
 	],
 	"injectors": {
-		"defaultRequire": 1
+		"defaultRequire": 0
 	}
 }

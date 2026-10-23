@@ -67,3 +67,19 @@ test('stack fallback never blames the LEGO client', () => {
 test('clean log gives nothing', () => {
   assert.equal(analyzeLog('[12:00:00] [Render thread/INFO]: Stopping!', ctx).length, 0);
 });
+
+test('crash excerpt for the AI removes personal data and stays small', async () => {
+  const { crashExcerpt } = await import('../src/core/crashdoc.ts');
+  const log = 'Loading C:\\Users\\Max Mustermann\\AppData\\x.jar and /home/maxi/.minecraft/mods\n--accessToken eyJabc.def --uuid 1234abcd\nmail max@example.com from 85.12.3.4 and 127.0.0.1\n' + 'x'.repeat(100_000);
+  const e = crashExcerpt('---- Minecraft Crash Report ----\nDescription: boom', log);
+  assert.ok(e.length < 60_000);
+  assert.ok(e.startsWith('---- Minecraft Crash Report'));
+  const head = crashExcerpt('', log.slice(0, 300));
+  assert.ok(!head.includes('Mustermann') && !head.includes('maxi') && !head.includes('eyJabc') && !head.includes('1234abcd'), head);
+  assert.ok(!head.includes('max@example.com') && !head.includes('85.12.3.4') && head.includes('127.0.0.1'), head);
+});
+
+test('Vivecraft without a running VR runtime is explained', () => {
+  const d = analyzeLog('[Render thread/ERROR]: org.vivecraft.client_vr.provider.openvr_lwjgl.MCOpenVR: VR Initialization failed: VRInitError_Init_HmdNotFound', { mods: [], memoryMb: 4096 });
+  assert.equal(d[0]?.id, 'vr-runtime');
+});

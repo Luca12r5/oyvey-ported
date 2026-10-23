@@ -284,6 +284,8 @@ public final class VisorController {
 	// Commands
 
 	public void toggle() {
+		// Real VR (Vivecraft) renders the world itself: the Visor glasses would fight it.
+		if (dev.lego.core.Compat.vivecraft) return;
 		switch (this.state) {
 			case OFF -> this.equip();
 			case ON -> this.remove();

@@ -70,7 +70,7 @@ export function ProfileCardV2({ profile, selected, layoutMode = 'list', h }: { p
 
   const actionButtons: ProfileActionButton[] = [
     { id: 'play', label: isLaunching ? 'STOP' : 'PLAY', icon: isLaunching ? 'solar:stop-bold' : 'solar:play-bold', variant: isLaunching ? 'destructive' : 'primary', tooltip: isLaunching ? 'Abbrechen' : 'Spielen', onClick: play },
-    { id: 'mods', label: 'MODS', icon: 'solar:box-bold', variant: 'secondary', tooltip: 'Mods verwalten', onClick: (p) => h.onMods(p) },
+    { id: 'mods', label: 'INHALT', icon: 'solar:box-bold', variant: 'secondary', tooltip: 'Inhalte: Mods, Packs, Welten, Screenshots', onClick: (p) => h.onMods(p) },
     {
       id: 'settings', label: 'SETTINGS', icon: 'solar:settings-bold', variant: 'icon-only', tooltip: 'Profil-Optionen',
       onClick: (_p, e) => {
@@ -136,7 +136,7 @@ export function ProfileCardV2({ profile, selected, layoutMode = 'list', h }: { p
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); const open = !isContextMenuOpen; setIsContextMenuOpen(open); if (open) { const b = e.currentTarget.getBoundingClientRect(); const c = e.currentTarget.closest('.nr-pcard')!.getBoundingClientRect(); setContextMenuPosition({ x: b.right - c.left - 200, y: b.bottom - c.top + 4 }); } }}>
             <Icon icon="solar:settings-bold" className={isCompact ? 'w-3 h-3' : 'w-4 h-4'} />
           </button>
-          <button data-action="mods" title="Mods verwalten" className={`${isCompact ? 'w-6 h-6' : 'w-8 h-8'} flex items-center justify-center rounded transition-all duration-200 bg-black/30 hover:bg-black/50 text-white/70 hover:text-white border border-white/10 hover:border-white/20`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); h.onMods(profile); }}>
+          <button data-action="mods" title="Inhalte: Mods, Packs, Welten, Screenshots" className={`${isCompact ? 'w-6 h-6' : 'w-8 h-8'} flex items-center justify-center rounded transition-all duration-200 bg-black/30 hover:bg-black/50 text-white/70 hover:text-white border border-white/10 hover:border-white/20`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); h.onMods(profile); }}>
             <Icon icon="solar:box-bold" className={isCompact ? 'w-3 h-3' : 'w-4 h-4'} />
           </button>
         </div>

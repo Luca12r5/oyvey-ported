@@ -13,7 +13,8 @@ import { showCrashDoctor } from '../../crashdoc-ui.ts';
 type Filter = 'all' | 'warn' | 'error';
 const shown = (f: Filter) => (e: LogEntry) => f === 'all' || (f === 'error' ? isProblem(e) : e.level !== 'INFO' && e.level !== 'DEBUG');
 
-export function GameConsole({ profileId }: { profileId: string }) {
+/** windowed: fills the separate console window instead of floating over the play page. */
+export function GameConsole({ profileId, windowed = false }: { profileId: string; windowed?: boolean }) {
   const accent = useThemeStore((s) => s.accentColor);
   const log = useGame((s) => s.log);
   const [filter, setFilter] = useState<Filter>('all');
@@ -34,7 +35,7 @@ export function GameConsole({ profileId }: { profileId: string }) {
   );
 
   return (
-    <div className="absolute left-6 right-6 bottom-6 z-40 flex flex-col backdrop-blur-lg border-2 border-b-4 nr-slide-up" id="consoleCard" style={{ height: '46%', backgroundColor: 'rgba(0,0,0,0.72)', borderColor: `${accent.value}80`, borderBottomColor: accent.dark }}>
+    <div className={windowed ? 'fixed inset-0 flex flex-col border-t-2' : 'absolute left-6 right-6 bottom-6 z-40 flex flex-col backdrop-blur-lg border-2 border-b-4 nr-slide-up'} id="consoleCard" style={windowed ? { backgroundColor: '#0b0b10', borderColor: `${accent.value}80` } : { height: '46%', backgroundColor: 'rgba(0,0,0,0.72)', borderColor: `${accent.value}80`, borderBottomColor: accent.dark }}>
       <div className="flex items-center gap-3 px-3 py-2 border-b-2" style={{ borderColor: `${accent.value}40` }}>
         <Icon icon="solar:monitor-bold" className="w-5 h-5" />
         <h3 className="font-smallcaps text-base m-0">Konsole</h3>
@@ -44,9 +45,9 @@ export function GameConsole({ profileId }: { profileId: string }) {
         <Button size="xs" variant="flat" id="crashDoc" icon={<Icon icon="solar:shield-warning-bold" className="w-4 h-4" />} onClick={async () => { try { const r = await api.crashAnalyze(profileId); showCrashDoctor(r.profileId, r.diagnoses); } catch (e) { errorToast(e); } }}>Crash-Analyse</Button>
         <IconButton size="xs" variant="flat" id="openLogs" title="Log-Ordner" aria-label="Log-Ordner" icon={<Icon icon="solar:folder-bold" className="w-4 h-4" />} onClick={() => void api.openFolder('logs')} />
         <Button size="xs" variant="flat" id="copyLog" onClick={() => void navigator.clipboard.writeText(gameStore.get().log.map((l) => `[${l.time}] [${l.source}/${l.level}] ${l.text}`).join('\n')).then(() => toast('Log kopiert', 'ok'))}>Kopieren</Button>
-        <IconButton size="xs" variant="flat" id="closeConsole" title="Schließen" aria-label="Schließen" icon={<Icon icon="solar:close-circle-bold" className="w-4 h-4" />} onClick={() => gameStore.set({ consoleOpen: false })} />
+        <IconButton size="xs" variant="flat" id="closeConsole" title="Schließen" aria-label="Schließen" icon={<Icon icon="solar:close-circle-bold" className="w-4 h-4" />} onClick={() => (windowed ? window.close() : gameStore.set({ consoleOpen: false }))} />
       </div>
-      <div ref={box} className="nr-console flex-1 overflow-auto custom-scrollbar px-3 py-2 font-mono text-xs" id="log" role="log" aria-live="off">
+      <div ref={box} className="nr-console flex-1 overflow-auto custom-scrollbar px-3 py-2 font-mono text-sm" id="log" role="log" aria-live="off">
         {lines.length === 0 ? <p className="text-white/50 font-smallcaps text-sm m-0">Noch keine Ausgabe. Starte Minecraft, dann erscheint hier das Log.</p>
           : lines.map((e, i) => (
             <div key={i} className={`ln lv-${e.level}`}><span className="ts">{e.time}</span><span className="lv">{e.level}</span><span className="src">{e.source}</span><span className="tx">{e.text}</span></div>

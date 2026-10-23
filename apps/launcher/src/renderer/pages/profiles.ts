@@ -3,7 +3,7 @@
 
 import { groupVersions } from '../../core/versions.ts';
 import { go, onLeave, state } from '../app.ts';
-import { renderProfiles } from '../nr/mount.tsx';
+import { renderProfileContent, renderProfiles } from '../nr/mount.tsx';
 import { api, confirm, dialog, errorToast, html, mount, toast } from '../ui.ts';
 import { icon, pixel, PIXEL_ICONS } from '../icons.ts';
 import { t } from '../i18n.ts';
@@ -30,7 +30,7 @@ export async function profilesPage(el: HTMLElement): Promise<void> {
     onImport: () => importDialog(el),
     onVulkan: () => vulkanDialog(el),
     onEdit: (p) => leave(() => editor(el, p)),
-    onMods: (p) => leave(() => { openModsFor(p.id); void go('mods'); }),
+    onMods: (p) => leave(() => contentView(el, p)),
     onOpenFolder: (p) => run(() => api.openFolder('game', p.id)),
     onSelect: (p) => run(async () => { state.settings = await api.setSettings({ selectedProfile: p.id }); }),
     onExport: (p) => run(async () => { const r = await api.exportToOfficial(p.id, null); toast(`Im offiziellen Launcher als „${r.name}“ angelegt`, 'ok'); }),
@@ -54,11 +54,23 @@ export async function profilesPage(el: HTMLElement): Promise<void> {
 
 type Version = { id: string; type: string; releaseTime: string };
 
+/** A profile's content: mods, resource packs, shaders, datapacks, worlds and screenshots. */
+function contentView(el: HTMLElement, p: GameProfile): void {
+  el.onclick = null;
+  const leave = (fn: () => unknown) => { unmountList?.(); unmountList = null; return fn(); };
+  unmountList = renderProfileContent(el, {
+    profile: p,
+    onBack: () => leave(() => profilesPage(el)),
+    onEdit: () => leave(() => editor(el, p)),
+    onAdd: (type) => leave(() => { openModsFor(p.id, type); void go('mods'); }),
+  });
+}
+
 async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
   el.onclick = null;
   const base: GameProfile = p ?? {
     id: '', name: t('prof.new'), gameVersion: LEGO_CLIENT_GAME_VERSION, loaderType: 'fabric', loader: null, performancePack: true, icon: 'grass',
-    legoClient: false, memoryMb: Math.min(4096, Math.max(1024, state.info.totalMemMb - 2048)), jvmArgs: '', resolution: null, gameDir: null, createdAt: 0, lastPlayed: null,
+    legoClient: true, memoryMb: Math.min(4096, Math.max(1024, state.info.totalMemMb - 2048)), jvmArgs: '', resolution: null, gameDir: null, createdAt: 0, lastPlayed: null,
   };
   const draft: GameProfile = { ...base };
   let versions: Version[] = [];
@@ -83,6 +95,7 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
       </section>
       <section class="glass">
         <div class="setting"><div><b>${pixel('brick', 'xs')} ${t('prof.lego')}</b><small>${t('prof.lego.d')}</small></div><label class="switch"><input type="checkbox" name="legoClient" ${draft.legoClient ? 'checked' : ''}><i></i></label></div>
+        ${p ? '' : html`<div class="setting"><div><b>${icon('vr', 'xs')} VR (Vivecraft)</b><small>Echtes VR mit Brille: installiert Vivecraft, nimmt nur VR-sichere FPS-Mods und mindestens 4 GB RAM. Der LEGO Client läuft im VR-Modus mit.</small></div><label class="switch"><input type="checkbox" name="vr"><i></i></label></div>`}
         <div class="setting"><div><b>${pixel('flame', 'xs')} ${t('prof.fps')}</b><small>${t('prof.fps.d')}</small></div><label class="switch"><input type="checkbox" name="performancePack" ${draft.performancePack ? 'checked' : ''}><i></i></label></div>
         <label>${t('prof.memory')}: <b id="memv">${draft.memoryMb}</b> MB <span class="muted">/ ${state.info.totalMemMb} MB</span></label>
         <input type="range" name="memoryMb" min="1024" max="${maxMem}" step="256" value="${draft.memoryMb}">
@@ -96,6 +109,7 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
   const lv = el.querySelector<HTMLSelectElement>('#lv')!;
   const lego = f.elements.namedItem('legoClient') as HTMLInputElement;
   const fps = f.elements.namedItem('performancePack') as HTMLInputElement;
+  const vr = f.elements.namedItem('vr') as HTMLInputElement | null;
 
   const fillVersions = () => {
     const snap = el.querySelector<HTMLInputElement>('#snap')!.checked;
@@ -119,9 +133,12 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
     el.querySelector<HTMLElement>('#loaderRow')!.hidden = !draft.loaderType;
     const legoOk = draft.gameVersion === LEGO_CLIENT_GAME_VERSION && draft.loaderType === 'fabric';
     if (!legoOk) lego.checked = false;
+    // Back on Fabric 1.21.11: the LEGO Client is on again unless the player switched it off.
+    else if (lego.dataset.userOff !== '1') lego.checked = true;
     lego.disabled = draft.gameVersion !== LEGO_CLIENT_GAME_VERSION;
     fps.disabled = !draft.loaderType;
     if (!draft.loaderType) fps.checked = false;
+    if (vr) { vr.disabled = !draft.loaderType; if (!draft.loaderType) vr.checked = false; }
     lv.length = 1;
     if (!draft.loaderType) return;
     const req = ++loaderReq;
@@ -151,7 +168,14 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
     draft.loader = null;
     void fillLoader();
   });
+  vr?.addEventListener('change', () => {
+    if (!vr.checked) return;
+    if (!draft.loaderType) { draft.loaderType = 'fabric'; void fillLoader(); }
+    const mem = f.elements.namedItem('memoryMb') as HTMLInputElement;
+    if (Number(mem.value) < 4096 && Number(mem.max) >= 4096) { mem.value = '4096'; el.querySelector('#memv')!.textContent = '4096'; }
+  });
   lego.addEventListener('change', () => {
+    lego.dataset.userOff = lego.checked ? '' : '1';
     if (lego.checked) { draft.loaderType = 'fabric'; void fillLoader(); }
   });
   el.querySelector('#icons')!.addEventListener('click', (e) => {
@@ -163,20 +187,23 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
   (f.elements.namedItem('memoryMb') as HTMLInputElement).addEventListener('input', (e) => { el.querySelector('#memv')!.textContent = (e.target as HTMLInputElement).value; });
   el.querySelector('#back')!.addEventListener('click', () => void profilesPage(el));
   el.querySelector('#cancel')!.addEventListener('click', () => void profilesPage(el));
-  el.querySelector('#editMods')?.addEventListener('click', () => { openModsFor(p!.id); void go('mods'); });
+  el.querySelector('#editMods')?.addEventListener('click', () => contentView(el, p!));
   f.addEventListener('submit', async (e) => {
     e.preventDefault();
     const fd = new FormData(f);
     const w = Number(fd.get('w')), h = Number(fd.get('h'));
     const profile: GameProfile = {
-      ...draft, name: String(fd.get('name')), legoClient: lego.checked, performancePack: fps.checked,
+      ...draft, id: draft.id || crypto.randomUUID(), name: String(fd.get('name')), legoClient: lego.checked, performancePack: fps.checked,
       memoryMb: Number(fd.get('memoryMb')), jvmArgs: String(fd.get('jvmArgs') ?? ''), resolution: w && h ? { width: w, height: h } : null,
     };
     try {
       const r = await api.saveProfile(profile);
       if (!r.ok) return errorToast(new Error(r.errors.join(' · ')));
       state.settings = r.settings;
-      toast(t('prof.saved'), 'ok');
+      if (vr?.checked) {
+        toast('Installiere Vivecraft …', 'info');
+        try { state.settings = (await api.addVivecraft(profile.id)).settings; toast('VR-Profil fertig: Vivecraft installiert', 'ok'); } catch (err) { errorToast(err); }
+      } else toast(t('prof.saved'), 'ok');
       void profilesPage(el);
     } catch (err) { errorToast(err); }
   });

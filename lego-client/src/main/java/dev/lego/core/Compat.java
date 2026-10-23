@@ -10,8 +10,15 @@ import net.fabricmc.loader.api.FabricLoader;
  */
 public final class Compat {
    public static boolean vulkan;
+   /** Vivecraft (real VR): own render effects, the Visor glasses and the knife hand swap stay off. */
+   public static boolean vivecraft;
 
    private Compat() {
+   }
+
+   /** Own post effects and sky are off with VulkanMod and in real VR. */
+   public static boolean noOwnRendering() {
+      return vulkan || vivecraft;
    }
 
    public static void init() {
@@ -20,6 +27,12 @@ public final class Compat {
       } catch (Throwable e) {
          vulkan = false;
       }
+      try {
+         vivecraft = FabricLoader.getInstance().isModLoaded("vivecraft");
+      } catch (Throwable e) {
+         vivecraft = false;
+      }
+      if (vivecraft) LegoClient.LOG("Vivecraft erkannt: VR-sicherer Modus (ohne Visor, Farbfilter, eigenen Himmel und Messer-Hand)");
       if (vulkan) LegoClient.LOG("VulkanMod erkannt: Kompatibilitätsmodus (ohne Farbfilter und eigenen Himmel)");
    }
 }

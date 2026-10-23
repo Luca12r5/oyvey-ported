@@ -13,7 +13,7 @@ import { headFromSkin } from './avatar.ts';
 import { setLang, t } from './i18n.ts';
 import { playPage } from './pages/play.ts';
 import { setUiSounds } from './nr/lib/sound.ts';
-import { mountShell, setAccent, shellStore, actions, gameStore, initGame, NAV_ICONS } from './nr/mount.tsx';
+import { mountShell, setAccent, shellStore, actions, gameStore, initConsoleWindow, initGame, NAV_ICONS, renderConsoleWindow } from './nr/mount.tsx';
 import { themeStore, applyAccentToDOM } from './nr/store/theme.ts';
 import type { CapeSpec } from '@lego/shared';
 import { skinsPage } from './pages/skins.ts';
@@ -423,7 +423,18 @@ export function refreshChrome(): void {
   renderTitlebar();
 }
 
+/** The separate console window (same page, ?console=1): only the game log. */
+async function bootConsole(): Promise<void> {
+  [state.settings, state.auth, state.info] = await Promise.all([api.getSettings(), api.authState(), api.info()]);
+  retheme();
+  document.body.classList.add('console-window');
+  document.title = 'LEGO Launcher · Konsole';
+  await initConsoleWindow();
+  renderConsoleWindow(document.getElementById('nrRoot')!, state.settings.selectedProfile);
+}
+
 async function boot(): Promise<void> {
+  if (new URLSearchParams(location.search).get('console') === '1') return bootConsole();
   [state.settings, state.auth, state.info] = await Promise.all([api.getSettings(), api.authState(), api.info()]);
   retheme();
   viewEl = await mountShell(document.getElementById('nrRoot')!);
@@ -438,7 +449,7 @@ async function boot(): Promise<void> {
   actions.friends = () => void friendsDrawer();
   actions.more = (a) => moreMenu(a);
   actions.account = (a) => { if (state.auth.signedIn) accountMenu(a); else guestMenu(a); };
-  actions.instances = () => { gameStore.set({ consoleOpen: true }); if (state.page !== 'play') void go('play'); };
+  actions.instances = () => void api.openConsole();
   actions.credits = credits;
   addEventListener('mouseup', (e) => {
     if (e.button === 3) actions.back();

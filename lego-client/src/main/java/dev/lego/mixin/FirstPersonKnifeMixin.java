@@ -21,7 +21,7 @@ public abstract class FirstPersonKnifeMixin {
          if (mc.player == null || !mc.options.getCameraType().isFirstPerson()) return;
          if (!dev.lego.cosmetic.KnifeView.replacing && !(mc.player.getMainHandItem().isEmpty() && dev.lego.cosmetic.KnifeView.replaces(mc.player.getMainHandItem()))) return;
          // While the Visor headset is being put on or taken off, the hands hold the headset.
-         if (dev.visor.VisorController.get().state() != dev.visor.VisorController.State.OFF) return;
+         if (dev.lego.core.Compat.vivecraft || dev.visor.VisorController.get().state() != dev.visor.VisorController.State.OFF) return;
          CosRender.drawKnifeFirstPerson(pose, out, light);
       } catch (Throwable ignored) {
       }

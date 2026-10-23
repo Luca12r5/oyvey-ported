@@ -308,7 +308,7 @@ public final class Visuals {
 
       @Override
       public void tick() {
-         if (dev.lego.core.Compat.vulkan) {
+         if (dev.lego.core.Compat.noOwnRendering()) {
             this.setEnabled(false);
             return;
          }

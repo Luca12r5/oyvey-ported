@@ -162,13 +162,18 @@ await page('profiles', 'LEGO Client');
 await win.click('#new');
 await win.waitForSelector('#loaders [data-loader=fabric]');
 await win.waitForTimeout(400);
+if (!(await win.locator('#f input[name=vr]').count())) problems.push('new profile has no VR (Vivecraft) switch');
 if (shots) await win.screenshot({ path: join(shots, 'launcher-profile-editor.png') });
-// A profile's MODS button opens the Mods page on that profile's installed files.
+// A profile's content button opens its content view: tabs for everything installed.
 await page('profiles', 'LEGO Client');
 await win.locator('.nr-prof-row [data-action=mods]').first().click();
-await win.waitForTimeout(800);
-if (!(await win.locator('#tabs [data-tab=installed].active').count())) problems.push('profile mods view did not open');
+await win.waitForSelector('#profileContent #pcTabs', { timeout: 5000 }).catch(() => problems.push('profile content view did not open'));
+for (const k of ['resourcepacks', 'shaderpacks', 'datapacks', 'saves', 'screenshots', 'mods']) {
+  await win.locator(`#pcTabs [data-tab=${k}]`).click().catch(() => problems.push(`content tab ${k} missing`));
+  await win.waitForTimeout(250);
+}
 if (shots) await win.screenshot({ path: join(shots, 'launcher-profile-mods.png') });
+await win.click('#pcBack').catch(() => problems.push('content view has no back button'));
 await page('mods', 'Modpacks');
 await page('skins', 'Add New Skin');
 // Photo → skin (offline designer here, no AI key): 3D dialog, adjust, save into the library.

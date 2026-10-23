@@ -116,7 +116,12 @@ export function analyzeLog(text: string, ctx: { mods: ModInfo[]; memoryMb: numbe
     add({ id: 'auth', title: 'Anmeldung abgelaufen', detail: 'Die Minecraft-Sitzung ist nicht mehr gültig.', fix: { kind: 'reauth' }, fixLabel: 'Neu anmelden', confidence: 'high' });
   }
 
-  // 9) Fallback: a mod jar that shows up in the crashing stack trace.
+  // 9) Vivecraft: the VR runtime did not start (SteamVR / OpenXR / Quest Link).
+  if (/org\.vivecraft|Vivecraft/.test(text) && /(VR ?Init(?:ialization)?(?:Error| failed)|Failed to (?:initialize|init) (?:OpenVR|OpenXR|VR)|openvr_api|XR_ERROR_[A-Z_]+|No HMD|HMD not found|VRInitError_\w+)/i.test(text)) {
+    add({ id: 'vr-runtime', title: 'VR konnte nicht gestartet werden', detail: 'Vivecraft findet keine laufende VR-Brille. Starte zuerst SteamVR (Quest: erst Quest Link oder Air Link verbinden, dann SteamVR), setze die Brille auf und starte dann Minecraft. In SteamVR unter Einstellungen → OpenXR SteamVR als OpenXR-Runtime festlegen.', fix: null, confidence: 'high' });
+  }
+
+  // 10) Fallback: a mod jar that shows up in the crashing stack trace.
   if (!out.length) {
     const jar = /at [\w.$]+\([^)]*\) ~\[([\w.+-]+\.jar)/.exec(text) ?? /Suspected Mods?: ([^\n(]+)/.exec(text);
     if (jar) {
@@ -127,4 +132,22 @@ export function analyzeLog(text: string, ctx: { mods: ModInfo[]; memoryMb: numbe
     }
   }
   return out;
+}
+
+/**
+ * Excerpt of the crash for the AI check: the crash report and the end of the log, at most
+ * ~60 000 characters, with personal data removed (user folder names, tokens, e-mails, IPs).
+ */
+export function crashExcerpt(report: string, log: string, max = 58_000): string {
+  const clean = (s: string) => s
+    .replace(/([A-Za-z]:\\(?:Users|Dokumente und Einstellungen|Documents and Settings)\\)[^\\"'\n]+/gi, '$1<user>')
+    .replace(/(\/(?:home|Users)\/)[^/\s"']+/g, '$1<user>')
+    .replace(/(--accessToken|--uuid|--xuid|--clientId|accessToken|session(?:Id)?)([=:\s]+)[^\s,;"']+/gi, '$1$2<hidden>')
+    .replace(/\b[\w.+-]+@[\w-]+\.[\w.-]+\b/g, '<email>')
+    .replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, (ip) => (/^(127|0)\./.test(ip) ? ip : '<ip>'))
+    .replace(/\beyJ[\w-]{10,}\.[\w-]{10,}\.[\w-]{10,}\b/g, '<token>');
+  const r = clean(report).slice(0, Math.round(max * 0.55));
+  const rest = Math.max(4000, max - r.length);
+  const l = clean(log);
+  return (r ? `${r}\n----- latest.log (end) -----\n` : '') + l.slice(-rest);
 }

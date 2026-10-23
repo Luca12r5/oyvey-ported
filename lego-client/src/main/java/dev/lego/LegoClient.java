@@ -148,12 +148,15 @@ public final class LegoClient implements ClientModInitializer {
          }
       });
       HudElementRegistry.attachElementAfter(
-         VanillaHudElements.MISC_OVERLAYS, Identifier.fromNamespaceAndPath("legoclient", "overlays"), (var0, var1x) -> renderOverlays(var0)
+         VanillaHudElements.MISC_OVERLAYS, Identifier.fromNamespaceAndPath("legoclient", "overlays"), (var0, var1x) -> {
+            // Full-screen overlays make no sense on a VR GUI plane (Vivecraft).
+            if (!dev.lego.compat.VrMixinPlugin.vr()) renderOverlays(var0);
+         }
       );
       HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("legoclient", "hud"), (var0, var1x) -> renderHud(var0));
       HudElementRegistry.replaceElement(VanillaHudElements.CROSSHAIR, var0 -> (var1x, var2x) -> {
          if (!Cutscenes.active()) {
-            if (Visuals.crosshair != null && Visuals.crosshair.enabled && Mc.firstPerson() && !Mc.mc().options.hideGui) {
+            if (!dev.lego.compat.VrMixinPlugin.vr() && Visuals.crosshair != null && Visuals.crosshair.enabled && Mc.firstPerson() && !Mc.mc().options.hideGui) {
                try {
                   Visuals.crosshair.draw(var1x);
                } catch (Throwable var4) {
@@ -164,7 +167,10 @@ public final class LegoClient implements ClientModInitializer {
             }
          }
       });
-      WorldRenderEvents.BEFORE_TRANSLUCENT.register(Visuals::render);
+      // In real VR Vivecraft draws the world once per eye with its own cameras: no own world effects there.
+      WorldRenderEvents.BEFORE_TRANSLUCENT.register(var0 -> {
+         if (!dev.lego.compat.VrMixinPlugin.vr()) Visuals.render(var0);
+      });
       WorldRenderEvents.BEFORE_BLOCK_OUTLINE
          .register((var0, var1x) -> Visuals2.outline == null || !Visuals2.outline.enabled || !Visuals2.outline.replaceVanilla());
       AttackEntityCallback.EVENT.register((var0, var1x, var2x, var3x, var4) -> {
