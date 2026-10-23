@@ -96,6 +96,9 @@ if (shots) {
     srv.on('exit', () => { clearTimeout(timer); resolve(); });
   });
   mkdirSync(join(gameDir, 'saves'), { recursive: true });
+  // A fresh game dir shows the accessibility onboarding on first start, which keeps quick play from
+  // opening the world. Skip it (and the other first-start hints) like a returning player.
+  writeFileSync(join(gameDir, 'options.txt'), ['onboardAccessibility:false', 'skipMultiplayerWarning:true', 'joinedFirstServer:true', 'tutorialStep:none', 'pauseOnLostFocus:false', 'narrator:0', ''].join('\n'));
   cpSync(join(srvDir, 'world'), join(gameDir, 'saves', 'ci'), { recursive: true });
   step('flat world ready');
 }
@@ -125,7 +128,7 @@ const game = await startGame(javaPath, args, gameDir, join(root, 'logs'), (raw) 
   if (/\[LegoClient\] geladen/.test(line)) { legoLoaded = true; step(`LEGO: ${line.trim()}`); }
   const shot = /\[LegoClient\] CI shot ([a-z0-9-]+)$/.exec(line.trim());
   if (shot) { shotNames.push(shot[1]!); step(`shot ${shot[1]}`); }
-  if (/\[LegoClient\] CI (in world|shots done)/.test(line)) step(line.trim());
+  if (/\[LegoClient\] CI (in world|shots done|waiting)/.test(line)) step(line.trim());
   if (/\[LegoClient\] CI shots done/.test(line)) shotsDone = true;
   const m = /Loading (\d+) mods/.exec(line);
   if (m) { modCount = m[1]!; step(line.trim()); }
@@ -175,9 +178,15 @@ if (shots) {
   files.forEach((f, k) => {
     const name = shotNames[k] ?? f;
     try {
-      const jpg = join(dir, `${f}.jpg`);
-      execFileSync('convert', [join(dir, f), '-resize', '640x', '-quality', '62', jpg]);
-      const b64 = readFileSync(jpg).toString('base64');
+      let b64: string;
+      try {
+        const jpg = join(dir, `${f}.jpg`);
+        execFileSync('convert', [join(dir, f), '-resize', '640x', '-quality', '62', jpg]);
+        b64 = readFileSync(jpg).toString('base64');
+      } catch {
+        // No ImageMagick on the runner: the PNG as it is (larger, still fine for a few pictures).
+        b64 = readFileSync(join(dir, f)).toString('base64');
+      }
       const parts = Math.ceil(b64.length / 8000);
       for (let i = 0; i < parts; i++) console.log(`LEGOSHOT ${name} ${i + 1}/${parts} ${b64.slice(i * 8000, (i + 1) * 8000)}`);
     } catch (e) {
