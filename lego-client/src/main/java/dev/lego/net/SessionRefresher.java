@@ -12,7 +12,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.net.Proxy;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -112,7 +111,8 @@ public final class SessionRefresher {
                boolean changed = !token.equals(old.getAccessToken());
                if (changed) {
                   replaceToken(mc, old, token);
-                  refreshKeys(mc, token);
+                  // The key service may ask Mojang over the network: not on the render thread.
+                  CompletableFuture.runAsync(() -> refreshKeys(mc, token));
                   LegoClient.LOG("Sitzung erneuert (uuid gleich)");
                   Toasts.show("check", "Sitzung erneuert", "Du kannst weiter Servern beitreten – ohne Neustart.", -16735270, 4000L);
                }
@@ -161,11 +161,20 @@ public final class SessionRefresher {
    /** New chat-signing keys and user API for the new token; skipped quietly where it does not fit. */
    private static void refreshKeys(Minecraft mc, String token) {
       try {
-         Proxy proxy = (Proxy)getFieldOfType(mc, Proxy.class);
-         Object auth = Class.forName("com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService").getConstructor(Proxy.class).newInstance(proxy == null ? Proxy.NO_PROXY : proxy);
-         Object api = auth.getClass().getMethod("createMinecraftUserApiService", String.class).invoke(auth, token);
-         Class<?> apiType = Class.forName("com.mojang.authlib.minecraft.UserApiService");
-         setFieldOfType(mc, apiType, api);
+         // The game's user API object (authlib), rebuilt with the same parts but the new token.
+         Field apiField = null;
+         for (Field f : Minecraft.class.getDeclaredFields()) {
+            if (!Modifier.isStatic(f.getModifiers()) && f.getType().isInterface() && f.getType().getName().endsWith(".UserApiService")) {
+               apiField = f;
+               break;
+            }
+         }
+         if (apiField == null) throw new IllegalStateException("kein UserApiService");
+         apiField.setAccessible(true);
+         Object oldApi = apiField.get(mc);
+         Object api = withToken(oldApi, token);
+         apiField.set(mc, api);
+         Class<?> apiType = apiField.getType();
          Path dir = FabricLoader.getInstance().getGameDir();
          for (Field f : Minecraft.class.getDeclaredFields()) {
             if (Modifier.isStatic(f.getModifiers())) continue;
@@ -181,18 +190,45 @@ public final class SessionRefresher {
             }
          }
       } catch (Throwable t) {
-         LegoClient.LOG("Sitzung: Chat-Schlüssel bleiben alt (" + t.getClass().getSimpleName() + ")");
+         LegoClient.LOG("Sitzung: Chat-Schlüssel bleiben alt (" + t.getClass().getSimpleName() + ": " + t.getMessage() + ")");
       }
    }
 
-   private static Object getFieldOfType(Object target, Class<?> type) throws IllegalAccessException {
-      for (Field f : target.getClass().getDeclaredFields()) {
-         if (!Modifier.isStatic(f.getModifiers()) && f.getType() == type) {
+   /**
+    * A copy of an authlib service object whose access token is replaced: its constructor gets the
+    * new token for the String parameter and the old object's values (by type) for the rest.
+    */
+   private static Object withToken(Object old, String token) throws ReflectiveOperationException {
+      List<Field> fields = new ArrayList<>();
+      for (Class<?> c = old.getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
+         for (Field f : c.getDeclaredFields()) if (!Modifier.isStatic(f.getModifiers())) {
             f.setAccessible(true);
-            return f.get(target);
+            fields.add(f);
          }
       }
-      return null;
+      Constructor<?> best = null;
+      for (Constructor<?> c : old.getClass().getDeclaredConstructors()) {
+         int strings = 0;
+         for (Class<?> t : c.getParameterTypes()) if (t == String.class) strings++;
+         if (strings == 1 && (best == null || c.getParameterCount() > best.getParameterCount())) best = c;
+      }
+      if (best == null) throw new NoSuchMethodException(old.getClass().getSimpleName() + "(String, …)");
+      Class<?>[] types = best.getParameterTypes();
+      Object[] args = new Object[types.length];
+      List<Field> unused = new ArrayList<>(fields);
+      for (int i = 0; i < types.length; i++) {
+         if (types[i] == String.class) {
+            args[i] = token;
+            continue;
+         }
+         Field match = null;
+         for (Field f : unused) if (types[i].isAssignableFrom(f.getType()) || (types[i].isPrimitive() && f.getType() == types[i])) { match = f; break; }
+         if (match == null) throw new NoSuchFieldException(types[i].getSimpleName());
+         unused.remove(match);
+         args[i] = match.get(old);
+      }
+      best.setAccessible(true);
+      return best.newInstance(args);
    }
 
    private static void setFieldOfType(Object target, Class<?> type, Object value) throws IllegalAccessException {
