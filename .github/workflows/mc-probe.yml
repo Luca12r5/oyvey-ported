@@ -1,0 +1,53 @@
+# Reads what a new Minecraft version needs for the LEGO Client port (Java version, Fabric
+# Loom/loader/API, the example mod's build setup). Output goes to the log.
+name: MC version probe
+
+on:
+  push:
+    branches: ['claude/**']
+    paths: ['.github/workflows/mc-probe.yml']
+  workflow_dispatch:
+    inputs:
+      mc:
+        description: Minecraft version
+        default: '26.3'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      MC: ${{ inputs.mc || '26.3' }}
+    steps:
+      - name: Mojang version and Java
+        run: |
+          url=$(curl -s https://piston-meta.mojang.com/mc/game/version_manifest_v2.json | jq -r --arg v "$MC" '.versions[] | select(.id==$v) | .url')
+          echo "version json: $url"
+          curl -s "$url" | jq '{id, javaVersion, mainClass, releaseTime, downloads: (.downloads | keys)}'
+          curl -s https://piston-meta.mojang.com/mc/game/version_manifest_v2.json | jq -r '.latest, ([.versions[] | select(.type=="release") | .id] | .[:8])'
+      - name: Fabric loader, Loom, API
+        run: |
+          echo "--- loader for $MC"; curl -s "https://meta.fabricmc.net/v2/versions/loader/$MC" | jq -r '.[:3][] | .loader.version'
+          echo "--- yarn for $MC (empty = no mappings needed)"; curl -s "https://meta.fabricmc.net/v2/versions/yarn/$MC" | jq -r '.[:2][] | .version'
+          for a in fabric-loom fabric-loom-remap loom; do
+            echo "--- maven net/fabricmc/$a"; curl -s "https://maven.fabricmc.net/net/fabricmc/$a/maven-metadata.xml" | grep -oE '<(latest|release)>[^<]+' || true
+          done
+          echo "--- plugin markers"; curl -s https://maven.fabricmc.net/net/fabricmc/ | grep -oE 'href="[^"]*loom[^"]*"' | sort -u || true
+          echo "--- fabric-api on Modrinth for $MC"; curl -s "https://api.modrinth.com/v2/project/fabric-api/version?game_versions=%5B%22$MC%22%5D" | jq -r '.[:3][] | .version_number'
+          echo "--- vivecraft on Modrinth for $MC"; curl -s "https://api.modrinth.com/v2/project/vivecraft/version?game_versions=%5B%22$MC%22%5D" | jq -r '.[:5][] | "\(.version_number) \(.loaders)"'
+          echo "--- vulkanmod on Modrinth for $MC"; curl -s "https://api.modrinth.com/v2/project/vulkanmod/version?game_versions=%5B%22$MC%22%5D" | jq -r '.[:3][] | .version_number'
+          for p in sodium lithium ferrite-core modmenu; do echo "--- $p"; curl -s "https://api.modrinth.com/v2/project/$p/version?game_versions=%5B%22$MC%22%5D&loaders=%5B%22fabric%22%5D" | jq -r '.[:1][] | .version_number'; done
+      - name: Fabric example mod build setup
+        run: |
+          git ls-remote --heads https://github.com/FabricMC/fabric-example-mod | awk '{print $2}' | sed 's#refs/heads/##' | sort -V | tail -15
+          for b in "$MC" "${MC%.*}" main master; do
+            if curl -sf "https://raw.githubusercontent.com/FabricMC/fabric-example-mod/$b/build.gradle" -o b.gradle; then
+              echo "=== branch $b build.gradle"; cat b.gradle
+              echo "=== gradle.properties"; curl -s "https://raw.githubusercontent.com/FabricMC/fabric-example-mod/$b/gradle.properties"
+              echo "=== settings.gradle"; curl -s "https://raw.githubusercontent.com/FabricMC/fabric-example-mod/$b/settings.gradle"
+              echo "=== wrapper"; curl -s "https://raw.githubusercontent.com/FabricMC/fabric-example-mod/$b/gradle/wrapper/gradle-wrapper.properties"
+              echo "=== fabric.mod.json"; curl -s "https://raw.githubusercontent.com/FabricMC/fabric-example-mod/$b/src/main/resources/fabric.mod.json"
+              break
+            fi
+          done
