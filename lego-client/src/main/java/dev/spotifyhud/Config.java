@@ -19,7 +19,8 @@ public final class Config {
    public double posY = 0.012;
    public double scale = 1.0;
    public boolean visible = true;
-   public boolean hideWhenIdle = false;
+   /** Only show the HUD while something is playing (on by default since v2 of the config). */
+   public boolean hideWhenIdle = true;
    public boolean lyrics = true;
    public int lyricsOffsetMs = 0;
    public boolean karaoke = true;
@@ -53,7 +54,8 @@ public final class Config {
             var0.posY = clamp01(Json.dbl(var2, "posY", 0.012));
             var0.scale = Math.max(0.5, Math.min(3.0, Json.dbl(var2, "scale", 1.0)));
             var0.visible = Json.bool(var2, "visible", true);
-            var0.hideWhenIdle = Json.bool(var2, "hideWhenIdle", false);
+            // Config v2: "no song" no longer covers the screen; older files switch to hiding once.
+            var0.hideWhenIdle = Json.num(var2, "configVersion", 1L) < 2L || Json.bool(var2, "hideWhenIdle", true);
             var0.lyrics = Json.bool(var2, "lyrics", true);
             var0.lyricsOffsetMs = (int)Math.max(-5000L, Math.min(5000L, Json.num(var2, "lyricsOffsetMs", 0L)));
             var0.karaoke = Json.bool(var2, "karaoke", true);
@@ -83,6 +85,7 @@ public final class Config {
          var1.put("scale", this.scale);
          var1.put("visible", this.visible);
          var1.put("hideWhenIdle", this.hideWhenIdle);
+         var1.put("configVersion", 2L);
          var1.put("lyrics", this.lyrics);
          var1.put("lyricsOffsetMs", (long)this.lyricsOffsetMs);
          var1.put("karaoke", this.karaoke);

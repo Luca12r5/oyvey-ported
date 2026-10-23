@@ -2,7 +2,7 @@
 // mod with its required dependencies into a profile, and install .mrpack
 // modpacks. Every file is verified with the SHA-512 Modrinth publishes.
 
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, normalize, sep } from 'node:path';
 import { downloadAll, type DownloadTask } from './download.ts';
 import { fetchJson, type FetchLike } from './net.ts';
@@ -96,6 +96,16 @@ export async function installedMods(gameDir: string): Promise<InstalledMod[]> {
   return readInstalled(join(gameDir, 'mods'));
 }
 
+/** Modrinth project ids installed in a profile for one content type (files that still exist, on or off). */
+export async function installedProjectIds(gameDir: string, type: ProjectType): Promise<string[]> {
+  if (type === 'modpack') return [];
+  const dir = join(gameDir, FOLDER[type]);
+  const names = new Set(await readdir(dir).catch(() => [] as string[]));
+  return (await readInstalled(dir))
+    .filter((m) => m.projectId && (names.has(m.filename) || names.has(`${m.filename}.disabled`)))
+    .map((m) => m.projectId!);
+}
+
 /**
  * Installs a project (and, for mods, all required dependencies) into the
  * profile's game directory. Returns the titles that were installed.
@@ -106,7 +116,7 @@ export async function installProject(
 ): Promise<string[]> {
   if (type === 'modpack') throw new Error('Modpacks werden als neues Profil installiert.');
   const dir = join(gameDir, FOLDER[type]);
-  const installed = type === 'mod' ? await readInstalled(dir) : [];
+  const installed = await readInstalled(dir);
   const have = new Set([...installed.map((m) => m.projectId).filter((x): x is string => !!x), ...alreadyManaged]);
   const queue: { projectId: string | null; versionId: string | null; title?: string; iconUrl?: string | null }[] = [{ projectId, versionId: null, ...meta }];
   const tasks: DownloadTask[] = [];
@@ -139,8 +149,8 @@ export async function installProject(
     }
   }
   await downloadAll(f, tasks);
-  if (type === 'mod') {
-    // Replace older files of the same projects.
+  {
+    // Remember what came from where (all content types), replacing older files of the same projects.
     const ids = new Set(added.map((a) => a.projectId));
     for (const old of installed.filter((m) => m.projectId && ids.has(m.projectId))) {
       if (!added.some((a) => a.filename === old.filename)) await rm(join(dir, old.filename), { force: true });

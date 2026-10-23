@@ -26,8 +26,7 @@ import { cosmeticsPage, shopPage } from './pages/cosmetics.ts';
 import { friendsPage } from './pages/social.ts';
 import { rewardsPage } from './pages/rewards.ts';
 import { accountPage, signInFlow } from './pages/account.ts';
-import { openSettingsAt, settingsPage } from './pages/settings.ts';
-import { setOpenAiSettings } from './crashdoc-ui.ts';
+import { settingsPage } from './pages/settings.ts';
 import { modsPage } from './pages/mods.ts';
 import { capesPage } from './pages/capes.ts';
 import { designsPage } from './pages/designs.ts';
@@ -452,7 +451,6 @@ async function boot(): Promise<void> {
   actions.account = (a) => { if (state.auth.signedIn) accountMenu(a); else guestMenu(a); };
   actions.instances = () => void api.openConsole();
   actions.credits = credits;
-  setOpenAiSettings(() => { openSettingsAt('ai'); void go('settings'); });
   addEventListener('mouseup', (e) => {
     if (e.button === 3) actions.back();
     if (e.button === 4) actions.fwd();

@@ -34,8 +34,14 @@ public final class Xmas {
    private Xmas() {
    }
 
+   /** Winter look only in the season (25 Nov – 6 Jan) and only if the player keeps it on. */
    public static boolean on() {
-      return UiSettings.xmas;
+      return UiSettings.xmas && inSeason(LocalDate.now());
+   }
+
+   static boolean inSeason(LocalDate d) {
+      int m = d.getMonthValue(), day = d.getDayOfMonth();
+      return m == 12 || (m == 11 && day >= 25) || (m == 1 && day <= 6);
    }
 
    public static String countdown() {

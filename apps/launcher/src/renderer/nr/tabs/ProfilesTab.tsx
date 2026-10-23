@@ -17,8 +17,9 @@ type Layout = 'list' | 'grid' | 'compact';
 type Prefs = { group: string; sort: string; versions: string[]; layout: Layout };
 
 function loadPrefs(): Prefs {
-  const d: Prefs = { group: 'all', sort: 'last_played', versions: [], layout: 'list' };
-  try { return { ...d, ...JSON.parse(localStorage.getItem('lego.profilesTab') ?? '{}') }; } catch { return d; }
+  const d: Prefs = { group: 'all', sort: 'last_played', versions: [], layout: 'grid' };
+  // v2: tiles (like NoRisk's instances) are the new default, once.
+  try { const s = JSON.parse(localStorage.getItem('lego.profilesTab') ?? '{}'); return { ...d, ...s, ...(s.v === 2 ? {} : { layout: 'grid' }) }; } catch { return d; }
 }
 
 const toVersionMajor = (v?: string | null) => {
@@ -40,7 +41,7 @@ export function ProfilesTab(p: ProfilesTabProps) {
   const [prefs, setPrefsState] = useState(loadPrefs);
   const setPrefs = (patch: Partial<Prefs>) => setPrefsState((old) => {
     const next = { ...old, ...patch };
-    try { localStorage.setItem('lego.profilesTab', JSON.stringify(next)); } catch { /* storage blocked */ }
+    try { localStorage.setItem('lego.profilesTab', JSON.stringify({ ...next, v: 2 })); } catch { /* storage blocked */ }
     return next;
   });
   const [searchQuery, setSearchQuery] = useState('');
@@ -90,7 +91,8 @@ export function ProfilesTab(p: ProfilesTabProps) {
     { id: 'import', label: 'IMPORT', icon: 'solar:import-bold', tooltip: 'Modpack-Datei, anderen Launcher oder Ordner importieren', onClick: p.onImport },
     { id: 'new', label: 'CREATE', icon: 'solar:widget-add-bold', tooltip: 'Neues Profil erstellen', onClick: p.onCreate },
   ];
-  const gridColsClass = layoutMode === 'compact' ? 'grid-cols-3' : layoutMode === 'grid' ? 'grid-cols-2' : 'grid-cols-1';
+  // Tiles fill the width: as many columns as fit (NoRisk-style instance grid).
+  const gridStyle = layoutMode === 'list' ? undefined : { gridTemplateColumns: `repeat(auto-fill, minmax(${layoutMode === 'compact' ? 240 : 320}px, 1fr))` };
 
   if (p.profiles.length === 0) {
     return <EmptyState icon="solar:widget-bold" message="Keine Profile gefunden" action={<Button variant="default" size="md" onClick={p.onCreate} icon={<Icon icon="solar:widget-add-bold" className="w-5 h-5" />}>Neues Profil erstellen</Button>} />;
@@ -139,7 +141,7 @@ export function ProfilesTab(p: ProfilesTabProps) {
                 <div className="h-px flex-1 bg-white/10" />
               </div>
             )}
-            <div className={`grid ${gridColsClass} gap-3 mb-3`}>
+            <div className={`grid ${layoutMode === 'list' ? 'grid-cols-1' : ''} gap-3 mb-3`} style={gridStyle}>
               {sec.list.map((pr) => <ProfileCardV2 key={pr.id} profile={pr} selected={pr.id === p.selectedId} layoutMode={layoutMode} h={p} />)}
             </div>
           </div>

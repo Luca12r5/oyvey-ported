@@ -27,3 +27,16 @@ test('content names cannot leave the folder', () => {
   for (const bad of ['', '..', '../x', 'a/b', 'a\\b', '.hidden', 5]) assert.equal(validContentName(bad), false);
   assert.equal(validContentName('Welt 1'), true);
 });
+
+test('installed project ids per content type survive leaving the page', async () => {
+  const { installedProjectIds } = await import('../src/core/modrinth.ts');
+  const g = await mkdtemp(join(tmpdir(), 'lego-ids-'));
+  await mkdir(join(g, 'resourcepacks'), { recursive: true });
+  await writeFile(join(g, 'resourcepacks', 'Faithful.zip'), 'x');
+  await writeFile(join(g, 'resourcepacks', '.lego-mods.json'), JSON.stringify([
+    { projectId: 'faithful', versionId: 'v', title: 'Faithful', filename: 'Faithful.zip', sha512: null, iconUrl: null, source: 'modrinth' },
+    { projectId: 'gone', versionId: 'v', title: 'Gone', filename: 'Gone.zip', sha512: null, iconUrl: null, source: 'modrinth' },
+  ]));
+  assert.deepEqual(await installedProjectIds(g, 'resourcepack'), ['faithful']);
+  assert.deepEqual(await installedProjectIds(g, 'shader'), []);
+});

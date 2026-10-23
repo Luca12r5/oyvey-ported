@@ -84,8 +84,7 @@ export interface LauncherApi {
   crashLast(): Promise<{ profileId: string; diagnoses: Diagnosis[] } | null>;
   crashAnalyze(profileId: string): Promise<{ profileId: string; diagnoses: Diagnosis[] }>;
   /** Cleaned-up crash excerpt + mod list for the AI check. */
-  crashExcerpt(profileId: string): Promise<{ log: string; mods: { filename: string; id: string | null; title: string | null; enabled: boolean }[]; gameVersion: string; loader: string | null; memoryMb: number; legoClient: boolean }>;
-  crashFix(profileId: string, fix: Fix | { kind: 'enable-mod'; filename: string }): Promise<{ undo: Fix | { kind: 'enable-mod'; filename: string } | null; message: string }>;
+  crashFix(profileId: string, fix: Fix | { kind: 'enable-mod'; filename: string }, meta?: { title: string; fixLabel?: string }): Promise<{ undo: Fix | { kind: 'enable-mod'; filename: string } | null; message: string }>;
   versions(): Promise<{ id: string; type: string; releaseTime: string }[]>;
   loaderVersions(type: LoaderType, gameVersion: string): Promise<{ version: string; stable: boolean }[]>;
   launch(profileId: string): Promise<{ ok: boolean; error?: string }>;
@@ -93,11 +92,8 @@ export interface LauncherApi {
   gameRunning(): Promise<boolean>;
   openFolder(kind: 'game' | 'logs' | 'mods' | 'screenshots' | 'resourcepacks' | 'shaderpacks' | 'datapacks' | 'saves', profileId?: string): Promise<void>;
   mods(profileId: string): Promise<ModEntry[]>;
-  /** Crash doctor AI (own key → Claude directly, else the LEGO server). */
-  crashAi(profileId: string): Promise<{ summary: string; causes: Omit<Diagnosis, 'id'>[]; left: number | null; via: 'own' | 'server' }>;
-  aiStatus(): Promise<{ ownKey: boolean; server: boolean; persistent: boolean }>;
-  /** Saves (after a test) or removes (null) the player's own Claude API key. The key never comes back to the page. */
-  setAiKey(key: string | null): Promise<{ ok: boolean; error?: string }>;
+  /** Modrinth project ids already installed in a profile for a content type. */
+  installedIds(profileId: string, type: ProjectType): Promise<string[]>;
   /** Opens (or focuses) the separate console window. */
   openConsole(): Promise<void>;
   consoleHistory(): Promise<{ line: string; stream: string }[]>;

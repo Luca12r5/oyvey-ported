@@ -1,11 +1,11 @@
 // Electron main process: window, IPC, sign-in (multiple accounts), version and
 // loader installation, mods/modpacks/imports and launching.
 
-import { app, BrowserWindow, ipcMain, nativeImage, shell, session, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeImage, screen, shell, session, dialog } from 'electron';
 import { cpus, freemem, release, totalmem } from 'node:os';
 import { join } from 'node:path';
 import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createHash, randomUUID } from 'node:crypto';
 import { authorizeRequest, exchangeCode, minecraftFromMicrosoft, parseRedirect, pollDeviceCode, refreshMicrosoft, resetSkin, startDeviceCode, uploadSkin, AuthError, type MinecraftSession } from '../core/msauth.ts';
 import { LegoApi } from '../core/lego.ts';
@@ -15,7 +15,7 @@ import {
 } from '../core/install.ts';
 import { loaderSupports } from '../core/loaders.ts';
 import {
-  installedMods, installMrPack, installProject, type SearchFilters, packLoader, performanceFiles, projectVersions, readPackIndex, VULKAN_PACK, hasVivecraft, removeMod, search, toggleMod,
+  installedMods, installedProjectIds, installMrPack, installProject, type SearchFilters, packLoader, performanceFiles, projectVersions, readPackIndex, VULKAN_PACK, hasVivecraft, removeMod, search, toggleMod,
   type ProjectType,
 } from '../core/modrinth.ts';
 import { cfLoader, copyInstance, installCfPack, readCfManifest, readFolder, scanInstances, type FoundInstance } from '../core/importers.ts';
@@ -26,15 +26,15 @@ import { createLogCleaner, diagnose, startGame } from '../core/launch.ts';
 import { classifyDrop, safeFileName } from '../core/dropimport.ts';
 import { CONTENT_KINDS, listContent, validContentName, type ContentKind } from '../core/content.ts';
 import { DEFAULT_PROFILE, fastJvmFlags, LEGO_CLIENT_GAME_VERSION, legoClientFits, LOADER_TYPES, parseJvmArgs, validateProfile, type GameProfile, type LoaderType, type Settings } from '../core/settings.ts';
-import { encryptionAvailable, loadAccounts, loadAiKey, loadSettings, paths, saveAccounts, saveAiKey, saveSettings, type Account, type AccountStore } from './store.ts';
-import { aiError, localCrashAi, testAiKey, validAiKey } from './crashai.ts';
+import { encryptionAvailable, loadAccounts, loadSettings, paths, saveAccounts, saveSettings, type Account, type AccountStore } from './store.ts';
+import { crashSignature, parseDb, prune, rank, recordApplied, recordCrash, recordOutcome, recordUndo, type LearnDb } from '../core/crashlearn.ts';
 import { setupUpdater, checkForUpdate, installUpdate } from './updater.ts';
 import { VrBrowser } from './vrbrowser.ts';
 import { listModules, setModule } from '../core/clientcfg.ts';
 import type { AuthState, LaunchProgress, ModEntry, SkinData } from '../ipc-types.ts';
 import { validateTheme } from '@lego/shared';
 import { LANG_CODES } from '../renderer/lang.ts';
-import { analyzeLog, crashExcerpt, type Diagnosis, type Fix, type ModInfo } from '../core/crashdoc.ts';
+import { analyzeLog, type Diagnosis, type Fix, type ModInfo } from '../core/crashdoc.ts';
 import { BUTTON_STYLES, TRANSITIONS, HEAD_FONTS, pick, sanitizeFont, sanitizeSkinLib, sanitizeFx, sanitizeImage, sanitizeLanguage, sanitizeLook, sanitizePreset, STAGES, SURFACES, UI_FONTS, type DesignPreset } from '../core/design.ts';
 
 declare const __MS_CLIENT_ID__: string;
@@ -74,13 +74,15 @@ function send(channel: string, data: unknown): void {
 
 function openConsole(): void {
   if (consoleWin && !consoleWin.isDestroyed()) { if (consoleWin.isMinimized()) consoleWin.restore(); consoleWin.focus(); return; }
+  const saved = savedBounds('console', { width: 640, height: 360 });
   consoleWin = new BrowserWindow({
-    width: 1000, height: 620, minWidth: 640, minHeight: 360, title: 'LEGO Launcher · Konsole', autoHideMenuBar: true, backgroundColor: '#0b0b10',
+    ...(saved ? { x: saved.x, y: saved.y, width: saved.width, height: saved.height } : { width: 1000, height: 620 }), minWidth: 640, minHeight: 360, title: 'LEGO Launcher · Konsole', autoHideMenuBar: true, backgroundColor: '#0b0b10',
     icon: join(app.getAppPath(), 'buildres', 'icon.png'),
     webPreferences: { preload: join(__dirname, 'preload.cjs'), contextIsolation: true, sandbox: true, nodeIntegration: false, webviewTag: false, spellcheck: false },
   });
   consoleWin.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   consoleWin.webContents.on('will-navigate', (e) => e.preventDefault());
+  rememberBounds('console', consoleWin);
   consoleWin.on('closed', () => { consoleWin = null; });
   void consoleWin.loadFile(join(__dirname, 'renderer', 'index.html'), { query: { console: '1' } });
 }
@@ -370,9 +372,12 @@ async function launch(profileId: string): Promise<{ ok: boolean; error?: string 
         const log = await readFile(game.logFile, 'utf8').catch(() => '');
         const text = `${report}\n${log.slice(-400_000)}`;
         hint = diagnose(text);
-        diagnoses = analyzeLog(text, { mods: await modInfos(profile).catch(() => []), memoryMb: profile.memoryMb });
-        lastCrash = { profileId: profile.id, diagnoses };
-      }
+        const d = await diagnoseCrash(profile, text, true);
+        diagnoses = d.diagnoses;
+        lastCrash = { profileId: profile.id, diagnoses, sig: d.sig };
+        recordOutcome(await learn(), profile.id, r.code ?? 1, d.sig);
+      } else recordOutcome(await learn(), profile.id, 0, null);
+      void saveLearn();
       send('game-exit', { ...r, logFile: game.logFile, hint, diagnoses, profileId: profile.id });
       if (settings.closeOnLaunch) win?.restore();
     }).catch((e) => {
@@ -448,7 +453,25 @@ async function modInfos(p: GameProfile): Promise<ModInfo[]> {
   }));
 }
 
-let lastCrash: { profileId: string; diagnoses: Diagnosis[] } | null = null;
+let lastCrash: { profileId: string; diagnoses: Diagnosis[]; sig: string | null } | null = null;
+
+// ---- crash doctor memory (learns which fix helped on this PC) ---------------
+let learnDb: LearnDb | null = null;
+const learnFile = () => join(app.getPath('userData'), 'crashlearn.json');
+async function learn(): Promise<LearnDb> {
+  return (learnDb ??= parseDb(await readFile(learnFile(), 'utf8').catch(() => '')));
+}
+async function saveLearn(): Promise<void> {
+  if (learnDb) await writeFile(learnFile(), JSON.stringify(prune(learnDb))).catch(() => {});
+}
+/** Rule results of a crash, ranked by what helped before; remembers the crash. */
+async function diagnoseCrash(p: GameProfile, text: string, remember: boolean): Promise<{ diagnoses: Diagnosis[]; sig: string | null }> {
+  const mods = await modInfos(p).catch(() => []);
+  const sig = crashSignature(text);
+  const db = await learn();
+  if (remember) recordCrash(db, sig);
+  return { diagnoses: rank(db, sig, analyzeLog(text, { mods, memoryMb: p.memoryMb }), mods), sig };
+}
 
 async function applyFix(profileId: string, fix: Fix): Promise<{ undo: Fix | { kind: 'enable-mod'; filename: string } | null; message: string }> {
   const p = profileById(profileId);
@@ -816,6 +839,10 @@ function registerIpc(): void {
     const icon = typeof iconUrl === 'string' && iconUrl.startsWith('https://cdn.modrinth.com/') ? iconUrl : null;
     return installProject(fetch, profileDir(p), projectId, p.gameVersion, p.loaderType, type, { title: String(title).slice(0, 80), iconUrl: icon });
   });
+  ipcMain.handle('mods:installedIds', (_e, profileId: string, type: ProjectType) => {
+    if (!PROJECT_TYPES.includes(type)) throw new Error('invalid type');
+    return installedProjectIds(profileDir(profileById(profileId)), type);
+  });
   ipcMain.handle('mods:remove', (_e, profileId: string, filename: string) => removeMod(profileDir(profileById(profileId)), filename));
   // Real VR inside Minecraft needs the Vivecraft mod: look it up for a version, create a profile with it.
   ipcMain.handle('vr:vivecraft', async (_e, gameVersion: unknown) => {
@@ -891,51 +918,28 @@ function registerIpc(): void {
     const reports = (await readdir(dir).catch(() => [] as string[])).filter((n) => n.endsWith('.txt')).sort();
     const report = reports.length ? await readFile(join(dir, reports[reports.length - 1]!), 'utf8').catch(() => '') : '';
     const log = await readFile(join(profileDir(p), 'logs', 'latest.log'), 'utf8').catch(() => '');
-    const diagnoses = analyzeLog(`${report}\n${log.slice(-400_000)}`, { mods: await modInfos(p).catch(() => []), memoryMb: p.memoryMb });
-    lastCrash = { profileId, diagnoses };
+    const d = await diagnoseCrash(p, `${report}\n${log.slice(-400_000)}`, false);
+    lastCrash = { profileId, diagnoses: d.diagnoses, sig: d.sig };
     return lastCrash;
   });
-  // Cleaned-up excerpt for the AI check (sent to the LEGO server only when the player asks).
-  // Crash doctor AI: with the player's own key directly at Claude, otherwise via the LEGO server.
-  ipcMain.handle('crash:ai', async (_e, profileId: string) => {
-    const input = await crashInput(profileId);
-    const key = await loadAiKey();
-    if (key) {
-      try {
-        return { ...(await localCrashAi(key, input)), left: null, via: 'own' as const };
-      } catch (e) { throw new Error(aiError(e)); }
-    }
-    if (!backendUrl()) throw new Error('NO_AI: Kein KI-Zugang: trag unter Optionen → KI einen Claude-API-Schlüssel ein.');
-    const r = await legoApi().call<{ summary: string; causes: unknown[]; left: number }>('POST', '/api/crash/ai', input);
-    return { ...r, via: 'server' as const };
-  });
-  ipcMain.handle('ai:status', async () => ({ ownKey: !!(await loadAiKey()), server: !!backendUrl(), persistent: encryptionAvailable() }));
-  ipcMain.handle('ai:setKey', async (_e, key: unknown) => {
-    if (key === null || key === '') { await saveAiKey(null); return { ok: true }; }
-    if (!validAiKey(key)) return { ok: false, error: 'Das sieht nicht wie ein Claude-API-Schlüssel aus (beginnt mit sk-ant-).' };
-    try { await testAiKey(key.trim()); } catch (e) { return { ok: false, error: aiError(e) }; }
-    await saveAiKey(key.trim());
-    return { ok: true };
-  });
-  const crashInput = async (profileId: string) => {
-    const p = profileById(profileId);
-    const dir = join(profileDir(p), 'crash-reports');
-    const reports = (await readdir(dir).catch(() => [] as string[])).filter((n) => n.endsWith('.txt')).sort();
-    const report = reports.length ? await readFile(join(dir, reports[reports.length - 1]!), 'utf8').catch(() => '') : '';
-    const log = await readFile(join(profileDir(p), 'logs', 'latest.log'), 'utf8').catch(() => '');
-    const mods = (await modInfos(p).catch(() => [])).map((m) => ({ filename: m.filename, id: m.id ?? null, title: m.title ?? null, enabled: m.enabled }));
-    return { log: crashExcerpt(report, log), mods, gameVersion: p.gameVersion, loader: p.loaderType, memoryMb: p.memoryMb, legoClient: !!p.legoClient };
-  };
-  ipcMain.handle('crash:excerpt', (_e, profileId: string) => crashInput(profileId));
-  ipcMain.handle('crash:fix', async (_e, profileId: string, fix: Fix | { kind: 'enable-mod'; filename: string }) => {
+  ipcMain.handle('crash:fix', async (_e, profileId: string, fix: Fix | { kind: 'enable-mod'; filename: string }, meta?: { title?: unknown; fixLabel?: unknown }) => {
     if (!fix || typeof fix !== 'object') throw new Error('invalid fix');
     if (fix.kind === 'enable-mod') {
       if (!/^[^/\\]+\.jar$/.test(fix.filename)) throw new Error('invalid file');
+      recordUndo(await learn(), profileId);
+      void saveLearn();
       await toggleMod(profileDir(profileById(profileId)), fix.filename, true);
       return { undo: null, message: `${fix.filename} wieder aktiviert` };
     }
     if (!['disable-mod', 'install-mod', 'set-memory', 'redownload', 'reauth'].includes(fix.kind)) throw new Error('invalid fix');
-    return applyFix(profileId, fix);
+    const res = await applyFix(profileId, fix);
+    // Remember the fix for this crash; the next start of the profile tells whether it helped.
+    if (lastCrash?.profileId === profileId) {
+      const text = (v: unknown) => (typeof v === 'string' ? v.slice(0, 120) : undefined);
+      recordApplied(await learn(), profileId, lastCrash.sig, { fix, title: text(meta?.title) ?? 'Lösung', fixLabel: text(meta?.fixLabel) });
+      void saveLearn();
+    }
+    return res;
   });
   ipcMain.handle('mods:toggle', async (_e, profileId: string, filename: string, enabled: boolean) => {
     await toggleMod(profileDir(profileById(profileId)), filename, !!enabled);
@@ -1070,12 +1074,42 @@ function windowAction(action: string): void {
   } else if (action === 'close') win.close();
 }
 
+// ---- window size and position are remembered (main window and console) -----
+type Bounds = { x: number; y: number; width: number; height: number; maximized?: boolean };
+const boundsFile = () => join(app.getPath('userData'), 'windows.json');
+function savedBounds(key: string, min: { width: number; height: number }): Bounds | null {
+  try {
+    const b = (JSON.parse(readFileSync(boundsFile(), 'utf8')) as Record<string, Bounds>)[key];
+    if (!b || ![b.x, b.y, b.width, b.height].every(Number.isFinite) || b.width < min.width || b.height < min.height) return null;
+    // Only if most of it is still on a connected screen.
+    const on = screen.getAllDisplays().some(({ workArea: w }) => b.x + 80 < w.x + w.width && b.x + b.width - 80 > w.x && b.y >= w.y - 20 && b.y + 40 < w.y + w.height);
+    return on ? b : null;
+  } catch { return null; }
+}
+function rememberBounds(key: string, w: BrowserWindow): void {
+  const save = () => {
+    if (w.isDestroyed() || w.isMinimized() || w.isFullScreen()) return;
+    let all: Record<string, Bounds> = {};
+    try { all = JSON.parse(readFileSync(boundsFile(), 'utf8')) as Record<string, Bounds>; } catch { /* first time */ }
+    all[key] = { ...w.getNormalBounds(), maximized: w.isMaximized() };
+    try { writeFileSync(boundsFile(), JSON.stringify(all)); } catch { /* read-only profile */ }
+  };
+  let t: ReturnType<typeof setTimeout> | null = null;
+  const later = () => { if (t) clearTimeout(t); t = setTimeout(save, 600); };
+  w.on('resize', later);
+  w.on('move', later);
+  w.on('close', save);
+}
+
 function createWindow(): void {
+  const saved = savedBounds('main', { width: 1024, height: 680 });
   win = new BrowserWindow({
-    width: 1280, height: 800, minWidth: 1024, minHeight: 680, frame: false, backgroundColor: '#07060b', show: false,
+    ...(saved ? { x: saved.x, y: saved.y, width: saved.width, height: saved.height } : { width: 1280, height: 800 }), minWidth: 1024, minHeight: 680, frame: false, backgroundColor: '#07060b', show: false,
     title: 'LEGO Launcher', icon: join(app.getAppPath(), 'buildres', 'icon.png'),
     webPreferences: { preload: join(__dirname, 'preload.cjs'), contextIsolation: true, sandbox: true, nodeIntegration: false, webviewTag: false, spellcheck: false },
   });
+  if (saved?.maximized) win.maximize();
+  rememberBounds('main', win);
   win.once('ready-to-show', () => win?.show());
   for (const ev of ['maximize', 'unmaximize', 'enter-full-screen', 'leave-full-screen'] as const) {
     win.on(ev as 'maximize', () => send('window-state', windowState()));

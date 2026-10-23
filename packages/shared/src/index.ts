@@ -10,4 +10,3 @@ export * from './feedback.ts';
 export * from './design.ts';
 export * from './cape.ts';
 export * from './skin-gen.ts';
-export * from './crash-ai.ts';

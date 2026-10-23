@@ -170,6 +170,14 @@ function SearchResults({ type, profile, profiles, q, filters, onEditProfile, onM
     }
   }, [profile.id, q, type, filters.versions, filters.categories, filters.loaders, filters.env, filters.sort]);
 
+  // What is already in the profile (also after leaving and coming back, or another profile).
+  useEffect(() => {
+    let live = true;
+    setInstalled({});
+    if (type !== 'modpack') api.installedIds(profile.id, type).then((ids) => { if (live) setInstalled(Object.fromEntries(ids.map((id) => [id, true]))); }).catch(() => {});
+    return () => { live = false; };
+  }, [profile.id, type]);
+
   useEffect(() => {
     if (needsLoader) return;
     const t = setTimeout(() => void load(0), q ? 300 : 0);

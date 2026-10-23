@@ -14,14 +14,13 @@ import { sanitizeLanguage } from '../../core/design.ts';
 import type { Settings } from '../../core/settings.ts';
 import { signInFlow } from './account.ts';
 
-type Section = 'general' | 'language' | 'designs' | 'animations' | 'game' | 'ai' | 'accounts' | 'advanced' | 'about';
+type Section = 'general' | 'language' | 'designs' | 'animations' | 'game' | 'accounts' | 'advanced' | 'about';
 const SECTIONS: [Section, string, () => string][] = [
   ['general', 'sliders', () => t('set.general')],
   ['language', 'globe', () => t('set.language')],
   ['designs', 'brush', () => t('nav.designs')],
   ['animations', 'pumpkin', () => t('set.anim')],
   ['game', 'gamepad', () => t('set.game')],
-  ['ai', 'sparkle', () => 'KI'],
   ['accounts', 'users', () => t('set.accounts')],
   ['advanced', 'terminal', () => t('set.advanced')],
   ['about', 'info', () => t('set.about')],
@@ -77,7 +76,6 @@ export async function settingsPage(el: HTMLElement, section?: Section | string):
   else if (sec === 'designs') { box.onclick = null; box.onchange = null; await designsPage(box); }
   else if (sec === 'language') languageTab(box);
   else if (sec === 'accounts') await accountsTab(box);
-  else if (sec === 'ai') await aiTab(box);
   else await aboutTab(box);
 }
 
@@ -141,37 +139,6 @@ function rowSections(box: HTMLElement, q: string, only?: Section): void {
     }
     if (b.id === 'diag') { await navigator.clipboard.writeText(await api.diagnostics()); toast('Diagnose in die Zwischenablage kopiert', 'ok'); }
   };
-}
-
-/** Crash doctor AI: the player's own Claude API key (stored encrypted, never shown again). */
-async function aiTab(box: HTMLElement): Promise<void> {
-  box.onclick = null; box.onchange = null;
-  const st = await api.aiStatus();
-  mount(box, html`<section class="set-sec"><h2>${icon('sparkle', 'sm')} KI für den Crash-Doktor</h2><div class="glass rows">
-    <div class="setting"><div><b>Status</b><small>${st.ownKey ? 'Eigener Claude-Schlüssel gespeichert: die KI-Prüfung läuft direkt bei Claude.' : st.server ? 'Kein eigener Schlüssel: die KI-Prüfung läuft über den LEGO-Server (Anmeldung nötig, 20 pro Tag).' : 'Noch kein KI-Zugang. Trag unten einen Claude-API-Schlüssel ein.'}</small></div>
-      <div class="ctl"><span class="badge ${st.ownKey || st.server ? 'ok' : ''}">${st.ownKey ? 'Eigener Schlüssel' : st.server ? 'LEGO-Server' : 'Aus'}</span></div></div>
-    <div class="setting"><div><b>Claude-API-Schlüssel</b><small>Bekommst du auf console.anthropic.com unter „API Keys“ (beginnt mit sk-ant-). Jede Prüfung kostet dort ein paar Cent. Der Schlüssel wird verschlüsselt auf diesem PC gespeichert${st.persistent ? '' : ' (hier ist keine Verschlüsselung verfügbar, er gilt nur bis zum Neustart)'} und nur an api.anthropic.com geschickt.</small></div>
-      <div class="ctl row gap"><input type="password" id="aiKey" placeholder="${st.ownKey ? '•••••••• (gespeichert)' : 'sk-ant-…'}" autocomplete="off" spellcheck="false" class="compact wide"><button class="btn sm primary" id="aiSave">${icon('check', 'xs')} Testen &amp; speichern</button>${st.ownKey ? html`<button class="btn sm" id="aiDel">${icon('trash', 'xs')} Entfernen</button>` : ''}</div></div>
-    <div class="setting"><div><b>Was geschickt wird</b><small>Nur wenn du im Crash-Doktor auf „Mit KI prüfen“ klickst: das Ende von latest.log und der letzte Crash-Report, vorher bereinigt (Benutzernamen in Pfaden, Tokens, E-Mails, IP-Adressen entfernt), dazu deine Mod-Liste und Version, Loader und RAM des Profils.</small></div></div>
-  </div></section>`);
-  const input = box.querySelector<HTMLInputElement>('#aiKey')!;
-  box.querySelector('#aiSave')!.addEventListener('click', async (e) => {
-    const b = e.currentTarget as HTMLButtonElement;
-    if (!input.value.trim()) { toast('Bitte zuerst den Schlüssel einfügen.', 'error'); return; }
-    b.disabled = true; b.textContent = 'Prüfe Schlüssel …';
-    try {
-      const r = await api.setAiKey(input.value.trim());
-      input.value = '';
-      if (!r.ok) { toast(r.error ?? 'Schlüssel funktioniert nicht.', 'error'); b.disabled = false; b.textContent = 'Testen & speichern'; return; }
-      toast('Schlüssel funktioniert und ist gespeichert.', 'ok');
-      await aiTab(box);
-    } catch (err) { errorToast(err); b.disabled = false; }
-  });
-  box.querySelector('#aiDel')?.addEventListener('click', async () => {
-    await api.setAiKey(null);
-    toast('Schlüssel entfernt.', 'ok');
-    await aiTab(box);
-  });
 }
 
 async function accountsTab(box: HTMLElement): Promise<void> {

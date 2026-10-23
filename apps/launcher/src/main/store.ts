@@ -4,7 +4,7 @@
 // unavailable, secrets are kept in memory only and never written in clear text.
 
 import { app, safeStorage } from 'electron';
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { defaultSettings, migrateProfile, migrateSettings, type Settings } from '../core/settings.ts';
 import { sanitizeFx, sanitizeLook, sanitizeImage } from '../core/design.ts';
@@ -82,26 +82,3 @@ export const paths = {
   game: () => join(dir(), 'minecraft'),
   logs: () => join(dir(), 'logs'),
 };
-
-// ---- the player's own Claude API key (crash doctor AI) ----------------------
-// Entered by the player in Options → AI; never shipped with the launcher and never sent to
-// the page. Stored only encrypted with safeStorage; without OS encryption it lives in memory.
-const aiKeyFile = () => join(app.getPath('userData'), 'ai-key.bin');
-let aiKeyMemory: string | null = null;
-
-export async function loadAiKey(): Promise<string | null> {
-  if (aiKeyMemory) return aiKeyMemory;
-  if (!encryptionAvailable()) return null;
-  try {
-    aiKeyMemory = safeStorage.decryptString(await readFile(aiKeyFile())) || null;
-  } catch {
-    aiKeyMemory = null;
-  }
-  return aiKeyMemory;
-}
-
-export async function saveAiKey(key: string | null): Promise<void> {
-  aiKeyMemory = key;
-  if (!key) { await rm(aiKeyFile(), { force: true }); return; }
-  if (encryptionAvailable()) await atomicWrite(aiKeyFile(), safeStorage.encryptString(key));
-}

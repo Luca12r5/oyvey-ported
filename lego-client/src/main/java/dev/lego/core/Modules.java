@@ -85,11 +85,45 @@ public final class Modules {
       saveAt = System.currentTimeMillis() + 700L;
    }
 
+   private static long checkAt;
+   private static int savedState;
+
+   /**
+    * Saves after a change. Besides explicit scheduleSave() calls, every 2 s the state of all
+    * modules (on/off, key, settings, HUD position) is compared with what was saved last, so
+    * changes from any place (Visor menu, key binds, games) are kept too.
+    */
    public static void tickSave() {
-      if (saveAt != 0L && System.currentTimeMillis() >= saveAt) {
+      long now = System.currentTimeMillis();
+      if (saveAt != 0L && now >= saveAt) {
          saveAt = 0L;
          save();
+         return;
       }
+      if (now >= checkAt) {
+         checkAt = now + 2000L;
+         int st = stateHash();
+         if (st != savedState) save();
+      }
+   }
+
+   private static int stateHash() {
+      int h = 17;
+      try {
+         h = 31 * h + String.valueOf(theme).hashCode() + 7 * accent + 13 * hudAccent + String.valueOf(hudTheme).hashCode();
+         for (Module m : ALL) {
+            h = 31 * h + m.id.hashCode() + (m.enabled ? 1 : 0) + 3 * m.key;
+            for (Setting st : m.settings) {
+               Object v = st.save();
+               h = 31 * h + (v == null ? 0 : v.hashCode());
+            }
+            if (m instanceof HudModule hm) {
+               h = 31 * h + Double.hashCode(hm.fx) + Double.hashCode(hm.fy) + Double.hashCode(hm.scale);
+            }
+         }
+      } catch (Throwable ignored) {
+      }
+      return h;
    }
 
    public static synchronized void save() {
@@ -143,6 +177,7 @@ public final class Modules {
          Path var14 = var12.resolveSibling("legoclient.json.tmp");
          Files.writeString(var14, Json.write(var0), StandardCharsets.UTF_8);
          Files.move(var14, var12, StandardCopyOption.REPLACE_EXISTING);
+         savedState = stateHash();
       } catch (Throwable var10) {
          LegoClient.LOG("Speichern fehlgeschlagen: " + var10);
       }
