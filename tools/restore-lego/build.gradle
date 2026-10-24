@@ -2,7 +2,8 @@ plugins {
     id 'fabric-loom' version '1.14-SNAPSHOT'
 }
 
-def legacyJar = file('../../legacy/legoclient-3.4.0+1.21.11.jar')
+// -PlegoJar=<path> remaps another LEGO Client jar (e.g. the upstream build from tools/lego-upstream).
+def legacyJar = file(project.findProperty('legoJar') ?: '../../legacy/legoclient-3.4.0+1.21.11.jar')
 
 repositories {
     mavenCentral()

@@ -1,0 +1,9 @@
+// Compiles the LEGO Client's original source (intermediary names, as written by its author)
+// into a jar, so tools/restore-lego can remap and decompile it in the same style as lego-client/.
+pluginManagement {
+    repositories {
+        maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+        gradlePluginPortal()
+    }
+}
+rootProject.name = 'lego-upstream'

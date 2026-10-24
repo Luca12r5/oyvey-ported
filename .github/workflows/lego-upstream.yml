@@ -1,0 +1,55 @@
+# LEGO Client upstream update: compiles the author's original source (tools/lego-upstream,
+# intermediary names), remaps the jar to Mojang names and decompiles it in exactly the style
+# of lego-client/ (same Vineflower settings as restore-lego-sources.yml). The result is
+# published on ci/lego-upstream-decompiled, ready for a 3-way merge against the 3.4.0 import.
+name: LEGO upstream merge source
+
+on:
+  push:
+    paths:
+      - 'tools/lego-upstream/**'
+      - '.github/workflows/lego-upstream.yml'
+  workflow_dispatch:
+
+jobs:
+  decompile:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compile upstream source (intermediary)
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew -p tools/lego-upstream jar --no-daemon --console=plain 2>&1 | tee build.log || {
+            echo "==== ERROR LIST"
+            grep -E '\.java:[0-9]+: error:' build.log | sed -E 's#.*/src/main/java/##' | head -300
+            exit 1
+          }
+          ls -la tools/lego-upstream/build/libs/
+      - name: Remap to Mojang names
+        run: |
+          JAR=$(ls tools/lego-upstream/build/libs/*.jar | grep -v sources | head -1)
+          ./gradlew -p tools/restore-lego remapLego -PlegoJar="$PWD/$JAR" --no-daemon --console=plain
+      - name: Decompile
+        run: tools/restore-lego/decompile.sh
+      - name: Publish to ci/lego-upstream-decompiled
+        run: |
+          set -e
+          SRC=tools/restore-lego/build/decompiled
+          DEST=$(mktemp -d)
+          cp -r "$SRC"/. "$DEST"/
+          cd "$DEST"
+          git init -q
+          git checkout -q -b ci/lego-upstream-decompiled
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Decompiled LEGO Client upstream source (Mojang names) from ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" ci/lego-upstream-decompiled
