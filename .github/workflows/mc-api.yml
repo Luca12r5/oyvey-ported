@@ -44,6 +44,8 @@ jobs:
               vivestr) re=${arg#(?i)}; grep -rlaiE -- "$re" vive | head -40; grep -rhaoiE -- "[A-Za-z0-9_.:-]{0,40}($re)[A-Za-z0-9_.:-]{0,40}" vive | sort -u | head -80 ;;
               mcfile) while read -r jar; do [ -f "$jar" ] && unzip -Z1 "$jar" 2>/dev/null | grep -E -- "$arg" | head -8 | while read -r e; do echo "--- $jar!$e"; unzip -p "$jar" "$e" | head -c 3000; echo; done; done < cp.txt | head -300 ;;
               vivefile) find vive -iname "$arg" | head -20 | while read -r f; do echo "--- $f"; head -c 4000 "$f"; echo; done ;;
+              code) c=${arg%% *}; m=${arg#* }; javap -c -p -constants -cp "$CP" "$c" 2>&1 | awk -v m="$m" '$0 ~ m {p=1} p {print; n++} p && /^$/ {p=0} n>400 {exit}' ;;
+              consts) javap -p -constants -cp "$CP" "$arg" 2>&1 | grep -E 'static final int' | head -200 ;;
               grep) cut -d'|' -f2 classes.txt | grep -E '^(net/minecraft|com/mojang)/' | grep -v '\$' | sed 's/\.class$//;s#/#.#g' | while read -r c; do javap -p -cp "$CP" "$c" 2>/dev/null | grep -E "$arg" | sed "s#^#$c: #"; done | head -200 ;;
             esac
           done
