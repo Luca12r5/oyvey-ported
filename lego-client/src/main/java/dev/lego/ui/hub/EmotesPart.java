@@ -59,7 +59,7 @@ public final class EmotesPart implements HubView.Part {
 
       Kit.unclip();
       Gx.unclip();
-      if (shown.isEmpty()) var1.nothingFound(var1, var9 + var10 / 2.0F, var11 + var12 / 2.0F);
+      if (shown.isEmpty()) var1.nothingFound(var9 + var10 / 2.0F, var11 + var12 / 2.0F);
       if (this.max > 0.0F) {
          int var33 = var12 - var1.p(8.0);
          int var35 = Math.max(var1.p(24.0), Math.round(var33 * var12 / (var12 + this.max)));
