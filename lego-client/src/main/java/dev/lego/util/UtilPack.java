@@ -1161,7 +1161,7 @@ public final class UtilPack {
                }
 
                if (st != null && !st.isEmpty()) {
-                  o.set(st.peek().on);
+                  o.set((T)st.peek().on);
                } else {
                   Object orig = ORIGINAL.remove(o);
                   o.set((T)(orig != null ? orig : this.fallback));

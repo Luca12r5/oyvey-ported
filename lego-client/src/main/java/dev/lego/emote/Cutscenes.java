@@ -236,13 +236,13 @@ public final class Cutscenes {
                      h = hs[(int)cut] + Math.sin(t * 3.0) * 0.08;
                }
 
-               double cx = tx + (fx * Math.cos(ang) + rx * Math.sin(ang)) * dist;
+               double cx2 = tx + (fx * Math.cos(ang) + rx * Math.sin(ang)) * dist;
                double cz = tz + (fz * Math.cos(ang) + rz * Math.sin(ang)) * dist;
                double cy = pos[1] + 1.3 + h;
-               double dx = tx - cx;
+               double dx = tx - cx2;
                double dy = ty - cy;
                double dz = tz - cz;
-               out[0] = cx;
+               out[0] = cx2;
                out[1] = cy;
                out[2] = cz;
                out[3] = Math.toDegrees(Math.atan2(-dx, dz));
@@ -333,16 +333,16 @@ public final class Cutscenes {
                      double life = (i * 0.173 + t * 1.6) % 1.0;
                      double r = 0.55 + 0.25 * Math.sin(i + t * 4.0F);
                      double hy = life * 2.4;
-                     double a = (1.0 - life) * charge * (burst ? Math.max(0.0, 1.0 - (t - 3.8) / 1.5) : 1.0);
+                     double a1 = (1.0 - life) * charge * (burst ? Math.max(0.0, 1.0 - (t - 3.8) / 1.5) : 1.0);
                      int c = i % 3 == 0 ? 16774048 : 16756782;
-                     R3.glowBillboard(glow, x + Math.cos(an) * r, y + hy, z + Math.sin(an) * r, 0.5 * (1.0 - life * 0.5), R3.argb(c, 0.55 * a));
+                     R3.glowBillboard(glow, x + Math.cos(an) * r, y + hy, z + Math.sin(an) * r, 0.5 * (1.0 - life * 0.5), R3.argb(c, 0.55 * a1));
                   }
 
                   if (burst) {
-                     double s = t - 3.8;
-                     double a = Math.max(0.0, 1.0 - s / 1.2);
-                     R3.ring(x, y + 1.0, z, s * 8.0, s * 8.0 + 0.6, 64, R3.argb(16769162, 0.0), R3.argb(16777215, a), 0.0);
-                     R3.glowBillboard(glow, x, y + 1.0, z, 2.0 + s * 12.0, R3.argb(16765040, 0.6 * a));
+                     double s2 = t - 3.8;
+                     double a2 = Math.max(0.0, 1.0 - s2 / 1.2);
+                     R3.ring(x, y + 1.0, z, s2 * 8.0, s2 * 8.0 + 0.6, 64, R3.argb(16769162, 0.0), R3.argb(16777215, a2), 0.0);
+                     R3.glowBillboard(glow, x, y + 1.0, z, 2.0 + s2 * 12.0, R3.argb(16765040, 0.6 * a2));
                   }
 
                   if (!burst && (int)(t * 7.0F) % 3 == 0) {
@@ -364,8 +364,8 @@ public final class Cutscenes {
                   break;
                case "cs_selfie":
                   if (t > dur - 0.9 && t < dur - 0.5) {
-                     double a = 1.0 - Math.abs((t - (dur - 0.7)) / 0.2);
-                     R3.glowBillboard(glow, x, y + 1.4, z, 6.0, R3.argb(16777215, Math.max(0.0, a)));
+                     double a3 = 1.0 - Math.abs((t - (dur - 0.7)) / 0.2);
+                     R3.glowBillboard(glow, x, y + 1.4, z, 6.0, R3.argb(16777215, Math.max(0.0, a3)));
                   }
 
                   for (int i = 0; i < 6; i++) {
@@ -406,13 +406,13 @@ public final class Cutscenes {
                   break;
                default:
                   if (id.startsWith("cs_gen_")) {
-                     double a = Math.min(1.0, t / 0.6) * Math.min(1.0, Math.max(0.0, (dur - t) / 0.6));
+                     double a4 = Math.min(1.0, t / 0.6) * Math.min(1.0, Math.max(0.0, (dur - t) / 0.6));
 
                      for (int i = 0; i < 48; i++) {
                         double an = i * 2.399 + t * 1.8;
                         double r = 0.8 + i % 8 * 0.35;
                         double yy = (i * 0.17 + t * 0.9) % 2.8;
-                        R3.glowBillboard(glow, x + Math.cos(an) * r, y + yy, z + Math.sin(an) * r, 0.18 + i % 3 * 0.05, R3.argb(11065599, 0.65 * a));
+                        R3.glowBillboard(glow, x + Math.cos(an) * r, y + yy, z + Math.sin(an) * r, 0.18 + i % 3 * 0.05, R3.argb(11065599, 0.65 * a4));
                      }
 
                      double pulse = Math.max(0.0, 1.0 - Math.min(1.0, t / 1.0));
@@ -424,7 +424,7 @@ public final class Cutscenes {
                         2.0 + Math.sin(t * 4.0F) * 0.3,
                         48,
                         R3.argb(16777215, 0.0),
-                        R3.argb(10190079, 0.45 * a * pulse),
+                        R3.argb(10190079, 0.45 * a4 * pulse),
                         t * 1.2
                      );
                   }

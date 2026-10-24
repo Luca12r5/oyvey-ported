@@ -232,27 +232,27 @@ final class VehTex {
                for (int i = 0; i < 2; i++) {
                   int cx = s / 4 + i * s / 2;
                   int cy = s / 2;
-                  int r = s / 5;
+                  int rr = s / 5;
                   g.setColor(new Color(40, 42, 50));
-                  g.fillOval(cx - r - 3, cy - r - 3, 2 * r + 6, 2 * r + 6);
+                  g.fillOval(cx - rr - 3, cy - rr - 3, 2 * rr + 6, 2 * rr + 6);
                   g.setColor(new Color(12, 12, 16));
-                  g.fillOval(cx - r, cy - r, 2 * r, 2 * r);
+                  g.fillOval(cx - rr, cy - rr, 2 * rr, 2 * rr);
                   g.setColor(new Color(255, 255, 255, 200));
 
                   for (int k = 0; k <= 8; k++) {
                      double a = Math.toRadians(225.0 - k * 33.75);
                      g.drawLine(
-                        cx + (int)(Math.cos(a) * r * 0.7),
-                        cy - (int)(Math.sin(a) * r * 0.7),
-                        cx + (int)(Math.cos(a) * r * 0.92),
-                        cy - (int)(Math.sin(a) * r * 0.92)
+                        cx + (int)(Math.cos(a) * rr * 0.7),
+                        cy - (int)(Math.sin(a) * rr * 0.7),
+                        cx + (int)(Math.cos(a) * rr * 0.92),
+                        cy - (int)(Math.sin(a) * rr * 0.92)
                      );
                   }
 
                   g.setColor(new Color(255, 70, 40));
                   g.setStroke(new BasicStroke(2.0F));
                   double a = Math.toRadians(i == 0 ? 120.0 : 60.0);
-                  g.drawLine(cx, cy, cx + (int)(Math.cos(a) * r * 0.85), cy - (int)(Math.sin(a) * r * 0.85));
+                  g.drawLine(cx, cy, cx + (int)(Math.cos(a) * rr * 0.85), cy - (int)(Math.sin(a) * rr * 0.85));
                }
 
                return true;

@@ -28,8 +28,8 @@ public final class DesignPart implements HubView.Part {
       int top = v.header(x + pad, y + v.p(20.0), "Design & Client", Lang.get("ui.design.sub", "Thema, Farbe, HUD, UI-Größe und Animations-Tempo"));
       this.view = v;
       // Design has no list of its own: its search looks through every module (opens Mods).
-      int sw = v.p(170.0), sh = v.p(24.0);
-      this.search.draw(v, "design", x + w - pad - sw, y + v.p(22.0), sw, sh, true);
+      int ssw = v.p(170.0), ssh = v.p(24.0);
+      this.search.draw(v, "design", x + w - pad - ssw, y + v.p(22.0), ssw, ssh, true);
       int ly = top + v.p(4.0);
       int lh = y + h - v.p(14.0) - ly;
       this.max = Math.max(0, this.contentH(v) - lh);
@@ -178,13 +178,13 @@ public final class DesignPart implements HubView.Part {
       cy = this.label(v, Lang.get("ui.d.theme", "THEMA"), x + pad, cy);
       int cols = 4;
       bc = v.p(10.0);
-      hv = (boolean)((cw - bc * (cols - 1)) / cols);
+      int tw = (cw - bc * (cols - 1)) / cols;
       bw = v.p(66.0);
 
       for (int i = 0; i < Style.THEMES.length; i++) {
-         int tx = x + pad + i % cols * (hv + bc);
+         int tx = x + pad + i % cols * (tw + bc);
          int ty = cy + i / cols * (bw + v.p(24.0));
-         this.themeCard(v, i, tx, ty, hv, bw);
+         this.themeCard(v, i, tx, ty, tw, bw);
       }
 
       cy += (Style.THEMES.length + cols - 1) / cols * (bw + v.p(24.0)) + v.p(8.0);

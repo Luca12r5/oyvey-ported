@@ -154,11 +154,11 @@ public final class BgFx {
                }
                break;
             case 9:
-               int cols = 46;
-               int cs = Math.max(2, W / cols);
+               int cols2 = 46;
+               int cs = Math.max(2, W / cols2);
                int bs = Math.max(2, cs / 2);
 
-               for (int c = 0; c < cols; c++) {
+               for (int c = 0; c < cols2; c++) {
                   float head = fract(hash(c, 1) + t * (0.12 + hash(c, 2) * 0.18));
                   int len = 10 + Math.round(hash(c, 3) * 10.0F);
 
@@ -242,20 +242,20 @@ public final class BgFx {
                      }
                   }
 
-                  for (float[] p : pts) {
-                     Gx.circle(Math.round(p[0]), Math.round(p[1]), Math.max(1, Math.round(S * 0.003F)), Gx.rgba(16777215, (0.5F - p[2] * 0.2F) * k));
+                  for (float[] pt : pts) {
+                     Gx.circle(Math.round(pt[0]), Math.round(pt[1]), Math.max(1, Math.round(S * 0.003F)), Gx.rgba(16777215, (0.5F - pt[2] * 0.2F) * k));
                   }
                }
                break;
             case 12:
-               int[] cols = new int[]{14876683, 16764163, 27831, 4955978, 16053492};
+               int[] cols3 = new int[]{14876683, 16764163, 27831, 4955978, 16053492};
 
                for (int ix = 0; ix < 34; ix++) {
                   float depth = 0.25F + 0.75F * hash(ix, 1);
                   float x = W * fract(hash(ix, 2) + t * 0.012 * depth);
                   float y = H * (hash(ix, 3) + 0.05F * (float)Math.sin(t * 0.6 * depth + ix));
                   int s = Math.round(S * 0.035F * depth);
-                  int col = cols[ix % cols.length];
+                  int col = cols3[ix % cols3.length];
                   float al = (0.25F + 0.55F * depth) * k;
                   int bx = Math.round(x);
                   int by = Math.round(y);
@@ -268,8 +268,8 @@ public final class BgFx {
                }
                break;
             case 13:
-               float cx = W / 2.0F + (float)Math.sin(t * 0.5) * W * 0.05F;
-               float cy = H / 2.0F + (float)Math.cos(t * 0.4) * H * 0.05F;
+               float cx2 = W / 2.0F + (float)Math.sin(t * 0.5) * W * 0.05F;
+               float cy2 = H / 2.0F + (float)Math.cos(t * 0.4) * H * 0.05F;
 
                for (int i = 0; i < 18; i++) {
                   float z = 1.0F - fract(i / 18.0 + t * 0.15);
@@ -281,8 +281,8 @@ public final class BgFx {
                      for (int d = 0; d < dots; d++) {
                         double ang = (Math.PI * 2) * d / dots + t * 0.3 + i * 0.2;
                         Gx.circle(
-                           Math.round(cx + (float)Math.cos(ang) * r),
-                           Math.round(cy + (float)Math.sin(ang) * r),
+                           Math.round(cx2 + (float)Math.cos(ang) * r),
+                           Math.round(cy2 + (float)Math.sin(ang) * r),
                            Math.max(1, Math.round(S * 0.003F * near + 1.0F)),
                            Gx.rgba(i % 2 == 0 ? acc : acc2, near * near * 0.8F * k)
                         );

@@ -145,8 +145,8 @@ public final class Pets {
       float tailAmp = 18.0F;
       float tailSpd = 7.0F;
       p.flapSpd = 13.0F;
-      String doze = p.emo;
-      switch (doze) {
+      String emo = p.emo;
+      switch (emo) {
          case "happy":
             p.headRoll = PetGeo.sin(t * 1.7F) * 5.0F;
             p.y = p.y + Math.abs(PetGeo.sin(t * 3.4F)) * 0.2F;

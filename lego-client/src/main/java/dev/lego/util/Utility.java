@@ -287,7 +287,7 @@ public final class Utility {
       boolean blocks(String s) {
          long now = System.currentTimeMillis();
 
-         while (!this.recent.isEmpty() && now - this.recent.peekFirst()[1] > this.window.get() * 1000.0) {
+         while (!this.recent.isEmpty() && now - (Long)this.recent.peekFirst()[1] > this.window.get() * 1000.0) {
             this.recent.pollFirst();
          }
 
@@ -1031,7 +1031,7 @@ public final class Utility {
                      Utility.POINTS.clear();
 
                      for (Object e : (List)o) {
-                        if (e instanceof Map<String, Object> m) {
+                        if (e instanceof Map<?, ?> m) {
                            try {
                               Utility.POINTS
                                  .add(

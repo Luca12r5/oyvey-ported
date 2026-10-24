@@ -226,7 +226,7 @@ public final class Performance {
                if (o instanceof Map) {
                   FpsBoost.this.saved.clear();
 
-                  for (Entry<String, Object> e : ((Map)o).entrySet()) {
+                  for (Entry<String, Object> e : ((Map<String, Object>)o).entrySet()) {
                      FpsBoost.this.saved.put(e.getKey(), String.valueOf(e.getValue()));
                   }
                }
@@ -533,12 +533,12 @@ public final class Performance {
 
             @Override
             public void load(Object o) {
-               if (o instanceof Map<String, Object> m) {
+               if (o instanceof Map<?, ?> m) {
                   Moltron.this.saved.clear();
                   Moltron.this.disabledMods.clear();
                   Object os = m.get("opts");
                   if (os instanceof Map) {
-                     for (Entry<String, Object> e : ((Map)os).entrySet()) {
+                     for (Entry<String, Object> e : ((Map<String, Object>)os).entrySet()) {
                         Moltron.this.saved.put(e.getKey(), String.valueOf(e.getValue()));
                      }
                   }

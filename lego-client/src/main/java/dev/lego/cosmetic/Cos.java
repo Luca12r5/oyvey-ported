@@ -111,7 +111,7 @@ public final class Cos {
             if (o instanceof Map) {
                Cos.EQUIPPED.clear();
 
-               for (Entry<String, Object> e : ((Map)o).entrySet()) {
+               for (Entry<String, Object> e : ((Map<String, Object>)o).entrySet()) {
                   try {
                      Cos.Slot s = Cos.Slot.valueOf(e.getKey());
                      if (e.getValue() instanceof String && Cos.get((String)e.getValue()) != null) {

@@ -159,7 +159,7 @@ public final class SkyPacks {
 
    private static SkyPacks.Layer parseFsb(String text) {
       Object root = Json.parse(text);
-      if (!(root instanceof Map<String, Object> m)) {
+      if (!(root instanceof Map<?, ?> m)) {
          return null;
       } else {
          String type = Json.str(root, "type", "");

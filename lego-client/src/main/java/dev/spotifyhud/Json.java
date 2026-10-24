@@ -284,13 +284,13 @@ public final class Json {
          b.append(v);
       } else if (v instanceof Number) {
          b.append(((Number)v).doubleValue());
-      } else if (v instanceof Map<String, Object> m) {
+      } else if (v instanceof Map<?, ?> m) {
          b.append("{\n");
          int n = 0;
 
-         for (Entry<String, Object> e : m.entrySet()) {
+         for (Entry<?, ?> e : m.entrySet()) {
             b.append("  ".repeat(ind + 1));
-            quote(b, e.getKey());
+            quote(b, String.valueOf(e.getKey()));
             b.append(": ");
             write(b, e.getValue(), ind + 1);
             if (++n < m.size()) {
@@ -301,7 +301,7 @@ public final class Json {
          }
 
          b.append("  ".repeat(ind)).append('}');
-      } else if (v instanceof List<Object> l) {
+      } else if (v instanceof List<?> l) {
          b.append('[');
 
          for (int k = 0; k < l.size(); k++) {

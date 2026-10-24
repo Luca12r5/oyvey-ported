@@ -149,22 +149,22 @@ public final class SkyGen {
             uv[1] = (1.0 - y / z) * 0.5;
             return true;
          case 3:
-            double a = -x;
-            if (a <= 1.0E-6) {
+            double a3 = -x;
+            if (a3 <= 1.0E-6) {
                return false;
             }
 
-            uv[0] = (1.0 - z / a) * 0.5;
-            uv[1] = (1.0 - y / a) * 0.5;
+            uv[0] = (1.0 - z / a3) * 0.5;
+            uv[1] = (1.0 - y / a3) * 0.5;
             return true;
          case 4:
-            double a = -z;
-            if (a <= 1.0E-6) {
+            double a4 = -z;
+            if (a4 <= 1.0E-6) {
                return false;
             }
 
-            uv[0] = (x / a + 1.0) * 0.5;
-            uv[1] = (1.0 - y / a) * 0.5;
+            uv[0] = (x / a4 + 1.0) * 0.5;
+            uv[1] = (1.0 - y / a4) * 0.5;
             return true;
          default:
             if (x <= 1.0E-6) {
