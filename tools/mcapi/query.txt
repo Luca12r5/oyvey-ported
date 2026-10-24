@@ -1,6 +1,6 @@
 # API explorer for the 26.3 port (see mc-api.yml).
 # Why KeyMapping.setAll still crashes with SDL3 key codes
-consts com.mojang.blaze3d.platform.InputConstants
-code com.mojang.blaze3d.platform.InputConstants isKeyDown\(
-code net.minecraft.client.KeyMapping setAll\(
-code com.mojang.blaze3d.platform.InputConstants\$Type getOrCreate\(
+code com.mojang.blaze3d.platform.InputConstants boolean isKeyDown
+code net.minecraft.client.KeyMapping void setAll
+code net.minecraft.client.KeyMapping KeyMapping.java.lang.String, com.mojang.blaze3d.platform.InputConstants.Type, int, net.minecraft.client.KeyMapping.Category, int
+code com.mojang.blaze3d.platform.InputConstants\$Type Key getOrCreate
