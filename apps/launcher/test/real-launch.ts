@@ -38,6 +38,8 @@ const loaderType = arg('loader') as LoaderType | null;
 const legoJar = arg('lego');
 const fps = process.argv.includes('--fps');
 const shots = process.argv.includes('--shots');
+// Real VR with Vivecraft's headset-less NullVR provider, in the flat world (needs --mods vivecraft).
+const vrNull = process.argv.includes('--vr-null');
 // In-game session renewal through the launcher's bridge (LEGO Client SessionRefresher).
 const sessionTest = process.argv.includes('--session-test');
 // Extra Modrinth projects for this loader/version, e.g. --mods vivecraft,lithium
@@ -90,7 +92,7 @@ if (legoJar) {
 }
 
 // A flat test world made by the official server (no client-side world creation needed).
-if (shots) {
+if (shots || vrNull) {
   const serverUrl = (base as unknown as { downloads?: { server?: { url: string } } }).downloads?.server?.url;
   if (!serverUrl) throw new Error('no server download for this version');
   const srvDir = join(root, 'server');
@@ -134,16 +136,16 @@ const args = buildArguments({
   version: merged, env, javaPath, gameDir, assetsDir: l.assets, gameAssetsDir: installed.virtualAssets ?? undefined,
   librariesDir: l.libraries, nativesDir: installed.nativesDir, clientJar: installed.clientJar, classpathSeparator: process.platform === 'win32' ? ';' : ':',
   player: { name: 'LegoCI', uuid: playerUuid, accessToken: token, xuid: null, userType: 'msa' },
-  launcherName: 'lego-launcher', launcherVersion: 'ci', memoryMb: { min: 1024, max: 3072 }, extraJvmArgs: [...(shots ? ['-Dlegoclient.ci.shots=1'] : []), ...(sessionTest ? ['-Dlegoclient.ci.session=1'] : [])],
+  launcherName: 'lego-launcher', launcherVersion: 'ci', memoryMb: { min: 1024, max: 3072 }, extraJvmArgs: [...(shots ? ['-Dlegoclient.ci.shots=1'] : []), ...(sessionTest ? ['-Dlegoclient.ci.session=1'] : []), ...(vrNull ? ['-Dlegoclient.ci.vr=1'] : [])],
   resolution: { width: 854, height: 480 }, loggingConfigPath: installed.loggingConfig ?? undefined,
 });
-if (shots) args.push('--quickPlaySingleplayer', 'ci');
+if (shots || vrNull) args.push('--quickPlaySingleplayer', 'ci');
 step(`Launch: ${redactArgs(args, token).slice(0, 6).join(' ')} … (${args.length} args)`);
 
 // Markers that the client finished loading and shows the title screen.
 const READY = [/Sound engine started/, /Created: \d+x\d+x\d+ minecraft:textures\/atlas\/blocks\.png-atlas/, /Created: \d+x\d+ textures-atlas/, /Reloading ResourceManager/];
 const lines: string[] = [];
-let ready = false, legoLoaded = false, modCount: string | null = null, noBackend = false, shotsDone = false, sessionRenewed = false;
+let ready = false, legoLoaded = false, modCount: string | null = null, noBackend = false, shotsDone = false, sessionRenewed = false, vrRunning = false, vrWorld = false;
 const shotNames: string[] = [];
 const clean = createLogCleaner();
 let leaked = false;
@@ -160,6 +162,9 @@ const game = await startGame(javaPath, args, gameDir, join(root, 'logs'), (raw) 
   if (shot) { shotNames.push(shot[1]!); step(`shot ${shot[1]}`); }
   if (/\[LegoClient\] CI (in world|shots done|waiting)/.test(line)) step(line.trim());
   if (/\[LegoClient\] CI shots done/.test(line)) shotsDone = true;
+  if (/\[LegoClient\] CI VR/.test(line)) step(line.trim());
+  if (/\[LegoClient\] CI VR running/.test(line)) vrRunning = true;
+  if (/\[LegoClient\] CI VR world ok/.test(line)) vrWorld = true;
   const m = /Loading (\d+) mods/.exec(line);
   if (m) { modCount = m[1]!; step(line.trim()); }
   if (/Exception|ERROR|FATAL|Mixin apply failed/.test(line) && !/Failed to (verify|fetch|load) (authentication|profile|user properties)|realms|telemetry|YggdrasilUserApi|Couldn't connect|AL lib|OpenAL|sound/i.test(line)) console.log(`  ! ${line.slice(0, 300)}`);
@@ -177,6 +182,12 @@ const outcome = await new Promise<{ ok: boolean; why: string }>((resolve) => {
   });
   const poll = setInterval(() => {
     if (noBackend) { clearInterval(poll); clearTimeout(timer); resolve({ ok: false, why: 'no usable graphics backend (OpenGL and Vulkan both failed)' }); return; }
+    if (vrNull) {
+      if (!vrWorld) return;
+      clearInterval(poll); clearTimeout(timer);
+      resolve({ ok: true, why: 'Vivecraft VR (NullVR) running in a world for 30 s' });
+      return;
+    }
     if (!ready || shots) return;
     clearInterval(poll);
     // Stay alive a while on the title screen: catches render-time crashes of mods.
@@ -207,6 +218,7 @@ setTimeout(() => game.child.kill('SIGKILL'), 10_000).unref();
 await game.exited.catch(() => {});
 
 if (legoJar && !legoLoaded) Object.assign(outcome, { ok: false, why: `${outcome.why}; but "[LegoClient] geladen" never appeared` });
+if (vrNull && !vrRunning) Object.assign(outcome, { ok: false, why: `${outcome.why}; VR never started` });
 if (sessionTest && !sessionRenewed) Object.assign(outcome, { ok: false, why: `${outcome.why}; but the session was not renewed in game` });
 if (leaked) Object.assign(outcome, { ok: false, why: `${outcome.why}; renewed token appeared in the log` });
 await bridge?.stop();
