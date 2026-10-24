@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "legoclient",
+  "version": "3.4.0",
+  "name": "Lego Client",
+  "description": "Lego Client Winter Edition for 1.21.11: Christmas menu (Right Shift) with snow, lights and gift buttons, Essential-style HUD + Spotify HUD, 212 3D cosmetics incl. Christmas collection, pets, vehicles incl. sleigh, 38 emotes incl. cinematic cutscenes, 13 world particle effects, 15 mini games, real FPS boost, TV browser using the Edge/Chrome already on your PC (no download).",
+  "authors": [
+    "Ar Zero"
+  ],
+  "license": "MIT",
+  "icon": "assets/legoclient/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.lego.LegoClient"
+    ]
+  },
+  "mixins": [
+    "legoclient.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": "\u003e\u003d0.16.0",
+    "minecraft": "1.21.11",
+    "java": "\u003e\u003d21",
+    "fabric-api": "*"
+  },
+  "breaks": {},
+  "suggests": {}
+}
