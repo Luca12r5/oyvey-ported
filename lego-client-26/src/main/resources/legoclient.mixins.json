@@ -20,7 +20,8 @@
     "ClientRenderMixin",
     "BlockEntityCullMixin",
     "WindowTitleMixin",
-    "FovRangeMixin"
+    "FovRangeMixin",
+    "FireOverlayMixin"
   ],
   "injectors": {
     "defaultRequire": 0

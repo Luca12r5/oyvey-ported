@@ -46,6 +46,8 @@ jobs:
         include:
           - name: 1.21.11 Fabric + LEGO Client + FPS pack
             args: --version 1.21.11 --loader fabric --lego legoclient.jar --fps --session-test
+          - name: 1.21.11 LEGO Client + Vivecraft VR (NullVR)
+            args: --version 1.21.11 --loader fabric --lego legoclient.jar --mods vivecraft --vr-null --timeout 600
           - name: 1.21.11 LEGO Client in-game screenshots
             args: --version 1.21.11 --loader fabric --lego legoclient.jar --shots --timeout 900
           - name: latest release (vanilla)
