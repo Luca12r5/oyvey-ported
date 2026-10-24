@@ -27,6 +27,29 @@ public final class McCompat {
       return new KeyMapping(name, InputConstants.Type.KEYBOARD, Keys.toGame(glfw), category);
    }
 
+   /**
+    * GLFW mouse button of a 26.3 (SDL3) button: SDL counts 1 left, 2 middle, 3 right; the shared
+    * UI code expects GLFW's 0 left, 1 right, 2 middle (with SDL's numbers no click ever hit).
+    */
+   public static int mouseButton(int button) {
+      return switch (button) {
+         case 1 -> 0;
+         case 2 -> 2;
+         case 3 -> 1;
+         default -> Math.max(-1, button - 1);
+      };
+   }
+
+   /** GLFW modifier bits of SDL3's (left/right pairs: shift 3, ctrl 192, alt 768, super 3072). */
+   public static int glfwMods(int mods) {
+      int r = 0;
+      if ((mods & InputConstants.MOD_SHIFT) != 0) r |= 1;
+      if ((mods & InputConstants.MOD_CONTROL) != 0) r |= 2;
+      if ((mods & InputConstants.MOD_ALT) != 0) r |= 4;
+      if ((mods & InputConstants.MOD_SUPER) != 0) r |= 8;
+      return r;
+   }
+
    /** GLFW code of a 26.3 key code (-1 when it has none). */
    public static int glfwKey(int code) {
       return Keys.toGlfw(code);

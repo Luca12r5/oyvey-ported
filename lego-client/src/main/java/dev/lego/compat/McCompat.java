@@ -28,6 +28,16 @@ public final class McCompat {
       return new KeyMapping(name, glfw, category);
    }
 
+   /** GLFW mouse button (0 left, 1 right, 2 middle) of a game mouse button (the same on 1.21.11). */
+   public static int mouseButton(int button) {
+      return button;
+   }
+
+   /** GLFW modifier bits (1 shift, 2 ctrl, 4 alt, 8 super) of the game's (the same on 1.21.11). */
+   public static int glfwMods(int mods) {
+      return mods;
+   }
+
    /** GLFW code of a game key code (the same on 1.21.11). */
    public static int glfwKey(int code) {
       return code;

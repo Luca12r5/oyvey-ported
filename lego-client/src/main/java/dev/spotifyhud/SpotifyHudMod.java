@@ -77,7 +77,7 @@ public final class SpotifyHudMod implements ClientModInitializer {
             (var0, var1x, var2, var3) -> {
                if (var1x instanceof ChatScreen) {
                   ScreenMouseEvents.allowMouseClick(var1x)
-                     .register((var0x, var1xx) -> !safe(() -> chatInteraction.mouseDown(var1xx.x(), var1xx.y(), var1xx.button(), var0x.width, var0x.height)));
+                     .register((var0x, var1xx) -> !safe(() -> chatInteraction.mouseDown(var1xx.x(), var1xx.y(), dev.lego.compat.McCompat.mouseButton(var1xx.button()), var0x.width, var0x.height)));
                   ScreenMouseEvents.allowMouseDrag(var1x)
                      .register((var0x, var1xx, var2x, var4) -> !safe(() -> chatInteraction.mouseDrag(var1xx.x(), var1xx.y(), var0x.width, var0x.height)));
                   ScreenMouseEvents.allowMouseRelease(var1x).register((var0x, var1xx) -> !safe(chatInteraction::mouseUp));

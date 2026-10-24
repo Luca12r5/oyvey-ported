@@ -187,7 +187,7 @@ public final class SettingsScreen extends Screen {
       double var5 = var1.y();
       int[] var7 = this.card();
       if (inside(var3, var5, var7)) {
-         if (var1.button() != 0) {
+         if (dev.lego.compat.McCompat.mouseButton(var1.button()) != 0) {
             return true;
          } else {
             List var8 = this.ui.build(this.cfg, this.api);
@@ -204,7 +204,7 @@ public final class SettingsScreen extends Screen {
          }
       } else {
          this.unfocus();
-         return this.interaction.mouseDown(var3, var5, var1.button(), this.width, this.height) ? true : super.mouseClicked(var1, var2);
+         return this.interaction.mouseDown(var3, var5, dev.lego.compat.McCompat.mouseButton(var1.button()), this.width, this.height) ? true : super.mouseClicked(var1, var2);
       }
    }
 
@@ -438,7 +438,7 @@ public final class SettingsScreen extends Screen {
          return super.keyPressed(var1);
       } else {
          int var2 = dev.lego.compat.McCompat.glfwKey(var1.key());
-         boolean var3 = (var1.modifiers() & 2) != 0;
+         boolean var3 = (dev.lego.compat.McCompat.glfwMods(var1.modifiers()) & 2) != 0;
          String var4 = String.valueOf(this.text());
          if (var2 == 256 || var2 == 257 || var2 == 335 || var2 == 258) {
             this.unfocus();

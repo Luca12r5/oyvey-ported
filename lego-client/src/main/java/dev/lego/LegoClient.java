@@ -137,7 +137,7 @@ public final class LegoClient implements ClientModInitializer {
          if (var1x instanceof ChatScreen) {
             ScreenMouseEvents.allowMouseClick(var1x).register((var0x, var1xx) -> {
                try {
-                  return !DiscordHud.click(var1xx.x(), var1xx.y(), var1xx.button());
+                  return !DiscordHud.click(var1xx.x(), var1xx.y(), dev.lego.compat.McCompat.mouseButton(var1xx.button()));
                } catch (Throwable var3xx) {
                   return true;
                }
@@ -175,7 +175,7 @@ public final class LegoClient implements ClientModInitializer {
             (var0, var1x, var2x, var3x) -> {
                if (var1x instanceof ChatScreen) {
                   ScreenMouseEvents.allowMouseClick(var1x)
-                     .register((var0x, var1xx) -> !safe(() -> HudManager.mouseDown(var1xx.x(), var1xx.y(), var1xx.button(), var0x.width, var0x.height)));
+                     .register((var0x, var1xx) -> !safe(() -> HudManager.mouseDown(var1xx.x(), var1xx.y(), dev.lego.compat.McCompat.mouseButton(var1xx.button()), var0x.width, var0x.height)));
                   ScreenMouseEvents.allowMouseDrag(var1x)
                      .register((var0x, var1xx, var2xx, var4) -> !safe(() -> HudManager.mouseDrag(var1xx.x(), var1xx.y(), var0x.width, var0x.height, true)));
                   ScreenMouseEvents.allowMouseRelease(var1x).register((var0x, var1xx) -> !safe(HudManager::mouseUp));

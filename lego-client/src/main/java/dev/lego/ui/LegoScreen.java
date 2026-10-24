@@ -180,7 +180,7 @@ public class LegoScreen extends Screen implements View.Host {
          return true;
       } else {
          try {
-            this.view.mouseDown(this.px(var1.x()), this.px(var1.y()), var1.button(), var2);
+            this.view.mouseDown(this.px(var1.x()), this.px(var1.y()), dev.lego.compat.McCompat.mouseButton(var1.button()), var2);
          } catch (Throwable var4) {
             LegoClient.LOG("Klick: " + var4);
          }
@@ -192,7 +192,7 @@ public class LegoScreen extends Screen implements View.Host {
    @Override
    public boolean mouseReleased(MouseButtonEvent var1) {
       try {
-         this.view.mouseUp(this.px(var1.x()), this.px(var1.y()), var1.button());
+         this.view.mouseUp(this.px(var1.x()), this.px(var1.y()), dev.lego.compat.McCompat.mouseButton(var1.button()));
       } catch (Throwable var3) {
          LegoClient.LOG("Klick: " + var3);
       }
@@ -203,7 +203,7 @@ public class LegoScreen extends Screen implements View.Host {
    @Override
    public boolean mouseDragged(MouseButtonEvent var1, double var2, double var4) {
       try {
-         this.view.mouseDrag(this.px(var1.x()), this.px(var1.y()), var1.button());
+         this.view.mouseDrag(this.px(var1.x()), this.px(var1.y()), dev.lego.compat.McCompat.mouseButton(var1.button()));
       } catch (Throwable var7) {
          LegoClient.LOG("Ziehen: " + var7);
       }
@@ -229,7 +229,7 @@ public class LegoScreen extends Screen implements View.Host {
          return true;
       } else {
          try {
-            if (this.view.key(var2, var1.modifiers())) {
+            if (this.view.key(var2, dev.lego.compat.McCompat.glfwMods(var1.modifiers()))) {
                return true;
             }
 
@@ -249,7 +249,7 @@ public class LegoScreen extends Screen implements View.Host {
    public boolean keyReleased(KeyEvent var1) {
       try {
          int var2 = dev.lego.compat.McCompat.glfwKey(var1.key());
-         return var2 >= 0 && this.view.key(-1 - var2, var1.modifiers());
+         return var2 >= 0 && this.view.key(-1 - var2, dev.lego.compat.McCompat.glfwMods(var1.modifiers()));
       } catch (Throwable var3) {
          return false;
       }
