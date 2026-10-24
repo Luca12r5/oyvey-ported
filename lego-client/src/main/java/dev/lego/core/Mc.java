@@ -106,6 +106,11 @@ public final class Mc {
       }
    }
 
+   /** A local chat line (only you see it). */
+   public static void chat(Component c) {
+      mc().gui.getChat().addMessage(c);
+   }
+
    public static void chat(String msg) {
       LocalPlayer p = player();
       if (p != null) {

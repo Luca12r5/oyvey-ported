@@ -8,9 +8,6 @@ import java.io.File;
 import javax.imageio.ImageIO;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
-import org.lwjgl.PointerBuffer;
-import org.lwjgl.system.MemoryStack;
-import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 public final class BgImage {
    private static Identifier texId;
@@ -24,14 +21,8 @@ public final class BgImage {
 
    public static void pick() {
       new Thread(() -> {
-         try (MemoryStack stack = MemoryStack.stackPush()) {
-            PointerBuffer filters = stack.mallocPointer(4);
-            filters.put(stack.UTF8("*.png"));
-            filters.put(stack.UTF8("*.jpg"));
-            filters.put(stack.UTF8("*.jpeg"));
-            filters.put(stack.UTF8("*.bmp"));
-            filters.flip();
-            String result = TinyFileDialogs.tinyfd_openFileDialog("Hintergrundbild wählen", "", filters, "Bilder (png, jpg, bmp)", false);
+         try {
+            String result = dev.lego.compat.McCompat.openImageDialog("Hintergrundbild wählen");
             if (result != null && !result.isEmpty()) {
                UiSettings.bgImage = result;
                Modules.scheduleSave();

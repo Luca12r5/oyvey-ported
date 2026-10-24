@@ -107,4 +107,25 @@ public final class McCompat {
          : os.contains("mac") ? new String[]{"open", uri} : new String[]{"xdg-open", uri};
       new ProcessBuilder(cmd).start();
    }
+
+   /**
+    * Native "open image" dialog; null when cancelled. 26.3 ships no tinyfd, so this asks the
+    * system dialog (Windows Forms via PowerShell, zenity on Linux, AppleScript on macOS).
+    * Blocks, so call it off the render thread.
+    */
+   public static String openImageDialog(String title) throws java.io.IOException, InterruptedException {
+      String os = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT);
+      String safe = title.replace("'", "");
+      String[] cmd = os.contains("win")
+         ? new String[]{"powershell", "-NoProfile", "-STA", "-Command",
+            "Add-Type -AssemblyName System.Windows.Forms; $d = New-Object System.Windows.Forms.OpenFileDialog; $d.Title = '" + safe
+               + "'; $d.Filter = 'Bilder|*.png;*.jpg;*.jpeg;*.bmp'; if ($d.ShowDialog() -eq 'OK') { $d.FileName }"}
+         : os.contains("mac")
+            ? new String[]{"osascript", "-e", "POSIX path of (choose file with prompt \"" + safe + "\" of type {\"png\", \"jpg\", \"jpeg\", \"bmp\"})"}
+            : new String[]{"zenity", "--file-selection", "--title=" + safe, "--file-filter=*.png *.jpg *.jpeg *.bmp"};
+      Process p = new ProcessBuilder(cmd).redirectErrorStream(false).start();
+      String out = new String(p.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).trim();
+      p.waitFor();
+      return out.isEmpty() ? null : out;
+   }
 }

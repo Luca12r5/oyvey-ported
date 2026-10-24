@@ -70,7 +70,7 @@ public final class DiscordControl extends Module {
 
       try {
          for (String l : lines) {
-            Mc.mc().gui.getChat().addMessage(Component.literal(l));
+            Mc.chat(Component.literal(l));
          }
       } catch (Throwable var5) {
       }

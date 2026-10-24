@@ -104,7 +104,7 @@ public final class HudPack {
          lastHp = hp;
          ClientLevel w = Mc.world();
          if (w != null) {
-            long wt = w.getDayTime();
+            long wt = Mc.timeOfDay();
             long now = System.currentTimeMillis();
             if (lastWorldTime >= 0L && wt >= lastWorldTime) {
                if (now - lastWorldReal >= 3000L) {

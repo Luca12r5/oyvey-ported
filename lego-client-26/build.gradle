@@ -41,6 +41,8 @@ def mergeSources = tasks.register('mergeSources', Sync) {
             exclude { FileTreeElement e -> !e.directory && new File(overlay, "$kind/${e.relativePath.pathString}").exists() }
             // The Visor headset is being ported to 26.3: only with -Pvisor (CI probe job) for now.
             if (!project.hasProperty('visor')) exclude 'dev/visor/**', 'visor.mixins.json', 'assets/visor/**'
+            // Written against the 1.21.11 blaze3d/item renderer API; HandEffect has a 26.3 stand-in in the overlay.
+            exclude 'dev/lego/visual/shader/**', 'dev/lego/mixin/GlintMixin.java', 'dev/lego/mixin/HeldItemRendererMixin.java'
         }
         from(new File(overlay, kind)) { into kind }
     }

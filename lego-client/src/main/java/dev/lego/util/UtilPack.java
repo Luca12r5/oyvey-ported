@@ -94,7 +94,7 @@ public final class UtilPack {
 
    static void local(String s) {
       try {
-         Mc.mc().gui.getChat().addMessage(Component.literal("[Lego] ").withStyle(ChatFormatting.GOLD).append(Component.literal(s)));
+         Mc.chat(Component.literal("[Lego] ").withStyle(ChatFormatting.GOLD).append(Component.literal(s)));
       } catch (Throwable var2) {
          LegoClient.LOG("chat: " + var2);
       }
@@ -280,13 +280,13 @@ public final class UtilPack {
                "clock",
                ".zeit",
                a -> {
-                  long t = (Mc.world().getDayTime() + 6000L) % 24000L;
+                  long t = (Mc.timeOfDay() + 6000L) % 24000L;
                   return "Echt: "
                      + LocalTime.now().withNano(0)
                      + "  ·  Minecraft: "
                      + String.format(Locale.ROOT, "%02d:%02d", t / 1000L, t % 1000L * 60L / 1000L)
                      + "  ·  Tag "
-                     + (Mc.world().getDayTime() / 24000L + 1L);
+                     + (Mc.timeOfDay() / 24000L + 1L);
                },
                "zeit",
                "time"
@@ -900,7 +900,7 @@ public final class UtilPack {
                   .withStyle(ChatFormatting.DARK_GRAY)
                   .append(body)
                : body);
-            Mc.mc().gui.getChat().addMessage(out);
+            Mc.chat(out);
             return false;
          }
       } catch (Throwable var8) {

@@ -75,4 +75,17 @@ public final class McCompat {
    public static float depthFar(net.minecraft.client.renderer.GameRenderer gr) {
       return gr.getDepthFar();
    }
+
+   /** Native "open image" dialog; null when cancelled. Blocks, so call it off the render thread. */
+   public static String openImageDialog(String title) {
+      try (org.lwjgl.system.MemoryStack stack = org.lwjgl.system.MemoryStack.stackPush()) {
+         org.lwjgl.PointerBuffer filters = stack.mallocPointer(4);
+         filters.put(stack.UTF8("*.png"));
+         filters.put(stack.UTF8("*.jpg"));
+         filters.put(stack.UTF8("*.jpeg"));
+         filters.put(stack.UTF8("*.bmp"));
+         filters.flip();
+         return org.lwjgl.util.tinyfd.TinyFileDialogs.tinyfd_openFileDialog(title, "", filters, "Bilder (png, jpg, bmp)", false);
+      }
+   }
 }

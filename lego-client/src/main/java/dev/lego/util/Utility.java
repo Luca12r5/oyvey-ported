@@ -61,7 +61,6 @@ public final class Utility {
    public static FakeCheck fakeCheck;
    public static Auction auction;
    public static FightPreset fightPreset;
-   public static Utility.HeadSearch headSearch;
    private static final Set<Integer> KILLED = new HashSet<>();
    public static final List<Utility.Waypoint> POINTS = new ArrayList<>();
    private static final int[] WP_COLORS = new int[]{-14756000, -16735270, -13053, -36939, -6599222, -30208, -8587265};
@@ -114,7 +113,7 @@ public final class Utility {
       fakeCheck = Modules.register(new FakeCheck());
       auction = Modules.register(new Auction());
       fightPreset = Modules.register(new FightPreset());
-      headSearch = Modules.register(new Utility.HeadSearch());
+      // Head Search (skull ESP through walls) is excluded.
    }
 
    public static void onHit(Entity target) {
@@ -200,10 +199,6 @@ public final class Utility {
    public static void renderWorld(float td) {
       if (waypoints != null) {
          waypoints.render();
-      }
-
-      if (headSearch != null && headSearch.enabled) {
-         headSearch.render();
       }
    }
 
@@ -507,142 +502,6 @@ public final class Utility {
          this.toggled = false;
          if (this.active) {
             this.stop();
-         }
-      }
-   }
-
-   public static final class HeadSearch extends Module {
-      final Setting.Mode mode = this.add(new Setting.Mode("Modus", 0, "Profil", "FindEventHead"));
-      final Setting.Color color = this.add(new Setting.Color("ESP-Farbe", 0));
-      final Setting.Num range = this.add(new Setting.Num("Reichweite", 16.0, 256.0, 8.0, 128.0, " Blöcke"));
-      private final Set<Long> collected = ConcurrentHashMap.newKeySet();
-      private boolean lastUse;
-      private long lastCount;
-
-      HeadSearch() {
-         super("headsearch", "Head Search", "Zeigt Spieler-Köpfe mit ESP durch Wände", Category.UTILITY);
-         this.icon("search");
-         this.fresh();
-         this.add(new Setting.Action("Gesammelte zurücksetzen", "Reset", () -> {
-            this.collected.clear();
-            Toasts.show("search", "Head Search", "Alle Köpfe wieder sichtbar");
-         }));
-      }
-
-      @Override
-      public void onEnable() {
-         this.lastCount = System.currentTimeMillis();
-      }
-
-      @Override
-      public void tick() {
-         if (this.enabled) {
-            LocalPlayer p = Mc.player();
-            if (p != null && !Mc.screenOpen()) {
-               boolean use = Mc.mouseDown(1);
-               if (use && !this.lastUse) {
-                  HitResult hit = Mc.mc().hitResult;
-                  if (hit instanceof BlockHitResult && hit.getType() == Type.BLOCK) {
-                     BlockPos pos = ((BlockHitResult)hit).getBlockPos();
-                     long packed = pos.asLong();
-                     if (!this.collected.contains(packed)) {
-                        this.collected.add(packed);
-                        Toasts.show("search", "Head Search", "Eingesammelt (" + this.collected.size() + ")", -16735270, 1500L);
-                     }
-                  }
-               }
-
-               this.lastUse = use;
-            } else {
-               this.lastUse = false;
-            }
-         }
-      }
-
-      private boolean matchesFilter(SkullBlockEntity skull) {
-         try {
-            ResolvableProfile owner = skull.getOwnerProfile();
-            if (owner == null) {
-               return false;
-            } else if ("Profil".equals(this.mode.get())) {
-               return true;
-            } else {
-               Optional<String> name = owner.name();
-               if (name.isPresent() && name.get().equals("FindEventHead")) {
-                  return true;
-               } else {
-                  GameProfile gp = owner.partialProfile();
-                  return gp != null && "FindEventHead".equals(gp.name());
-               }
-            }
-         } catch (Throwable var5) {
-            return false;
-         }
-      }
-
-      void render() {
-         LocalPlayer p = Mc.player();
-         if (p != null) {
-            double cx = R3.camX();
-            double cy = R3.camY();
-            double cz = R3.camZ();
-            double maxR = this.range.get();
-            int rgb = this.color.argb() & 16777215;
-            double t = System.currentTimeMillis() / 1000.0;
-            double pulse = 0.6 + 0.2 * Math.sin(t * 3.0);
-            int pcx = (int)Math.floor(Mc.x(p)) >> 4;
-            int pcz = (int)Math.floor(Mc.z(p)) >> 4;
-            int cr = (int)Math.ceil(maxR / 16.0);
-            int found = 0;
-
-            try {
-               for (int ddx = -cr; ddx <= cr; ddx++) {
-                  for (int ddz = -cr; ddz <= cr; ddz++) {
-                     LevelChunk chunk;
-                     try {
-                        chunk = Mc.world().getChunk(pcx + ddx, pcz + ddz);
-                     } catch (Throwable var40) {
-                        continue;
-                     }
-
-                     if (chunk != null) {
-                        Map<BlockPos, BlockEntity> bes;
-                        try {
-                           bes = chunk.getBlockEntities();
-                        } catch (Throwable var39) {
-                           continue;
-                        }
-
-                        if (bes != null && !bes.isEmpty()) {
-                           for (Entry<BlockPos, BlockEntity> entry : bes.entrySet()) {
-                              if (entry.getValue() instanceof SkullBlockEntity skull && this.matchesFilter(skull)) {
-                                 BlockPos pos = entry.getKey();
-                                 if (!this.collected.contains(pos.asLong())) {
-                                    double bx = pos.getX() + 0.5 - cx;
-                                    double by = pos.getY() + 0.5 - cy;
-                                    double bz = pos.getZ() + 0.5 - cz;
-                                    if (!(bx * bx + by * by + bz * bz > maxR * maxR)) {
-                                       found++;
-                                       double x0 = pos.getX();
-                                       double y0 = pos.getY();
-                                       double z0 = pos.getZ();
-                                       R3.noDepthBox(x0 - 0.01, y0 - 0.01, z0 - 0.01, x0 + 1.01, y0 + 1.01, z0 + 1.01, R3.argb(rgb, 0.3 * pulse));
-                                       R3.noDepthBoxEdges(x0 - 0.01, y0 - 0.01, z0 - 0.01, x0 + 1.01, y0 + 1.01, z0 + 1.01, 0.012, R3.argb(rgb, 0.95));
-                                    }
-                                 }
-                              }
-                           }
-                        }
-                     }
-                  }
-               }
-            } catch (Throwable var41) {
-            }
-
-            if (System.currentTimeMillis() - this.lastCount > 5000L) {
-               this.lastCount = System.currentTimeMillis();
-               Mc.actionBar("§7Head Search: §a" + found + " §7Köpfe gefunden");
-            }
          }
       }
    }
