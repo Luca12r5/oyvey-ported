@@ -14,11 +14,11 @@ import net.minecraft.resources.Identifier;
 import org.lwjgl.system.MemoryUtil;
 
 public final class TexSlot {
-   private static final ExecutorService PAINTER = Executors.newSingleThreadExecutor(var0 -> {
-      Thread var1 = new Thread(var0, "LegoClient-Painter");
-      var1.setDaemon(true);
-      var1.setPriority(4);
-      return var1;
+   private static final ExecutorService PAINTER = Executors.newSingleThreadExecutor(r -> {
+      Thread t = new Thread(r, "LegoClient-Painter");
+      t.setDaemon(true);
+      t.setPriority(4);
+      return t;
    });
    private static volatile boolean fastUpload = true;
    final Identifier id;
@@ -33,74 +33,74 @@ public final class TexSlot {
    private volatile int readyH;
    private String requestedKey;
 
-   public TexSlot(Identifier var1) {
-      this.id = var1;
+   public TexSlot(Identifier id) {
+      this.id = id;
    }
 
-   public void draw(GuiGraphics var1, Minecraft var2, int var3, int var4, int var5, int var6, int var7, int var8, String var9, Supplier<int[]> var10) {
-      if (var7 > 0 && var8 > 0) {
-         String var11 = var7 + "x" + var8 + "|" + var9;
-         int[] var12 = this.ready;
-         if (var12 != null && this.readyW == var7 && this.readyH == var8) {
+   public void draw(GuiGraphics ctx, Minecraft mc, int x, int y, int gw, int gh, int pw, int ph, String k, Supplier<int[]> painter) {
+      if (pw > 0 && ph > 0) {
+         String fullKey = pw + "x" + ph + "|" + k;
+         int[] px = this.ready;
+         if (px != null && this.readyW == pw && this.readyH == ph) {
             this.ready = null;
-            this.upload(var2, var12, var7, var8);
+            this.upload(mc, px, pw, ph);
             this.shownKey = this.readyKey;
-         } else if (var12 != null) {
+         } else if (px != null) {
             this.ready = null;
          }
 
-         if (!var11.equals(this.shownKey) && !this.busy && !var11.equals(this.requestedKey)) {
+         if (!fullKey.equals(this.shownKey) && !this.busy && !fullKey.equals(this.requestedKey)) {
             this.busy = true;
-            this.requestedKey = var11;
+            this.requestedKey = fullKey;
             PAINTER.execute(() -> {
                try {
-                  int[] var5x = (int[])var10.get();
-                  if (var5x != null && var5x.length == var7 * var8) {
-                     toAbgr(var5x);
-                     this.readyW = var7;
-                     this.readyH = var8;
-                     this.readyKey = var11;
-                     this.ready = var5x;
+                  int[] argb = painter.get();
+                  if (argb != null && argb.length == pw * ph) {
+                     toAbgr(argb);
+                     this.readyW = pw;
+                     this.readyH = ph;
+                     this.readyKey = fullKey;
+                     this.ready = argb;
                   }
-               } catch (Throwable var9x) {
-                  SpotifyHudMod.LOG("Painter-Fehler: " + var9x);
+               } catch (Throwable var9) {
+                  SpotifyHudMod.LOG("Painter-Fehler: " + var9);
                } finally {
                   this.busy = false;
                }
             });
-         } else if (var11.equals(this.requestedKey) && !this.busy && this.ready == null && !var11.equals(this.shownKey)) {
+         } else if (fullKey.equals(this.requestedKey) && !this.busy && this.ready == null && !fullKey.equals(this.shownKey)) {
             this.requestedKey = null;
          }
 
          if (this.tex != null && this.shownKey != null) {
-            var1.blit(RenderPipelines.GUI_TEXTURED, this.id, var3, var4, 0.0F, 0.0F, var5, var6, this.w, this.h, this.w, this.h);
+            ctx.blit(RenderPipelines.GUI_TEXTURED, this.id, x, y, 0.0F, 0.0F, gw, gh, this.w, this.h, this.w, this.h);
          }
       }
    }
 
-   private void upload(Minecraft var1, int[] var2, int var3, int var4) {
-      TextureManager var5 = var1.getTextureManager();
-      if (this.tex == null || this.w != var3 || this.h != var4) {
+   private void upload(Minecraft mc, int[] abgr, int pw, int ph) {
+      TextureManager tm = mc.getTextureManager();
+      if (this.tex == null || this.w != pw || this.h != ph) {
          if (this.tex != null) {
-            var5.release(this.id);
+            tm.release(this.id);
          }
 
-         NativeImage var6 = new NativeImage(var3, var4, true);
-         this.tex = new DynamicTexture(() -> "legoclient_" + this.id.hashCode(), var6);
-         var5.register(this.id, this.tex);
-         this.w = var3;
-         this.h = var4;
+         NativeImage img = new NativeImage(pw, ph, true);
+         this.tex = new DynamicTexture(() -> "legoclient_" + this.id.hashCode(), img);
+         tm.register(this.id, this.tex);
+         this.w = pw;
+         this.h = ph;
       }
 
-      NativeImage var13 = this.tex.getPixels();
-      boolean var7 = false;
+      NativeImage img = this.tex.getPixels();
+      boolean done = false;
       if (fastUpload) {
          try {
-            long var8 = var13.getPointer();
-            if (var8 != 0L) {
-               IntBuffer var10 = MemoryUtil.memIntBuffer(var8, var3 * var4);
-               var10.put(var2, 0, var3 * var4);
-               var7 = true;
+            long ptr = img.getPointer();
+            if (ptr != 0L) {
+               IntBuffer buf = MemoryUtil.memIntBuffer(ptr, pw * ph);
+               buf.put(abgr, 0, pw * ph);
+               done = true;
             }
          } catch (Throwable var12) {
             fastUpload = false;
@@ -108,13 +108,13 @@ public final class TexSlot {
          }
       }
 
-      if (!var7) {
-         for (int var14 = 0; var14 < var4; var14++) {
-            int var9 = var14 * var3;
+      if (!done) {
+         for (int yy = 0; yy < ph; yy++) {
+            int row = yy * pw;
 
-            for (int var15 = 0; var15 < var3; var15++) {
-               int var11 = var2[var9 + var15];
-               var13.setPixel(var15, var14, var11 & -16711936 | (var11 & 0xFF) << 16 | var11 >> 16 & 0xFF);
+            for (int xx = 0; xx < pw; xx++) {
+               int c = abgr[row + xx];
+               img.setPixel(xx, yy, c & -16711936 | (c & 0xFF) << 16 | c >> 16 & 0xFF);
             }
          }
       }
@@ -122,10 +122,10 @@ public final class TexSlot {
       this.tex.upload();
    }
 
-   private static void toAbgr(int[] var0) {
-      for (int var1 = 0; var1 < var0.length; var1++) {
-         int var2 = var0[var1];
-         var0[var1] = var2 & -16711936 | (var2 & 0xFF) << 16 | var2 >> 16 & 0xFF;
+   private static void toAbgr(int[] px) {
+      for (int i = 0; i < px.length; i++) {
+         int c = px[i];
+         px[i] = c & -16711936 | (c & 0xFF) << 16 | c >> 16 & 0xFF;
       }
    }
 

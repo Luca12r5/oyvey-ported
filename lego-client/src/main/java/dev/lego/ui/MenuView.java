@@ -35,127 +35,164 @@ public final class MenuView extends View {
 
    @Override
    public void draw() {
-      float var1 = this.open;
-      boolean var2 = this.host != null && this.host.closing();
-      Gx.gradientV(0, 0, this.W, this.H, Gx.rgba(0, (Xmas.on() ? 0.1F : 0.3F) * var1), Gx.rgba(0, (Xmas.on() ? 0.3F : 0.55F) * var1));
-      int var3 = this.W / 2;
-      int var4 = this.H / 2 - this.p(46.0);
-      float var5 = var2 ? var1 : Ease.outCubic(Ease.stagger(var1, 0, 0.0F, 0.7F));
-      Gx.pushAlpha(var5);
+      float t = this.open;
+      boolean closing = this.host != null && this.host.closing();
+      boolean seasonal = Halloween.on() || Xmas.on();
+      Gx.gradientV(0, 0, this.W, this.H, Gx.rgba(0, (seasonal ? 0.1F : 0.3F) * t), Gx.rgba(0, (seasonal ? 0.3F : 0.55F) * t));
+      int cx = this.W / 2;
+      int cy = this.H / 2 - this.p(46.0);
+      float gl = closing ? t : Ease.outCubic(Ease.stagger(t, 0, 0.0F, 0.7F));
+      Gx.pushAlpha(gl);
       Gx.push();
-      Gx.translate(0.0F, -this.pf(30.0) * (1.0F - var5));
-      Xmas.lights(-this.p(10.0), this.p(4.0), this.W + this.p(10.0), this.P, this.p(16.0), 3);
-      long var6 = System.currentTimeMillis();
-      int[] var8 = new int[]{-1890757, -736942, -12867329, -14703780, -5022465, -1890757};
-      float[] var9 = new float[]{0.08F, 0.19F, 0.31F, 0.69F, 0.81F, 0.92F};
+      Gx.translate(0.0F, -this.pf(30.0) * (1.0F - gl));
+      long now = System.currentTimeMillis();
+      if (Halloween.on()) {
+         Halloween.lanterns(-this.p(10.0), this.p(4.0), this.W + this.p(10.0), this.P, this.p(16.0), 3);
+         float[] bxF = new float[]{0.1F, 0.25F, 0.5F, 0.75F, 0.9F};
 
-      for (int var10 = 0; var10 < var9.length && Xmas.on(); var10++) {
-         float var11 = this.pf(50 + var10 * 37 % 60);
-         float var12 = (float)Math.sin(var6 / 1100.0 + var10 * 1.3) * 0.08F;
-         float var13 = this.W * var9[var10];
-         float var14 = var13 + (float)Math.sin(var12) * var11;
-         float var15 = this.p(6.0) + (float)Math.cos(var12) * var11;
-         int var16 = Math.max(1, this.p(5.0));
-         int var17 = Math.max(1, Math.round(var11 / var16));
+         for (int i = 0; i < bxF.length; i++) {
+            float len = this.pf(40 + i * 31 % 50);
+            float sw = (float)Math.sin(now / 1300.0 + i * 1.5) * 0.06F;
+            float ax = this.W * bxF[i];
+            float ex = ax + (float)Math.sin(sw) * len;
+            float ey = this.p(6.0) + (float)Math.cos(sw) * len;
+            int seg = Math.max(1, this.p(5.0));
+            int steps = Math.max(1, Math.round(len / seg));
 
-         for (int var18 = 0; var18 < var17; var18++) {
-            float var19 = (float)var18 / var17;
-            Gx.fill(
-               Math.round(var13 + (var14 - var13) * var19),
-               Math.round(this.p(6.0) + (var15 - this.p(6.0)) * var19),
-               Math.max(1, this.p(0.6)),
-               var16,
-               1726536104
-            );
+            for (int k = 0; k < steps; k++) {
+               float u = (float)k / steps;
+               Gx.fill(Math.round(ax + (ex - ax) * u), Math.round(this.p(6.0) + (ey - this.p(6.0)) * u), Math.max(1, this.p(0.6)), seg, 1143608640);
+            }
+
+            Halloween.pumpkin(ex, ey + this.pf(10.0), this.pf(10 + i % 2 * 3));
          }
+      } else {
+         Xmas.lights(-this.p(10.0), this.p(4.0), this.W + this.p(10.0), this.P, this.p(16.0), 3);
+         int[] bc = new int[]{-1890757, -736942, -12867329, -14703780, -5022465, -1890757};
+         float[] bxF = new float[]{0.08F, 0.19F, 0.31F, 0.69F, 0.81F, 0.92F};
 
-         Xmas.bauble(var14, var15 + this.pf(10.0), this.pf(11 + var10 % 2 * 3), var8[var10]);
+         for (int i = 0; i < bxF.length && Xmas.on(); i++) {
+            float len = this.pf(50 + i * 37 % 60);
+            float sw = (float)Math.sin(now / 1100.0 + i * 1.3) * 0.08F;
+            float ax = this.W * bxF[i];
+            float ex = ax + (float)Math.sin(sw) * len;
+            float ey = this.p(6.0) + (float)Math.cos(sw) * len;
+            int seg = Math.max(1, this.p(5.0));
+            int steps = Math.max(1, Math.round(len / seg));
+
+            for (int k = 0; k < steps; k++) {
+               float u = (float)k / steps;
+               Gx.fill(Math.round(ax + (ex - ax) * u), Math.round(this.p(6.0) + (ey - this.p(6.0)) * u), Math.max(1, this.p(0.6)), seg, 1726536104);
+            }
+
+            Xmas.bauble(ex, ey + this.pf(10.0), this.pf(11 + i % 2 * 3), bc[i]);
+         }
       }
 
       Gx.pop();
       Gx.popAlpha();
-      float var44 = var2 ? var1 : Ease.outCubic(Ease.stagger(var1, 0, 0.0F, 0.55F));
-      float var45 = var2 ? 0.94F + 0.06F * var1 : 0.86F + 0.14F * Ease.outBack(Ease.stagger(var1, 0, 0.0F, 0.6F));
-      float var46 = 0.5F + 0.5F * (float)Math.sin(var6 / 900.0);
-      int var47 = Xmas.on() ? -1890757 : Style.accent;
-      Gx.pushAlpha(var44);
-      Gx.glow(var3, var4, this.p(170.0), Gx.withAlpha(var47, 0.1F + 0.05F * var46));
+      float a = closing ? t : Ease.outCubic(Ease.stagger(t, 0, 0.0F, 0.55F));
+      float sc = closing ? 0.94F + 0.06F * t : 0.86F + 0.14F * Ease.outBack(Ease.stagger(t, 0, 0.0F, 0.6F));
+      float pulse = 0.5F + 0.5F * (float)Math.sin(now / 900.0);
+      int logoCol = Halloween.on() ? -38118 : (Xmas.on() ? -1890757 : Style.accent);
+      Gx.pushAlpha(a);
+      Gx.glow(cx, cy, this.p(170.0), Gx.withAlpha(logoCol, 0.1F + 0.05F * pulse));
       Gx.push();
-      Gx.translate(0.0F, this.pf(14.0) * (1.0F - var44));
-      Gx.scaleAt(var3, var4, var45);
+      Gx.translate(0.0F, this.pf(14.0) * (1.0F - a));
+      Gx.scaleAt(cx, cy, sc);
       // Wordmark like the launcher and the app icon: white brick on a dark rounded tile + "LEGO Client".
-      float var48 = this.pf(40.0);
-      float var49 = Gx.width("LEGO", var48, 3);
-      float var50 = Gx.width("Client", var48, 0);
-      int var51 = this.p(58.0);
-      int var52 = this.p(16.0);
-      int gap = this.p(10.0);
-      float var53 = var51 + var52 + var49 + gap + var50;
-      float var20 = var3 - var53 / 2.0F;
-      float var21 = (float)Math.sin(var6 / 700.0) * this.pf(1.6F);
-      int tileY = Math.round(var4 - var51 / 2.0F + var21);
-      Gx.shadow(Math.round(var20), tileY, var51, var51, this.p(14.0), this.p(8.0), 0.5F);
-      Gx.rect(Math.round(var20), tileY, var51, var51, this.p(14.0), -15395300);
-      Gx.outline(Math.round(var20), tileY, var51, var51, this.p(14.0), Math.max(1, this.p(1.0)), 620756991);
-      int brick = Math.round(var51 * 0.7F);
-      Gx.image(Art.brickImg(brick, -1), Math.round(var20 + (var51 - brick) / 2.0F), Math.round(tileY + (var51 - brick) / 2.0F), brick, brick, -1);
-      Xmas.hat(var20 + var51 / 2.0F + this.pf(3.0), tileY + this.pf(10.0), var51 * 0.9F, 0.0F);
-      var20 += var51 + var52;
-      Gx.textMid("LEGO", var20, var4, var48, 3, -1);
-      var20 += var49 + gap;
-      Gx.textMid("Client", var20, var4, var48, 0, Gx.mix(-1, var47, 0.25F));
+      float fs = this.pf(40.0);
+      float wL = Gx.width("LEGO", fs, 3);
+      float wC = Gx.width("Client", fs, 0);
+      int brick = this.p(58.0);
+      int gap = this.p(16.0);
+      int gap2 = this.p(10.0);
+      float total = brick + gap + wL + gap2 + wC;
+      float x = cx - total / 2.0F;
+      float bob = (float)Math.sin(now / 700.0) * this.pf(1.6F);
+      int tileY = Math.round(cy - brick / 2.0F + bob);
+      Gx.shadow(Math.round(x), tileY, brick, brick, this.p(14.0), this.p(8.0), 0.5F);
+      Gx.rect(Math.round(x), tileY, brick, brick, this.p(14.0), -15395300);
+      Gx.outline(Math.round(x), tileY, brick, brick, this.p(14.0), Math.max(1, this.p(1.0)), Gx.withAlpha(logoCol, 0.4F));
+      int inner = Math.round(brick * 0.7F);
+      Gx.image(Art.brickImg(inner, -1), Math.round(x + (brick - inner) / 2.0F), Math.round(tileY + (brick - inner) / 2.0F), inner, inner, -1);
+      if (Halloween.on()) {
+         Halloween.witchHat(x + brick / 2.0F + this.pf(3.0), tileY + this.pf(10.0), brick * 0.9F, 0.0F);
+      } else {
+         Xmas.hat(x + brick / 2.0F + this.pf(3.0), tileY + this.pf(10.0), brick * 0.9F, 0.0F);
+      }
+
+      x += brick + gap;
+      Gx.textMid("LEGO", x, cy, fs, 3, -1);
+      x += wL + gap2;
+      Gx.textMid("Client", x, cy, fs, 0, Gx.mix(-1, logoCol, 0.25F));
       Gx.pop();
-      if (Xmas.on()) {
-         Gx.textSpaced("WINTER  EDITION", var3, var4 + this.pf(38.0), this.pf(8.4F), 3, -736942, this.pf(3.2F));
+      if (Halloween.on()) {
+         Gx.textSpaced("HALLOWEEN  EDITION", cx, cy + this.pf(38.0), this.pf(8.4F), 3, -38118, this.pf(3.2F));
          Gx.textSpaced(
-            Xmas.countdown().toUpperCase(Locale.ROOT) + "   •   v" + Env.version, var3, var4 + this.pf(54.0), this.pf(6.6F), 2, -1711276033, this.pf(1.4F)
+            Halloween.countdown().toUpperCase(Locale.ROOT) + "   •   v" + Env.version, cx, cy + this.pf(54.0), this.pf(6.6F), 2, -1711276033, this.pf(1.4F)
+         );
+      } else if (Xmas.on()) {
+         Gx.textSpaced("WINTER  EDITION", cx, cy + this.pf(38.0), this.pf(8.4F), 3, -736942, this.pf(3.2F));
+         Gx.textSpaced(
+            Xmas.countdown().toUpperCase(Locale.ROOT) + "   •   v" + Env.version, cx, cy + this.pf(54.0), this.pf(6.6F), 2, -1711276033, this.pf(1.4F)
          );
       } else {
-         Gx.textSpaced("v" + Env.version + "   •   MINECRAFT " + Env.mcVersion, var3, var4 + this.pf(40.0), this.pf(7.4F), 2, -1711276033, this.pf(1.6F));
+         Gx.textSpaced("v" + Env.version + "   •   MINECRAFT " + Env.mcVersion, cx, cy + this.pf(40.0), this.pf(7.4F), 2, -1711276033, this.pf(1.6F));
       }
 
-      Gx.textCenter(greeting(), var3, var4 - this.pf(58.0) + (float)Math.sin(var6 / 900.0) * this.pf(1.2F), this.pf(8.0F), 3, Gx.mix(-1, Style.accent, 0.35F));
+      Gx.textCenter(greeting(), cx, cy - this.pf(58.0) + (float)Math.sin(now / 900.0) * this.pf(1.2F), this.pf(8.0F), 3, Gx.mix(-1, Style.accent, 0.35F));
       Gx.popAlpha();
-      float var22 = var2 ? var1 : Ease.outCubic(Ease.stagger(var1, 1, 0.09F, 0.5F));
-      int var23 = this.p(300.0);
-      int var24 = this.p(40.0);
-      int var25 = var3 - var23 / 2;
-      int var26 = var4 + this.p(74.0);
-      boolean var27 = this.hover(var25, var26, var23, var24);
-      float var28 = Ease.to("menu:mod", var27 ? 1.0F : 0.0F, 14.0F);
-      Gx.pushAlpha(var22);
+      float b1 = closing ? t : Ease.outCubic(Ease.stagger(t, 1, 0.09F, 0.5F));
+      int bw = this.p(300.0);
+      int bh = this.p(40.0);
+      int bx = cx - bw / 2;
+      int by = cy + this.p(74.0);
+      boolean hov = this.hover(bx, by, bw, bh);
+      float hv = Ease.to("menu:mod", hov ? 1.0F : 0.0F, 14.0F);
+      Gx.pushAlpha(b1);
       Gx.push();
-      Gx.translate(0.0F, this.pf(16.0) * (1.0F - var22));
-      Gx.scaleAt(var3, var26 + var24 / 2.0F, 1.0F + 0.025F * var28);
-      Gx.shadow(var25, var26, var23, var24, this.p(10.0), this.p(7.0), 0.45F);
-      if (Xmas.on()) {
-         if (var28 > 0.01F) {
-            Gx.glow(var3, var26 + var24 / 2, this.p(150.0), Gx.withAlpha(-736942, 0.14F * var28));
+      Gx.translate(0.0F, this.pf(16.0) * (1.0F - b1));
+      Gx.scaleAt(cx, by + bh / 2.0F, 1.0F + 0.025F * hv);
+      Gx.shadow(bx, by, bw, bh, this.p(10.0), this.p(7.0), 0.45F);
+      if (Halloween.on()) {
+         if (hv > 0.01F) {
+            Gx.glow(cx, by + bh / 2, this.p(150.0), Gx.withAlpha(-38118, 0.16F * hv));
          }
 
-         Gx.rectV(var25, var26, var23, var24, this.p(10.0), Gx.mix(-1099186, -42388, var28), -6089686);
-         Gx.outline(var25, var26, var23, var24, this.p(10.0), Math.max(1, this.p(1.0)), Gx.mix(1442830730, -736942, var28));
-         Xmas.snowCap(var25, var26, var23, this.P * 0.85F);
-         Gx.icon("gift", var25 + this.p(28.0), var26 + var24 / 2.0F + this.pf(1.0), this.pf(14.0), -1);
-         Gx.textSpaced("MOD MENU", var3, var26 + var24 / 2.0F + this.pf(1.0), this.pf(11.5), 3, -1, this.pf(2.4F));
+         Gx.rectV(bx, by, bw, bh, this.p(10.0), Gx.mix(-14020544, -12969899, hv), -15202264);
+         Gx.outline(bx, by, bw, bh, this.p(10.0), Math.max(1, this.p(1.0)), Gx.mix(1442810688, -38118, hv));
+         Halloween.cobweb(bx, by, bw, this.P * 0.85F);
+         Gx.icon("skull", bx + this.p(28.0), by + bh / 2.0F + this.pf(1.0), this.pf(14.0), -38118);
+         Gx.textSpaced("MOD MENU", cx, by + bh / 2.0F + this.pf(1.0), this.pf(11.5), 3, -1, this.pf(2.4F));
+      } else if (Xmas.on()) {
+         if (hv > 0.01F) {
+            Gx.glow(cx, by + bh / 2, this.p(150.0), Gx.withAlpha(-736942, 0.14F * hv));
+         }
+
+         Gx.rectV(bx, by, bw, bh, this.p(10.0), Gx.mix(-1099186, -42388, hv), -6089686);
+         Gx.outline(bx, by, bw, bh, this.p(10.0), Math.max(1, this.p(1.0)), Gx.mix(1442830730, -736942, hv));
+         Xmas.snowCap(bx, by, bw, this.P * 0.85F);
+         Gx.icon("gift", bx + this.p(28.0), by + bh / 2.0F + this.pf(1.0), this.pf(14.0), -1);
+         Gx.textSpaced("MOD MENU", cx, by + bh / 2.0F + this.pf(1.0), this.pf(11.5), 3, -1, this.pf(2.4F));
       } else {
-         Gx.rect(var25, var26, var23, var24, this.p(8.0), Gx.mix(-653126888, -434496478, var28));
-         Gx.outline(var25, var26, var23, var24, this.p(8.0), Math.max(1, this.p(0.8)), Gx.mix(654311423, Style.accent, var28));
-         if (var28 > 0.01F) {
-            Gx.glow(var3, var26 + var24 / 2, this.p(120.0), Gx.withAlpha(Style.accent, 0.1F * var28));
+         Gx.rect(bx, by, bw, bh, this.p(8.0), Gx.mix(-653126888, -434496478, hv));
+         Gx.outline(bx, by, bw, bh, this.p(8.0), Math.max(1, this.p(0.8)), Gx.mix(654311423, Style.accent, hv));
+         if (hv > 0.01F) {
+            Gx.glow(cx, by + bh / 2, this.p(120.0), Gx.withAlpha(Style.accent, 0.1F * hv));
          }
 
-         Gx.textSpaced("MOD MENU", var3, var26 + var24 / 2.0F, this.pf(11.0), 3, Gx.mix(-1, Style.accent, var28 * 0.6F), this.pf(2.2F));
+         Gx.textSpaced("MOD MENU", cx, by + bh / 2.0F, this.pf(11.0), 3, Gx.mix(-1, Style.accent, hv * 0.6F), this.pf(2.2F));
       }
 
       Gx.pop();
       Gx.popAlpha();
-      Kit.hit(var25, var26, var23, var24).click(() -> this.host.open(new HubView(HubView.Section.MODS)));
-      int var29 = this.p(46.0);
-      int var30 = this.p(12.0);
-      int var31 = var3 - (QUICK.length * var29 + (QUICK.length - 1) * var30) / 2;
-      int var32 = var26 + var24 + this.p(18.0);
-      int[][] var33 = new int[][]{
+      Kit.hit(bx, by, bw, bh).click(() -> this.host.open(new HubView(HubView.Section.MODS)));
+      int qs = this.p(46.0);
+      int qg = this.p(12.0);
+      int qx = cx - (QUICK.length * qs + (QUICK.length - 1) * qg) / 2;
+      int qy = by + bh + this.p(18.0);
+      int[][] giftCol = new int[][]{
          {-15037874, -736942},
          {-2743752, -736942},
          {-15037874, -1890757},
@@ -164,80 +201,90 @@ public final class MenuView extends View {
          {-9752656, -726576},
          {-15766677, -736942}
       };
-      String var34 = null;
-      int var35 = 0;
+      String tip = null;
+      int tipX = 0;
 
-      for (int var36 = 0; var36 < QUICK.length; var36++) {
-         float var37 = var2 ? var1 : Ease.outBack(Ease.stagger(var1, var36 + 2, 0.06F, 0.45F));
-         int var38 = var31 + var36 * (var29 + var30);
-         boolean var39 = this.hover(var38, var32 - this.p(8.0), var29, var29 + this.p(8.0));
-         float var40 = Ease.to("menu:q" + var36, var39 ? 1.0F : 0.0F, 14.0F);
-         Gx.pushAlpha(Math.min(1.0F, Math.max(0.0F, var37)));
+      for (int i = 0; i < QUICK.length; i++) {
+         float bi = closing ? t : Ease.outBack(Ease.stagger(t, i + 2, 0.06F, 0.45F));
+         int x0 = qx + i * (qs + qg);
+         boolean h = this.hover(x0, qy - this.p(8.0), qs, qs + this.p(8.0));
+         float hq = Ease.to("menu:q" + i, h ? 1.0F : 0.0F, 14.0F);
+         Gx.pushAlpha(Math.min(1.0F, Math.max(0.0F, bi)));
          Gx.push();
-         Gx.translate(0.0F, this.pf(18.0) * (1.0F - var37));
-         if (Xmas.on()) {
-            float var41 = var39 ? (float)Math.sin(var6 / 90.0) * this.pf(0.8F) : 0.0F;
-            Gx.translate(var41, 0.0F);
-            Xmas.gift(var38, var32, var29, var29, var33[var36][0], var33[var36][1], this.pf(6.0) * var40, this.P);
-            float var42 = var32 + var29 * 0.64F - this.pf(6.0) * var40;
-            Gx.circle(var38 + var29 / 2, Math.round(var42), this.p(12.0), -419430401);
-            Gx.icon(QUICK[var36][0], var38 + var29 / 2.0F, var42, this.pf(14.0), var33[var36][0]);
+         Gx.translate(0.0F, this.pf(18.0) * (1.0F - bi));
+         if (Halloween.on()) {
+            int[][] hwCol = new int[][]{
+               {-12969899, -38118}, {-14020544, -7655482}, {-15058406, -12916643}, {-12972000, -3924450}, {-14020544, -14006}, {-12969899, -38118}
+            };
+            float wob = h ? (float)Math.sin(now / 90.0) * this.pf(0.8F) : 0.0F;
+            Gx.translate(wob, 0.0F);
+            Halloween.tombstone(x0, qy, qs, qs, hwCol[i][0], hwCol[i][1], this.pf(6.0) * hq, this.P);
+            float iy = qy + qs * 0.5F - this.pf(6.0) * hq;
+            Gx.circle(x0 + qs / 2, Math.round(iy), this.p(12.0), -654311424);
+            Gx.icon(QUICK[i][0], x0 + qs / 2.0F, iy, this.pf(14.0), hwCol[i][1]);
+         } else if (Xmas.on()) {
+            float wob = h ? (float)Math.sin(now / 90.0) * this.pf(0.8F) : 0.0F;
+            Gx.translate(wob, 0.0F);
+            Xmas.gift(x0, qy, qs, qs, giftCol[i][0], giftCol[i][1], this.pf(6.0) * hq, this.P);
+            float iy = qy + qs * 0.64F - this.pf(6.0) * hq;
+            Gx.circle(x0 + qs / 2, Math.round(iy), this.p(12.0), -419430401);
+            Gx.icon(QUICK[i][0], x0 + qs / 2.0F, iy, this.pf(14.0), giftCol[i][0]);
          } else {
-            Gx.scaleAt(var38 + var29 / 2.0F, var32 + var29 / 2.0F, 1.0F + 0.06F * var40);
-            Gx.shadow(var38, var32, var29, var29, this.p(9.0), this.p(5.0), 0.35F);
-            Gx.rect(var38, var32, var29, var29, this.p(9.0), Gx.mix(-653126888, -266592731, var40));
-            Gx.outline(var38, var32, var29, var29, this.p(9.0), Math.max(1, this.p(0.8)), Gx.mix(587202559, Style.accent, var40));
-            Gx.icon(QUICK[var36][0], var38 + var29 / 2.0F, var32 + var29 / 2.0F, this.pf(21.0), Gx.mix(-1512980, Style.accent, var40));
+            Gx.scaleAt(x0 + qs / 2.0F, qy + qs / 2.0F, 1.0F + 0.06F * hq);
+            Gx.shadow(x0, qy, qs, qs, this.p(9.0), this.p(5.0), 0.35F);
+            Gx.rect(x0, qy, qs, qs, this.p(9.0), Gx.mix(-653126888, -266592731, hq));
+            Gx.outline(x0, qy, qs, qs, this.p(9.0), Math.max(1, this.p(0.8)), Gx.mix(587202559, Style.accent, hq));
+            Gx.icon(QUICK[i][0], x0 + qs / 2.0F, qy + qs / 2.0F, this.pf(21.0), Gx.mix(-1512980, Style.accent, hq));
          }
 
          Gx.pop();
          Gx.popAlpha();
-         String var61 = QUICK[var36][2];
-         Kit.hit(var38, var32 - this.p(8.0), var29, var29 + this.p(8.0)).click(() -> this.openSection(var61));
-         if (var39) {
-            var34 = QUICK[var36][1];
-            var35 = var38 + var29 / 2;
+         String sec = QUICK[i][2];
+         Kit.hit(x0, qy - this.p(8.0), qs, qs + this.p(8.0)).click(() -> this.openSection(sec));
+         if (h) {
+            tip = QUICK[i][1];
+            tipX = x0 + qs / 2;
          }
       }
 
-      if (var34 != null) {
-         Kit.tooltip(var34, var35, var32 - this.p(14.0), this.P);
+      if (tip != null) {
+         Kit.tooltip(tip, tipX, qy - this.p(14.0), this.P);
       }
 
-      float var56 = var2 ? var1 : Ease.outCubic(Ease.stagger(var1, 7, 0.06F, 0.5F));
-      Gx.pushAlpha(var56);
-      Gx.textSpaced("ESC  ODER  RECHTS-STRG  ZUM  SCHLIESSEN", var3, this.H - this.pf(22.0), this.pf(6.6F), 2, 1728053247, this.pf(1.2F));
-      String var57 = Env.nowPlaying.get();
-      if (var57 != null && !var57.isEmpty()) {
-         float var58 = this.pf(8.0);
-         String var59 = Fonts.ellipsize(var57, 2, var58, this.pf(220.0));
-         int var60 = Math.round(Gx.width(var59, var58, 2) + this.pf(34.0));
-         int var62 = this.p(24.0);
-         int var63 = this.p(16.0);
-         int var43 = this.H - var62 - this.p(14.0);
-         Gx.rect(var63, var43, var60, var62, var62 / 2, -1290661096);
-         Gx.outline(var63, var43, var60, var62, var62 / 2, Math.max(1, this.p(0.6)), 536870911);
-         Gx.circle(var63 + this.p(12.0), var43 + var62 / 2, this.p(6.5), -14756000);
-         Gx.icon("music", var63 + this.p(12.0), var43 + var62 / 2.0F, this.pf(7.5), -16053493);
-         Gx.textMid(var59, var63 + this.p(24.0), var43 + var62 / 2.0F, var58, 2, -419430401);
+      float f = closing ? t : Ease.outCubic(Ease.stagger(t, 7, 0.06F, 0.5F));
+      Gx.pushAlpha(f);
+      Gx.textSpaced("ESC  ODER  RECHTS-STRG  ZUM  SCHLIESSEN", cx, this.H - this.pf(22.0), this.pf(6.6F), 2, 1728053247, this.pf(1.2F));
+      String np = Env.nowPlaying.get();
+      if (np != null && !np.isEmpty()) {
+         float s = this.pf(8.0);
+         String txt = Fonts.ellipsize(np, 2, s, this.pf(220.0));
+         int w = Math.round(Gx.width(txt, s, 2) + this.pf(34.0));
+         int hx = this.p(24.0);
+         int x0x = this.p(16.0);
+         int y0 = this.H - hx - this.p(14.0);
+         Gx.rect(x0x, y0, w, hx, hx / 2, -1290661096);
+         Gx.outline(x0x, y0, w, hx, hx / 2, Math.max(1, this.p(0.6)), 536870911);
+         Gx.circle(x0x + this.p(12.0), y0 + hx / 2, this.p(6.5), -14756000);
+         Gx.icon("music", x0x + this.p(12.0), y0 + hx / 2.0F, this.pf(7.5), -16053493);
+         Gx.textMid(txt, x0x + this.p(24.0), y0 + hx / 2.0F, s, 2, -419430401);
       }
 
       Gx.popAlpha();
    }
 
-   private void openSection(String var1) {
-      if ("HUD".equals(var1)) {
+   private void openSection(String sec) {
+      if ("HUD".equals(sec)) {
          this.host.closeThen(Env.openHudEditor);
-      } else if ("SPOTIFY".equals(var1)) {
+      } else if ("SPOTIFY".equals(sec)) {
          this.host.open(new SpotifyView());
       } else {
-         this.host.open(new HubView(HubView.Section.valueOf(var1)));
+         this.host.open(new HubView(HubView.Section.valueOf(sec)));
       }
    }
 
    @Override
-   public boolean key(int var1, int var2) {
-      if (var1 == 345 || var1 == 344) {
+   public boolean key(int key, int mods) {
+      if (key == 345 || key == 344) {
          this.host.close();
          return true;
       } else {

@@ -25,12 +25,12 @@ public final class SpotifyModule extends Module {
    }
 
    @Override
-   public void setEnabled(boolean var1) {
-      Config var2 = SpotifyHudMod.config();
-      if (var2 != null) {
-         this.enabled = var1;
-         var2.visible = var1;
-         var2.save();
+   public void setEnabled(boolean v) {
+      Config c = SpotifyHudMod.config();
+      if (c != null) {
+         this.enabled = v;
+         c.visible = v;
+         c.save();
       }
    }
 
@@ -39,14 +39,14 @@ public final class SpotifyModule extends Module {
    }
 
    public void sync() {
-      Config var1 = SpotifyHudMod.config();
-      if (var1 != null) {
-         this.enabled = var1.visible;
+      Config c = SpotifyHudMod.config();
+      if (c != null) {
+         this.enabled = c.visible;
       }
    }
 
    public boolean isOn() {
-      Config var1 = SpotifyHudMod.config();
-      return var1 != null && var1.visible;
+      Config c = SpotifyHudMod.config();
+      return c != null && c.visible;
    }
 }

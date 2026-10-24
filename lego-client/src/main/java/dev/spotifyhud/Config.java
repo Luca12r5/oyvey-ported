@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import net.fabricmc.loader.api.FabricLoader;
 
 public final class Config {
@@ -39,75 +40,75 @@ public final class Config {
    }
 
    public static Config load() {
-      Config var0 = new Config();
+      Config c = new Config();
 
       try {
-         Path var1 = path();
-         if (Files.exists(var1)) {
-            Object var2 = Json.parse(Files.readString(var1, StandardCharsets.UTF_8));
-            var0.clientId = Json.str(var2, "clientId", "").trim();
-            var0.redirectPort = (int)Json.num(var2, "redirectPort", 8888L);
-            var0.accessToken = Json.str(var2, "accessToken", "");
-            var0.refreshToken = Json.str(var2, "refreshToken", "");
-            var0.expiresAt = Json.num(var2, "expiresAt", 0L);
-            var0.posX = clamp01(Json.dbl(var2, "posX", 0.5));
-            var0.posY = clamp01(Json.dbl(var2, "posY", 0.012));
-            var0.scale = Math.max(0.5, Math.min(3.0, Json.dbl(var2, "scale", 1.0)));
-            var0.visible = Json.bool(var2, "visible", true);
+         Path p = path();
+         if (Files.exists(p)) {
+            Object o = Json.parse(Files.readString(p, StandardCharsets.UTF_8));
+            c.clientId = Json.str(o, "clientId", "").trim();
+            c.redirectPort = (int)Json.num(o, "redirectPort", 8888L);
+            c.accessToken = Json.str(o, "accessToken", "");
+            c.refreshToken = Json.str(o, "refreshToken", "");
+            c.expiresAt = Json.num(o, "expiresAt", 0L);
+            c.posX = clamp01(Json.dbl(o, "posX", 0.5));
+            c.posY = clamp01(Json.dbl(o, "posY", 0.012));
+            c.scale = Math.max(0.5, Math.min(3.0, Json.dbl(o, "scale", 1.0)));
+            c.visible = Json.bool(o, "visible", true);
             // Config v2: "no song" no longer covers the screen; older files switch to hiding once.
-            var0.hideWhenIdle = Json.num(var2, "configVersion", 1L) < 2L || Json.bool(var2, "hideWhenIdle", true);
-            var0.lyrics = Json.bool(var2, "lyrics", true);
-            var0.lyricsOffsetMs = (int)Math.max(-5000L, Math.min(5000L, Json.num(var2, "lyricsOffsetMs", 0L)));
-            var0.karaoke = Json.bool(var2, "karaoke", true);
-            var0.wordGrow = Json.bool(var2, "wordGrow", true);
-            var0.theme = Json.str(var2, "theme", "standard");
-            var0.animation = Json.str(var2, "animation", "none");
-            var0.animIntensity = Math.max(0.2, Math.min(1.0, Json.dbl(var2, "animIntensity", 0.7)));
-            var0.animOnLyrics = Json.bool(var2, "animOnLyrics", true);
-            if (var0.redirectPort < 1024 || var0.redirectPort > 65535) {
-               var0.redirectPort = 8888;
+            c.hideWhenIdle = Json.num(o, "configVersion", 1L) < 2L || Json.bool(o, "hideWhenIdle", true);
+            c.lyrics = Json.bool(o, "lyrics", true);
+            c.lyricsOffsetMs = (int)Math.max(-5000L, Math.min(5000L, Json.num(o, "lyricsOffsetMs", 0L)));
+            c.karaoke = Json.bool(o, "karaoke", true);
+            c.wordGrow = Json.bool(o, "wordGrow", true);
+            c.theme = Json.str(o, "theme", "standard");
+            c.animation = Json.str(o, "animation", "none");
+            c.animIntensity = Math.max(0.2, Math.min(1.0, Json.dbl(o, "animIntensity", 0.7)));
+            c.animOnLyrics = Json.bool(o, "animOnLyrics", true);
+            if (c.redirectPort < 1024 || c.redirectPort > 65535) {
+               c.redirectPort = 8888;
             }
          }
       } catch (Throwable var3) {
          SpotifyHudMod.LOG("Konfiguration konnte nicht geladen werden: " + var3);
       }
 
-      return var0;
+      return c;
    }
 
    public synchronized void save() {
       try {
-         LinkedHashMap var1 = new LinkedHashMap();
-         var1.put("clientId", this.clientId);
-         var1.put("redirectPort", (long)this.redirectPort);
-         var1.put("posX", this.posX);
-         var1.put("posY", this.posY);
-         var1.put("scale", this.scale);
-         var1.put("visible", this.visible);
-         var1.put("hideWhenIdle", this.hideWhenIdle);
-         var1.put("configVersion", 2L);
-         var1.put("lyrics", this.lyrics);
-         var1.put("lyricsOffsetMs", (long)this.lyricsOffsetMs);
-         var1.put("karaoke", this.karaoke);
-         var1.put("wordGrow", this.wordGrow);
-         var1.put("theme", this.theme);
-         var1.put("animation", this.animation);
-         var1.put("animIntensity", this.animIntensity);
-         var1.put("animOnLyrics", this.animOnLyrics);
-         var1.put("accessToken", this.accessToken);
-         var1.put("refreshToken", this.refreshToken);
-         var1.put("expiresAt", this.expiresAt);
-         Path var2 = path();
-         Files.createDirectories(var2.getParent());
-         Path var3 = var2.resolveSibling("spotifyhud.json.tmp");
-         Files.writeString(var3, Json.write(var1), StandardCharsets.UTF_8);
-         Files.move(var3, var2, StandardCopyOption.REPLACE_EXISTING);
+         Map<String, Object> m = new LinkedHashMap<>();
+         m.put("clientId", this.clientId);
+         m.put("redirectPort", (long)this.redirectPort);
+         m.put("posX", this.posX);
+         m.put("posY", this.posY);
+         m.put("scale", this.scale);
+         m.put("visible", this.visible);
+         m.put("hideWhenIdle", this.hideWhenIdle);
+         m.put("configVersion", 2L);
+         m.put("lyrics", this.lyrics);
+         m.put("lyricsOffsetMs", (long)this.lyricsOffsetMs);
+         m.put("karaoke", this.karaoke);
+         m.put("wordGrow", this.wordGrow);
+         m.put("theme", this.theme);
+         m.put("animation", this.animation);
+         m.put("animIntensity", this.animIntensity);
+         m.put("animOnLyrics", this.animOnLyrics);
+         m.put("accessToken", this.accessToken);
+         m.put("refreshToken", this.refreshToken);
+         m.put("expiresAt", this.expiresAt);
+         Path p = path();
+         Files.createDirectories(p.getParent());
+         Path tmp = p.resolveSibling("spotifyhud.json.tmp");
+         Files.writeString(tmp, Json.write(m), StandardCharsets.UTF_8);
+         Files.move(tmp, p, StandardCopyOption.REPLACE_EXISTING);
       } catch (Throwable var4) {
          SpotifyHudMod.LOG("Konfiguration konnte nicht gespeichert werden: " + var4);
       }
    }
 
-   public static double clamp01(double var0) {
-      return Double.isNaN(var0) ? 0.0 : Math.max(0.0, Math.min(1.0, var0));
+   public static double clamp01(double v) {
+      return Double.isNaN(v) ? 0.0 : Math.max(0.0, Math.min(1.0, v));
    }
 }

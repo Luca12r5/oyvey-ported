@@ -51,339 +51,340 @@ final class Models {
       Models3.registerBack();
       Auras.register();
       Cos3Models.registerAll();
+      CosPack.register();
    }
 
-   static void capePreview(G var0, Cos.A var1) {
+   static void capePreview(G g, Cos.A a) {
    }
 
-   static void capeGeometry(G var0, Cos.A var1, String var2) {
-      String var3 = Capes.frameName(var2, var1.time);
-      var0.push();
-      var0.translate(0.0F, 0.0F, -2.25F);
-      var0.rotX(var1.sneak ? 22.0F : 6.0F + var1.move * 20.0F + (float)Math.sin(var1.time * 1.3) * 1.5F);
-      float var4 = 512.0F;
-      float var5 = 256.0F;
-      float var6 = 8.0F / var4;
-      float var7 = 88.0F / var4;
-      float var8 = 96.0F / var4;
-      float var9 = 176.0F / var4;
-      byte var10 = 4;
-      float var11 = 0.0F;
-      float var12 = 0.0F;
+   static void capeGeometry(G g, Cos.A a, String tex) {
+      String t = Capes.frameName(tex, a.time);
+      g.push();
+      g.translate(0.0F, 0.0F, -2.25F);
+      g.rotX(a.sneak ? 22.0F : 6.0F + a.move * 20.0F + (float)Math.sin(a.time * 1.3) * 1.5F);
+      float W = 512.0F;
+      float H = 256.0F;
+      float fu0 = 8.0F / W;
+      float fu1 = 88.0F / W;
+      float iu0 = 96.0F / W;
+      float iu1 = 176.0F / W;
+      int rows = 4;
+      float y = 0.0F;
+      float z = 0.0F;
 
-      for (int var13 = 0; var13 < var10; var13++) {
-         float var14 = (float)Math.toRadians(var13 * 3.0 + Math.sin(var1.time * 1.7 - var13 * 0.8) * 1.2);
-         float var15 = 16.0F / var10;
-         float var16 = var11 - var15 * (float)Math.cos(var14);
-         float var17 = var12 - var15 * (float)Math.sin(var14);
-         float var18 = (8.0F + 128.0F * var13 / var10) / var5;
-         float var19 = (8.0F + 128.0F * (var13 + 1) / var10) / var5;
-         var0.quad(
-            var3,
-            new float[]{-5.0F, var11, var12 - 1.0F},
-            new float[]{5.0F, var11, var12 - 1.0F},
-            new float[]{5.0F, var16, var17 - 1.0F},
-            new float[]{-5.0F, var16, var17 - 1.0F},
-            new float[]{var6, var18, var7, var18, var7, var19, var6, var19}
+      for (int r = 0; r < rows; r++) {
+         float ang = (float)Math.toRadians(r * 3.0 + Math.sin(a.time * 1.7 - r * 0.8) * 1.2);
+         float h = 16.0F / rows;
+         float y1 = y - h * (float)Math.cos(ang);
+         float z1 = z - h * (float)Math.sin(ang);
+         float v0 = (8.0F + 128.0F * r / rows) / H;
+         float v1 = (8.0F + 128.0F * (r + 1) / rows) / H;
+         g.quad(
+            t,
+            new float[]{-5.0F, y, z - 1.0F},
+            new float[]{5.0F, y, z - 1.0F},
+            new float[]{5.0F, y1, z1 - 1.0F},
+            new float[]{-5.0F, y1, z1 - 1.0F},
+            new float[]{fu0, v0, fu1, v0, fu1, v1, fu0, v1}
          );
-         var0.quad(
-            var3,
-            new float[]{5.0F, var11, var12},
-            new float[]{-5.0F, var11, var12},
-            new float[]{-5.0F, var16, var17},
-            new float[]{5.0F, var16, var17},
-            new float[]{var8, var18, var9, var18, var9, var19, var8, var19}
+         g.quad(
+            t,
+            new float[]{5.0F, y, z},
+            new float[]{-5.0F, y, z},
+            new float[]{-5.0F, y1, z1},
+            new float[]{5.0F, y1, z1},
+            new float[]{iu0, v0, iu1, v0, iu1, v1, iu0, v1}
          );
-         var0.quad(
-            var3,
-            new float[]{-5.0F, var11, var12},
-            new float[]{-5.0F, var11, var12 - 1.0F},
-            new float[]{-5.0F, var16, var17 - 1.0F},
-            new float[]{-5.0F, var16, var17},
-            new float[]{0.0F, var18, 8.0F / var4, var18, 8.0F / var4, var19, 0.0F, var19}
+         g.quad(
+            t,
+            new float[]{-5.0F, y, z},
+            new float[]{-5.0F, y, z - 1.0F},
+            new float[]{-5.0F, y1, z1 - 1.0F},
+            new float[]{-5.0F, y1, z1},
+            new float[]{0.0F, v0, 8.0F / W, v0, 8.0F / W, v1, 0.0F, v1}
          );
-         var0.quad(
-            var3,
-            new float[]{5.0F, var11, var12 - 1.0F},
-            new float[]{5.0F, var11, var12},
-            new float[]{5.0F, var16, var17},
-            new float[]{5.0F, var16, var17 - 1.0F},
-            new float[]{88.0F / var4, var18, 96.0F / var4, var18, 96.0F / var4, var19, 88.0F / var4, var19}
+         g.quad(
+            t,
+            new float[]{5.0F, y, z - 1.0F},
+            new float[]{5.0F, y, z},
+            new float[]{5.0F, y1, z1},
+            new float[]{5.0F, y1, z1 - 1.0F},
+            new float[]{88.0F / W, v0, 96.0F / W, v0, 96.0F / W, v1, 88.0F / W, v1}
          );
-         if (var13 == var10 - 1) {
-            var0.quad(
-               var3,
-               new float[]{-5.0F, var16, var17},
-               new float[]{5.0F, var16, var17},
-               new float[]{5.0F, var16, var17 - 1.0F},
-               new float[]{-5.0F, var16, var17 - 1.0F},
-               new float[]{88.0F / var4, 0.0F, 168.0F / var4, 0.0F, 168.0F / var4, 8.0F / var5, 88.0F / var4, 8.0F / var5}
+         if (r == rows - 1) {
+            g.quad(
+               t,
+               new float[]{-5.0F, y1, z1},
+               new float[]{5.0F, y1, z1},
+               new float[]{5.0F, y1, z1 - 1.0F},
+               new float[]{-5.0F, y1, z1 - 1.0F},
+               new float[]{88.0F / W, 0.0F, 168.0F / W, 0.0F, 168.0F / W, 8.0F / H, 88.0F / W, 8.0F / H}
             );
          }
 
-         var11 = var16;
-         var12 = var17;
+         y = y1;
+         z = z1;
       }
 
-      var0.quad(
-         var3,
+      g.quad(
+         t,
          new float[]{-5.0F, 0.0F, 0.0F},
          new float[]{5.0F, 0.0F, 0.0F},
          new float[]{5.0F, 0.0F, -1.0F},
          new float[]{-5.0F, 0.0F, -1.0F},
-         new float[]{8.0F / var4, 0.0F, 88.0F / var4, 0.0F, 88.0F / var4, 8.0F / var5, 8.0F / var4, 8.0F / var5}
+         new float[]{8.0F / W, 0.0F, 88.0F / W, 0.0F, 88.0F / W, 8.0F / H, 8.0F / W, 8.0F / H}
       );
-      var0.pop();
+      g.pop();
    }
 
-   static void crown(G var0, Cos.A var1) {
-      var0.push();
-      var0.translate(0.0F, 8.05F, 0.0F);
-      var0.rotZ(-6.0F);
-      var0.cylinder("gold", 4.55F, 4.55F, 0.0F, 2.3F, 20, false, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.cylinder("gold", 4.35F, 4.35F, 0.0F, 2.3F, 20, false, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.ring("gold", 4.35F, 4.55F, 2.3F, 20, 0.0F, 0.0F, 1.0F, 1.0F);
+   static void crown(G g, Cos.A a) {
+      g.push();
+      g.translate(0.0F, 8.05F, 0.0F);
+      g.rotZ(-6.0F);
+      g.cylinder("gold", 4.55F, 4.55F, 0.0F, 2.3F, 20, false, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.cylinder("gold", 4.35F, 4.35F, 0.0F, 2.3F, 20, false, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.ring("gold", 4.35F, 4.55F, 2.3F, 20, 0.0F, 0.0F, 1.0F, 1.0F);
 
-      for (int var2 = 0; var2 < 8; var2++) {
-         var0.push();
-         var0.rotY(var2 * 45 + 22.5F);
-         var0.translate(0.0F, 2.3F, 4.45F);
-         float var3 = var2 % 2 == 0 ? 3.2F : 2.3F;
-         var0.quad(
+      for (int i = 0; i < 8; i++) {
+         g.push();
+         g.rotY(i * 45 + 22.5F);
+         g.translate(0.0F, 2.3F, 4.45F);
+         float hh = i % 2 == 0 ? 3.2F : 2.3F;
+         g.quad(
             "gold",
             new float[]{-1.4F, 0.0F, 0.0F},
             new float[]{1.4F, 0.0F, 0.0F},
-            new float[]{0.05F, var3, 0.0F},
-            new float[]{-0.05F, var3, 0.0F},
+            new float[]{0.05F, hh, 0.0F},
+            new float[]{-0.05F, hh, 0.0F},
             new float[]{0.0F, 1.0F, 1.0F, 1.0F, 0.5F, 0.0F, 0.5F, 0.0F}
          );
-         var0.push();
-         var0.translate(0.0F, var3 + 0.35F, 0.0F);
-         var0.sphere("gems", 0.55F, 8, 5, var2 % 4 * 0.25F, 0.0F, var2 % 4 * 0.25F + 0.25F, 1.0F);
-         var0.pop();
-         var0.pop();
+         g.push();
+         g.translate(0.0F, hh + 0.35F, 0.0F);
+         g.sphere("gems", 0.55F, 8, 5, i % 4 * 0.25F, 0.0F, i % 4 * 0.25F + 0.25F, 1.0F);
+         g.pop();
+         g.pop();
       }
 
-      for (int var4 = 0; var4 < 4; var4++) {
-         var0.push();
-         var0.rotY(var4 * 90);
-         var0.translate(0.0F, 1.15F, 4.62F);
-         var0.box("gems", -0.6F, -0.6F, -0.2F, 0.6F, 0.6F, 0.25F, var4 % 4 * 0.25F, 0.0F, var4 % 4 * 0.25F + 0.25F, 1.0F);
-         var0.pop();
+      for (int i = 0; i < 4; i++) {
+         g.push();
+         g.rotY(i * 90);
+         g.translate(0.0F, 1.15F, 4.62F);
+         g.box("gems", -0.6F, -0.6F, -0.2F, 0.6F, 0.6F, 0.25F, i % 4 * 0.25F, 0.0F, i % 4 * 0.25F + 0.25F, 1.0F);
+         g.pop();
       }
 
-      var0.pop();
+      g.pop();
    }
 
-   static void halo(G var0, Cos.A var1) {
-      float var2 = (float)Math.sin(var1.time * 2.2F) * 0.45F;
-      var0.push();
-      var0.translate(0.0F, 11.4F + var2, 0.0F);
-      var0.rotX(-10.0F);
-      var0.rotY(var1.time * 40.0F);
-      var0.glow(true);
-      var0.torus("halo", 4.5F, 0.5F, 28, 8, 0.0F, 0.0F, 1.0F, 1.0F);
-      float var3 = 0.75F + 0.25F * (float)Math.sin(var1.time * 3.0F);
-      var0.color((int)(110.0F * var3) << 24 | 16771496);
-      var0.torus("orb", 4.5F, 1.4F, 20, 6, 0.2F, 0.2F, 0.8F, 0.8F);
+   static void halo(G g, Cos.A a) {
+      float bob = (float)Math.sin(a.time * 2.2F) * 0.45F;
+      g.push();
+      g.translate(0.0F, 11.4F + bob, 0.0F);
+      g.rotX(-10.0F);
+      g.rotY(a.time * 40.0F);
+      g.glow(true);
+      g.torus("halo", 4.5F, 0.5F, 28, 8, 0.0F, 0.0F, 1.0F, 1.0F);
+      float pulse = 0.75F + 0.25F * (float)Math.sin(a.time * 3.0F);
+      g.color((int)(110.0F * pulse) << 24 | 16771496);
+      g.torus("orb", 4.5F, 1.4F, 20, 6, 0.2F, 0.2F, 0.8F, 0.8F);
 
-      for (int var4 = 0; var4 < 5; var4++) {
-         double var5 = (Math.PI * 2) * var4 / 5.0;
-         float var7 = 0.5F + 0.5F * (float)Math.sin(var1.time * 4.0F + var4 * 1.9);
-         var0.color((int)(255.0F * var7) << 24 | 16777215);
-         Geo.sprite(var0, "spark", (float)Math.cos(var5) * 4.5F, 0.3F, (float)Math.sin(var5) * 4.5F, 1.0F + var7 * 1.4F);
+      for (int i = 0; i < 5; i++) {
+         double an = (Math.PI * 2) * i / 5.0;
+         float tw = 0.5F + 0.5F * (float)Math.sin(a.time * 4.0F + i * 1.9);
+         g.color((int)(255.0F * tw) << 24 | 16777215);
+         Geo.sprite(g, "spark", (float)Math.cos(an) * 4.5F, 0.3F, (float)Math.sin(an) * 4.5F, 1.0F + tw * 1.4F);
       }
 
-      var0.color(-1).glow(false);
-      var0.pop();
+      g.color(-1).glow(false);
+      g.pop();
    }
 
-   static void tophat(G var0, Cos.A var1) {
-      var0.push();
-      var0.translate(0.0F, 7.95F, 0.0F);
-      var0.rotZ(-4.0F);
-      var0.cylinder("felt_black", 6.9F, 6.9F, 0.0F, 0.55F, 24, true, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.cylinder("felt_black", 4.15F, 4.3F, 0.55F, 8.2F, 24, true, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.cylinder("band_red", 4.25F, 4.33F, 0.6F, 2.2F, 24, false, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.pop();
+   static void tophat(G g, Cos.A a) {
+      g.push();
+      g.translate(0.0F, 7.95F, 0.0F);
+      g.rotZ(-4.0F);
+      g.cylinder("felt_black", 6.9F, 6.9F, 0.0F, 0.55F, 24, true, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.cylinder("felt_black", 4.15F, 4.3F, 0.55F, 8.2F, 24, true, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.cylinder("band_red", 4.25F, 4.33F, 0.6F, 2.2F, 24, false, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.pop();
    }
 
-   static void santa(G var0, Cos.A var1) {
-      var0.push();
-      var0.translate(0.0F, 7.4F, 0.0F);
-      var0.cylinder("felt_red", 4.35F, 3.1F, 1.4F, 6.2F, 20, false, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.push();
-      var0.translate(0.0F, 6.2F, 0.0F);
-      float var2 = (float)Math.sin(var1.time * 1.6F) * 5.0F;
-      var0.rotZ(-55.0F + var2);
-      var0.rotX(-10.0F);
-      var0.cylinder("felt_red", 3.1F, 0.5F, 0.0F, 5.5F, 16, false, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.translate(0.0F, 5.6F, 0.0F);
-      var0.sphere("fur_white", 1.35F, 12, 8, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.pop();
-      var0.cylinder("fur_white", 4.75F, 4.75F, 0.0F, 1.9F, 24, true, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.pop();
+   static void santa(G g, Cos.A a) {
+      g.push();
+      g.translate(0.0F, 7.4F, 0.0F);
+      g.cylinder("felt_red", 4.35F, 3.1F, 1.4F, 6.2F, 20, false, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.push();
+      g.translate(0.0F, 6.2F, 0.0F);
+      float sway = (float)Math.sin(a.time * 1.6F) * 5.0F;
+      g.rotZ(-55.0F + sway);
+      g.rotX(-10.0F);
+      g.cylinder("felt_red", 3.1F, 0.5F, 0.0F, 5.5F, 16, false, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.translate(0.0F, 5.6F, 0.0F);
+      g.sphere("fur_white", 1.35F, 12, 8, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.pop();
+      g.cylinder("fur_white", 4.75F, 4.75F, 0.0F, 1.9F, 24, true, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.pop();
    }
 
-   static void witch(G var0, Cos.A var1) {
-      var0.push();
-      var0.translate(0.0F, 7.8F, 0.0F);
-      var0.rotZ(-6.0F);
-      var0.cylinder("felt_purple", 8.2F, 8.2F, 0.0F, 0.45F, 28, true, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.cylinder("felt_purple", 4.3F, 3.1F, 0.45F, 5.2F, 22, false, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.cylinder("band_green", 4.28F, 4.0F, 0.5F, 1.8F, 22, false, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.push();
-      var0.translate(0.0F, 1.15F, 4.2F);
-      var0.box("gold", -1.1F, -0.8F, 0.0F, 1.1F, 0.8F, 0.35F, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.pop();
-      var0.translate(0.0F, 5.2F, 0.0F);
-      var0.rotZ(-18.0F);
-      var0.rotX(8.0F);
-      var0.cylinder("felt_purple", 3.1F, 1.5F, 0.0F, 4.2F, 18, false, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.translate(0.0F, 4.2F, 0.0F);
-      var0.rotZ(-35.0F);
-      var0.cylinder("felt_purple", 1.5F, 0.1F, 0.0F, 3.6F, 14, false, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.pop();
+   static void witch(G g, Cos.A a) {
+      g.push();
+      g.translate(0.0F, 7.8F, 0.0F);
+      g.rotZ(-6.0F);
+      g.cylinder("felt_purple", 8.2F, 8.2F, 0.0F, 0.45F, 28, true, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.cylinder("felt_purple", 4.3F, 3.1F, 0.45F, 5.2F, 22, false, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.cylinder("band_green", 4.28F, 4.0F, 0.5F, 1.8F, 22, false, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.push();
+      g.translate(0.0F, 1.15F, 4.2F);
+      g.box("gold", -1.1F, -0.8F, 0.0F, 1.1F, 0.8F, 0.35F, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.pop();
+      g.translate(0.0F, 5.2F, 0.0F);
+      g.rotZ(-18.0F);
+      g.rotX(8.0F);
+      g.cylinder("felt_purple", 3.1F, 1.5F, 0.0F, 4.2F, 18, false, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.translate(0.0F, 4.2F, 0.0F);
+      g.rotZ(-35.0F);
+      g.cylinder("felt_purple", 1.5F, 0.1F, 0.0F, 3.6F, 14, false, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.pop();
    }
 
-   static void catEars(G var0, Cos.A var1) {
-      float var2 = (float)Math.max(0.0, Math.sin(var1.time * 3.1F) - 0.85F) * 60.0F;
+   static void catEars(G g, Cos.A a) {
+      float twitch = (float)Math.max(0.0, Math.sin(a.time * 3.1F) - 0.85F) * 60.0F;
 
-      for (int var3 = 1; var3 >= -1; var3 -= 2) {
-         var0.push();
-         var0.scale(var3, 1.0F, 1.0F);
-         var0.translate(2.4F, 7.6F, 0.4F);
-         var0.rotZ(-14.0F - (var3 > 0 ? var2 : 0.0F));
-         var0.plane("cat_ear", 0.0F, 2.4F, 3.8F, 4.2F, 0.0F, 0.0F, 1.0F, 1.0F);
-         var0.pop();
-      }
-   }
-
-   static void bunnyEars(G var0, Cos.A var1) {
-      for (int var2 = 1; var2 >= -1; var2 -= 2) {
-         var0.push();
-         var0.scale(var2, 1.0F, 1.0F);
-         var0.translate(1.8F, 7.8F, 0.0F);
-         float var3 = (float)Math.sin(var1.time * 2.4F + var2) * 6.0F + var1.move * 12.0F;
-         var0.rotX(-8.0F - var3);
-         var0.rotZ(-10.0F);
-         var0.plane("bunny_ear", 0.0F, 4.6F, 3.0F, 9.2F, 0.0F, 0.0F, 1.0F, 1.0F);
-         var0.pop();
+      for (int s = 1; s >= -1; s -= 2) {
+         g.push();
+         g.scale(s, 1.0F, 1.0F);
+         g.translate(2.4F, 7.6F, 0.4F);
+         g.rotZ(-14.0F - (s > 0 ? twitch : 0.0F));
+         g.plane("cat_ear", 0.0F, 2.4F, 3.8F, 4.2F, 0.0F, 0.0F, 1.0F, 1.0F);
+         g.pop();
       }
    }
 
-   static void horns(G var0, Cos.A var1) {
-      for (int var2 = 1; var2 >= -1; var2 -= 2) {
-         var0.push();
-         var0.scale(var2, 1.0F, 1.0F);
-         var0.translate(2.6F, 7.6F, 1.2F);
-         var0.rotZ(-35.0F);
-         float var3 = 1.2F;
+   static void bunnyEars(G g, Cos.A a) {
+      for (int s = 1; s >= -1; s -= 2) {
+         g.push();
+         g.scale(s, 1.0F, 1.0F);
+         g.translate(1.8F, 7.8F, 0.0F);
+         float wob = (float)Math.sin(a.time * 2.4F + s) * 6.0F + a.move * 12.0F;
+         g.rotX(-8.0F - wob);
+         g.rotZ(-10.0F);
+         g.plane("bunny_ear", 0.0F, 4.6F, 3.0F, 9.2F, 0.0F, 0.0F, 1.0F, 1.0F);
+         g.pop();
+      }
+   }
 
-         for (int var4 = 0; var4 < 6; var4++) {
-            float var5 = var3 * 0.78F;
-            var0.cylinder("horn", var3, var5, 0.0F, 1.4F, 10, var4 == 5, 0.0F, 1.0F - var4 / 6.0F, 1.0F, 1.0F - (var4 + 1) / 6.0F);
-            var0.translate(0.0F, 1.35F, 0.0F);
-            var0.rotZ(14.0F);
-            var0.rotX(-4.0F);
-            var3 = var5;
+   static void horns(G g, Cos.A a) {
+      for (int s = 1; s >= -1; s -= 2) {
+         g.push();
+         g.scale(s, 1.0F, 1.0F);
+         g.translate(2.6F, 7.6F, 1.2F);
+         g.rotZ(-35.0F);
+         float r = 1.2F;
+
+         for (int i = 0; i < 6; i++) {
+            float r2 = r * 0.78F;
+            g.cylinder("horn", r, r2, 0.0F, 1.4F, 10, i == 5, 0.0F, 1.0F - i / 6.0F, 1.0F, 1.0F - (i + 1) / 6.0F);
+            g.translate(0.0F, 1.35F, 0.0F);
+            g.rotZ(14.0F);
+            g.rotX(-4.0F);
+            r = r2;
          }
 
-         var0.pop();
+         g.pop();
       }
    }
 
-   static void headphones(G var0, Cos.A var1) {
-      var0.push();
-      byte var2 = 12;
+   static void headphones(G g, Cos.A a) {
+      g.push();
+      int seg = 12;
 
-      for (int var3 = 0; var3 < var2; var3++) {
-         double var4 = Math.PI * var3 / var2;
-         double var6 = Math.PI * (var3 + 1) / var2;
-         float var8 = 5.3F;
-         float var9 = (float)Math.cos(var4) * var8;
-         float var10 = 3.8F + (float)Math.sin(var4) * var8 * 0.95F;
-         float var11 = (float)Math.cos(var6) * var8;
-         float var12 = 3.8F + (float)Math.sin(var6) * var8 * 0.95F;
-         float var13 = (float)Math.cos(var4) * 0.8F;
-         float var14 = (float)Math.sin(var4) * 0.8F;
-         float var15 = (float)Math.cos(var6) * 0.8F;
-         float var16 = (float)Math.sin(var6) * 0.8F;
-         float var17 = -0.9F;
-         float var18 = 0.9F;
-         var0.quad(
+      for (int i = 0; i < seg; i++) {
+         double a0 = Math.PI * i / seg;
+         double a1 = Math.PI * (i + 1) / seg;
+         float R = 5.3F;
+         float x0 = (float)Math.cos(a0) * R;
+         float y0 = 3.8F + (float)Math.sin(a0) * R * 0.95F;
+         float x1 = (float)Math.cos(a1) * R;
+         float y1 = 3.8F + (float)Math.sin(a1) * R * 0.95F;
+         float nx0 = (float)Math.cos(a0) * 0.8F;
+         float ny0 = (float)Math.sin(a0) * 0.8F;
+         float nx1 = (float)Math.cos(a1) * 0.8F;
+         float ny1 = (float)Math.sin(a1) * 0.8F;
+         float z0 = -0.9F;
+         float z1 = 0.9F;
+         g.quad(
             "headphone",
-            new float[]{var9 + var13, var10 + var14, var17},
-            new float[]{var9 + var13, var10 + var14, var18},
-            new float[]{var11 + var15, var12 + var16, var18},
-            new float[]{var11 + var15, var12 + var16, var17},
+            new float[]{x0 + nx0, y0 + ny0, z0},
+            new float[]{x0 + nx0, y0 + ny0, z1},
+            new float[]{x1 + nx1, y1 + ny1, z1},
+            new float[]{x1 + nx1, y1 + ny1, z0},
             new float[]{0.0F, 0.0F, 1.0F, 0.0F, 1.0F, 1.0F, 0.0F, 1.0F}
          );
-         var0.quad(
+         g.quad(
             "headphone",
-            new float[]{var9, var10, var18},
-            new float[]{var9, var10, var17},
-            new float[]{var11, var12, var17},
-            new float[]{var11, var12, var18},
+            new float[]{x0, y0, z1},
+            new float[]{x0, y0, z0},
+            new float[]{x1, y1, z0},
+            new float[]{x1, y1, z1},
             new float[]{0.0F, 0.0F, 1.0F, 0.0F, 1.0F, 1.0F, 0.0F, 1.0F}
          );
-         var0.quad(
+         g.quad(
             "headphone",
-            new float[]{var9, var10, var18},
-            new float[]{var9 + var13, var10 + var14, var18},
-            new float[]{var11 + var15, var12 + var16, var18},
-            new float[]{var11, var12, var18},
+            new float[]{x0, y0, z1},
+            new float[]{x0 + nx0, y0 + ny0, z1},
+            new float[]{x1 + nx1, y1 + ny1, z1},
+            new float[]{x1, y1, z1},
             new float[]{0.0F, 0.0F, 1.0F, 0.0F, 1.0F, 1.0F, 0.0F, 1.0F}
          );
-         var0.quad(
+         g.quad(
             "headphone",
-            new float[]{var9 + var13, var10 + var14, var17},
-            new float[]{var9, var10, var17},
-            new float[]{var11, var12, var17},
-            new float[]{var11 + var15, var12 + var16, var17},
+            new float[]{x0 + nx0, y0 + ny0, z0},
+            new float[]{x0, y0, z0},
+            new float[]{x1, y1, z0},
+            new float[]{x1 + nx1, y1 + ny1, z0},
             new float[]{0.0F, 0.0F, 1.0F, 0.0F, 1.0F, 1.0F, 0.0F, 1.0F}
          );
       }
 
-      for (int var19 = 1; var19 >= -1; var19 -= 2) {
-         var0.push();
-         var0.translate(var19 * 4.2F, 3.4F, 0.0F);
-         var0.rotZ(var19 * -90);
-         var0.cylinder("headphone", 2.5F, 2.5F, 0.0F, 1.8F, 18, true, 0.0F, 0.0F, 1.0F, 1.0F);
-         var0.translate(0.0F, 1.82F, 0.0F);
-         var0.cylinder("cushion", 2.2F, 2.2F, 0.0F, 0.05F, 18, true, 0.0F, 0.0F, 1.0F, 1.0F);
-         var0.pop();
+      for (int s = 1; s >= -1; s -= 2) {
+         g.push();
+         g.translate(s * 4.2F, 3.4F, 0.0F);
+         g.rotZ(s * -90);
+         g.cylinder("headphone", 2.5F, 2.5F, 0.0F, 1.8F, 18, true, 0.0F, 0.0F, 1.0F, 1.0F);
+         g.translate(0.0F, 1.82F, 0.0F);
+         g.cylinder("cushion", 2.2F, 2.2F, 0.0F, 0.05F, 18, true, 0.0F, 0.0F, 1.0F, 1.0F);
+         g.pop();
       }
 
-      var0.pop();
+      g.pop();
    }
 
-   static void sunglasses(G var0, Cos.A var1) {
-      var0.push();
-      var0.translate(0.0F, 3.6F, 4.12F);
-      var0.plane("sunglasses", 0.0F, 0.0F, 9.0F, 2.25F, 0.0F, 0.0F, 1.0F, 1.0F);
+   static void sunglasses(G g, Cos.A a) {
+      g.push();
+      g.translate(0.0F, 3.6F, 4.12F);
+      g.plane("sunglasses", 0.0F, 0.0F, 9.0F, 2.25F, 0.0F, 0.0F, 1.0F, 1.0F);
 
-      for (int var2 = 1; var2 >= -1; var2 -= 2) {
-         var0.push();
-         var0.translate(var2 * 4.3F, 0.4F, 0.0F);
-         var0.box("felt_black", -0.18F, -0.25F, -5.5F, 0.18F, 0.25F, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F);
-         var0.pop();
+      for (int s = 1; s >= -1; s -= 2) {
+         g.push();
+         g.translate(s * 4.3F, 0.4F, 0.0F);
+         g.box("felt_black", -0.18F, -0.25F, -5.5F, 0.18F, 0.25F, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F);
+         g.pop();
       }
 
-      var0.pop();
+      g.pop();
    }
 
-   static void pixelGlasses(G var0, Cos.A var1) {
-      var0.push();
-      var0.translate(0.0F, 3.5F, 4.1F);
-      var0.plane("pixelglasses", 0.0F, 0.0F, 8.0F, 2.0F, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.pop();
+   static void pixelGlasses(G g, Cos.A a) {
+      g.push();
+      g.translate(0.0F, 3.5F, 4.1F);
+      g.plane("pixelglasses", 0.0F, 0.0F, 8.0F, 2.0F, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.pop();
    }
 
-   static void legoBackpack(G var0, Cos.A var1) {
-      var0.push();
-      var0.translate(0.0F, -1.4F, -2.1F);
-      float[][] var2 = new float[][]{
+   static void legoBackpack(G g, Cos.A a) {
+      g.push();
+      g.translate(0.0F, -1.4F, -2.1F);
+      float[][] f = new float[][]{
          {0.0F, 0.0F, 1.0F, 1.0F},
          {0.0F, 0.0F, 1.0F, 1.0F},
          {0.0F, 0.0F, 1.0F, 1.0F},
@@ -391,88 +392,88 @@ final class Models {
          {0.0F, 0.0F, 1.0F, 1.0F},
          {0.0F, 0.0F, 1.0F, 1.0F}
       };
-      var0.box6("lego_red", -3.2F, -8.2F, -3.4F, 3.2F, 0.0F, 0.0F, var2);
+      g.box6("lego_red", -3.2F, -8.2F, -3.4F, 3.2F, 0.0F, 0.0F, f);
 
-      for (int var3 = 0; var3 < 2; var3++) {
-         for (int var4 = 0; var4 < 2; var4++) {
-            var0.push();
-            var0.translate(-1.5F + var3 * 3, 0.0F, -0.85F - var4 * 1.7F);
-            var0.cylinder("lego_red", 0.95F, 0.95F, 0.0F, 0.9F, 14, true, 0.1F, 0.1F, 0.9F, 0.9F);
-            var0.pop();
+      for (int ix = 0; ix < 2; ix++) {
+         for (int iz = 0; iz < 2; iz++) {
+            g.push();
+            g.translate(-1.5F + ix * 3, 0.0F, -0.85F - iz * 1.7F);
+            g.cylinder("lego_red", 0.95F, 0.95F, 0.0F, 0.9F, 14, true, 0.1F, 0.1F, 0.9F, 0.9F);
+            g.pop();
          }
       }
 
-      var0.box("lego_yellow", -2.2F, -6.6F, -3.55F, 2.2F, -4.4F, -3.3F, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.box("lego_yellow", -2.2F, -6.6F, -3.55F, 2.2F, -4.4F, -3.3F, 0.0F, 0.0F, 1.0F, 1.0F);
 
-      for (int var5 = 1; var5 >= -1; var5 -= 2) {
-         var0.box("strap", var5 * 2.1F - 0.55F, -6.0F, 0.0F, var5 * 2.1F + 0.55F, 0.3F, 0.35F, 0.0F, 0.0F, 1.0F, 1.0F);
-         var0.box("strap", var5 * 2.1F - 0.55F, 0.0F, 0.0F, var5 * 2.1F + 0.55F, 0.35F, 4.4F, 0.0F, 0.0F, 1.0F, 1.0F);
-         var0.box("strap", var5 * 2.1F - 0.55F, -5.5F, 4.1F, var5 * 2.1F + 0.55F, 0.35F, 4.45F, 0.0F, 0.0F, 1.0F, 1.0F);
+      for (int s = 1; s >= -1; s -= 2) {
+         g.box("strap", s * 2.1F - 0.55F, -6.0F, 0.0F, s * 2.1F + 0.55F, 0.3F, 0.35F, 0.0F, 0.0F, 1.0F, 1.0F);
+         g.box("strap", s * 2.1F - 0.55F, 0.0F, 0.0F, s * 2.1F + 0.55F, 0.35F, 4.4F, 0.0F, 0.0F, 1.0F, 1.0F);
+         g.box("strap", s * 2.1F - 0.55F, -5.5F, 4.1F, s * 2.1F + 0.55F, 0.35F, 4.45F, 0.0F, 0.0F, 1.0F, 1.0F);
       }
 
-      var0.pop();
+      g.pop();
    }
 
-   static void backSword(G var0, Cos.A var1) {
-      var0.push();
-      var0.translate(0.0F, -5.5F, -2.6F);
-      var0.rotZ(-40.0F);
-      float var2 = 14.0F;
-      float var3 = 1.3F;
-      var0.glow(false);
-      var0.quad(
+   static void backSword(G g, Cos.A a) {
+      g.push();
+      g.translate(0.0F, -5.5F, -2.6F);
+      g.rotZ(-40.0F);
+      float L = 14.0F;
+      float w = 1.3F;
+      g.glow(false);
+      g.quad(
          "sword_blade",
-         new float[]{-var3, 2.0F, -0.1F},
-         new float[]{var3, 2.0F, -0.1F},
-         new float[]{var3, 2.0F + var2, -0.1F},
-         new float[]{-var3, 2.0F + var2, -0.1F},
+         new float[]{-w, 2.0F, -0.1F},
+         new float[]{w, 2.0F, -0.1F},
+         new float[]{w, 2.0F + L, -0.1F},
+         new float[]{-w, 2.0F + L, -0.1F},
          new float[]{0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F}
       );
-      var0.quad(
+      g.quad(
          "sword_blade",
-         new float[]{-var3, 2.0F + var2, -0.1F},
-         new float[]{var3, 2.0F + var2, -0.1F},
-         new float[]{0.0F, 4.0F + var2, -0.1F},
-         new float[]{0.0F, 4.0F + var2, -0.1F},
+         new float[]{-w, 2.0F + L, -0.1F},
+         new float[]{w, 2.0F + L, -0.1F},
+         new float[]{0.0F, 4.0F + L, -0.1F},
+         new float[]{0.0F, 4.0F + L, -0.1F},
          new float[]{0.0F, 0.0F, 1.0F, 0.0F, 0.5F, 0.0F, 0.5F, 0.0F}
       );
-      var0.quad(
+      g.quad(
          "sword_blade",
-         new float[]{-var3, 2.0F, -0.5F},
-         new float[]{var3, 2.0F, -0.5F},
-         new float[]{var3, 2.0F + var2, -0.5F},
-         new float[]{-var3, 2.0F + var2, -0.5F},
+         new float[]{-w, 2.0F, -0.5F},
+         new float[]{w, 2.0F, -0.5F},
+         new float[]{w, 2.0F + L, -0.5F},
+         new float[]{-w, 2.0F + L, -0.5F},
          new float[]{0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F}
       );
-      var0.quad(
+      g.quad(
          "sword_blade",
-         new float[]{-var3, 2.0F + var2, -0.5F},
-         new float[]{var3, 2.0F + var2, -0.5F},
-         new float[]{0.0F, 4.0F + var2, -0.5F},
-         new float[]{0.0F, 4.0F + var2, -0.5F},
+         new float[]{-w, 2.0F + L, -0.5F},
+         new float[]{w, 2.0F + L, -0.5F},
+         new float[]{0.0F, 4.0F + L, -0.5F},
+         new float[]{0.0F, 4.0F + L, -0.5F},
          new float[]{0.0F, 0.0F, 1.0F, 0.0F, 0.5F, 0.0F, 0.5F, 0.0F}
       );
-      var0.box("sword_blade", -var3, 2.0F, -0.5F, var3, 2.0F + var2, -0.1F, 0.4F, 0.1F, 0.6F, 0.9F);
-      var0.glow(true);
-      float var4 = var1.time * 0.6F % 1.0F;
-      var0.color(-1432684801);
-      var0.box("orb", -var3 * 0.5F, 2.0F + var2 * var4, -0.55F, var3 * 0.5F, 2.0F + var2 * var4 + 2.0F, -0.05F, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.glow(false);
-      var0.color(-10863968);
-      var0.box("steel", -3.2F, 1.1F, -0.8F, 3.2F, 2.1F, 0.2F, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.color(-1);
-      var0.box("leather_dark", -0.5F, -2.8F, -0.6F, 0.5F, 1.1F, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.color(-8054);
-      var0.push();
-      var0.translate(0.0F, -3.4F, -0.3F);
-      var0.sphere("gold", 0.85F, 10, 6, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.pop();
-      var0.push();
-      var0.translate(0.0F, 1.6F, 0.25F);
-      var0.color(-1);
-      var0.sphere("gems", 0.5F, 8, 5, 0.25F, 0.0F, 0.5F, 1.0F);
-      var0.pop();
-      var0.color(-1);
-      var0.pop();
+      g.box("sword_blade", -w, 2.0F, -0.5F, w, 2.0F + L, -0.1F, 0.4F, 0.1F, 0.6F, 0.9F);
+      g.glow(true);
+      float sh = a.time * 0.6F % 1.0F;
+      g.color(-1432684801);
+      g.box("orb", -w * 0.5F, 2.0F + L * sh, -0.55F, w * 0.5F, 2.0F + L * sh + 2.0F, -0.05F, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.glow(false);
+      g.color(-10863968);
+      g.box("steel", -3.2F, 1.1F, -0.8F, 3.2F, 2.1F, 0.2F, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.color(-1);
+      g.box("leather_dark", -0.5F, -2.8F, -0.6F, 0.5F, 1.1F, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.color(-8054);
+      g.push();
+      g.translate(0.0F, -3.4F, -0.3F);
+      g.sphere("gold", 0.85F, 10, 6, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.pop();
+      g.push();
+      g.translate(0.0F, 1.6F, 0.25F);
+      g.color(-1);
+      g.sphere("gems", 0.5F, 8, 5, 0.25F, 0.0F, 0.5F, 1.0F);
+      g.pop();
+      g.color(-1);
+      g.pop();
    }
 }

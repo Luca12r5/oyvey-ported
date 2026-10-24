@@ -8,8 +8,8 @@ final class SkyGen3 {
    private SkyGen3() {
    }
 
-   static SkyGen.Sky make(String var0) {
-      switch (var0) {
+   static SkyGen.Sky make(String id) {
+      switch (id) {
          case "milkyway":
             return milkyway();
          case "nebula":
@@ -43,976 +43,956 @@ final class SkyGen3 {
       }
    }
 
-   static void moon(SkyGen.C var0, double var1, double var3, double var5, SkyGen3.Body var7, double[] var8, double var9, double[] var11) {
-      double var12 = var1 * var7.d[0] + var3 * var7.d[1] + var5 * var7.d[2];
-      if (!(var12 < var7.cosOut)) {
-         double var14 = Math.sqrt(Math.max(0.0, 2.0 * (1.0 - var12)));
-         double var16 = var14 / var7.rad;
-         if (var7.glow > 0.0) {
-            double var18 = var7.glow * var9 * Math.exp(-Math.max(0.0, var16 - 1.0) / var7.glowW);
-            SkyGen.add(var0, var8, var18);
+   static void moon(SkyGen.C c, double x, double y, double z, SkyGen3.Body m, double[] tint, double bright, double[] light) {
+      double cosA = x * m.d[0] + y * m.d[1] + z * m.d[2];
+      if (!(cosA < m.cosOut)) {
+         double ang = Math.sqrt(Math.max(0.0, 2.0 * (1.0 - cosA)));
+         double rr = ang / m.rad;
+         if (m.glow > 0.0) {
+            double g = m.glow * bright * Math.exp(-Math.max(0.0, rr - 1.0) / m.glowW);
+            SkyGen.add(c, tint, g);
          }
 
-         double var50 = Math.max(0.02, 0.004 / var7.rad);
-         if (!(var16 > 1.0 + var50)) {
-            double var20 = (var1 * var7.ex[0] + var3 * var7.ex[1] + var5 * var7.ex[2]) / var7.sinR;
-            double var22 = (var1 * var7.ey[0] + var3 * var7.ey[1] + var5 * var7.ey[2]) / var7.sinR;
-            double var24 = var20 * var20 + var22 * var22;
-            double var26 = Math.sqrt(Math.max(0.0, 1.0 - Math.min(1.0, var24)));
-            double var28 = var7.ex[0] * var20 + var7.ey[0] * var22 - var7.d[0] * var26;
-            double var30 = var7.ex[1] * var20 + var7.ey[1] * var22 - var7.d[1] * var26;
-            double var32 = var7.ex[2] * var20 + var7.ey[2] * var22 - var7.d[2] * var26;
-            double var34 = var7.seed;
-            double var36 = SkyGen.smooth(-0.05, 0.3, SkyGen.fbmL(var28 * 1.8 + var34, var30 * 1.8, var32 * 1.8, 4.0));
-            double var38 = SkyGen.smooth(0.55, 0.85, SkyGen.ridged(var28 * 6.0 + var34, var30 * 6.0, var32 * 6.0, 3));
-            double var40 = SkyGen.fbmL(var28 * 14.0, var30 * 14.0 + var34, var32 * 14.0, 3.0);
-            double var42 = var7.albedo * (1.0 - 0.42 * var36) * (0.9 + 0.25 * var40) * (1.0 + 0.25 * var38);
-            double var44;
-            if (var11 != null) {
-               double var46 = var28 * var11[0] + var30 * var11[1] + var32 * var11[2];
-               var44 = SkyGen.smooth(-0.04, 0.25, var46) * (0.35 + 0.65 * Math.max(0.0, var46));
+         double aa = Math.max(0.02, 0.004 / m.rad);
+         if (!(rr > 1.0 + aa)) {
+            double px = (x * m.ex[0] + y * m.ex[1] + z * m.ex[2]) / m.sinR;
+            double py = (x * m.ey[0] + y * m.ey[1] + z * m.ey[2]) / m.sinR;
+            double q = px * px + py * py;
+            double pz = Math.sqrt(Math.max(0.0, 1.0 - Math.min(1.0, q)));
+            double nx = m.ex[0] * px + m.ey[0] * py - m.d[0] * pz;
+            double ny = m.ex[1] * px + m.ey[1] * py - m.d[1] * pz;
+            double nz = m.ex[2] * px + m.ey[2] * py - m.d[2] * pz;
+            double s = m.seed;
+            double maria = SkyGen.smooth(-0.05, 0.3, SkyGen.fbmL(nx * 1.8 + s, ny * 1.8, nz * 1.8, 4.0));
+            double crater = SkyGen.smooth(0.55, 0.85, SkyGen.ridged(nx * 6.0 + s, ny * 6.0, nz * 6.0, 3));
+            double fine = SkyGen.fbmL(nx * 14.0, ny * 14.0 + s, nz * 14.0, 3.0);
+            double alb = m.albedo * (1.0 - 0.42 * maria) * (0.9 + 0.25 * fine) * (1.0 + 0.25 * crater);
+            double lam;
+            if (light != null) {
+               double ld = nx * light[0] + ny * light[1] + nz * light[2];
+               lam = SkyGen.smooth(-0.04, 0.25, ld) * (0.35 + 0.65 * Math.max(0.0, ld));
             } else {
-               var44 = 0.55 + 0.45 * var26;
+               lam = 0.55 + 0.45 * pz;
             }
 
-            if (var7.grad != null) {
-               double var51 = var28 * var7.grad[0] + var30 * var7.grad[1] + var32 * var7.grad[2];
-               var44 *= 0.3 + 0.7 * SkyGen.smooth(-0.9, 1.0, var51);
+            if (m.grad != null) {
+               double gd = nx * m.grad[0] + ny * m.grad[1] + nz * m.grad[2];
+               lam *= 0.3 + 0.7 * SkyGen.smooth(-0.9, 1.0, gd);
             }
 
-            double var52 = var42 * (var44 * var9 + var7.earthshine);
-            double var48 = SkyGen.smooth(1.0 + var50, 1.0 - var50, var16);
-            var0.r = var0.r + (var0.r * 0.35 + var8[0] * var52 - var0.r) * var48;
-            var0.g = var0.g + (var0.g * 0.35 + var8[1] * var52 - var0.g) * var48;
-            var0.b = var0.b + (var0.b * 0.35 + var8[2] * var52 - var0.b) * var48;
-            var0.vis *= 1.0 - var48;
+            double k = alb * (lam * bright + m.earthshine);
+            double e = SkyGen.smooth(1.0 + aa, 1.0 - aa, rr);
+            c.r = c.r + (c.r * 0.35 + tint[0] * k - c.r) * e;
+            c.g = c.g + (c.g * 0.35 + tint[1] * k - c.g) * e;
+            c.b = c.b + (c.b * 0.35 + tint[2] * k - c.b) * e;
+            c.vis *= 1.0 - e;
          }
       }
    }
 
-   static double milky(SkyGen.C var0, double var1, double var3, double var5, double[] var7, double[] var8, double var9) {
-      double var11 = var1 * var7[0] + var3 * var7[1] + var5 * var7[2];
-      if (Math.abs(var11) > 0.7) {
+   static double milky(SkyGen.C c, double x, double y, double z, double[] N, double[] core, double K) {
+      double dist = x * N[0] + y * N[1] + z * N[2];
+      if (Math.abs(dist) > 0.7) {
          return 0.0;
       } else {
-         double var13 = SkyGen.fbmL(var1 * 3.0 + 1.0, var3 * 3.0, var5 * 3.0, 4.0);
-         double var15 = (var11 + var13 * 0.07) / 0.17;
-         double var17 = Math.exp(-var15 * var15);
-         double var19 = var1 * var8[0] + var3 * var8[1] + var5 * var8[2];
-         double var21 = Math.exp(-(1.0 - var19) / 0.09) * Math.exp(-var11 * var11 / 0.03);
-         double var23 = SkyGen.fbmL(var1 * 7.0 + 3.0, var3 * 7.0, var5 * 7.0, 6.0);
-         double var25 = SkyGen.clamp01(0.45 + var23 * 1.1);
-         double var27 = SkyGen.ridged(var1 * 5.0 + 2.0, var3 * 5.0, var5 * 5.0, 5);
-         double var29 = var11 / 0.06;
-         double var31 = SkyGen.smooth(0.35, 0.8, var27) * Math.exp(-var29 * var29)
-            + 0.5 * SkyGen.smooth(0.1, 0.5, SkyGen.fbmL(var1 * 9.0, var3 * 9.0 + 5.0, var5 * 9.0, 4.0)) * var17;
-         var31 = SkyGen.clamp01(var31);
-         double var33 = (var17 * (0.25 + var25) + var21 * 1.4) * (1.0 - 0.8 * var31);
-         double var35 = SkyGen.clamp01(var21 * 1.5);
-         var0.r += var9 * var33 * (0.55 + 0.5 * var35);
-         var0.g += var9 * var33 * (0.62 + 0.22 * var35);
-         var0.b += var9 * var33 * (0.88 - 0.25 * var35);
-         return var17;
+         double w = SkyGen.fbmL(x * 3.0 + 1.0, y * 3.0, z * 3.0, 4.0);
+         double q = (dist + w * 0.07) / 0.17;
+         double band = Math.exp(-q * q);
+         double cc = x * core[0] + y * core[1] + z * core[2];
+         double bul = Math.exp(-(1.0 - cc) / 0.09) * Math.exp(-dist * dist / 0.03);
+         double s = SkyGen.fbmL(x * 7.0 + 3.0, y * 7.0, z * 7.0, 6.0);
+         double cl = SkyGen.clamp01(0.45 + s * 1.1);
+         double r = SkyGen.ridged(x * 5.0 + 2.0, y * 5.0, z * 5.0, 5);
+         double q2 = dist / 0.06;
+         double dust = SkyGen.smooth(0.35, 0.8, r) * Math.exp(-q2 * q2)
+            + 0.5 * SkyGen.smooth(0.1, 0.5, SkyGen.fbmL(x * 9.0, y * 9.0 + 5.0, z * 9.0, 4.0)) * band;
+         dust = SkyGen.clamp01(dust);
+         double light = (band * (0.25 + cl) + bul * 1.4) * (1.0 - 0.8 * dust);
+         double warm = SkyGen.clamp01(bul * 1.5);
+         c.r += K * light * (0.55 + 0.5 * warm);
+         c.g += K * light * (0.62 + 0.22 * warm);
+         c.b += K * light * (0.88 - 0.25 * warm);
+         return band;
       }
    }
 
-   static double milkyDensity(double var0, double var2, double var4, double[] var6) {
-      double var7 = var0 * var6[0] + var2 * var6[1] + var4 * var6[2];
-      double var9 = SkyGen.fbmL(var0 * 3.0 + 1.0, var2 * 3.0, var4 * 3.0, 4.0);
-      double var11 = (var7 + var9 * 0.07) / 0.17;
-      return Math.exp(-var11 * var11);
+   static double milkyDensity(double x, double y, double z, double[] N) {
+      double dist = x * N[0] + y * N[1] + z * N[2];
+      double w = SkyGen.fbmL(x * 3.0 + 1.0, y * 3.0, z * 3.0, 4.0);
+      double q = (dist + w * 0.07) / 0.17;
+      return Math.exp(-q * q);
    }
 
-   static void aurora(SkyGen.C var0, double var1, double var3, double var5, SkyGen3.Aurora var7) {
-      if (!(var3 < 0.004)) {
-         double var8 = SkyGen.smooth(0.004, 0.15, var3);
-         double var10 = Math.sqrt(var1 * var1 + var5 * var5) + 1.0E-9;
-         double var12 = SkyGen.smooth(
-            -0.35, 0.25, SkyGen.fbmL(var1 / var10 * 1.3 + var7.seed, 0.5, var5 / var10 * 1.3, 2.0) + var7.cover + 0.4 * (-var5 / var10) * var7.north
-         );
-         if (!(var12 <= 0.003)) {
-            double var14 = var7.scale / (var3 + 0.25);
-            double var16 = var10 * (var7.h1 - var7.h0) * var14 * 0.9;
-            int var18 = (int)Math.max(6.0, Math.min((double)var7.steps, Math.ceil(var16 / 0.06)));
-            double var19 = (var7.h1 - var7.h0) / var18;
-            double var21 = auroraF(var1 * var7.h0 * var14, var5 * var7.h0 * var14, var7);
-            double var23 = var7.h0;
-            double var25 = Math.exp(-var21 * var21 / 0.008);
-            double var27 = 0.0;
-            double var29 = 0.0;
-            double var31 = 0.0;
+   static void aurora(SkyGen.C c, double x, double y, double z, SkyGen3.Aurora A) {
+      if (!(y < 0.004)) {
+         double fade = SkyGen.smooth(0.004, 0.15, y);
+         double hl = Math.sqrt(x * x + z * z) + 1.0E-9;
+         double mask = SkyGen.smooth(-0.35, 0.25, SkyGen.fbmL(x / hl * 1.3 + A.seed, 0.5, z / hl * 1.3, 2.0) + A.cover + 0.4 * (-z / hl) * A.north);
+         if (!(mask <= 0.003)) {
+            double inv = A.scale / (y + 0.25);
+            double segLen = hl * (A.h1 - A.h0) * inv * 0.9;
+            int S = (int)Math.max(6.0, Math.min((double)A.steps, Math.ceil(segLen / 0.06)));
+            double dh = (A.h1 - A.h0) / S;
+            double pf = auroraF(x * A.h0 * inv, z * A.h0 * inv, A);
+            double ph = A.h0;
+            double glow = Math.exp(-pf * pf / 0.008);
+            double sr = 0.0;
+            double sg = 0.0;
+            double sb = 0.0;
 
-            for (int var33 = 1; var33 <= var18; var33++) {
-               double var34 = var7.h0 + var19 * var33;
-               double var36 = auroraF(var1 * var34 * var14, var5 * var34 * var14, var7);
-               double var38 = 0.0;
-               double var40 = 0.0;
-               if (var21 <= 0.0 != var36 <= 0.0) {
-                  var38 = var21 / (var21 - var36);
-                  var40 = 1.0;
+            for (int i = 1; i <= S; i++) {
+               double h = A.h0 + dh * i;
+               double f = auroraF(x * h * inv, z * h * inv, A);
+               double u = 0.0;
+               double wt = 0.0;
+               if (pf <= 0.0 != f <= 0.0) {
+                  u = pf / (pf - f);
+                  wt = 1.0;
                }
 
-               if (var40 > 0.002) {
-                  double var42 = var23 + var19 * var38;
-                  double var44 = (var42 - var7.h0) / (var7.h1 - var7.h0);
-                  double var46 = Math.abs(var36 - var21) / var19;
-                  double var48 = var7.width / Math.sqrt(var46 * var46 + var7.width * var7.width);
-                  double var50 = var1 * var42 * var14;
-                  double var52 = var5 * var42 * var14;
-                  double var54 = 0.25 + 0.75 * Math.abs(SkyGen.noise(var50 * 9.0 + var7.seed, 3.7, var52 * 9.0)) * var7.rays + (1.0 - var7.rays) * 0.75;
-                  double var56 = (Math.exp(-var44 * 2.6) * SkyGen.smooth(0.0, 0.06, var44) + 0.12 * Math.exp(-(var44 - 0.6) * (var44 - 0.6) / 0.04))
-                     * SkyGen.smooth(1.0, 0.75, var44);
-                  double var58 = Math.pow(var44, 0.8);
-                  double var60 = var48 * var54 * var56 * var40;
-                  var27 += (var7.low[0] + (var7.high[0] - var7.low[0]) * var58) * var60;
-                  var29 += (var7.low[1] + (var7.high[1] - var7.low[1]) * var58) * var60;
-                  var31 += (var7.low[2] + (var7.high[2] - var7.low[2]) * var58) * var60;
+               if (wt > 0.002) {
+                  double hs = ph + dh * u;
+                  double t = (hs - A.h0) / (A.h1 - A.h0);
+                  double slope = Math.abs(f - pf) / dh;
+                  double b = A.width / Math.sqrt(slope * slope + A.width * A.width);
+                  double px = x * hs * inv;
+                  double pz = z * hs * inv;
+                  double r = 0.25 + 0.75 * Math.abs(SkyGen.noise(px * 9.0 + A.seed, 3.7, pz * 9.0)) * A.rays + (1.0 - A.rays) * 0.75;
+                  double prof = (Math.exp(-t * 2.6) * SkyGen.smooth(0.0, 0.06, t) + 0.12 * Math.exp(-(t - 0.6) * (t - 0.6) / 0.04))
+                     * SkyGen.smooth(1.0, 0.75, t);
+                  double tt = Math.pow(t, 0.8);
+                  double w = b * r * prof * wt;
+                  sr += (A.low[0] + (A.high[0] - A.low[0]) * tt) * w;
+                  sg += (A.low[1] + (A.high[1] - A.low[1]) * tt) * w;
+                  sb += (A.low[2] + (A.high[2] - A.low[2]) * tt) * w;
                }
 
-               var21 = var36;
-               var23 = var34;
+               pf = f;
+               ph = h;
             }
 
-            double var62 = var7.bright * var8 * var12;
-            double var35 = 0.03 * var25 * var62;
-            var0.r = var0.r + (var27 * var62 + var7.low[0] * var35);
-            var0.g = var0.g + (var29 * var62 + var7.low[1] * var35);
-            var0.b = var0.b + (var31 * var62 + var7.low[2] * var35);
+            double k = A.bright * fade * mask;
+            double gk = 0.03 * glow * k;
+            c.r = c.r + (sr * k + A.low[0] * gk);
+            c.g = c.g + (sg * k + A.low[1] * gk);
+            c.b = c.b + (sb * k + A.low[2] * gk);
          }
       }
    }
 
-   private static double auroraF(double var0, double var2, SkyGen3.Aurora var4) {
-      return SkyGen.fbmL(var0 * 0.9 + var4.seed, var4.seed * 0.7, var2 * 0.9, 2.5);
+   private static double auroraF(double px, double pz, SkyGen3.Aurora A) {
+      return SkyGen.fbmL(px * 0.9 + A.seed, A.seed * 0.7, pz * 0.9, 2.5);
    }
 
    static void nebulaLayer(
-      SkyGen.C var0,
-      double var1,
-      double var3,
-      double var5,
-      double var7,
-      double var9,
-      double[] var11,
-      double[] var12,
-      double[] var13,
-      double[] var14,
-      double var15,
-      double var17
+      SkyGen.C c, double x, double y, double z, double seed, double scale, double[] a, double[] b, double[] cc, double[] core, double K, double dustK
    ) {
-      double var19 = SkyGen.fbmL(var1 * 1.3 + 3.1 + var7, var3 * 1.3, var5 * 1.3, 3.0);
-      double var21 = SkyGen.fbmL(var1 * 1.3, var3 * 1.3 + 7.7, var5 * 1.3 + var7, 3.0);
-      double var23 = SkyGen.fbmL(var1 * 1.3 + var7, var3 * 1.3, var5 * 1.3 + 1.3, 3.0);
-      double var25 = (var1 + var19 * 0.4) * var9;
-      double var27 = (var3 + var21 * 0.4) * var9;
-      double var29 = (var5 + var23 * 0.4) * var9;
-      double var31 = SkyGen.smooth(-0.05, 0.6, SkyGen.fbmL(var25 * 1.5, var27 * 1.5, var29 * 1.5 + var7, 6.0) + 0.12);
-      if (!(var31 <= 0.001)) {
-         double var33 = SkyGen.ridged(var25 * 4.0 + var7, var27 * 4.0, var29 * 4.0, 5);
-         double var35 = SkyGen.smooth(0.5, 0.95, var33) * var31;
-         double var37 = SkyGen.clamp01(0.5 + SkyGen.fbmL(var25 * 0.8 + 7.0, var27 * 0.8, var29 * 0.8 + var7, 3.0) * 1.6);
-         double var39 = var31 * var31 * 0.55 + var31 * 0.12;
-         double var41 = var11[0] + (var12[0] - var11[0]) * var37;
-         double var43 = var11[1] + (var12[1] - var11[1]) * var37;
-         double var45 = var11[2] + (var12[2] - var11[2]) * var37;
-         var0.r = var0.r + var15 * (var41 * var39 + (var13[0] * 0.6 + var41 * 0.6) * var35);
-         var0.g = var0.g + var15 * (var43 * var39 + (var13[1] * 0.6 + var43 * 0.6) * var35);
-         var0.b = var0.b + var15 * (var45 * var39 + (var13[2] * 0.6 + var45 * 0.6) * var35);
-         double var49 = Math.max(0.0, var31 - 0.75) / 0.25;
-         SkyGen.add(var0, var14, var15 * var49 * var49 * 0.8);
-         double var51 = SkyGen.smooth(0.45, 0.85, SkyGen.ridged(var25 * 2.3 + 3.0, var27 * 2.3 + var7, var29 * 2.3, 4)) * SkyGen.smooth(0.1, 0.6, var31);
-         double var53 = 1.0 - var51 * var17;
-         SkyGen.mul(var0, var53);
-         var0.vis *= 0.4 + 0.6 * var53;
+      double wx = SkyGen.fbmL(x * 1.3 + 3.1 + seed, y * 1.3, z * 1.3, 3.0);
+      double wy = SkyGen.fbmL(x * 1.3, y * 1.3 + 7.7, z * 1.3 + seed, 3.0);
+      double wz = SkyGen.fbmL(x * 1.3 + seed, y * 1.3, z * 1.3 + 1.3, 3.0);
+      double X = (x + wx * 0.4) * scale;
+      double Y = (y + wy * 0.4) * scale;
+      double Z = (z + wz * 0.4) * scale;
+      double D = SkyGen.smooth(-0.05, 0.6, SkyGen.fbmL(X * 1.5, Y * 1.5, Z * 1.5 + seed, 6.0) + 0.12);
+      if (!(D <= 0.001)) {
+         double fil = SkyGen.ridged(X * 4.0 + seed, Y * 4.0, Z * 4.0, 5);
+         double f = SkyGen.smooth(0.5, 0.95, fil) * D;
+         double hue = SkyGen.clamp01(0.5 + SkyGen.fbmL(X * 0.8 + 7.0, Y * 0.8, Z * 0.8 + seed, 3.0) * 1.6);
+         double gl = D * D * 0.55 + D * 0.12;
+         double ra = a[0] + (b[0] - a[0]) * hue;
+         double ga = a[1] + (b[1] - a[1]) * hue;
+         double ba = a[2] + (b[2] - a[2]) * hue;
+         c.r = c.r + K * (ra * gl + (cc[0] * 0.6 + ra * 0.6) * f);
+         c.g = c.g + K * (ga * gl + (cc[1] * 0.6 + ga * 0.6) * f);
+         c.b = c.b + K * (ba * gl + (cc[2] * 0.6 + ba * 0.6) * f);
+         double hot = Math.max(0.0, D - 0.75) / 0.25;
+         SkyGen.add(c, core, K * hot * hot * 0.8);
+         double dust = SkyGen.smooth(0.45, 0.85, SkyGen.ridged(X * 2.3 + 3.0, Y * 2.3 + seed, Z * 2.3, 4)) * SkyGen.smooth(0.1, 0.6, D);
+         double dk = 1.0 - dust * dustK;
+         SkyGen.mul(c, dk);
+         c.vis *= 0.4 + 0.6 * dk;
       }
    }
 
    static SkyGen.Sky milkyway() {
-      SkyGen3.Night var0 = new SkyGen3.Night();
-      var0.zen = SkyGen.rgb(132365);
-      var0.hor = SkyGen.rgb(924206);
-      var0.hW = 0.28;
-      var0.air = SkyGen.rgb(928284);
-      var0.airK = 0.6;
-      var0.airW = 0.07;
-      var0.lp = SkyGen.rgb(3810320);
-      var0.lpDir = SkyGen.norm(-0.7, 0.0, 0.7);
-      var0.lpK = 0.5;
-      var0.mwN = SkyGen.norm(0.35, 0.62, 0.7);
-      var0.mwCore = coreOn(var0.mwN, SkyGen.norm(0.75, 0.2, -0.6));
-      var0.mwK = 0.075;
-      var0.stars = 90000;
-      var0.ground = SkyGen.rgb(329483);
-      var0.groundFar = SkyGen.rgb(923170);
-      var0.groundFall = 0.2;
-      return var0;
+      SkyGen3.Night s = new SkyGen3.Night();
+      s.zen = SkyGen.rgb(132365);
+      s.hor = SkyGen.rgb(924206);
+      s.hW = 0.28;
+      s.air = SkyGen.rgb(928284);
+      s.airK = 0.6;
+      s.airW = 0.07;
+      s.lp = SkyGen.rgb(3810320);
+      s.lpDir = SkyGen.norm(-0.7, 0.0, 0.7);
+      s.lpK = 0.5;
+      s.mwN = SkyGen.norm(0.35, 0.62, 0.7);
+      s.mwCore = coreOn(s.mwN, SkyGen.norm(0.75, 0.2, -0.6));
+      s.mwK = 0.075;
+      s.stars = 90000;
+      s.ground = SkyGen.rgb(329483);
+      s.groundFar = SkyGen.rgb(923170);
+      s.groundFall = 0.2;
+      return s;
    }
 
    static SkyGen.Sky aurora() {
-      SkyGen3.Night var0 = new SkyGen3.Night();
-      var0.zen = SkyGen.rgb(132880);
-      var0.hor = SkyGen.rgb(729648);
-      var0.hW = 0.3;
-      var0.mwN = SkyGen.norm(-0.5, 0.55, 0.65);
-      var0.mwCore = coreOn(var0.mwN, SkyGen.norm(0.3, 0.3, 0.9));
-      var0.mwK = 0.025;
-      SkyGen3.Aurora var1 = new SkyGen3.Aurora();
-      var1.low = SkyGen.rgb(3080070);
-      var1.high = SkyGen.rgb(11553992);
-      var1.bright = 0.55;
-      var1.seed = 2.7;
-      var1.width = 0.14;
-      var0.au = var1;
-      var0.mist = SkyGen.rgb(929840);
-      var0.mistK = 0.35;
-      var0.mistW = 0.03;
-      var0.detail = 0.85;
-      var0.ground = SkyGen.rgb(1186854);
-      var0.groundFar = SkyGen.rgb(1980988);
-      var0.groundFall = 0.25;
-      return var0;
+      SkyGen3.Night s = new SkyGen3.Night();
+      s.zen = SkyGen.rgb(132880);
+      s.hor = SkyGen.rgb(729648);
+      s.hW = 0.3;
+      s.mwN = SkyGen.norm(-0.5, 0.55, 0.65);
+      s.mwCore = coreOn(s.mwN, SkyGen.norm(0.3, 0.3, 0.9));
+      s.mwK = 0.025;
+      SkyGen3.Aurora a = new SkyGen3.Aurora();
+      a.low = SkyGen.rgb(3080070);
+      a.high = SkyGen.rgb(11553992);
+      a.bright = 0.55;
+      a.seed = 2.7;
+      a.width = 0.14;
+      s.au = a;
+      s.mist = SkyGen.rgb(929840);
+      s.mistK = 0.35;
+      s.mistW = 0.03;
+      s.detail = 0.85;
+      s.ground = SkyGen.rgb(1186854);
+      s.groundFar = SkyGen.rgb(1980988);
+      s.groundFall = 0.25;
+      return s;
    }
 
    static SkyGen.Sky auroraViolet() {
-      SkyGen3.Night var0 = new SkyGen3.Night();
-      var0.zen = SkyGen.rgb(328463);
-      var0.hor = SkyGen.rgb(1839152);
-      var0.hW = 0.3;
-      SkyGen3.Aurora var1 = new SkyGen3.Aurora();
-      var1.low = SkyGen.rgb(16727968);
-      var1.high = SkyGen.rgb(5914879);
-      var1.bright = 0.55;
-      var1.seed = 7.3;
-      var1.width = 0.14;
-      var1.cover = 0.0;
-      var0.au = var1;
-      var0.stars = 70000;
-      var0.below = 2;
-      var0.water = SkyGen.rgb(131849);
-      var0.waves = 0.3;
-      var0.glitter = 0.0;
-      var0.detail = 0.85;
-      return var0;
+      SkyGen3.Night s = new SkyGen3.Night();
+      s.zen = SkyGen.rgb(328463);
+      s.hor = SkyGen.rgb(1839152);
+      s.hW = 0.3;
+      SkyGen3.Aurora a = new SkyGen3.Aurora();
+      a.low = SkyGen.rgb(16727968);
+      a.high = SkyGen.rgb(5914879);
+      a.bright = 0.55;
+      a.seed = 7.3;
+      a.width = 0.14;
+      a.cover = 0.0;
+      s.au = a;
+      s.stars = 70000;
+      s.below = 2;
+      s.water = SkyGen.rgb(131849);
+      s.waves = 0.3;
+      s.glitter = 0.0;
+      s.detail = 0.85;
+      return s;
    }
 
    static SkyGen.Sky storm() {
-      final double[][] var0 = new double[][]{SkyGen.azel(40.0, 25.0), SkyGen.azel(160.0, 14.0), SkyGen.azel(290.0, 35.0), SkyGen.azel(250.0, 60.0)};
-      final double[] var1 = SkyGen.rgb(12104959);
-      SkyGen3.Night var2 = new SkyGen3.Night() {
+      final double[][] cells = new double[][]{SkyGen.azel(40.0, 25.0), SkyGen.azel(160.0, 14.0), SkyGen.azel(290.0, 35.0), SkyGen.azel(250.0, 60.0)};
+      final double[] flash = SkyGen.rgb(12104959);
+      SkyGen3.Night s = new SkyGen3.Night() {
          @Override
-         void extra(double var1x, double var3, double var5, SkyGen.C var7) {
-            double var8 = Math.sqrt(var1x * var1x + var5 * var5) + 1.0E-9;
-            double var10 = Math.max(0.0, (var1x * 0.8 - var5 * 0.6) / var8);
-            SkyGen.add(var7, var1, 0.05 * var10 * var10 * var10 * var10 * Math.exp(-Math.max(0.0, var3) / 0.08));
+         void extra(double x, double y, double z, SkyGen.C c) {
+            double hl = Math.sqrt(x * x + z * z) + 1.0E-9;
+            double a = Math.max(0.0, (x * 0.8 - z * 0.6) / hl);
+            SkyGen.add(c, flash, 0.05 * a * a * a * a * Math.exp(-Math.max(0.0, y) / 0.08));
          }
 
          @Override
-         void sky(double var1x, double var3, double var5, SkyGen.C var7) {
-            super.sky(var1x, var3, var5, var7);
-            if (!(var3 <= 0.0)) {
-               double var8 = 0.0;
+         void sky(double x, double y, double z, SkyGen.C c) {
+            super.sky(x, y, z, c);
+            if (!(y <= 0.0)) {
+               double g = 0.0;
 
-               for (double[] var13 : var0) {
-                  double var14 = var1x * var13[0] + var3 * var13[1] + var5 * var13[2];
-                  double var16 = 2.0 * (1.0 - var14);
-                  var8 += Math.exp(-var16 / 0.06);
+               for (double[] q : cells) {
+                  double cosA = x * q[0] + y * q[1] + z * q[2];
+                  double a2 = 2.0 * (1.0 - cosA);
+                  g += Math.exp(-a2 / 0.06);
                }
 
-               if (var8 > 0.003) {
-                  double var18 = 1.0 / (var3 + 0.05);
-                  double var19 = SkyGen.fbmL(var1x * var18 * 1.2, 5.5, var5 * var18 * 1.2, 5.0);
-                  double var20 = var8 * SkyGen.smooth(-0.3, 0.5, var19) * SkyGen.smooth(0.0, 0.1, var3);
-                  SkyGen.add(var7, var1, var20 * 0.45);
+               if (g > 0.003) {
+                  double hl = 1.0 / (y + 0.05);
+                  double n = SkyGen.fbmL(x * hl * 1.2, 5.5, z * hl * 1.2, 5.0);
+                  double k = g * SkyGen.smooth(-0.3, 0.5, n) * SkyGen.smooth(0.0, 0.1, y);
+                  SkyGen.add(c, flash, k * 0.45);
                }
             }
          }
       };
-      var2.stars = 0;
-      var2.zen = SkyGen.rgb(790294);
-      var2.hor = SkyGen.rgb(2501688);
-      var2.hW = 0.25;
-      SkyGen.Clouds var3 = new SkyGen.Clouds();
-      var3.height = 0.8;
-      var3.scale = 0.7;
-      var3.cov = -0.15;
-      var3.soft = 0.45;
-      var3.warp = 1.3;
-      var3.seed = 4.1;
-      var3.fog = 6.0;
-      var3.lit = SkyGen.rgb(5266030);
-      var3.shade = SkyGen.rgb(592656);
-      var3.thickDark = 0.75;
-      var3.silver = 0.0;
-      var3.lightSide = 1.6;
-      var2.c1 = var3;
-      var2.sun = SkyGen.azel(40.0, 25.0);
-      var2.mist = SkyGen.rgb(1975084);
-      var2.mistK = 0.55;
-      var2.mistW = 0.05;
-      var2.ground = SkyGen.rgb(461068);
-      var2.groundFar = SkyGen.rgb(1711654);
-      var2.groundFall = 0.2;
-      return var2;
+      s.stars = 0;
+      s.zen = SkyGen.rgb(790294);
+      s.hor = SkyGen.rgb(2501688);
+      s.hW = 0.25;
+      SkyGen.Clouds c = new SkyGen.Clouds();
+      c.height = 0.8;
+      c.scale = 0.7;
+      c.cov = -0.15;
+      c.soft = 0.45;
+      c.warp = 1.3;
+      c.seed = 4.1;
+      c.fog = 6.0;
+      c.lit = SkyGen.rgb(5266030);
+      c.shade = SkyGen.rgb(592656);
+      c.thickDark = 0.75;
+      c.silver = 0.0;
+      c.lightSide = 1.6;
+      s.c1 = c;
+      s.sun = SkyGen.azel(40.0, 25.0);
+      s.mist = SkyGen.rgb(1975084);
+      s.mistK = 0.55;
+      s.mistW = 0.05;
+      s.ground = SkyGen.rgb(461068);
+      s.groundFar = SkyGen.rgb(1711654);
+      s.groundFall = 0.2;
+      return s;
    }
 
    static SkyGen.Sky bloodMoon() {
-      SkyGen3.Night var0 = new SkyGen3.Night();
-      var0.zen = SkyGen.rgb(328458);
-      var0.hor = SkyGen.rgb(2756626);
-      var0.hW = 0.22;
-      var0.air = SkyGen.rgb(3804680);
-      var0.airK = 0.3;
-      var0.airW = 0.05;
-      var0.mwN = SkyGen.norm(0.2, 0.7, -0.68);
-      var0.mwCore = coreOn(var0.mwN, SkyGen.norm(-0.8, 0.3, 0.1));
-      var0.mwK = 0.02;
-      SkyGen3.Body var1 = new SkyGen3.Body(SkyGen.azel(160.0, 24.0), 0.09, 25.0);
-      var1.glow = 0.035;
-      var1.glowW = 2.5;
-      var1.albedo = 0.6;
-      var1.seed = 3.0;
-      var1.grad = SkyGen.norm(0.3, 1.0, 0.2);
-      var1.earthshine = 0.0;
-      var0.moon = var1;
-      var0.moonTint = SkyGen.rgb(16734764);
-      var0.moonBright = 1.5;
-      var0.mist = SkyGen.rgb(2755596);
-      var0.mistK = 0.5;
-      var0.mistW = 0.04;
-      var0.stars = 50000;
-      var0.ground = SkyGen.rgb(787718);
-      var0.groundFar = SkyGen.rgb(2363406);
-      var0.groundFall = 0.2;
-      return var0;
+      SkyGen3.Night s = new SkyGen3.Night();
+      s.zen = SkyGen.rgb(328458);
+      s.hor = SkyGen.rgb(2756626);
+      s.hW = 0.22;
+      s.air = SkyGen.rgb(3804680);
+      s.airK = 0.3;
+      s.airW = 0.05;
+      s.mwN = SkyGen.norm(0.2, 0.7, -0.68);
+      s.mwCore = coreOn(s.mwN, SkyGen.norm(-0.8, 0.3, 0.1));
+      s.mwK = 0.02;
+      SkyGen3.Body m = new SkyGen3.Body(SkyGen.azel(160.0, 24.0), 0.09, 25.0);
+      m.glow = 0.035;
+      m.glowW = 2.5;
+      m.albedo = 0.6;
+      m.seed = 3.0;
+      m.grad = SkyGen.norm(0.3, 1.0, 0.2);
+      m.earthshine = 0.0;
+      s.moon = m;
+      s.moonTint = SkyGen.rgb(16734764);
+      s.moonBright = 1.5;
+      s.mist = SkyGen.rgb(2755596);
+      s.mistK = 0.5;
+      s.mistW = 0.04;
+      s.stars = 50000;
+      s.ground = SkyGen.rgb(787718);
+      s.groundFar = SkyGen.rgb(2363406);
+      s.groundFall = 0.2;
+      return s;
    }
 
    static SkyGen.Sky eclipse() {
-      final double[] var0 = SkyGen.azel(165.0, 36.0);
-      final double[] var1 = SkyGen.rgb(15723263);
-      final double[] var2 = SkyGen.rgb(16726634);
-      final double[] var3 = SkyGen.rgb(16751178);
-      final double[] var4 = SkyGen.rgb(15255696);
-      final double[][] var5 = SkyGen.frame(var0, 0.0);
-      SkyGen3.Night var6 = new SkyGen3.Night() {
+      final double[] sunD = SkyGen.azel(165.0, 36.0);
+      double R = 0.034;
+      final double[] cor = SkyGen.rgb(15723263);
+      final double[] prom = SkyGen.rgb(16726634);
+      final double[] band = SkyGen.rgb(16751178);
+      final double[] band2 = SkyGen.rgb(15255696);
+      final double[][] fr = SkyGen.frame(sunD, 0.0);
+      SkyGen3.Night s = new SkyGen3.Night() {
          @Override
-         void extra(double var1x, double var3x, double var5x, SkyGen.C var7) {
-            double var8 = Math.max(0.0, var3x);
-            double var10 = Math.sqrt(var1x * var1x + var5x * var5x) + 1.0E-9;
-            double var12 = 0.6 + 0.4 * SkyGen.fbmL(var1x / var10 * 2.0, 1.1, var5x / var10 * 2.0, 3.0) + 0.3 * ((var1x * var0[0] + var5x * var0[2]) / var10);
-            SkyGen.add(var7, var3, 0.55 * var12 * Math.exp(-var8 / 0.035));
-            SkyGen.add(var7, var4, 0.12 * Math.exp(-var8 / 0.12));
-            double var14 = var1x * var0[0] + var3x * var0[1] + var5x * var0[2];
-            if (!(var14 < 0.6)) {
-               double var16 = Math.sqrt(Math.max(0.0, 2.0 * (1.0 - var14)));
-               double var18 = var16 / 0.034;
-               double var20 = var1x * var5[0][0] + var3x * var5[0][1] + var5x * var5[0][2];
-               double var22 = var1x * var5[1][0] + var3x * var5[1][1] + var5x * var5[1][2];
-               double var24 = Math.sqrt(var20 * var20 + var22 * var22) + 1.0E-12;
-               double var26 = var20 / var24;
-               double var28 = var22 / var24;
-               if (var18 > 0.99) {
-                  double var30 = 0.45 + 0.9 * Math.max(0.0, SkyGen.fbmL(var26 * 2.5, var28 * 2.5, var18 * 0.35, 4.0) + 0.2);
-                  double var32 = Math.pow(Math.abs(SkyGen.noise(var26 * 9.0, var28 * 9.0, 1.3)), 0.5);
-                  double var34 = 1.4 * Math.pow(var18, -2.6) * (0.3 + var30 * 0.9 + 0.3 * var32) + 0.05 * Math.pow(var18, -1.0);
-                  SkyGen.add(var7, var1, var34 * SkyGen.smooth(0.99, 1.02, var18));
-                  if (var18 < 1.12) {
-                     double var36 = SkyGen.smooth(0.25, 0.55, SkyGen.fbmL(var26 * 6.0 + 4.0, var28 * 6.0, 2.2, 3.0)) * SkyGen.smooth(1.12, 1.0, var18);
-                     SkyGen.add(var7, var2, var36 * 2.2);
+         void extra(double x, double y, double z, SkyGen.C c) {
+            double yy = Math.max(0.0, y);
+            double hl = Math.sqrt(x * x + z * z) + 1.0E-9;
+            double var = 0.6 + 0.4 * SkyGen.fbmL(x / hl * 2.0, 1.1, z / hl * 2.0, 3.0) + 0.3 * ((x * sunD[0] + z * sunD[2]) / hl);
+            SkyGen.add(c, band, 0.55 * var * Math.exp(-yy / 0.035));
+            SkyGen.add(c, band2, 0.12 * Math.exp(-yy / 0.12));
+            double cosA = x * sunD[0] + y * sunD[1] + z * sunD[2];
+            if (!(cosA < 0.6)) {
+               double ang = Math.sqrt(Math.max(0.0, 2.0 * (1.0 - cosA)));
+               double r = ang / 0.034;
+               double px = x * fr[0][0] + y * fr[0][1] + z * fr[0][2];
+               double py = x * fr[1][0] + y * fr[1][1] + z * fr[1][2];
+               double pl = Math.sqrt(px * px + py * py) + 1.0E-12;
+               double ca = px / pl;
+               double sa = py / pl;
+               if (r > 0.99) {
+                  double st = 0.45 + 0.9 * Math.max(0.0, SkyGen.fbmL(ca * 2.5, sa * 2.5, r * 0.35, 4.0) + 0.2);
+                  double st2 = Math.pow(Math.abs(SkyGen.noise(ca * 9.0, sa * 9.0, 1.3)), 0.5);
+                  double corona = 1.4 * Math.pow(r, -2.6) * (0.3 + st * 0.9 + 0.3 * st2) + 0.05 * Math.pow(r, -1.0);
+                  SkyGen.add(c, cor, corona * SkyGen.smooth(0.99, 1.02, r));
+                  if (r < 1.12) {
+                     double p = SkyGen.smooth(0.25, 0.55, SkyGen.fbmL(ca * 6.0 + 4.0, sa * 6.0, 2.2, 3.0)) * SkyGen.smooth(1.12, 1.0, r);
+                     SkyGen.add(c, prom, p * 2.2);
                   }
 
-                  double var43 = var26 - Math.cos(2.3);
-                  double var38 = var28 - Math.sin(2.3);
-                  double var40 = (var43 * var43 + var38 * var38) * 60.0 + (var18 - 1.0) * (var18 - 1.0) * 900.0;
-                  SkyGen.add(var7, var1, 12.0 * Math.exp(-var40) + 0.25 * Math.exp(-(var43 * var43 + var38 * var38) * 3.0 - (var18 - 1.0) * 1.2));
+                  double bx = ca - Math.cos(2.3);
+                  double by = sa - Math.sin(2.3);
+                  double bd = (bx * bx + by * by) * 60.0 + (r - 1.0) * (r - 1.0) * 900.0;
+                  SkyGen.add(c, cor, 12.0 * Math.exp(-bd) + 0.25 * Math.exp(-(bx * bx + by * by) * 3.0 - (r - 1.0) * 1.2));
                }
 
-               double var42 = SkyGen.smooth(1.0, 0.985, var18);
-               var7.r *= 1.0 - var42 * 0.97;
-               var7.g *= 1.0 - var42 * 0.97;
-               var7.b *= 1.0 - var42 * 0.97;
-               var7.vis *= 1.0 - var42;
+               double e = SkyGen.smooth(1.0, 0.985, r);
+               c.r *= 1.0 - e * 0.97;
+               c.g *= 1.0 - e * 0.97;
+               c.b *= 1.0 - e * 0.97;
+               c.vis *= 1.0 - e;
             }
          }
       };
-      var6.zen = SkyGen.rgb(726322);
-      var6.hor = SkyGen.rgb(2372174);
-      var6.hW = 0.3;
-      var6.stars = 30000;
-      var6.starDens = 0.6;
-      var6.ground = SkyGen.rgb(460812);
-      var6.groundFar = SkyGen.rgb(2761254);
-      var6.groundFall = 0.07;
-      return var6;
+      s.zen = SkyGen.rgb(726322);
+      s.hor = SkyGen.rgb(2372174);
+      s.hW = 0.3;
+      s.stars = 30000;
+      s.starDens = 0.6;
+      s.ground = SkyGen.rgb(460812);
+      s.groundFar = SkyGen.rgb(2761254);
+      s.groundFall = 0.07;
+      return s;
    }
 
    static SkyGen.Sky winter() {
-      SkyGen3.Night var0 = new SkyGen3.Night();
-      var0.zen = SkyGen.rgb(198936);
-      var0.hor = SkyGen.rgb(1848402);
-      var0.hW = 0.28;
-      SkyGen3.Body var1 = new SkyGen3.Body(SkyGen.azel(205.0, 34.0), 0.018, 0.0);
-      var1.glow = 0.07;
-      var1.glowW = 2.2;
-      var1.albedo = 0.9;
-      var1.seed = 1.5;
-      var0.moon = var1;
-      var0.moonTint = SkyGen.rgb(15397119);
-      var0.moonBright = 2.2;
-      var0.halo22 = 0.035;
-      SkyGen.Clouds var2 = new SkyGen.Clouds();
-      var2.height = 3.0;
-      var2.scale = 0.3;
-      var2.stretch = 4.0;
-      var2.cov = 0.22;
-      var2.soft = 0.35;
-      var2.warp = 1.5;
-      var2.seed = 3.7;
-      var2.oct = 5.0;
-      var2.lit = SkyGen.rgb(4873342);
-      var2.shade = SkyGen.rgb(1186864);
-      var2.thickDark = 0.2;
-      var2.silver = 1.0;
-      var2.opacity = 0.6;
-      var2.fog = 25.0;
-      var0.c1 = var2;
-      var0.cloudLight = SkyGen.rgb(8427720);
-      var0.mist = SkyGen.rgb(3033192);
-      var0.mistK = 0.55;
-      var0.mistW = 0.04;
-      var0.stars = 70000;
-      var0.starDens = 0.9;
-      var0.ground = SkyGen.rgb(2898514);
-      var0.groundFar = SkyGen.rgb(4217468);
-      var0.groundFall = 0.3;
-      var0.groundNoise = 0.35;
-      return var0;
+      SkyGen3.Night s = new SkyGen3.Night();
+      s.zen = SkyGen.rgb(198936);
+      s.hor = SkyGen.rgb(1848402);
+      s.hW = 0.28;
+      SkyGen3.Body m = new SkyGen3.Body(SkyGen.azel(205.0, 34.0), 0.018, 0.0);
+      m.glow = 0.07;
+      m.glowW = 2.2;
+      m.albedo = 0.9;
+      m.seed = 1.5;
+      s.moon = m;
+      s.moonTint = SkyGen.rgb(15397119);
+      s.moonBright = 2.2;
+      s.halo22 = 0.035;
+      SkyGen.Clouds c = new SkyGen.Clouds();
+      c.height = 3.0;
+      c.scale = 0.3;
+      c.stretch = 4.0;
+      c.cov = 0.22;
+      c.soft = 0.35;
+      c.warp = 1.5;
+      c.seed = 3.7;
+      c.oct = 5.0;
+      c.lit = SkyGen.rgb(4873342);
+      c.shade = SkyGen.rgb(1186864);
+      c.thickDark = 0.2;
+      c.silver = 1.0;
+      c.opacity = 0.6;
+      c.fog = 25.0;
+      s.c1 = c;
+      s.cloudLight = SkyGen.rgb(8427720);
+      s.mist = SkyGen.rgb(3033192);
+      s.mistK = 0.55;
+      s.mistW = 0.04;
+      s.stars = 70000;
+      s.starDens = 0.9;
+      s.ground = SkyGen.rgb(2898514);
+      s.groundFar = SkyGen.rgb(4217468);
+      s.groundFall = 0.3;
+      s.groundNoise = 0.35;
+      return s;
    }
 
    static SkyGen.Sky twilight() {
-      SkyGen3.Night var0 = new SkyGen3.Night() {
+      SkyGen3.Night s = new SkyGen3.Night() {
          @Override
-         void moteColor(Random var1, double[] var2) {
-            double var3 = var1.nextDouble();
-            if (var3 < 0.55) {
-               var2[0] = 1.3;
-               var2[1] = 0.95;
-               var2[2] = 0.45;
-            } else if (var3 < 0.8) {
-               var2[0] = 0.45;
-               var2[1] = 1.0;
-               var2[2] = 1.3;
+         void moteColor(Random r, double[] o) {
+            double t = r.nextDouble();
+            if (t < 0.55) {
+               o[0] = 1.3;
+               o[1] = 0.95;
+               o[2] = 0.45;
+            } else if (t < 0.8) {
+               o[0] = 0.45;
+               o[1] = 1.0;
+               o[2] = 1.3;
             } else {
-               var2[0] = 1.25;
-               var2[1] = 0.55;
-               var2[2] = 1.2;
+               o[0] = 1.25;
+               o[1] = 0.55;
+               o[2] = 1.2;
             }
          }
 
          @Override
-         double moteDensity(double var1, double var3, double var5) {
-            return 0.08 + 0.92 * Math.exp(-Math.abs(var3 + 0.04) / 0.14);
+         double moteDensity(double x, double y, double z) {
+            return 0.08 + 0.92 * Math.exp(-Math.abs(y + 0.04) / 0.14);
          }
       };
-      var0.zen = SkyGen.rgb(525856);
-      var0.hor = SkyGen.rgb(9326222);
-      var0.hW = 0.12;
-      var0.air = SkyGen.rgb(3808880);
-      var0.airK = 0.25;
-      var0.airW = 0.35;
-      var0.lp = SkyGen.rgb(16751226);
-      var0.lpDir = SkyGen.norm(-1.0, 0.0, -0.3);
-      var0.lpK = 0.6;
-      SkyGen3.Body var1 = new SkyGen3.Body(SkyGen.azel(250.0, 30.0), 0.03, 0.0);
-      var1.glow = 0.03;
-      var1.glowW = 1.5;
-      var1.albedo = 0.9;
-      var1.seed = 5.0;
-      var0.moon = var1;
-      var0.moonTint = SkyGen.rgb(16773338);
-      var0.moonBright = 2.0;
-      var0.moonLight = SkyGen.azel(290.0, -10.0);
-      SkyGen.Clouds var2 = new SkyGen.Clouds();
-      var2.height = 1.4;
-      var2.scale = 0.5;
-      var2.stretch = 2.5;
-      var2.cov = 0.16;
-      var2.soft = 0.3;
-      var2.warp = 1.4;
-      var2.seed = 11.2;
-      var2.fog = 12.0;
-      var2.lit = SkyGen.rgb(14715584);
-      var2.shade = SkyGen.rgb(3022944);
-      var2.thickDark = 0.35;
-      var2.silver = 0.5;
-      var2.opacity = 0.85;
-      var0.c1 = var2;
-      var0.cloudLight = SkyGen.rgb(16756944);
-      var0.sun = SkyGen.azel(290.0, -10.0);
-      var0.stars = 50000;
-      var0.starDens = 0.8;
-      var0.motes = 1400;
-      var0.moteBright = 0.7;
-      var0.moteSize = 1.4;
-      var0.ground = SkyGen.rgb(657432);
-      var0.groundFar = SkyGen.rgb(3810386);
-      var0.groundFall = 0.2;
-      return var0;
+      s.zen = SkyGen.rgb(525856);
+      s.hor = SkyGen.rgb(9326222);
+      s.hW = 0.12;
+      s.air = SkyGen.rgb(3808880);
+      s.airK = 0.25;
+      s.airW = 0.35;
+      s.lp = SkyGen.rgb(16751226);
+      s.lpDir = SkyGen.norm(-1.0, 0.0, -0.3);
+      s.lpK = 0.6;
+      SkyGen3.Body m = new SkyGen3.Body(SkyGen.azel(250.0, 30.0), 0.03, 0.0);
+      m.glow = 0.03;
+      m.glowW = 1.5;
+      m.albedo = 0.9;
+      m.seed = 5.0;
+      s.moon = m;
+      s.moonTint = SkyGen.rgb(16773338);
+      s.moonBright = 2.0;
+      s.moonLight = SkyGen.azel(290.0, -10.0);
+      SkyGen.Clouds c = new SkyGen.Clouds();
+      c.height = 1.4;
+      c.scale = 0.5;
+      c.stretch = 2.5;
+      c.cov = 0.16;
+      c.soft = 0.3;
+      c.warp = 1.4;
+      c.seed = 11.2;
+      c.fog = 12.0;
+      c.lit = SkyGen.rgb(14715584);
+      c.shade = SkyGen.rgb(3022944);
+      c.thickDark = 0.35;
+      c.silver = 0.5;
+      c.opacity = 0.85;
+      s.c1 = c;
+      s.cloudLight = SkyGen.rgb(16756944);
+      s.sun = SkyGen.azel(290.0, -10.0);
+      s.stars = 50000;
+      s.starDens = 0.8;
+      s.motes = 1400;
+      s.moteBright = 0.7;
+      s.moteSize = 1.4;
+      s.ground = SkyGen.rgb(657432);
+      s.groundFar = SkyGen.rgb(3810386);
+      s.groundFall = 0.2;
+      return s;
    }
 
    static SkyGen.Sky nebula() {
-      final double[] var0 = SkyGen.rgb(3816136);
-      final double[] var1 = SkyGen.rgb(11549368);
-      final double[] var2 = SkyGen.rgb(8048895);
-      final double[] var3 = SkyGen.rgb(16770768);
-      final double[] var4 = SkyGen.rgb(131850);
-      final double[] var5 = SkyGen.norm(0.2, 0.9, 0.3);
-      SkyGen3.Space var6 = new SkyGen3.Space() {
+      final double[] a = SkyGen.rgb(3816136);
+      final double[] b = SkyGen.rgb(11549368);
+      final double[] cc = SkyGen.rgb(8048895);
+      final double[] core = SkyGen.rgb(16770768);
+      final double[] bg = SkyGen.rgb(131850);
+      final double[] mwN = SkyGen.norm(0.2, 0.9, 0.3);
+      SkyGen3.Space s = new SkyGen3.Space() {
          @Override
-         void sky(double var1x, double var3x, double var5x, SkyGen.C var7) {
-            SkyGen.set(var7, var4);
-            SkyGen3.milky(var7, var1x, var3x, var5x, var5, SkyGen3.coreOn(var5, SkyGen.norm(1.0, 0.0, 0.0)), 0.02);
-            SkyGen3.nebulaLayer(var7, var1x, var3x, var5x, 0.0, 1.0, var0, var1, var2, var3, 0.5, 0.85);
+         void sky(double x, double y, double z, SkyGen.C c) {
+            SkyGen.set(c, bg);
+            SkyGen3.milky(c, x, y, z, mwN, SkyGen3.coreOn(mwN, SkyGen.norm(1.0, 0.0, 0.0)), 0.02);
+            SkyGen3.nebulaLayer(c, x, y, z, 0.0, 1.0, a, b, cc, core, 0.5, 0.85);
          }
 
          @Override
-         double starDensity(double var1x, double var3x, double var5x) {
-            return 0.3 + 0.5 * SkyGen3.milkyDensity(var1x, var3x, var5x, var5);
+         double starDensity(double x, double y, double z) {
+            return 0.3 + 0.5 * SkyGen3.milkyDensity(x, y, z, mwN);
          }
       };
-      var6.stars = 90000;
-      var6.detail = 0.8;
-      return var6;
+      s.stars = 90000;
+      s.detail = 0.8;
+      return s;
    }
 
    static SkyGen.Sky redNebula() {
-      final double[] var0 = SkyGen.rgb(12591146);
-      final double[] var1 = SkyGen.rgb(16742960);
-      final double[] var2 = SkyGen.rgb(16756848);
-      final double[] var3 = SkyGen.rgb(16773320);
-      final double[] var4 = SkyGen.rgb(262660);
-      final double[] var5 = SkyGen.azel(30.0, 15.0);
-      final double[] var6 = SkyGen.rgb(10141951);
-      SkyGen3.Space var7 = new SkyGen3.Space() {
+      final double[] a = SkyGen.rgb(12591146);
+      final double[] b = SkyGen.rgb(16742960);
+      final double[] cc = SkyGen.rgb(16756848);
+      final double[] core = SkyGen.rgb(16773320);
+      final double[] bg = SkyGen.rgb(262660);
+      final double[] cl = SkyGen.azel(30.0, 15.0);
+      final double[] blue = SkyGen.rgb(10141951);
+      SkyGen3.Space s = new SkyGen3.Space() {
          @Override
-         void sky(double var1x, double var3x, double var5x, SkyGen.C var7x) {
-            SkyGen.set(var7x, var4);
-            SkyGen3.nebulaLayer(var7x, var1x, var3x, var5x, 4.2, 1.1, var0, var1, var2, var3, 0.55, 0.9);
-            double var8 = var1x * var5[0] + var3x * var5[1] + var5x * var5[2];
-            double var10 = 2.0 * (1.0 - var8);
-            SkyGen.add(var7x, var6, 0.35 * Math.exp(-var10 / 0.004) + 0.08 * Math.exp(-var10 / 0.05));
-            double var12 = SkyGen.fbmL(var1x * 2.2 + 2.0, var3x * 2.2, var5x * 2.2 + 9.0, 5.0);
-            double var14 = SkyGen.smooth(0.28, 0.45, var12);
-            SkyGen.mul(var7x, 1.0 - 0.9 * var14);
-            var7x.vis *= 1.0 - 0.95 * var14;
+         void sky(double x, double y, double z, SkyGen.C c) {
+            SkyGen.set(c, bg);
+            SkyGen3.nebulaLayer(c, x, y, z, 4.2, 1.1, a, b, cc, core, 0.55, 0.9);
+            double cosA = x * cl[0] + y * cl[1] + z * cl[2];
+            double a2 = 2.0 * (1.0 - cosA);
+            SkyGen.add(c, blue, 0.35 * Math.exp(-a2 / 0.004) + 0.08 * Math.exp(-a2 / 0.05));
+            double g = SkyGen.fbmL(x * 2.2 + 2.0, y * 2.2, z * 2.2 + 9.0, 5.0);
+            double k = SkyGen.smooth(0.28, 0.45, g);
+            SkyGen.mul(c, 1.0 - 0.9 * k);
+            c.vis *= 1.0 - 0.95 * k;
          }
 
          @Override
-         double starDensity(double var1x, double var3x, double var5x) {
-            double var7x = var1x * var5[0] + var3x * var5[1] + var5x * var5[2];
-            return Math.min(1.0, 0.3 + 0.9 * Math.exp(-2.0 * (1.0 - var7x) / 0.02));
+         double starDensity(double x, double y, double z) {
+            double cosA = x * cl[0] + y * cl[1] + z * cl[2];
+            return Math.min(1.0, 0.3 + 0.9 * Math.exp(-2.0 * (1.0 - cosA) / 0.02));
          }
       };
-      var7.stars = 80000;
-      var7.detail = 0.9;
-      return var7;
+      s.stars = 80000;
+      s.detail = 0.9;
+      return s;
    }
 
    static SkyGen.Sky planets() {
-      final double[] var0 = SkyGen.rgb(66056);
-      final double[] var1 = SkyGen.rgb(1719434);
-      final double[] var2 = SkyGen.rgb(5906042);
-      final double[] var3 = SkyGen.azel(35.0, 22.0);
-      final double var4 = Math.sin(0.26);
-      final double[] var6 = SkyGen.norm(0.25, 0.95, 0.35);
-      final double[] var7 = SkyGen.azel(250.0, 25.0);
-      final double[] var8 = SkyGen.rgb(15258280);
-      final double[] var9 = SkyGen.rgb(12618330);
-      final double[] var10 = SkyGen.rgb(9067066);
-      final double[] var11 = SkyGen.rgb(15919312);
-      final double[] var12 = SkyGen.rgb(14207144);
-      final double[] var13 = SkyGen.rgb(16769712);
-      final SkyGen3.Body var14 = new SkyGen3.Body(SkyGen.azel(300.0, 34.0), 0.045, 0.0);
-      final SkyGen3.Body var15 = new SkyGen3.Body(SkyGen.azel(95.0, 55.0), 0.02, 0.0);
-      final SkyGen3.Body var16 = new SkyGen3.Body(SkyGen.azel(200.0, 12.0), 0.012, 0.0);
-      var14.albedo = 0.7;
-      var14.seed = 2.0;
-      var15.albedo = 0.9;
-      var15.seed = 7.0;
-      var16.albedo = 0.5;
-      var16.seed = 11.0;
-      final double[] var17 = SkyGen.rgb(14209224);
-      final double[] var18 = SkyGen.rgb(13624575);
-      final double[] var19 = SkyGen.rgb(16751216);
-      SkyGen3.Space var20 = new SkyGen3.Space() {
+      final double[] bg = SkyGen.rgb(66056);
+      final double[] neb1 = SkyGen.rgb(1719434);
+      final double[] neb2 = SkyGen.rgb(5906042);
+      final double[] P = SkyGen.azel(35.0, 22.0);
+      double pr = 0.26;
+      final double Rp = Math.sin(0.26);
+      final double[] Nr = SkyGen.norm(0.25, 0.95, 0.35);
+      final double[] light = SkyGen.azel(250.0, 25.0);
+      final double[] c1 = SkyGen.rgb(15258280);
+      final double[] c2 = SkyGen.rgb(12618330);
+      final double[] c3 = SkyGen.rgb(9067066);
+      final double[] c4 = SkyGen.rgb(15919312);
+      final double[] ringC = SkyGen.rgb(14207144);
+      final double[] atm = SkyGen.rgb(16769712);
+      final SkyGen3.Body m1 = new SkyGen3.Body(SkyGen.azel(300.0, 34.0), 0.045, 0.0);
+      final SkyGen3.Body m2 = new SkyGen3.Body(SkyGen.azel(95.0, 55.0), 0.02, 0.0);
+      final SkyGen3.Body m3 = new SkyGen3.Body(SkyGen.azel(200.0, 12.0), 0.012, 0.0);
+      m1.albedo = 0.7;
+      m1.seed = 2.0;
+      m2.albedo = 0.9;
+      m2.seed = 7.0;
+      m3.albedo = 0.5;
+      m3.seed = 11.0;
+      final double[] m1t = SkyGen.rgb(14209224);
+      final double[] m2t = SkyGen.rgb(13624575);
+      final double[] m3t = SkyGen.rgb(16751216);
+      SkyGen3.Space s = new SkyGen3.Space() {
          @Override
-         void sky(double var1x, double var3x, double var5, SkyGen.C var7x) {
-            SkyGen.set(var7x, var0);
-            double var8x = SkyGen.smooth(0.1, 0.8, SkyGen.fbmL(var1x * 2.0 + 4.0, var3x * 2.0, var5 * 2.0, 5.0));
-            SkyGen.add(var7x, var1, var8x * 0.12);
-            SkyGen.add(var7x, var2, SkyGen.smooth(0.3, 0.9, SkyGen.fbmL(var1x * 3.0, var3x * 3.0 + 2.0, var5 * 3.0, 4.0)) * 0.1);
-            SkyGen3.moon(var7x, var1x, var3x, var5, var14, var17, 1.3, var7);
-            SkyGen3.moon(var7x, var1x, var3x, var5, var15, var18, 1.4, var7);
-            SkyGen3.moon(var7x, var1x, var3x, var5, var16, var19, 1.2, var7);
-            this.ringed(var7x, var1x, var3x, var5);
+         void sky(double x, double y, double z, SkyGen.C c) {
+            SkyGen.set(c, bg);
+            double n = SkyGen.smooth(0.1, 0.8, SkyGen.fbmL(x * 2.0 + 4.0, y * 2.0, z * 2.0, 5.0));
+            SkyGen.add(c, neb1, n * 0.12);
+            SkyGen.add(c, neb2, SkyGen.smooth(0.3, 0.9, SkyGen.fbmL(x * 3.0, y * 3.0 + 2.0, z * 3.0, 4.0)) * 0.1);
+            SkyGen3.moon(c, x, y, z, m1, m1t, 1.3, light);
+            SkyGen3.moon(c, x, y, z, m2, m2t, 1.4, light);
+            SkyGen3.moon(c, x, y, z, m3, m3t, 1.2, light);
+            this.ringed(c, x, y, z);
          }
 
-         void ringed(SkyGen.C var1x, double var2x, double var4x, double var6x) {
-            double var8x = var2x * var3[0] + var4x * var3[1] + var6x * var3[2];
-            if (!(var8x < 0.3)) {
-               double var10x = var8x * var8x - (1.0 - var4 * var4);
-               double var12x = Double.MAX_VALUE;
-               double var14x = 0.0;
-               double var16x = 0.0;
-               double var18x = 0.0;
-               double var20x = 0.0;
-               double var22 = Math.sqrt(Math.max(0.0, var10x)) / var4;
-               if (var10x > -4.0E-4 * var4) {
-                  var14x = SkyGen.smooth(-0.004, 0.012, var10x / var4);
-                  var12x = var8x - Math.sqrt(Math.max(0.0, var10x));
-                  var16x = var2x * var12x;
-                  var18x = var4x * var12x;
-                  var20x = var6x * var12x;
+         void ringed(SkyGen.C c, double x, double y, double z) {
+            double b = x * P[0] + y * P[1] + z * P[2];
+            if (!(b < 0.3)) {
+               double disc = b * b - (1.0 - Rp * Rp);
+               double tP = Double.MAX_VALUE;
+               double edge = 0.0;
+               double hx = 0.0;
+               double hy = 0.0;
+               double hz = 0.0;
+               double rim = Math.sqrt(Math.max(0.0, disc)) / Rp;
+               if (disc > -4.0E-4 * Rp) {
+                  edge = SkyGen.smooth(-0.004, 0.012, disc / Rp);
+                  tP = b - Math.sqrt(Math.max(0.0, disc));
+                  hx = x * tP;
+                  hy = y * tP;
+                  hz = z * tP;
                }
 
-               double var24 = var2x * var6[0] + var4x * var6[1] + var6x * var6[2];
-               double var26 = Math.abs(var24) > 1.0E-5 ? (var3[0] * var6[0] + var3[1] * var6[1] + var3[2] * var6[2]) / var24 : -1.0;
-               double var28 = 0.0;
-               double var30 = 0.0;
-               if (var26 > 0.0) {
-                  double var32 = var2x * var26 - var3[0];
-                  double var34 = var4x * var26 - var3[1];
-                  double var36 = var6x * var26 - var3[2];
-                  double var38 = Math.sqrt(var32 * var32 + var34 * var34 + var36 * var36) / var4;
-                  if (var38 > 1.25 && var38 < 2.35) {
-                     var28 = SkyGen3.ringDensity(var38);
-                     double var40 = var2x * var26;
-                     double var42 = var4x * var26;
-                     double var44 = var6x * var26;
-                     double var46 = SkyGen3.sphereHit(var40, var42, var44, var7, var3, var4);
-                     double var48 = 0.35 + 0.65 * Math.abs(var7[0] * var6[0] + var7[1] * var6[1] + var7[2] * var6[2]);
-                     var30 = var48 * (1.0 - 0.92 * var46);
+               double dn = x * Nr[0] + y * Nr[1] + z * Nr[2];
+               double tR = Math.abs(dn) > 1.0E-5 ? (P[0] * Nr[0] + P[1] * Nr[1] + P[2] * Nr[2]) / dn : -1.0;
+               double ringA = 0.0;
+               double ringL = 0.0;
+               if (tR > 0.0) {
+                  double rx = x * tR - P[0];
+                  double ry = y * tR - P[1];
+                  double rz = z * tR - P[2];
+                  double rr = Math.sqrt(rx * rx + ry * ry + rz * rz) / Rp;
+                  if (rr > 1.25 && rr < 2.35) {
+                     ringA = SkyGen3.ringDensity(rr);
+                     double ox = x * tR;
+                     double oy = y * tR;
+                     double oz = z * tR;
+                     double sh = SkyGen3.sphereHit(ox, oy, oz, light, P, Rp);
+                     double lam = 0.35 + 0.65 * Math.abs(light[0] * Nr[0] + light[1] * Nr[1] + light[2] * Nr[2]);
+                     ringL = lam * (1.0 - 0.92 * sh);
                   }
                }
 
-               boolean var76 = var28 > 0.0 && var26 < var12x;
-               if (var14x > 0.0) {
-                  double var33 = (var16x - var3[0]) / var4;
-                  double var35 = (var18x - var3[1]) / var4;
-                  double var37 = (var20x - var3[2]) / var4;
-                  double var39 = var33 * var6[0] + var35 * var6[1] + var37 * var6[2];
-                  double var41 = SkyGen.fbmL(var33 * 3.0, var35 * 3.0, var37 * 3.0, 4.0) * 0.12;
-                  double var43 = Math.sin((var39 + var41) * 22.0) * 0.5 + 0.5;
-                  double var45 = Math.sin((var39 + var41 * 1.5) * 57.0 + 1.3) * 0.5 + 0.5;
-                  double var47 = SkyGen.fbmL(var33 * 8.0, var35 * 8.0 + 3.0, var37 * 8.0, 4.0);
-                  double[] var49 = var43 > 0.5 ? var8 : var9;
-                  double var50 = Math.abs(var43 - 0.5) * 2.0;
-                  double var52 = SkyGen.mix(var9[0], var49[0], var50);
-                  double var54 = SkyGen.mix(var9[1], var49[1], var50);
-                  double var56 = SkyGen.mix(var9[2], var49[2], var50);
-                  var52 = SkyGen.mix(var52, var10[0], var45 * 0.35);
-                  var54 = SkyGen.mix(var54, var10[1], var45 * 0.35);
-                  var56 = SkyGen.mix(var56, var10[2], var45 * 0.35);
-                  double var58 = SkyGen.smooth(0.3, 0.5, var47) * 0.5;
-                  var52 = SkyGen.mix(var52, var11[0], var58);
-                  var54 = SkyGen.mix(var54, var11[1], var58);
-                  var56 = SkyGen.mix(var56, var11[2], var58);
-                  double var60 = var33 * var7[0] + var35 * var7[1] + var37 * var7[2];
-                  double var62 = SkyGen.smooth(-0.1, 0.3, var60) * (0.25 + 0.75 * Math.max(0.0, var60));
-                  double var64 = var7[0] * var6[0] + var7[1] * var6[1] + var7[2] * var6[2];
-                  if (Math.abs(var64) > 1.0E-4) {
-                     double var66 = ((var3[0] - var16x) * var6[0] + (var3[1] - var18x) * var6[1] + (var3[2] - var20x) * var6[2]) / var64;
-                     if (var66 > 0.0) {
-                        double var68 = var16x + var7[0] * var66 - var3[0];
-                        double var70 = var18x + var7[1] * var66 - var3[1];
-                        double var72 = var20x + var7[2] * var66 - var3[2];
-                        double var74 = Math.sqrt(var68 * var68 + var70 * var70 + var72 * var72) / var4;
-                        if (var74 > 1.25 && var74 < 2.35) {
-                           var62 *= 1.0 - 0.8 * SkyGen3.ringDensity(var74);
+               boolean ringFront = ringA > 0.0 && tR < tP;
+               if (edge > 0.0) {
+                  double nx = (hx - P[0]) / Rp;
+                  double ny = (hy - P[1]) / Rp;
+                  double nz = (hz - P[2]) / Rp;
+                  double lat = nx * Nr[0] + ny * Nr[1] + nz * Nr[2];
+                  double w = SkyGen.fbmL(nx * 3.0, ny * 3.0, nz * 3.0, 4.0) * 0.12;
+                  double bands = Math.sin((lat + w) * 22.0) * 0.5 + 0.5;
+                  double bands2 = Math.sin((lat + w * 1.5) * 57.0 + 1.3) * 0.5 + 0.5;
+                  double storm = SkyGen.fbmL(nx * 8.0, ny * 8.0 + 3.0, nz * 8.0, 4.0);
+                  double[] ca = bands > 0.5 ? c1 : c2;
+                  double t = Math.abs(bands - 0.5) * 2.0;
+                  double r0 = SkyGen.mix(c2[0], ca[0], t);
+                  double g0 = SkyGen.mix(c2[1], ca[1], t);
+                  double b0 = SkyGen.mix(c2[2], ca[2], t);
+                  r0 = SkyGen.mix(r0, c3[0], bands2 * 0.35);
+                  g0 = SkyGen.mix(g0, c3[1], bands2 * 0.35);
+                  b0 = SkyGen.mix(b0, c3[2], bands2 * 0.35);
+                  double st = SkyGen.smooth(0.3, 0.5, storm) * 0.5;
+                  r0 = SkyGen.mix(r0, c4[0], st);
+                  g0 = SkyGen.mix(g0, c4[1], st);
+                  b0 = SkyGen.mix(b0, c4[2], st);
+                  double ld = nx * light[0] + ny * light[1] + nz * light[2];
+                  double lam = SkyGen.smooth(-0.1, 0.3, ld) * (0.25 + 0.75 * Math.max(0.0, ld));
+                  double dnl = light[0] * Nr[0] + light[1] * Nr[1] + light[2] * Nr[2];
+                  if (Math.abs(dnl) > 1.0E-4) {
+                     double st2 = ((P[0] - hx) * Nr[0] + (P[1] - hy) * Nr[1] + (P[2] - hz) * Nr[2]) / dnl;
+                     if (st2 > 0.0) {
+                        double qx = hx + light[0] * st2 - P[0];
+                        double qy = hy + light[1] * st2 - P[1];
+                        double qz = hz + light[2] * st2 - P[2];
+                        double qr = Math.sqrt(qx * qx + qy * qy + qz * qz) / Rp;
+                        if (qr > 1.25 && qr < 2.35) {
+                           lam *= 1.0 - 0.8 * SkyGen3.ringDensity(qr);
                         }
                      }
                   }
 
-                  double var85 = Math.pow(1.0 - Math.min(1.0, var22), 4.0);
-                  double var86 = 1.3 * var62;
-                  double var87 = var52 * var86 + var13[0] * var85 * var62 * 0.6;
-                  double var89 = var54 * var86 + var13[1] * var85 * var62 * 0.6;
-                  double var91 = var56 * var86 + var13[2] * var85 * var62 * 0.6;
-                  var87 += 0.004;
-                  var89 += 0.004;
-                  var91 += 0.006;
-                  var1x.r = var1x.r + (var87 - var1x.r) * var14x;
-                  var1x.g = var1x.g + (var89 - var1x.g) * var14x;
-                  var1x.b = var1x.b + (var91 - var1x.b) * var14x;
-                  var1x.vis *= 1.0 - var14x;
+                  double fres = Math.pow(1.0 - Math.min(1.0, rim), 4.0);
+                  double k = 1.3 * lam;
+                  double pr0 = r0 * k + atm[0] * fres * lam * 0.6;
+                  double pg0 = g0 * k + atm[1] * fres * lam * 0.6;
+                  double pb0 = b0 * k + atm[2] * fres * lam * 0.6;
+                  pr0 += 0.004;
+                  pg0 += 0.004;
+                  pb0 += 0.006;
+                  c.r = c.r + (pr0 - c.r) * edge;
+                  c.g = c.g + (pg0 - c.g) * edge;
+                  c.b = c.b + (pb0 - c.b) * edge;
+                  c.vis *= 1.0 - edge;
                }
 
-               if (var28 > 0.0 && (var76 || var14x < 1.0)) {
-                  double var77 = var28 * (var76 ? 1.0 : 1.0 - var14x);
-                  double var78 = 1.2 * var30;
-                  var1x.r = var1x.r + (var12[0] * var78 - var1x.r) * var77;
-                  var1x.g = var1x.g + (var12[1] * var78 - var1x.g) * var77;
-                  var1x.b = var1x.b + (var12[2] * var78 - var1x.b) * var77;
-                  var1x.vis *= 1.0 - var77;
+               if (ringA > 0.0 && (ringFront || edge < 1.0)) {
+                  double a = ringA * (ringFront ? 1.0 : 1.0 - edge);
+                  double k = 1.2 * ringL;
+                  c.r = c.r + (ringC[0] * k - c.r) * a;
+                  c.g = c.g + (ringC[1] * k - c.g) * a;
+                  c.b = c.b + (ringC[2] * k - c.b) * a;
+                  c.vis *= 1.0 - a;
                }
             }
          }
       };
-      var20.stars = 70000;
-      return var20;
+      s.stars = 70000;
+      return s;
    }
 
-   static double ringDensity(double var0) {
-      double var2 = 0.35 + 0.35 * SkyGen.noise(var0 * 18.0, 1.1, 0.5) + 0.2 * SkyGen.noise(var0 * 55.0, 2.3, 0.1);
-      var2 *= SkyGen.smooth(1.25, 1.32, var0) * SkyGen.smooth(2.35, 2.25, var0);
-      var2 *= 1.0 - 0.9 * SkyGen.smooth(0.035, 0.0, Math.abs(var0 - 1.95));
-      var2 *= 1.0 - 0.5 * SkyGen.smooth(1.55, 1.45, var0);
-      return SkyGen.clamp01(var2 * 1.4);
+   static double ringDensity(double rr) {
+      double d = 0.35 + 0.35 * SkyGen.noise(rr * 18.0, 1.1, 0.5) + 0.2 * SkyGen.noise(rr * 55.0, 2.3, 0.1);
+      d *= SkyGen.smooth(1.25, 1.32, rr) * SkyGen.smooth(2.35, 2.25, rr);
+      d *= 1.0 - 0.9 * SkyGen.smooth(0.035, 0.0, Math.abs(rr - 1.95));
+      d *= 1.0 - 0.5 * SkyGen.smooth(1.55, 1.45, rr);
+      return SkyGen.clamp01(d * 1.4);
    }
 
-   static double sphereHit(double var0, double var2, double var4, double[] var6, double[] var7, double var8) {
-      double var10 = var7[0] - var0;
-      double var12 = var7[1] - var2;
-      double var14 = var7[2] - var4;
-      double var16 = var10 * var6[0] + var12 * var6[1] + var14 * var6[2];
-      if (var16 < 0.0) {
+   static double sphereHit(double ox, double oy, double oz, double[] l, double[] p, double R) {
+      double vx = p[0] - ox;
+      double vy = p[1] - oy;
+      double vz = p[2] - oz;
+      double t = vx * l[0] + vy * l[1] + vz * l[2];
+      if (t < 0.0) {
          return 0.0;
       } else {
-         double var18 = var10 * var10 + var12 * var12 + var14 * var14 - var16 * var16;
-         return SkyGen.smooth(var8 * var8 * 1.03, var8 * var8 * 0.97, var18);
+         double d2 = vx * vx + vy * vy + vz * vz - t * t;
+         return SkyGen.smooth(R * R * 1.03, R * R * 0.97, d2);
       }
    }
 
    static SkyGen.Sky spiral() {
-      final double[] var0 = SkyGen.azel(20.0, 28.0);
-      final double[][] var1 = SkyGen.frame(var0, 35.0);
-      final double var2 = Math.cos(Math.toRadians(58.0));
-      final double[] var4 = SkyGen.rgb(16770748);
-      final double[] var5 = SkyGen.rgb(11060479);
-      final double[] var6 = SkyGen.rgb(16738992);
-      final double[] var7 = SkyGen.rgb(1707528);
-      final double[] var8 = SkyGen.rgb(131848);
-      final double[] var9 = SkyGen.azel(210.0, -30.0);
-      final double[][] var10 = SkyGen.frame(var9, -20.0);
-      final double[] var11 = SkyGen.rgb(3808874);
-      SkyGen3.Space var12 = new SkyGen3.Space() {
+      final double[] G = SkyGen.azel(20.0, 28.0);
+      final double[][] fr = SkyGen.frame(G, 35.0);
+      double Rg = 0.95;
+      final double inc = Math.cos(Math.toRadians(58.0));
+      final double[] bulgeC = SkyGen.rgb(16770748);
+      final double[] armC = SkyGen.rgb(11060479);
+      final double[] hii = SkyGen.rgb(16738992);
+      final double[] dustC = SkyGen.rgb(1707528);
+      final double[] bg = SkyGen.rgb(131848);
+      final double[] G2 = SkyGen.azel(210.0, -30.0);
+      final double[][] fr2 = SkyGen.frame(G2, -20.0);
+      final double[] neb = SkyGen.rgb(3808874);
+      SkyGen3.Space s = new SkyGen3.Space() {
          @Override
-         void sky(double var1x, double var3, double var5x, SkyGen.C var7x) {
-            SkyGen.set(var7x, var8);
-            SkyGen.add(var7x, var11, 0.12 * SkyGen.smooth(0.1, 0.8, SkyGen.fbmL(var1x * 2.0 + 1.0, var3 * 2.0, var5x * 2.0 + 5.0, 5.0)));
-            this.galaxy(var7x, var1x, var3, var5x, var0, var1, 0.95, var2, 1.0, 0.0);
-            this.galaxy(var7x, var1x, var3, var5x, var9, var10, 0.16, Math.cos(Math.toRadians(70.0)), 0.6, 3.0);
+         void sky(double x, double y, double z, SkyGen.C c) {
+            SkyGen.set(c, bg);
+            SkyGen.add(c, neb, 0.12 * SkyGen.smooth(0.1, 0.8, SkyGen.fbmL(x * 2.0 + 1.0, y * 2.0, z * 2.0 + 5.0, 5.0)));
+            this.galaxy(c, x, y, z, G, fr, 0.95, inc, 1.0, 0.0);
+            this.galaxy(c, x, y, z, G2, fr2, 0.16, Math.cos(Math.toRadians(70.0)), 0.6, 3.0);
          }
 
-         void galaxy(
-            SkyGen.C var1x,
-            double var2x,
-            double var4x,
-            double var6x,
-            double[] var8x,
-            double[][] var9x,
-            double var10x,
-            double var12x,
-            double var14,
-            double var16
-         ) {
-            double var18 = var2x * var8x[0] + var4x * var8x[1] + var6x * var8x[2];
-            if (!(var18 < Math.cos(var10x * 1.6))) {
-               double var20 = var2x * var9x[0][0] + var4x * var9x[0][1] + var6x * var9x[0][2];
-               double var22 = var2x * var9x[1][0] + var4x * var9x[1][1] + var6x * var9x[1][2];
-               double var24 = var20 / var10x;
-               double var26 = var22 / (var10x * var12x);
-               double var28 = Math.sqrt(var24 * var24 + var26 * var26) + 1.0E-9;
-               if (!(var28 > 1.6)) {
-                  double var30 = Math.atan2(var26, var24);
-                  double var32 = SkyGen.fbmL(var24 * 3.0 + var16, var26 * 3.0, 1.7 + var16, 4.0);
-                  double var34 = var30 - Math.log(var28) / 0.32 + var32 * 0.9;
-                  double var36 = Math.pow(0.5 + 0.5 * Math.cos(2.0 * var34), 2.5);
-                  double var38 = Math.pow(0.5 + 0.5 * Math.cos(2.0 * (var34 + 0.45)), 6.0);
-                  double var40 = Math.exp(-var28 / 0.3) * SkyGen.smooth(1.4, 0.6, var28);
-                  double var42 = Math.exp(-(var28 * var28) / 0.006) * 3.0 + Math.exp(-var28 / 0.06) * 1.0;
-                  double var44 = 0.75 + 0.5 * SkyGen.fbmL(var24 * 25.0 + var16, var26 * 25.0, 3.3, 3.0);
-                  double var46 = var40 * (0.25 + 1.4 * var36 * var44);
-                  double var48 = SkyGen.smooth(0.25, 0.55, SkyGen.fbmL(var24 * 14.0, var26 * 14.0 + var16, 7.1, 3.0)) * var36 * var40 * 2.0;
-                  double var50 = var38 * SkyGen.smooth(0.05, 0.25, var28) * SkyGen.smooth(1.1, 0.4, var28) * 0.75;
-                  double var52 = 0.45 * var14;
-                  var1x.r = var1x.r + var52 * (var5[0] * var46 + var4[0] * var42 + var6[0] * var48 * 0.5);
-                  var1x.g = var1x.g + var52 * (var5[1] * var46 + var4[1] * var42 + var6[1] * var48 * 0.5);
-                  var1x.b = var1x.b + var52 * (var5[2] * var46 + var4[2] * var42 + var6[2] * var48 * 0.5);
-                  double var54 = 1.0 - var50;
-                  var1x.r = var1x.r * var54 + var7[0] * var50 * 0.2;
-                  var1x.g = var1x.g * var54 + var7[1] * var50 * 0.2;
-                  var1x.b = var1x.b * var54 + var7[2] * var50 * 0.2;
-                  var1x.vis = var1x.vis * (1.0 - 0.6 * SkyGen.smooth(0.0, 0.6, var40 + var42 * 0.3));
+         void galaxy(SkyGen.C c, double x, double y, double z, double[] g, double[][] f, double R, double inc, double K, double seed) {
+            double cosA = x * g[0] + y * g[1] + z * g[2];
+            if (!(cosA < Math.cos(R * 1.6))) {
+               double px = x * f[0][0] + y * f[0][1] + z * f[0][2];
+               double py = x * f[1][0] + y * f[1][1] + z * f[1][2];
+               double a = px / R;
+               double bq = py / (R * inc);
+               double r = Math.sqrt(a * a + bq * bq) + 1.0E-9;
+               if (!(r > 1.6)) {
+                  double th = Math.atan2(bq, a);
+                  double warp = SkyGen.fbmL(a * 3.0 + seed, bq * 3.0, 1.7 + seed, 4.0);
+                  double phase = th - Math.log(r) / 0.32 + warp * 0.9;
+                  double arm = Math.pow(0.5 + 0.5 * Math.cos(2.0 * phase), 2.5);
+                  double armD = Math.pow(0.5 + 0.5 * Math.cos(2.0 * (phase + 0.45)), 6.0);
+                  double disk = Math.exp(-r / 0.3) * SkyGen.smooth(1.4, 0.6, r);
+                  double bulge = Math.exp(-(r * r) / 0.006) * 3.0 + Math.exp(-r / 0.06) * 1.0;
+                  double grain = 0.75 + 0.5 * SkyGen.fbmL(a * 25.0 + seed, bq * 25.0, 3.3, 3.0);
+                  double lumA = disk * (0.25 + 1.4 * arm * grain);
+                  double knots = SkyGen.smooth(0.25, 0.55, SkyGen.fbmL(a * 14.0, bq * 14.0 + seed, 7.1, 3.0)) * arm * disk * 2.0;
+                  double dust = armD * SkyGen.smooth(0.05, 0.25, r) * SkyGen.smooth(1.1, 0.4, r) * 0.75;
+                  double k = 0.45 * K;
+                  c.r = c.r + k * (armC[0] * lumA + bulgeC[0] * bulge + hii[0] * knots * 0.5);
+                  c.g = c.g + k * (armC[1] * lumA + bulgeC[1] * bulge + hii[1] * knots * 0.5);
+                  c.b = c.b + k * (armC[2] * lumA + bulgeC[2] * bulge + hii[2] * knots * 0.5);
+                  double dd = 1.0 - dust;
+                  c.r = c.r * dd + dustC[0] * dust * 0.2;
+                  c.g = c.g * dd + dustC[1] * dust * 0.2;
+                  c.b = c.b * dd + dustC[2] * dust * 0.2;
+                  c.vis = c.vis * (1.0 - 0.6 * SkyGen.smooth(0.0, 0.6, disk + bulge * 0.3));
                }
             }
          }
       };
-      var12.stars = 70000;
-      return var12;
+      s.stars = 70000;
+      return s;
    }
 
    static SkyGen.Sky blackHole() {
-      final double[] var0 = SkyGen.azel(0.0, 18.0);
-      final double[][] var1 = SkyGen.frame(var0, -8.0);
-      final double var2 = Math.cos(Math.toRadians(76.0));
-      final double[] var4 = SkyGen.norm(0.1, 0.5, 0.86);
-      final double[] var5 = SkyGen.rgb(2763386);
-      final double[] var6 = SkyGen.rgb(6957658);
-      final double[] var7 = SkyGen.rgb(65798);
-      final double[] var8 = SkyGen.rgb(16774368);
-      final double[] var9 = SkyGen.rgb(16752704);
-      final double[] var10 = SkyGen.rgb(12638463);
-      SkyGen3.Space var11 = new SkyGen3.Space() {
-         void background(double var1x, double var3, double var5x, SkyGen.C var7x) {
-            SkyGen.set(var7x, var7);
-            SkyGen3.milky(var7x, var1x, var3, var5x, var4, SkyGen3.coreOn(var4, var0), 0.04);
-            SkyGen.add(var7x, var5, 0.15 * SkyGen.smooth(0.0, 0.8, SkyGen.fbmL(var1x * 2.2 + 5.0, var3 * 2.2, var5x * 2.2, 5.0)));
-            SkyGen.add(var7x, var6, 0.1 * SkyGen.smooth(0.2, 0.9, SkyGen.fbmL(var1x * 3.1, var3 * 3.1 + 5.0, var5x * 3.1, 5.0)));
+      final double[] B = SkyGen.azel(0.0, 18.0);
+      final double[][] fr = SkyGen.frame(B, -8.0);
+      double rs = 0.1;
+      double E = 0.19;
+      final double inc = Math.cos(Math.toRadians(76.0));
+      final double[] mwN = SkyGen.norm(0.1, 0.5, 0.86);
+      final double[] neb = SkyGen.rgb(2763386);
+      final double[] neb2 = SkyGen.rgb(6957658);
+      final double[] bg = SkyGen.rgb(65798);
+      final double[] hot = SkyGen.rgb(16774368);
+      final double[] warm = SkyGen.rgb(16752704);
+      final double[] cool = SkyGen.rgb(12638463);
+      SkyGen3.Space s = new SkyGen3.Space() {
+         void background(double x, double y, double z, SkyGen.C c) {
+            SkyGen.set(c, bg);
+            SkyGen3.milky(c, x, y, z, mwN, SkyGen3.coreOn(mwN, B), 0.04);
+            SkyGen.add(c, neb, 0.15 * SkyGen.smooth(0.0, 0.8, SkyGen.fbmL(x * 2.2 + 5.0, y * 2.2, z * 2.2, 5.0)));
+            SkyGen.add(c, neb2, 0.1 * SkyGen.smooth(0.2, 0.9, SkyGen.fbmL(x * 3.1, y * 3.1 + 5.0, z * 3.1, 5.0)));
          }
 
          @Override
-         void sky(double var1x, double var3, double var5x, SkyGen.C var7x) {
-            double var8x = var1x * var0[0] + var3 * var0[1] + var5x * var0[2];
-            double var10x = var1x * var1[0][0] + var3 * var1[0][1] + var5x * var1[0][2];
-            double var12 = var1x * var1[1][0] + var3 * var1[1][1] + var5x * var1[1][2];
-            double var14 = Math.acos(Math.max(-1.0, Math.min(1.0, var8x)));
-            double var16 = Math.sqrt(var10x * var10x + var12 * var12) + 1.0E-12;
-            double var18 = var10x / var16;
-            double var20 = var12 / var16;
-            double var22 = var14 / 0.1;
-            if (var22 > 1.0) {
-               double var24 = var14 - 0.0361 / var14;
-               double var26 = Math.sin(var24);
-               double var28 = Math.cos(var24);
-               double var30 = var0[0] * var28 + (var1[0][0] * var18 + var1[1][0] * var20) * var26;
-               double var32 = var0[1] * var28 + (var1[0][1] * var18 + var1[1][1] * var20) * var26;
-               double var34 = var0[2] * var28 + (var1[0][2] * var18 + var1[1][2] * var20) * var26;
-               this.background(var30, var32, var34, var7x);
+         void sky(double x, double y, double z, SkyGen.C c) {
+            double cosA = x * B[0] + y * B[1] + z * B[2];
+            double px = x * fr[0][0] + y * fr[0][1] + z * fr[0][2];
+            double py = x * fr[1][0] + y * fr[1][1] + z * fr[1][2];
+            double th = Math.acos(Math.max(-1.0, Math.min(1.0, cosA)));
+            double pl = Math.sqrt(px * px + py * py) + 1.0E-12;
+            double ux = px / pl;
+            double uy = py / pl;
+            double q = th / 0.1;
+            if (q > 1.0) {
+               double th2 = th - 0.0361 / th;
+               double st = Math.sin(th2);
+               double ct = Math.cos(th2);
+               double dx = B[0] * ct + (fr[0][0] * ux + fr[1][0] * uy) * st;
+               double dy = B[1] * ct + (fr[0][1] * ux + fr[1][1] * uy) * st;
+               double dz = B[2] * ct + (fr[0][2] * ux + fr[1][2] * uy) * st;
+               this.background(dx, dy, dz, c);
             } else {
-               var7x.r = var7x.g = var7x.b = 0.0;
+               c.r = c.g = c.b = 0.0;
             }
 
-            var7x.vis = var7x.vis * SkyGen.smooth(1.6, 3.0, var22);
-            double var81 = SkyGen.smooth(1.03, 0.99, var22);
-            SkyGen.mul(var7x, 1.0 - var81);
-            double var82 = (var22 - 1.06) / 0.035;
-            double var83 = Math.exp(-var82 * var82);
-            double var84 = (var22 - 1.3) / (0.16 + 0.22 * Math.abs(var20));
-            double var85 = Math.exp(-var84 * var84) * (0.35 + 0.65 * var20 * var20) * SkyGen.smooth(1.02, 1.12, var22);
-            double var86 = 1.0 + 0.4 * var18;
-            double var36 = 0.6 + 0.4 * SkyGen.fbmL(var18 * 4.0, var20 * 4.0, var22 * 6.0, 3.0);
-            double var38 = 1.5 * var85 * var36 * var86 * var86 + 2.2 * var83 * var86;
-            double var40 = var8[0] * 0.6 + var9[0] * 0.4;
-            double var42 = var8[1] * 0.6 + var9[1] * 0.4;
-            double var44 = var8[2] * 0.6 + var9[2] * 0.4;
-            var7x.r += var40 * var38;
-            var7x.g += var42 * var38;
-            var7x.b += var44 * var38;
-            double var46 = var10x / 0.1;
-            double var48 = var12 / (0.1 * var2);
-            double var50 = Math.sqrt(var46 * var46 + var48 * var48);
-            boolean var52 = var12 < 0.0;
-            if (var50 > 2.2 && var50 < 7.5 && (var52 || var22 > 1.02)) {
-               double var53 = Math.atan2(var48, var46);
-               double var55 = var53 + 3.0 / Math.sqrt(var50);
-               double var57 = 0.45
-                  + 0.55 * SkyGen.smooth(-0.4, 0.5, SkyGen.fbmL(Math.cos(var55) * var50 * 0.9, Math.sin(var55) * var50 * 0.9, var50 * 0.4, 5.0));
-               double var59 = 0.75 + 0.25 * SkyGen.noise(var50 * 3.5, 0.3, 0.7);
-               double var61 = Math.pow(2.6 / var50, 2.0) * SkyGen.smooth(2.2, 2.9, var50) * SkyGen.smooth(7.5, 4.5, var50);
-               double var63 = 1.0 + 0.4 * (var46 / var50);
-               double var65 = var61 * var57 * var59 * var63 * var63 * var63 * 1.6;
-               double var67 = SkyGen.smooth(2.5, 7.5, var50);
-               double var69 = SkyGen.mix(var8[0], var9[0], var67);
-               double var71 = SkyGen.mix(var8[1], var9[1], var67);
-               double var73 = SkyGen.mix(var8[2], var9[2], var67);
-               double var75 = SkyGen.clamp01((var63 - 1.0) * 0.8);
-               var69 = SkyGen.mix(var69, var10[0], var75 * 0.5);
-               var71 = SkyGen.mix(var71, var10[1], var75 * 0.5);
-               var73 = SkyGen.mix(var73, var10[2], var75 * 0.5);
-               double var77 = SkyGen.smooth(1.0, 0.0, Math.abs(var48) / Math.max(1.0E-6, var50) * 0.0);
-               double var79 = SkyGen.clamp01(var65 * 1.4) * var77;
-               var7x.r = var7x.r * (1.0 - var79 * 0.5) + var69 * var65;
-               var7x.g = var7x.g * (1.0 - var79 * 0.5) + var71 * var65;
-               var7x.b = var7x.b * (1.0 - var79 * 0.5) + var73 * var65;
-               var7x.vis *= 1.0 - var79;
+            c.vis = c.vis * SkyGen.smooth(1.6, 3.0, q);
+            double shadow = SkyGen.smooth(1.03, 0.99, q);
+            SkyGen.mul(c, 1.0 - shadow);
+            double pr = (q - 1.06) / 0.035;
+            double ring = Math.exp(-pr * pr);
+            double lq = (q - 1.3) / (0.16 + 0.22 * Math.abs(uy));
+            double arc = Math.exp(-lq * lq) * (0.35 + 0.65 * uy * uy) * SkyGen.smooth(1.02, 1.12, q);
+            double beamL = 1.0 + 0.4 * ux;
+            double texA = 0.6 + 0.4 * SkyGen.fbmL(ux * 4.0, uy * 4.0, q * 6.0, 3.0);
+            double hk = 1.5 * arc * texA * beamL * beamL + 2.2 * ring * beamL;
+            double tr = hot[0] * 0.6 + warm[0] * 0.4;
+            double tg = hot[1] * 0.6 + warm[1] * 0.4;
+            double tb = hot[2] * 0.6 + warm[2] * 0.4;
+            c.r += tr * hk;
+            c.g += tg * hk;
+            c.b += tb * hk;
+            double a = px / 0.1;
+            double bq = py / (0.1 * inc);
+            double rd = Math.sqrt(a * a + bq * bq);
+            boolean front = py < 0.0;
+            if (rd > 2.2 && rd < 7.5 && (front || q > 1.02)) {
+               double phi = Math.atan2(bq, a);
+               double swirl = phi + 3.0 / Math.sqrt(rd);
+               double tex = 0.45 + 0.55 * SkyGen.smooth(-0.4, 0.5, SkyGen.fbmL(Math.cos(swirl) * rd * 0.9, Math.sin(swirl) * rd * 0.9, rd * 0.4, 5.0));
+               double streak = 0.75 + 0.25 * SkyGen.noise(rd * 3.5, 0.3, 0.7);
+               double prof = Math.pow(2.6 / rd, 2.0) * SkyGen.smooth(2.2, 2.9, rd) * SkyGen.smooth(7.5, 4.5, rd);
+               double dop = 1.0 + 0.4 * (a / rd);
+               double I = prof * tex * streak * dop * dop * dop * 1.6;
+               double tt = SkyGen.smooth(2.5, 7.5, rd);
+               double cr = SkyGen.mix(hot[0], warm[0], tt);
+               double cg = SkyGen.mix(hot[1], warm[1], tt);
+               double cb = SkyGen.mix(hot[2], warm[2], tt);
+               double bl = SkyGen.clamp01((dop - 1.0) * 0.8);
+               cr = SkyGen.mix(cr, cool[0], bl * 0.5);
+               cg = SkyGen.mix(cg, cool[1], bl * 0.5);
+               cb = SkyGen.mix(cb, cool[2], bl * 0.5);
+               double thick = SkyGen.smooth(1.0, 0.0, Math.abs(bq) / Math.max(1.0E-6, rd) * 0.0);
+               double al = SkyGen.clamp01(I * 1.4) * thick;
+               c.r = c.r * (1.0 - al * 0.5) + cr * I;
+               c.g = c.g * (1.0 - al * 0.5) + cg * I;
+               c.b = c.b * (1.0 - al * 0.5) + cb * I;
+               c.vis *= 1.0 - al;
             }
 
-            SkyGen.add(var7x, var9, 0.025 * Math.exp(-Math.max(0.0, var22 - 1.0) / 1.2) * SkyGen.smooth(0.97, 1.05, var22));
+            SkyGen.add(c, warm, 0.025 * Math.exp(-Math.max(0.0, q - 1.0) / 1.2) * SkyGen.smooth(0.97, 1.05, q));
          }
 
          @Override
-         double starDensity(double var1x, double var3, double var5x) {
-            double var7x = var1x * var0[0] + var3 * var0[1] + var5x * var0[2];
-            double var9x = Math.acos(Math.max(-1.0, Math.min(1.0, var7x)));
-            return (0.3 + 0.5 * SkyGen3.milkyDensity(var1x, var3, var5x, var4)) * SkyGen.smooth(0.15000000000000002, 0.30000000000000004, var9x);
+         double starDensity(double x, double y, double z) {
+            double cosA = x * B[0] + y * B[1] + z * B[2];
+            double th = Math.acos(Math.max(-1.0, Math.min(1.0, cosA)));
+            return (0.3 + 0.5 * SkyGen3.milkyDensity(x, y, z, mwN)) * SkyGen.smooth(0.15000000000000002, 0.30000000000000004, th);
          }
       };
-      var11.stars = 80000;
-      var11.detail = 0.85;
-      return var11;
+      s.stars = 80000;
+      s.detail = 0.85;
+      return s;
    }
 
    static SkyGen.Sky voidSky() {
-      final double[] var0 = SkyGen.rgb(393740);
-      final double[] var1 = SkyGen.rgb(5906058);
-      final double[] var2 = SkyGen.rgb(12603647);
-      final double[] var3 = SkyGen.rgb(1706554);
-      final double[] var4 = SkyGen.rgb(14725375);
-      SkyGen3.Space var5 = new SkyGen3.Space() {
+      final double[] bg = SkyGen.rgb(393740);
+      final double[] v1 = SkyGen.rgb(5906058);
+      final double[] v2 = SkyGen.rgb(12603647);
+      final double[] v3 = SkyGen.rgb(1706554);
+      final double[] eye = SkyGen.rgb(14725375);
+      SkyGen3.Space s = new SkyGen3.Space() {
          @Override
-         void sky(double var1x, double var3x, double var5x, SkyGen.C var7) {
-            SkyGen.set(var7, var0);
-            double var8 = SkyGen.fbmL(var1x * 1.5 + 2.0, var3x * 1.5, var5x * 1.5, 3.0);
-            double var10 = SkyGen.fbmL(var1x * 1.5, var3x * 1.5 + 6.0, var5x * 1.5, 3.0);
-            double var12 = SkyGen.fbmL(var1x * 1.5, var3x * 1.5, var5x * 1.5 + 4.0, 3.0);
-            double var14 = var1x + var8 * 0.9;
-            double var16 = var3x + var10 * 0.9;
-            double var18 = var5x + var12 * 0.9;
-            double var20 = SkyGen.fbmL(var14 * 2.5, var16 * 2.5, var18 * 2.5, 6.0);
-            double var22 = SkyGen.ridged(var14 * 3.5 + 1.0, var16 * 3.5, var18 * 3.5, 5);
-            double var24 = SkyGen.smooth(0.0, 0.6, var20);
-            double var26 = SkyGen.smooth(0.6, 0.95, var22) * var24;
-            SkyGen.add(var7, var3, 0.5 * var24);
-            SkyGen.add(var7, var1, 0.35 * var24 * var24 + 0.25 * var26);
-            SkyGen.add(var7, var2, 0.5 * var26 * var26);
-            double var28 = SkyGen.smooth(0.2, -0.9, var3x);
-            SkyGen.add(var7, var1, 0.07 * var28);
-            double[] var30 = SkyGen3.EYE;
-            double var31 = var1x * var30[0] + var3x * var30[1] + var5x * var30[2];
-            double var33 = 2.0 * (1.0 - var31);
-            SkyGen.add(var7, var4, 0.9 * Math.exp(-var33 / 0.0015) + 0.1 * Math.exp(-var33 / 0.03));
+         void sky(double x, double y, double z, SkyGen.C c) {
+            SkyGen.set(c, bg);
+            double wx = SkyGen.fbmL(x * 1.5 + 2.0, y * 1.5, z * 1.5, 3.0);
+            double wy = SkyGen.fbmL(x * 1.5, y * 1.5 + 6.0, z * 1.5, 3.0);
+            double wz = SkyGen.fbmL(x * 1.5, y * 1.5, z * 1.5 + 4.0, 3.0);
+            double X = x + wx * 0.9;
+            double Y = y + wy * 0.9;
+            double Z = z + wz * 0.9;
+            double n = SkyGen.fbmL(X * 2.5, Y * 2.5, Z * 2.5, 6.0);
+            double r = SkyGen.ridged(X * 3.5 + 1.0, Y * 3.5, Z * 3.5, 5);
+            double swirl = SkyGen.smooth(0.0, 0.6, n);
+            double fil = SkyGen.smooth(0.6, 0.95, r) * swirl;
+            SkyGen.add(c, v3, 0.5 * swirl);
+            SkyGen.add(c, v1, 0.35 * swirl * swirl + 0.25 * fil);
+            SkyGen.add(c, v2, 0.5 * fil * fil);
+            double below = SkyGen.smooth(0.2, -0.9, y);
+            SkyGen.add(c, v1, 0.07 * below);
+            double[] E = SkyGen3.EYE;
+            double cosA = x * E[0] + y * E[1] + z * E[2];
+            double a2 = 2.0 * (1.0 - cosA);
+            SkyGen.add(c, eye, 0.9 * Math.exp(-a2 / 0.0015) + 0.1 * Math.exp(-a2 / 0.03));
          }
 
          @Override
-         void moteColor(Random var1x, double[] var2x) {
-            double var3x = var1x.nextDouble();
-            if (var3x < 0.7) {
-               var2x[0] = 0.9;
-               var2x[1] = 0.5;
-               var2x[2] = 1.3;
+         void moteColor(Random r, double[] o) {
+            double t = r.nextDouble();
+            if (t < 0.7) {
+               o[0] = 0.9;
+               o[1] = 0.5;
+               o[2] = 1.3;
             } else {
-               var2x[0] = 0.6;
-               var2x[1] = 0.9;
-               var2x[2] = 1.2;
+               o[0] = 0.6;
+               o[1] = 0.9;
+               o[2] = 1.2;
             }
          }
 
          @Override
-         double moteDensity(double var1x, double var3x, double var5x) {
+         double moteDensity(double x, double y, double z) {
             return 1.0;
          }
       };
-      var5.stars = 30000;
-      var5.starMax = 1.6;
-      var5.motes = 700;
-      var5.moteBright = 0.35;
-      var5.moteSize = 1.2;
-      return var5;
+      s.stars = 30000;
+      s.starMax = 1.6;
+      s.motes = 700;
+      s.moteBright = 0.35;
+      s.moteSize = 1.2;
+      return s;
    }
 
-   static double[] coreOn(double[] var0, double[] var1) {
-      double var2 = var1[0] * var0[0] + var1[1] * var0[1] + var1[2] * var0[2];
-      return SkyGen.norm(var1[0] - var0[0] * var2, var1[1] - var0[1] * var2, var1[2] - var0[2] * var2);
+   static double[] coreOn(double[] N, double[] hint) {
+      double d = hint[0] * N[0] + hint[1] * N[1] + hint[2] * N[2];
+      return SkyGen.norm(hint[0] - N[0] * d, hint[1] - N[1] * d, hint[2] - N[2] * d);
    }
 
    static final class Aurora {
@@ -1044,14 +1024,14 @@ final class SkyGen3 {
       double earthshine = 0.015;
       double[] grad = null;
 
-      Body(double[] var1, double var2, double var4) {
-         this.d = var1;
-         this.rad = var2;
-         this.sinR = Math.sin(var2);
-         double[][] var6 = SkyGen.frame(var1, var4);
-         this.ex = var6[0];
-         this.ey = var6[1];
-         this.cosOut = Math.cos(Math.min(Math.PI, var2 * 14.0));
+      Body(double[] dir, double rad, double roll) {
+         this.d = dir;
+         this.rad = rad;
+         this.sinR = Math.sin(rad);
+         double[][] f = SkyGen.frame(dir, roll);
+         this.ex = f[0];
+         this.ey = f[1];
+         this.cosOut = Math.cos(Math.min(Math.PI, rad * 14.0));
       }
    }
 
@@ -1089,67 +1069,64 @@ final class SkyGen3 {
       }
 
       @Override
-      void sky(double var1, double var3, double var5, SkyGen.C var7) {
-         double var8 = var3 > 0.0 ? var3 : 0.0;
-         double var10 = Math.exp(-var8 / this.hW);
-         var7.r = this.zen[0] + (this.hor[0] - this.zen[0]) * var10;
-         var7.g = this.zen[1] + (this.hor[1] - this.zen[1]) * var10;
-         var7.b = this.zen[2] + (this.hor[2] - this.zen[2]) * var10;
+      void sky(double x, double y, double z, SkyGen.C c) {
+         double yy = y > 0.0 ? y : 0.0;
+         double t = Math.exp(-yy / this.hW);
+         c.r = this.zen[0] + (this.hor[0] - this.zen[0]) * t;
+         c.g = this.zen[1] + (this.hor[1] - this.zen[1]) * t;
+         c.b = this.zen[2] + (this.hor[2] - this.zen[2]) * t;
          if (this.air != null) {
-            SkyGen.add(var7, this.air, this.airK * Math.exp(-var8 / this.airW));
+            SkyGen.add(c, this.air, this.airK * Math.exp(-yy / this.airW));
          }
 
          if (this.lp != null) {
-            double var12 = Math.sqrt(var1 * var1 + var5 * var5) + 1.0E-9;
-            double var14 = (var1 * this.lpDir[0] + var5 * this.lpDir[2]) / var12;
-            var14 = Math.max(0.0, var14);
-            SkyGen.add(var7, this.lp, this.lpK * var14 * var14 * var14 * Math.exp(-var8 / 0.1));
+            double hl = Math.sqrt(x * x + z * z) + 1.0E-9;
+            double a = (x * this.lpDir[0] + z * this.lpDir[2]) / hl;
+            a = Math.max(0.0, a);
+            SkyGen.add(c, this.lp, this.lpK * a * a * a * Math.exp(-yy / 0.1));
          }
 
          if (this.mwN != null) {
-            SkyGen3.milky(var7, var1, var3, var5, this.mwN, this.mwCore, this.mwK);
+            SkyGen3.milky(c, x, y, z, this.mwN, this.mwCore, this.mwK);
          }
 
          if (this.au != null) {
-            SkyGen3.aurora(var7, var1, var3, var5, this.au);
+            SkyGen3.aurora(c, x, y, z, this.au);
          }
 
-         this.extra(var1, var3, var5, var7);
+         this.extra(x, y, z, c);
          if (this.moon != null) {
             if (this.halo22 > 0.0) {
-               double var20 = var1 * this.moon.d[0] + var3 * this.moon.d[1] + var5 * this.moon.d[2];
-               double var22 = Math.acos(Math.max(-1.0, Math.min(1.0, var20)));
-               double var16 = (var22 - 0.384) / 0.016;
-               double var18 = Math.exp(-var16 * var16) * this.halo22
-                  + Math.exp(-Math.max(0.0, var22 - 0.384) / 0.12) * this.halo22 * 0.25 * SkyGen.smooth(0.36, 0.4, var22);
-               var7.r = var7.r + var18 * (1.1 - 0.25 * SkyGen.smooth(-1.0, 1.0, var16));
-               var7.g += var18;
-               var7.b = var7.b + var18 * (0.85 + 0.35 * SkyGen.smooth(-1.0, 1.0, var16));
+               double cosA = x * this.moon.d[0] + y * this.moon.d[1] + z * this.moon.d[2];
+               double ang = Math.acos(Math.max(-1.0, Math.min(1.0, cosA)));
+               double q = (ang - 0.384) / 0.016;
+               double hh = Math.exp(-q * q) * this.halo22 + Math.exp(-Math.max(0.0, ang - 0.384) / 0.12) * this.halo22 * 0.25 * SkyGen.smooth(0.36, 0.4, ang);
+               c.r = c.r + hh * (1.1 - 0.25 * SkyGen.smooth(-1.0, 1.0, q));
+               c.g += hh;
+               c.b = c.b + hh * (0.85 + 0.35 * SkyGen.smooth(-1.0, 1.0, q));
             }
 
-            SkyGen3.moon(var7, var1, var3, var5, this.moon, this.moonTint, this.moonBright, this.moonLight);
+            SkyGen3.moon(c, x, y, z, this.moon, this.moonTint, this.moonBright, this.moonLight);
          }
 
          if (this.c1 != null) {
-            SkyGen.clouds(var7, var1, var3, var5, this.c1, this.moon != null ? this.moon.d : this.sun, this.cloudLight);
+            SkyGen.clouds(c, x, y, z, this.c1, this.moon != null ? this.moon.d : this.sun, this.cloudLight);
          }
 
          if (this.mist != null) {
-            SkyGen.mixTo(var7, this.mist, this.mistK * Math.exp(-var8 / this.mistW));
+            SkyGen.mixTo(c, this.mist, this.mistK * Math.exp(-yy / this.mistW));
          }
 
-         var7.vis = var7.vis * SkyGen.smooth(-0.01, 0.2, var3);
+         c.vis = c.vis * SkyGen.smooth(-0.01, 0.2, y);
       }
 
-      void extra(double var1, double var3, double var5, SkyGen.C var7) {
+      void extra(double x, double y, double z, SkyGen.C c) {
       }
 
       @Override
-      double starDensity(double var1, double var3, double var5) {
-         double var7 = SkyGen.smooth(-0.02, 0.3, var3);
-         return this.mwN == null
-            ? var7 * 0.35 * this.starDens
-            : var7 * Math.min(1.0, (0.25 + 0.75 * SkyGen3.milkyDensity(var1, var3, var5, this.mwN)) * this.starDens);
+      double starDensity(double x, double y, double z) {
+         double h = SkyGen.smooth(-0.02, 0.3, y);
+         return this.mwN == null ? h * 0.35 * this.starDens : h * Math.min(1.0, (0.25 + 0.75 * SkyGen3.milkyDensity(x, y, z, this.mwN)) * this.starDens);
       }
    }
 
@@ -1163,7 +1140,7 @@ final class SkyGen3 {
       }
 
       @Override
-      double starDensity(double var1, double var3, double var5) {
+      double starDensity(double x, double y, double z) {
          return 0.4;
       }
    }

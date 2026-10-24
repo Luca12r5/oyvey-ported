@@ -18,52 +18,52 @@ public final class PlayerState {
    public static final PlayerState EMPTY = new PlayerState(false, null, null, "", "", null, 0L, 0L, System.currentTimeMillis(), false, false, "off", -1, false);
 
    public PlayerState(
-      boolean var1,
-      String var2,
-      String var3,
-      String var4,
-      String var5,
-      String var6,
-      long var7,
-      long var9,
-      long var11,
-      boolean var13,
-      boolean var14,
-      String var15,
-      int var16,
-      boolean var17
+      boolean hasTrack,
+      String trackId,
+      String uri,
+      String title,
+      String artist,
+      String artUrl,
+      long durationMs,
+      long progressMs,
+      long sampledAt,
+      boolean playing,
+      boolean shuffle,
+      String repeat,
+      int volume,
+      boolean liked
    ) {
-      this.hasTrack = var1;
-      this.trackId = var2;
-      this.uri = var3;
-      this.title = var4;
-      this.artist = var5;
-      this.artUrl = var6;
-      this.durationMs = var7;
-      this.progressMs = var9;
-      this.sampledAt = var11;
-      this.playing = var13;
-      this.shuffle = var14;
-      this.repeat = var15;
-      this.volume = var16;
-      this.liked = var17;
+      this.hasTrack = hasTrack;
+      this.trackId = trackId;
+      this.uri = uri;
+      this.title = title;
+      this.artist = artist;
+      this.artUrl = artUrl;
+      this.durationMs = durationMs;
+      this.progressMs = progressMs;
+      this.sampledAt = sampledAt;
+      this.playing = playing;
+      this.shuffle = shuffle;
+      this.repeat = repeat;
+      this.volume = volume;
+      this.liked = liked;
    }
 
    public long currentProgress() {
-      long var1 = this.progressMs;
+      long p = this.progressMs;
       if (this.playing) {
-         var1 += System.currentTimeMillis() - this.sampledAt;
+         p += System.currentTimeMillis() - this.sampledAt;
       }
 
       if (this.durationMs > 0L) {
-         var1 = Math.min(var1, this.durationMs);
+         p = Math.min(p, this.durationMs);
       }
 
-      return Math.max(0L, var1);
+      return Math.max(0L, p);
    }
 
-   public PlayerState withPlaying(boolean var1) {
-      long var2 = System.currentTimeMillis();
+   public PlayerState withPlaying(boolean v) {
+      long now = System.currentTimeMillis();
       return new PlayerState(
          this.hasTrack,
          this.trackId,
@@ -73,8 +73,8 @@ public final class PlayerState {
          this.artUrl,
          this.durationMs,
          this.currentProgress(),
-         var2,
-         var1,
+         now,
+         v,
          this.shuffle,
          this.repeat,
          this.volume,
@@ -82,7 +82,7 @@ public final class PlayerState {
       );
    }
 
-   public PlayerState withProgress(long var1) {
+   public PlayerState withProgress(long ms) {
       return new PlayerState(
          this.hasTrack,
          this.trackId,
@@ -91,7 +91,7 @@ public final class PlayerState {
          this.artist,
          this.artUrl,
          this.durationMs,
-         var1,
+         ms,
          System.currentTimeMillis(),
          this.playing,
          this.shuffle,
@@ -101,7 +101,7 @@ public final class PlayerState {
       );
    }
 
-   public PlayerState withShuffle(boolean var1) {
+   public PlayerState withShuffle(boolean v) {
       return new PlayerState(
          this.hasTrack,
          this.trackId,
@@ -113,14 +113,14 @@ public final class PlayerState {
          this.progressMs,
          this.sampledAt,
          this.playing,
-         var1,
+         v,
          this.repeat,
          this.volume,
          this.liked
       );
    }
 
-   public PlayerState withRepeat(String var1) {
+   public PlayerState withRepeat(String v) {
       return new PlayerState(
          this.hasTrack,
          this.trackId,
@@ -133,32 +133,13 @@ public final class PlayerState {
          this.sampledAt,
          this.playing,
          this.shuffle,
-         var1,
+         v,
          this.volume,
          this.liked
       );
    }
 
-   public PlayerState withVolume(int var1) {
-      return new PlayerState(
-         this.hasTrack,
-         this.trackId,
-         this.uri,
-         this.title,
-         this.artist,
-         this.artUrl,
-         this.durationMs,
-         this.progressMs,
-         this.sampledAt,
-         this.playing,
-         this.shuffle,
-         this.repeat,
-         var1,
-         this.liked
-      );
-   }
-
-   public PlayerState withLiked(boolean var1) {
+   public PlayerState withVolume(int v) {
       return new PlayerState(
          this.hasTrack,
          this.trackId,
@@ -172,16 +153,35 @@ public final class PlayerState {
          this.playing,
          this.shuffle,
          this.repeat,
-         this.volume,
-         var1
+         v,
+         this.liked
       );
    }
 
-   public static String fmt(long var0) {
-      long var2 = Math.max(0L, var0) / 1000L;
-      long var4 = var2 / 3600L;
-      long var6 = var2 % 3600L / 60L;
-      long var8 = var2 % 60L;
-      return var4 > 0L ? String.format("%d:%02d:%02d", var4, var6, var8) : String.format("%d:%02d", var6, var8);
+   public PlayerState withLiked(boolean v) {
+      return new PlayerState(
+         this.hasTrack,
+         this.trackId,
+         this.uri,
+         this.title,
+         this.artist,
+         this.artUrl,
+         this.durationMs,
+         this.progressMs,
+         this.sampledAt,
+         this.playing,
+         this.shuffle,
+         this.repeat,
+         this.volume,
+         v
+      );
+   }
+
+   public static String fmt(long ms) {
+      long s = Math.max(0L, ms) / 1000L;
+      long h = s / 3600L;
+      long m = s % 3600L / 60L;
+      long sec = s % 60L;
+      return h > 0L ? String.format("%d:%02d:%02d", h, m, sec) : String.format("%d:%02d", m, sec);
    }
 }

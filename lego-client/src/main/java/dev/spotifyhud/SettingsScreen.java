@@ -32,16 +32,16 @@ public final class SettingsScreen extends Screen {
    private static int lastTab = 0;
    private int shownPort;
 
-   public SettingsScreen(Config var1, Media var2, HudRenderer var3) {
+   public SettingsScreen(Config cfg, Media media, HudRenderer hud) {
       super(Component.literal("Spotify HUD"));
-      this.cfg = var1;
-      this.media = var2;
-      this.api = var2.api();
-      this.interaction = new HudInteraction(var1, var3);
+      this.cfg = cfg;
+      this.media = media;
+      this.api = media.api();
+      this.interaction = new HudInteraction(cfg, hud);
       this.ui.tab = lastTab;
-      this.ui.clientIdText = var1.clientId == null ? "" : var1.clientId;
-      this.ui.portText = String.valueOf(var1.redirectPort);
-      this.shownPort = var1.redirectPort;
+      this.ui.clientIdText = cfg.clientId == null ? "" : cfg.clientId;
+      this.ui.portText = String.valueOf(cfg.redirectPort);
+      this.shownPort = cfg.redirectPort;
    }
 
    @Override
@@ -49,248 +49,230 @@ public final class SettingsScreen extends Screen {
    }
 
    private int[] card() {
-      int var1 = this.width;
-      int var2 = this.height;
-      double var3 = Math.min(1.0, Math.min((var1 - 10) / 360.0, (var2 - 10) / 230.0));
-      int var5 = (int)Math.round(360.0 * var3);
-      int var6 = (int)Math.round(230.0 * var3);
-      return new int[]{(var1 - var5) / 2, (var2 - var6) / 2, var5, var6};
+      int sw = this.width;
+      int sh = this.height;
+      double k = Math.min(1.0, Math.min((sw - 10) / 360.0, (sh - 10) / 230.0));
+      int w = (int)Math.round(360.0 * k);
+      int h = (int)Math.round(230.0 * k);
+      return new int[]{(sw - w) / 2, (sh - h) / 2, w, h};
    }
 
-   private static boolean inside(double var0, double var2, int[] var4) {
-      return var0 >= var4[0] && var2 >= var4[1] && var0 < var4[0] + var4[2] && var2 < var4[1] + var4[3];
+   private static boolean inside(double mx, double my, int[] b) {
+      return mx >= b[0] && my >= b[1] && mx < b[0] + b[2] && my < b[1] + b[3];
    }
 
-   private static double dx(double var0, int[] var2) {
-      return (var0 - var2[0]) * 360.0 / var2[2];
+   private static double dx(double mx, int[] b) {
+      return (mx - b[0]) * 360.0 / b[2];
    }
 
-   private static double dy(double var0, int[] var2) {
-      return (var0 - var2[1]) * 230.0 / var2[3];
-   }
-
-   @Override
-   public void renderBackground(GuiGraphics var1, int var2, int var3, float var4) {
+   private static double dy(double my, int[] b) {
+      return (my - b[1]) * 230.0 / b[3];
    }
 
    @Override
-   public void render(GuiGraphics var1, int var2, int var3, float var4) {
+   public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+   }
+
+   @Override
+   public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
       if (this.cfg.redirectPort != this.shownPort && !"port".equals(this.ui.focused)) {
          this.shownPort = this.cfg.redirectPort;
          this.ui.portText = String.valueOf(this.shownPort);
       }
 
-      int var5 = this.width;
-      int var6 = this.height;
-      var1.fill(0, 0, var5, var6, 1711276032);
-      this.interaction.render(var1, var2, var3, var5, var6);
-      int[] var7 = this.card();
-      List var8 = this.ui.build(this.cfg, this.api);
-      SettingsUi.W var9 = inside(var2, var3, var7) ? SettingsUi.hit(var8, dx(var2, var7), dy(var3, var7)) : null;
-      this.ui.hover = var9 != null ? var9.id : null;
-      SettingsPainter.Info var10 = this.info();
-      double var11 = HudRenderer.animTime();
-      StringBuilder var13 = new StringBuilder(256);
+      int sw = this.width;
+      int sh = this.height;
+      ctx.fill(0, 0, sw, sh, 1711276032);
+      this.interaction.render(ctx, mouseX, mouseY, sw, sh);
+      int[] b = this.card();
+      List<SettingsUi.W> ws = this.ui.build(this.cfg, this.api);
+      SettingsUi.W hov = inside(mouseX, mouseY, b) ? SettingsUi.hit(ws, dx(mouseX, b), dy(mouseY, b)) : null;
+      this.ui.hover = hov != null ? hov.id : null;
+      SettingsPainter.Info info = this.info();
+      double t = HudRenderer.animTime();
+      StringBuilder key = new StringBuilder(256);
 
-      for (SettingsUi.W var15 : (Iterable<SettingsUi.W>) (Iterable<?>) (var8)) {
-         var13.append(var15.id)
-            .append(var15.on)
-            .append(var15.selected)
-            .append(Math.round(var15.value * 1000.0))
-            .append(var15.label)
-            .append(var15.sub)
-            .append(';');
+      for (SettingsUi.W w : ws) {
+         key.append(w.id).append(w.on).append(w.selected).append(Math.round(w.value * 1000.0)).append(w.label).append(w.sub).append(';');
       }
 
-      var13.append(this.ui.hover)
+      key.append(this.ui.hover)
          .append('|')
          .append(this.ui.focused)
          .append(this.ui.dragging)
          .append(this.ui.selectAll)
          .append('|')
-         .append(var10.detect)
-         .append(var10.account)
-         .append(var10.latency)
-         .append(var10.redirect)
-         .append(var10.caretOn)
+         .append(info.detect)
+         .append(info.account)
+         .append(info.latency)
+         .append(info.redirect)
+         .append(info.caretOn)
          .append('|')
          .append(this.cfg.theme)
-         .append(System.identityHashCode(var10.art))
+         .append(System.identityHashCode(info.art))
          .append('|')
-         .append(this.ui.tab == 1 ? HudRenderer.frame(var11) : 0L);
-      Minecraft var20 = Minecraft.getInstance();
-      int var21 = Math.max(1, var20.getWindow().getGuiScale());
-      int var16 = var7[2] * var21;
-      int var17 = var7[3] * var21;
+         .append(this.ui.tab == 1 ? HudRenderer.frame(t) : 0L);
+      Minecraft mc = Minecraft.getInstance();
+      int s = Math.max(1, mc.getWindow().getGuiScale());
+      int pw = b[2] * s;
+      int ph = b[3] * s;
 
       try {
-         this.slot
-            .draw(
-               var1,
-               var20,
-               var7[0],
-               var7[1],
-               var7[2],
-               var7[3],
-               var16,
-               var17,
-               var13.toString(),
-               () -> SettingsPainter.render(var16, var17, this.ui, var8, this.cfg, var10, var11)
-            );
+         this.slot.draw(ctx, mc, b[0], b[1], b[2], b[3], pw, ph, key.toString(), () -> SettingsPainter.render(pw, ph, this.ui, ws, this.cfg, info, t));
       } catch (Throwable var19) {
-         var1.fill(var7[0], var7[1], var7[0] + var7[2], var7[1] + var7[3], -267251182);
-         var1.drawCenteredString(this.font, "Spotify HUD - Einstellungen (Grafik nicht verfügbar)", var5 / 2, var7[1] + 10, -1);
+         ctx.fill(b[0], b[1], b[0] + b[2], b[1] + b[3], -267251182);
+         ctx.drawCenteredString(this.font, "Spotify HUD - Einstellungen (Grafik nicht verfügbar)", sw / 2, b[1] + 10, -1);
       }
    }
 
    private SettingsPainter.Info info() {
-      SettingsPainter.Info var1 = new SettingsPainter.Info();
-      SmtcBridge var2 = this.media.smtc();
-      String var3 = this.media.sourceName();
-      if (var3 != null) {
-         var1.detect = "Erkannt: " + var3;
-         var1.detectColor = new Color(30, 215, 96);
-      } else if (var2.fatal() != null) {
-         var1.detect = "Windows-Erkennung: " + var2.fatal();
-         var1.detectColor = new Color(241, 94, 108);
-      } else if (!var2.available()) {
-         var1.detect = "Song-Erkennung startet...";
-         var1.detectColor = new Color(255, 209, 102);
+      SettingsPainter.Info i = new SettingsPainter.Info();
+      SmtcBridge smtc = this.media.smtc();
+      String src = this.media.sourceName();
+      if (src != null) {
+         i.detect = "Erkannt: " + src;
+         i.detectColor = new Color(30, 215, 96);
+      } else if (smtc.fatal() != null) {
+         i.detect = "Windows-Erkennung: " + smtc.fatal();
+         i.detectColor = new Color(241, 94, 108);
+      } else if (!smtc.available()) {
+         i.detect = "Song-Erkennung startet...";
+         i.detectColor = new Color(255, 209, 102);
       } else {
-         var1.detect = "Kein Song erkannt - starte Spotify";
-         var1.detectColor = new Color(255, 209, 102);
+         i.detect = "Kein Song erkannt - starte Spotify";
+         i.detectColor = new Color(255, 209, 102);
       }
 
-      String var4 = this.api.status();
+      String st = this.api.status();
       if (this.api.isLoggedIn()) {
-         var1.account = System.currentTimeMillis() - this.api.statusTime() > 8000L ? "Verbunden - das Herz speichert Songs" : var4;
-         var1.accountColor = new Color(30, 215, 96);
+         i.account = System.currentTimeMillis() - this.api.statusTime() > 8000L ? "Verbunden - das Herz speichert Songs" : st;
+         i.accountColor = new Color(30, 215, 96);
       } else if (this.api.authRunning()) {
-         var1.account = var4;
-         var1.accountColor = new Color(255, 209, 102);
+         i.account = st;
+         i.accountColor = new Color(255, 209, 102);
       } else {
-         boolean var5 = System.currentTimeMillis() - this.api.statusTime() < 60000L;
-         var1.account = var5 && var4 != null && !var4.isEmpty() ? var4 : "Nicht verbunden";
-         var1.accountColor = var5 ? new Color(255, 209, 102) : new Color(160, 160, 166);
+         boolean recent = System.currentTimeMillis() - this.api.statusTime() < 60000L;
+         i.account = recent && st != null && !st.isEmpty() ? st : "Nicht verbunden";
+         i.accountColor = recent ? new Color(255, 209, 102) : new Color(160, 160, 166);
       }
 
-      var1.latency = this.media.latencyMs();
-      var1.redirect = this.cfg.redirectUri();
-      var1.art = this.media.art();
-      var1.caretOn = this.ui.focused != null && System.currentTimeMillis() / 530L % 2L == 0L;
-      return var1;
+      i.latency = this.media.latencyMs();
+      i.redirect = this.cfg.redirectUri();
+      i.art = this.media.art();
+      i.caretOn = this.ui.focused != null && System.currentTimeMillis() / 530L % 2L == 0L;
+      return i;
    }
 
    @Override
-   public boolean mouseClicked(MouseButtonEvent var1, boolean var2) {
-      double var3 = var1.x();
-      double var5 = var1.y();
-      int[] var7 = this.card();
-      if (inside(var3, var5, var7)) {
-         if (dev.lego.compat.McCompat.mouseButton(var1.button()) != 0) {
+   public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
+      double mx = click.x();
+      double my = click.y();
+      int[] b = this.card();
+      if (inside(mx, my, b)) {
+         if (dev.lego.compat.McCompat.mouseButton(click.button()) != 0) {
             return true;
          } else {
-            List var8 = this.ui.build(this.cfg, this.api);
-            SettingsUi.W var9 = SettingsUi.hit(var8, dx(var3, var7), dy(var5, var7));
-            if (var9 == null || var9.kind != SettingsUi.Kind.FIELD) {
+            List<SettingsUi.W> ws = this.ui.build(this.cfg, this.api);
+            SettingsUi.W w = SettingsUi.hit(ws, dx(mx, b), dy(my, b));
+            if (w == null || w.kind != SettingsUi.Kind.FIELD) {
                this.unfocus();
             }
 
-            if (var9 != null) {
-               this.activate(var9, dx(var3, var7));
+            if (w != null) {
+               this.activate(w, dx(mx, b));
             }
 
             return true;
          }
       } else {
          this.unfocus();
-         return this.interaction.mouseDown(var3, var5, dev.lego.compat.McCompat.mouseButton(var1.button()), this.width, this.height) ? true : super.mouseClicked(var1, var2);
+         return this.interaction.mouseDown(mx, my, dev.lego.compat.McCompat.mouseButton(click.button()), this.width, this.height) ? true : super.mouseClicked(click, doubled);
       }
    }
 
    @Override
-   public boolean mouseDragged(MouseButtonEvent var1, double var2, double var4) {
+   public boolean mouseDragged(MouseButtonEvent click, double ddx, double ddy) {
       if (this.ui.dragging != null) {
-         int[] var6 = this.card();
+         int[] b = this.card();
 
-         for (SettingsUi.W var9 : this.ui.build(this.cfg, this.api)) {
-            if (var9.id.equals(this.ui.dragging)) {
-               this.setSlider(var9, dx(var1.x(), var6), false);
+         for (SettingsUi.W w : this.ui.build(this.cfg, this.api)) {
+            if (w.id.equals(this.ui.dragging)) {
+               this.setSlider(w, dx(click.x(), b), false);
             }
          }
 
          return true;
       } else {
-         return this.interaction.mouseDrag(var1.x(), var1.y(), this.width, this.height) ? true : super.mouseDragged(var1, var2, var4);
+         return this.interaction.mouseDrag(click.x(), click.y(), this.width, this.height) ? true : super.mouseDragged(click, ddx, ddy);
       }
    }
 
    @Override
-   public boolean mouseReleased(MouseButtonEvent var1) {
+   public boolean mouseReleased(MouseButtonEvent click) {
       if (this.ui.dragging != null) {
          this.ui.dragging = null;
          this.cfg.save();
          return true;
       } else {
-         return this.interaction.mouseUp() ? true : super.mouseReleased(var1);
+         return this.interaction.mouseUp() ? true : super.mouseReleased(click);
       }
    }
 
    @Override
-   public boolean mouseScrolled(double var1, double var3, double var5, double var7) {
-      int[] var9 = this.card();
-      if (inside(var1, var3, var9)) {
-         List var10 = this.ui.build(this.cfg, this.api);
-         SettingsUi.W var11 = SettingsUi.hit(var10, dx(var1, var9), dy(var3, var9));
-         if (var11 != null && var11.kind == SettingsUi.Kind.SLIDER && var7 != 0.0) {
-            double var12 = "offset".equals(var11.id) ? 0.00625 : 0.02;
-            this.applySlider(var11.id, Math.max(0.0, Math.min(1.0, var11.value + (var7 > 0.0 ? var12 : -var12))));
+   public boolean mouseScrolled(double mx, double my, double horizontal, double vertical) {
+      int[] b = this.card();
+      if (inside(mx, my, b)) {
+         List<SettingsUi.W> ws = this.ui.build(this.cfg, this.api);
+         SettingsUi.W w = SettingsUi.hit(ws, dx(mx, b), dy(my, b));
+         if (w != null && w.kind == SettingsUi.Kind.SLIDER && vertical != 0.0) {
+            double step = "offset".equals(w.id) ? 0.00625 : 0.02;
+            this.applySlider(w.id, Math.max(0.0, Math.min(1.0, w.value + (vertical > 0.0 ? step : -step))));
             SpotifyHudMod.scheduleSave();
          }
 
          return true;
       } else {
-         return this.interaction.scroll(var1, var3, var7, this.width, this.height) ? true : super.mouseScrolled(var1, var3, var5, var7);
+         return this.interaction.scroll(mx, my, vertical, this.width, this.height) ? true : super.mouseScrolled(mx, my, horizontal, vertical);
       }
    }
 
-   private void activate(SettingsUi.W var1, double var2) {
-      switch (var1.kind) {
+   private void activate(SettingsUi.W w, double x) {
+      switch (w.kind) {
          case CLOSE:
             this.onClose();
             return;
          case TAB:
-            this.ui.tab = Integer.parseInt(var1.id.substring(3));
+            this.ui.tab = Integer.parseInt(w.id.substring(3));
             lastTab = this.ui.tab;
             return;
          case THEME:
-            this.cfg.theme = var1.ref;
+            this.cfg.theme = w.ref;
             this.cfg.save();
             return;
          case ANIM:
-            this.cfg.animation = var1.ref;
+            this.cfg.animation = w.ref;
             this.cfg.save();
             return;
          case TOGGLE:
-            this.toggle(var1.id);
+            this.toggle(w.id);
             this.cfg.save();
             return;
          case SLIDER:
-            this.ui.dragging = var1.id;
-            this.setSlider(var1, var2, false);
+            this.ui.dragging = w.id;
+            this.setSlider(w, x, false);
             return;
          case FIELD:
-            this.ui.focused = var1.id;
+            this.ui.focused = w.id;
             this.ui.selectAll = false;
             return;
          case BUTTON:
-            this.button(var1.id);
+            this.button(w.id);
             return;
       }
    }
 
-   private void toggle(String var1) {
-      switch (var1) {
+   private void toggle(String id) {
+      switch (id) {
          case "lyrics":
             this.cfg.lyrics = !this.cfg.lyrics;
             break;
@@ -311,29 +293,29 @@ public final class SettingsScreen extends Screen {
       }
    }
 
-   private void setSlider(SettingsUi.W var1, double var2, boolean var4) {
-      double var5 = Math.max(0.0, Math.min(1.0, (var2 - var1.x) / var1.w));
-      this.applySlider(var1.id, var5);
-      if (var4) {
+   private void setSlider(SettingsUi.W w, double x, boolean save) {
+      double v = Math.max(0.0, Math.min(1.0, (x - w.x) / w.w));
+      this.applySlider(w.id, v);
+      if (save) {
          this.cfg.save();
       }
    }
 
-   private void applySlider(String var1, double var2) {
-      switch (var1) {
+   private void applySlider(String id, double v) {
+      switch (id) {
          case "intensity":
-            this.cfg.animIntensity = SettingsUi.sliderToIntensity(var2);
+            this.cfg.animIntensity = SettingsUi.sliderToIntensity(v);
             break;
          case "offset":
-            this.cfg.lyricsOffsetMs = SettingsUi.sliderToOffset(var2);
+            this.cfg.lyricsOffsetMs = SettingsUi.sliderToOffset(v);
             break;
          case "scale":
-            this.cfg.scale = SettingsUi.sliderToScale(var2);
+            this.cfg.scale = SettingsUi.sliderToScale(v);
       }
    }
 
-   private void button(String var1) {
-      switch (var1) {
+   private void button(String id) {
+      switch (id) {
          case "off-":
             this.cfg.lyricsOffsetMs = Math.max(-5000, this.cfg.lyricsOffsetMs - 50);
             this.cfg.save();
@@ -370,9 +352,9 @@ public final class SettingsScreen extends Screen {
                this.cfg.clientId = this.ui.clientIdText.trim();
                this.applyPort();
                this.cfg.save();
-               String var4 = this.api.startLogin();
-               if (var4 != null) {
-                  open(var4);
+               String url = this.api.startLogin();
+               if (url != null) {
+                  open(url);
                }
             }
       }
@@ -380,9 +362,9 @@ public final class SettingsScreen extends Screen {
 
    private void applyPort() {
       try {
-         int var1 = Integer.parseInt(this.ui.portText.trim());
-         if (var1 >= 1024 && var1 <= 65535 && var1 != this.cfg.redirectPort) {
-            this.cfg.redirectPort = var1;
+         int p = Integer.parseInt(this.ui.portText.trim());
+         if (p >= 1024 && p <= 65535 && p != this.cfg.redirectPort) {
+            this.cfg.redirectPort = p;
             this.cfg.save();
          }
       } catch (NumberFormatException var2) {
@@ -408,9 +390,9 @@ public final class SettingsScreen extends Screen {
       }
    }
 
-   private static void open(String var0) {
+   private static void open(String url) {
       try {
-         Util.getPlatform().openUri(var0);
+         Util.getPlatform().openUri(url);
       } catch (Throwable var2) {
          SpotifyHudMod.LOG("Browser konnte nicht geöffnet werden: " + var2);
       }
@@ -420,54 +402,54 @@ public final class SettingsScreen extends Screen {
       return "port".equals(this.ui.focused) ? this.ui.portText : this.ui.clientIdText;
    }
 
-   private void setText(String var1) {
+   private void setText(String s) {
       if ("port".equals(this.ui.focused)) {
-         this.ui.portText = var1.length() > 5 ? var1.substring(0, 5) : var1;
+         this.ui.portText = s.length() > 5 ? s.substring(0, 5) : s;
       } else {
-         this.ui.clientIdText = var1.length() > 64 ? var1.substring(0, 64) : var1;
+         this.ui.clientIdText = s.length() > 64 ? s.substring(0, 64) : s;
       }
    }
 
-   private boolean accept(char var1) {
-      return !"port".equals(this.ui.focused) ? Character.isLetterOrDigit(var1) : var1 >= '0' && var1 <= '9';
+   private boolean accept(char c) {
+      return !"port".equals(this.ui.focused) ? Character.isLetterOrDigit(c) : c >= '0' && c <= '9';
    }
 
    @Override
-   public boolean keyPressed(KeyEvent var1) {
+   public boolean keyPressed(KeyEvent key) {
       if (this.ui.focused == null) {
-         return super.keyPressed(var1);
+         return super.keyPressed(key);
       } else {
-         int var2 = dev.lego.compat.McCompat.glfwKey(var1.key());
-         boolean var3 = (dev.lego.compat.McCompat.glfwMods(var1.modifiers()) & 2) != 0;
-         String var4 = String.valueOf(this.text());
-         if (var2 == 256 || var2 == 257 || var2 == 335 || var2 == 258) {
+         int k = dev.lego.compat.McCompat.glfwKey(key.key());
+         boolean ctrl = (dev.lego.compat.McCompat.glfwMods(key.modifiers()) & 2) != 0;
+         String t = this.text();
+         if (k == 256 || k == 257 || k == 335 || k == 258) {
             this.unfocus();
             return true;
-         } else if (var2 != 259 && var2 != 261) {
-            if (var3 && var2 == 65) {
+         } else if (k != 259 && k != 261) {
+            if (ctrl && k == 65) {
                this.ui.selectAll = true;
                return true;
-            } else if (var3 && var2 == 67) {
-               SpotifyHudMod.copyToClipboard((String)var4);
+            } else if (ctrl && k == 67) {
+               SpotifyHudMod.copyToClipboard(t);
                return true;
-            } else if (var3 && var2 == 86) {
-               String var5 = "";
+            } else if (ctrl && k == 86) {
+               String clip = "";
 
                try {
-                  var5 = Minecraft.getInstance().keyboardHandler.getClipboard();
+                  clip = Minecraft.getInstance().keyboardHandler.getClipboard();
                } catch (Throwable var11) {
                }
 
-               StringBuilder var6 = new StringBuilder();
-               if (var5 != null) {
-                  for (char var10 : var5.trim().toCharArray()) {
-                     if (this.accept(var10)) {
-                        var6.append(var10);
+               StringBuilder sb = new StringBuilder();
+               if (clip != null) {
+                  for (char c : clip.trim().toCharArray()) {
+                     if (this.accept(c)) {
+                        sb.append(c);
                      }
                   }
                }
 
-               this.setText(this.ui.selectAll ? var6.toString() : var4 + var6);
+               this.setText(this.ui.selectAll ? sb.toString() : t + sb);
                this.ui.selectAll = false;
                return true;
             } else {
@@ -476,8 +458,8 @@ public final class SettingsScreen extends Screen {
          } else {
             if (this.ui.selectAll) {
                this.setText("");
-            } else if (!var4.isEmpty()) {
-               this.setText(var3 ? "" : var4.substring(0, var4.length() - 1));
+            } else if (!t.isEmpty()) {
+               this.setText(ctrl ? "" : t.substring(0, t.length() - 1));
             }
 
             this.ui.selectAll = false;
@@ -487,26 +469,26 @@ public final class SettingsScreen extends Screen {
    }
 
    @Override
-   public boolean charTyped(CharacterEvent var1) {
+   public boolean charTyped(CharacterEvent chr) {
       if (this.ui.focused == null) {
-         return super.charTyped(var1);
+         return super.charTyped(chr);
       } else {
-         String var2 = var1.codepointAsString();
-         if (var2 == null) {
+         String s = chr.codepointAsString();
+         if (s == null) {
             return true;
          } else {
-            StringBuilder var3 = new StringBuilder();
+            StringBuilder sb = new StringBuilder();
 
-            for (char var7 : var2.toCharArray()) {
-               if (this.accept(var7)) {
-                  var3.append(var7);
+            for (char c : s.toCharArray()) {
+               if (this.accept(c)) {
+                  sb.append(c);
                }
             }
 
-            if (var3.length() == 0) {
+            if (sb.length() == 0) {
                return true;
             } else {
-               this.setText(this.ui.selectAll ? var3.toString() : this.text() + var3);
+               this.setText(this.ui.selectAll ? sb.toString() : this.text() + sb);
                this.ui.selectAll = false;
                return true;
             }

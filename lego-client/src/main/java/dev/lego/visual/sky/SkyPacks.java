@@ -46,194 +46,194 @@ public final class SkyPacks {
    }
 
    private static List<SkyPacks.Layer> scan() {
-      ResourceManager var0 = Mc.mc().getResourceManager();
-      ArrayList var1 = new ArrayList();
-      ArrayList var2 = new ArrayList();
-      Map var3 = var0.listResources("fabricskyboxes/sky", var0x -> var0x.getPath().endsWith(".json"));
+      ResourceManager rm = Mc.mc().getResourceManager();
+      List<SkyPacks.Layer> fsb = new ArrayList<>();
+      List<SkyPacks.Layer> of = new ArrayList<>();
+      Map<Identifier, Resource> json = rm.listResources("fabricskyboxes/sky", id -> id.getPath().endsWith(".json"));
 
-      for (Entry var5 : (Iterable<Entry>) (Iterable<?>) (var3.entrySet())) {
-         try (InputStream var6 = ((Resource)var5.getValue()).open()) {
-            SkyPacks.Layer var7 = parseFsb(new String(var6.readAllBytes(), StandardCharsets.UTF_8));
-            if (var7 != null) {
-               var7.source = ((Identifier)var5.getKey()).toString();
-               var1.add(var7);
+      for (Entry<Identifier, Resource> e : json.entrySet()) {
+         try (InputStream in = e.getValue().open()) {
+            SkyPacks.Layer l = parseFsb(new String(in.readAllBytes(), StandardCharsets.UTF_8));
+            if (l != null) {
+               l.source = e.getKey().toString();
+               fsb.add(l);
             }
          } catch (Throwable var15) {
-            LegoClient.LOG("Sky-JSON " + var5.getKey() + ": " + var15);
+            LegoClient.LOG("Sky-JSON " + e.getKey() + ": " + var15);
          }
       }
 
-      Map var16 = var0.listResources("optifine/sky/world0", var0x -> var0x.getPath().endsWith(".properties"));
+      Map<Identifier, Resource> props = rm.listResources("optifine/sky/world0", id -> id.getPath().endsWith(".properties"));
 
-      for (Entry var19 : (Iterable<Entry>) (Iterable<?>) (var16.entrySet())) {
-         try (InputStream var20 = ((Resource)var19.getValue()).open()) {
-            Properties var8 = new Properties();
-            var8.load(new BufferedReader(new InputStreamReader(var20, StandardCharsets.UTF_8)));
-            SkyPacks.Layer var9 = parseOptifine((Identifier)var19.getKey(), var8);
-            if (var9 != null) {
-               var9.source = ((Identifier)var19.getKey()).toString();
-               var2.add(var9);
+      for (Entry<Identifier, Resource> e : props.entrySet()) {
+         try (InputStream inx = e.getValue().open()) {
+            Properties p = new Properties();
+            p.load(new BufferedReader(new InputStreamReader(inx, StandardCharsets.UTF_8)));
+            SkyPacks.Layer l = parseOptifine(e.getKey(), p);
+            if (l != null) {
+               l.source = e.getKey().toString();
+               of.add(l);
             }
          } catch (Throwable var13) {
-            LegoClient.LOG("Sky-Properties " + var19.getKey() + ": " + var13);
+            LegoClient.LOG("Sky-Properties " + e.getKey() + ": " + var13);
          }
       }
 
-      ArrayList var18 = !var1.isEmpty() ? var1 : var2;
-      ((java.util.List<SkyPacks.Layer>)(java.util.List<?>)var18).sort((var0x, var1x) -> Integer.compare(var0x.priority, var1x.priority));
-      info = var18.isEmpty() ? "Kein Sky-Pack aktiv" : var18.size() + " Himmel-Ebene(n) aus " + (!var1.isEmpty() ? "FabricSkyboxes" : "OptiFine") + "-Format";
+      List<SkyPacks.Layer> out = !fsb.isEmpty() ? fsb : of;
+      out.sort((a, b) -> Integer.compare(a.priority, b.priority));
+      info = out.isEmpty() ? "Kein Sky-Pack aktiv" : out.size() + " Himmel-Ebene(n) aus " + (!fsb.isEmpty() ? "FabricSkyboxes" : "OptiFine") + "-Format";
       LegoClient.LOG("Sky-Packs: " + info);
-      return var18;
+      return out;
    }
 
-   private static SkyPacks.Layer parseOptifine(Identifier var0, Properties var1) {
-      String var2 = var0.getPath();
-      String var3 = var2.substring(0, var2.lastIndexOf(47) + 1);
-      String var4 = var2.substring(var2.lastIndexOf(47) + 1).replace(".properties", "");
-      String var5 = var1.getProperty("source", var4 + ".png").trim();
-      Identifier var6;
-      if (var5.startsWith("./")) {
-         var6 = Identifier.fromNamespaceAndPath(var0.getNamespace(), var3 + var5.substring(2));
-      } else if (var5.contains(":")) {
-         var6 = Identifier.parse(var5);
-      } else if (var5.startsWith("assets/")) {
-         String[] var7 = var5.substring(7).split("/", 2);
-         var6 = Identifier.fromNamespaceAndPath(var7[0], var7[1]);
+   private static SkyPacks.Layer parseOptifine(Identifier file, Properties p) {
+      String path = file.getPath();
+      String dir = path.substring(0, path.lastIndexOf(47) + 1);
+      String name = path.substring(path.lastIndexOf(47) + 1).replace(".properties", "");
+      String src = p.getProperty("source", name + ".png").trim();
+      Identifier tex;
+      if (src.startsWith("./")) {
+         tex = Identifier.fromNamespaceAndPath(file.getNamespace(), dir + src.substring(2));
+      } else if (src.contains(":")) {
+         tex = Identifier.parse(src);
+      } else if (src.startsWith("assets/")) {
+         String[] parts = src.substring(7).split("/", 2);
+         tex = Identifier.fromNamespaceAndPath(parts[0], parts[1]);
       } else {
-         var6 = Identifier.fromNamespaceAndPath(var0.getNamespace(), var5.contains("/") ? var5 : var3 + var5);
+         tex = Identifier.fromNamespaceAndPath(file.getNamespace(), src.contains("/") ? src : dir + src);
       }
 
-      if (!var6.getPath().endsWith(".png")) {
-         var6 = Identifier.fromNamespaceAndPath(var6.getNamespace(), var6.getPath() + ".png");
+      if (!tex.getPath().endsWith(".png")) {
+         tex = Identifier.fromNamespaceAndPath(tex.getNamespace(), tex.getPath() + ".png");
       }
 
-      SkyPacks.Layer var19 = new SkyPacks.Layer();
-      var19.strip = var6;
-      String var8 = var1.getProperty("startFadeIn");
-      String var9 = var1.getProperty("endFadeIn");
-      String var10 = var1.getProperty("startFadeOut");
-      String var11 = var1.getProperty("endFadeOut");
-      if (var8 != null && var9 != null && var11 != null) {
-         int var12 = hm(var8);
-         int var13 = hm(var9);
-         int var14 = hm(var11);
-         int var15 = var10 != null ? hm(var10) : ((var14 - (var13 - var12)) % 24000 + 24000) % 24000;
-         var19.fade = new int[]{var12, var13, var15, var14};
+      SkyPacks.Layer l = new SkyPacks.Layer();
+      l.strip = tex;
+      String a = p.getProperty("startFadeIn");
+      String b = p.getProperty("endFadeIn");
+      String c = p.getProperty("startFadeOut");
+      String d = p.getProperty("endFadeOut");
+      if (a != null && b != null && d != null) {
+         int ia = hm(a);
+         int ib = hm(b);
+         int id = hm(d);
+         int ic = c != null ? hm(c) : ((id - (ib - ia)) % 24000 + 24000) % 24000;
+         l.fade = new int[]{ia, ib, ic, id};
       }
 
-      var19.rotate = !"false".equalsIgnoreCase(var1.getProperty("rotate", "true").trim());
+      l.rotate = !"false".equalsIgnoreCase(p.getProperty("rotate", "true").trim());
 
       try {
-         var19.speed = Double.parseDouble(var1.getProperty("speed", "1").trim());
+         l.speed = Double.parseDouble(p.getProperty("speed", "1").trim());
       } catch (NumberFormatException var18) {
       }
 
-      String var20 = var1.getProperty("axis");
-      if (var20 != null) {
-         String[] var21 = var20.trim().split("\\s+");
-         if (var21.length == 3) {
+      String ax = p.getProperty("axis");
+      if (ax != null) {
+         String[] s = ax.trim().split("\\s+");
+         if (s.length == 3) {
             try {
-               var19.axis = new double[]{Double.parseDouble(var21[0]), Double.parseDouble(var21[1]), Double.parseDouble(var21[2])};
+               l.axis = new double[]{Double.parseDouble(s[0]), Double.parseDouble(s[1]), Double.parseDouble(s[2])};
             } catch (NumberFormatException var17) {
             }
          }
       }
 
-      String var22 = var1.getProperty("blend", "add").trim();
-      var19.add = var22.equals("add");
+      String blend = p.getProperty("blend", "add").trim();
+      l.add = blend.equals("add");
 
       try {
-         var19.priority = Integer.parseInt(var4.replaceAll("\\D", ""));
+         l.priority = Integer.parseInt(name.replaceAll("\\D", ""));
       } catch (NumberFormatException var16) {
       }
 
-      return var19;
+      return l;
    }
 
-   private static int hm(String var0) {
-      String[] var1 = var0.trim().split(":");
-      int var2 = Integer.parseInt(var1[0].trim());
-      int var3 = var1.length > 1 ? Integer.parseInt(var1[1].trim()) : 0;
-      return ((var2 * 1000 + var3 * 1000 / 60 - 6000) % 24000 + 24000) % 24000;
+   private static int hm(String s) {
+      String[] p = s.trim().split(":");
+      int h = Integer.parseInt(p[0].trim());
+      int m = p.length > 1 ? Integer.parseInt(p[1].trim()) : 0;
+      return ((h * 1000 + m * 1000 / 60 - 6000) % 24000 + 24000) % 24000;
    }
 
-   private static SkyPacks.Layer parseFsb(String var0) {
-      Object var1 = Json.parse(var0);
-      if (!(var1 instanceof Map var2)) {
+   private static SkyPacks.Layer parseFsb(String text) {
+      Object root = Json.parse(text);
+      if (!(root instanceof Map<String, Object> m)) {
          return null;
       } else {
-         String var3 = Json.str(var1, "type", "");
-         SkyPacks.Layer var4 = new SkyPacks.Layer();
-         if (!var3.equals("single-sprite-square-textured") && !var3.equals("single-sprite-animated-square-textured")) {
-            if (!var3.equals("square-textured")) {
+         String type = Json.str(root, "type", "");
+         SkyPacks.Layer l = new SkyPacks.Layer();
+         if (!type.equals("single-sprite-square-textured") && !type.equals("single-sprite-animated-square-textured")) {
+            if (!type.equals("square-textured")) {
                return null;
             }
 
-            Map var11 = Json.obj(var1, "textures");
-            if (var11 == null) {
+            Map<String, Object> tx = Json.obj(root, "textures");
+            if (tx == null) {
                return null;
             }
 
-            var4.faces = new Identifier[]{
-               id(Json.str(var11, "bottom", "")),
-               id(Json.str(var11, "top", "")),
-               id(Json.str(var11, "south", "")),
-               id(Json.str(var11, "west", "")),
-               id(Json.str(var11, "north", "")),
-               id(Json.str(var11, "east", ""))
+            l.faces = new Identifier[]{
+               id(Json.str(tx, "bottom", "")),
+               id(Json.str(tx, "top", "")),
+               id(Json.str(tx, "south", "")),
+               id(Json.str(tx, "west", "")),
+               id(Json.str(tx, "north", "")),
+               id(Json.str(tx, "east", ""))
             };
          } else {
-            String var5 = Json.str(var1, "texture", null);
-            if (var5 == null) {
+            String t = Json.str(root, "texture", null);
+            if (t == null) {
                return null;
             }
 
-            var4.strip = id(var5);
+            l.strip = id(t);
          }
 
-         Map var12 = Json.obj(var1, "properties");
-         if (var12 != null) {
-            var4.priority = (int)Json.num(var12, "priority", 0L);
-            Map var6 = Json.obj(var12, "fade");
-            if (var6 != null && !Json.bool(var6, "alwaysOn", false) && var6.containsKey("startFadeIn")) {
-               var4.fade = new int[]{
-                  (int)Json.dbl(var6, "startFadeIn", 0.0),
-                  (int)Json.dbl(var6, "endFadeIn", 0.0),
-                  (int)Json.dbl(var6, "startFadeOut", 0.0),
-                  (int)Json.dbl(var6, "endFadeOut", 0.0)
+         Map<String, Object> props = Json.obj(root, "properties");
+         if (props != null) {
+            l.priority = (int)Json.num(props, "priority", 0L);
+            Map<String, Object> fade = Json.obj(props, "fade");
+            if (fade != null && !Json.bool(fade, "alwaysOn", false) && fade.containsKey("startFadeIn")) {
+               l.fade = new int[]{
+                  (int)Json.dbl(fade, "startFadeIn", 0.0),
+                  (int)Json.dbl(fade, "endFadeIn", 0.0),
+                  (int)Json.dbl(fade, "startFadeOut", 0.0),
+                  (int)Json.dbl(fade, "endFadeOut", 0.0)
                };
             }
 
-            Map var7 = Json.obj(var12, "rotation");
-            if (var7 != null) {
-               List var8 = Json.arr(var7, "axis");
-               if (var8 != null && var8.size() == 3) {
-                  var4.axis = new double[]{num(var8.get(0)), num(var8.get(1)), num(var8.get(2))};
-                  double var9 = Math.sqrt(var4.axis[0] * var4.axis[0] + var4.axis[1] * var4.axis[1] + var4.axis[2] * var4.axis[2]);
-                  var4.rotate = var9 > 1.0E-6;
+            Map<String, Object> rot = Json.obj(props, "rotation");
+            if (rot != null) {
+               List<Object> axis = Json.arr(rot, "axis");
+               if (axis != null && axis.size() == 3) {
+                  l.axis = new double[]{num(axis.get(0)), num(axis.get(1)), num(axis.get(2))};
+                  double len = Math.sqrt(l.axis[0] * l.axis[0] + l.axis[1] * l.axis[1] + l.axis[2] * l.axis[2]);
+                  l.rotate = len > 1.0E-6;
                } else {
-                  var4.rotate = false;
+                  l.rotate = false;
                }
 
-               var4.speed = Json.dbl(var7, "rotationSpeed", 1.0);
+               l.speed = Json.dbl(rot, "rotationSpeed", 1.0);
             } else {
-               var4.rotate = false;
+               l.rotate = false;
             }
          }
 
-         Map var13 = Json.obj(var1, "blend");
-         var4.add = var13 != null && "add".equals(Json.str(var13, "type", ""));
-         return var4;
+         Map<String, Object> blend = Json.obj(root, "blend");
+         l.add = blend != null && "add".equals(Json.str(blend, "type", ""));
+         return l;
       }
    }
 
-   private static double num(Object var0) {
-      return var0 instanceof Number ? ((Number)var0).doubleValue() : 0.0;
+   private static double num(Object o) {
+      return o instanceof Number ? ((Number)o).doubleValue() : 0.0;
    }
 
-   private static Identifier id(String var0) {
-      if (var0 != null && !var0.isEmpty()) {
-         return var0.contains(":") ? Identifier.parse(var0) : Identifier.fromNamespaceAndPath("minecraft", var0);
+   private static Identifier id(String s) {
+      if (s != null && !s.isEmpty()) {
+         return s.contains(":") ? Identifier.parse(s) : Identifier.fromNamespaceAndPath("minecraft", s);
       } else {
          return null;
       }
@@ -250,36 +250,36 @@ public final class SkyPacks {
       public int priority;
       public String source;
 
-      public double alpha(long var1) {
+      public double alpha(long t) {
          if (this.fade == null) {
             return 1.0;
          } else {
-            double var3 = (var1 % 24000L + 24000L) % 24000L;
-            double var5 = this.fade[0];
-            double var7 = this.fade[1];
-            double var9 = this.fade[2];
-            double var11 = this.fade[3];
-            if (in(var3, var7, var9)) {
+            double tt = (t % 24000L + 24000L) % 24000L;
+            double sIn = this.fade[0];
+            double eIn = this.fade[1];
+            double sOut = this.fade[2];
+            double eOut = this.fade[3];
+            if (in(tt, eIn, sOut)) {
                return 1.0;
-            } else if (in(var3, var5, var7)) {
-               return frac(var3, var5, var7);
+            } else if (in(tt, sIn, eIn)) {
+               return frac(tt, sIn, eIn);
             } else {
-               return in(var3, var9, var11) ? 1.0 - frac(var3, var9, var11) : 0.0;
+               return in(tt, sOut, eOut) ? 1.0 - frac(tt, sOut, eOut) : 0.0;
             }
          }
       }
 
-      private static boolean in(double var0, double var2, double var4) {
-         return var2 <= var4 ? var0 >= var2 && var0 <= var4 : var0 >= var2 || var0 <= var4;
+      private static boolean in(double t, double a, double b) {
+         return a <= b ? t >= a && t <= b : t >= a || t <= b;
       }
 
-      private static double frac(double var0, double var2, double var4) {
-         double var6 = ((var4 - var2) % 24000.0 + 24000.0) % 24000.0;
-         if (var6 == 0.0) {
+      private static double frac(double t, double a, double b) {
+         double len = ((b - a) % 24000.0 + 24000.0) % 24000.0;
+         if (len == 0.0) {
             return 1.0;
          } else {
-            double var8 = ((var0 - var2) % 24000.0 + 24000.0) % 24000.0;
-            return Math.max(0.0, Math.min(1.0, var8 / var6));
+            double d = ((t - a) % 24000.0 + 24000.0) % 24000.0;
+            return Math.max(0.0, Math.min(1.0, d / len));
          }
       }
    }

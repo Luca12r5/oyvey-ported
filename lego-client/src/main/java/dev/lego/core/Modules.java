@@ -27,32 +27,32 @@ public final class Modules {
    private Modules() {
    }
 
-   public static <T extends Module> T register(T var0) {
-      ALL.add(var0);
-      var0.captureDefaults();
-      return (T)var0;
+   public static <T extends Module> T register(T m) {
+      ALL.add(m);
+      m.captureDefaults();
+      return m;
    }
 
-   public static void persist(String var0, Modules.Persist var1) {
-      EXTRA.put(var0, var1);
+   public static void persist(String key, Modules.Persist p) {
+      EXTRA.put(key, p);
    }
 
-   public static List<Module> of(Category var0) {
-      ArrayList var1 = new ArrayList();
+   public static List<Module> of(Category c) {
+      List<Module> out = new ArrayList<>();
 
-      for (Module var3 : ALL) {
-         if (var3.category == var0) {
-            var1.add(var3);
+      for (Module m : ALL) {
+         if (m.category == c) {
+            out.add(m);
          }
       }
 
-      return var1;
+      return out;
    }
 
-   public static Module get(String var0) {
-      for (Module var2 : ALL) {
-         if (var2.id.equals(var0)) {
-            return var2;
+   public static Module get(String id) {
+      for (Module m : ALL) {
+         if (m.id.equals(id)) {
+            return m;
          }
       }
 
@@ -67,13 +67,13 @@ public final class Modules {
       return argbOf(hudAccent);
    }
 
-   private static int argbOf(int var0) {
-      int var1 = Math.max(0, Math.min(Setting.Color.PALETTE.length - 1, var0));
-      if (var1 == Setting.Color.PALETTE.length - 1) {
-         double var2 = System.currentTimeMillis() / 2600.0;
-         return 0xFF000000 | Color.HSBtoRGB((float)(var2 - Math.floor(var2)), 0.7F, 1.0F) & 16777215;
+   private static int argbOf(int accent) {
+      int i = Math.max(0, Math.min(Setting.Color.PALETTE.length - 1, accent));
+      if (i == Setting.Color.PALETTE.length - 1) {
+         double t = System.currentTimeMillis() / 2600.0;
+         return 0xFF000000 | Color.HSBtoRGB((float)(t - Math.floor(t)), 0.7F, 1.0F) & 16777215;
       } else {
-         return Setting.Color.PALETTE[var1];
+         return Setting.Color.PALETTE[i];
       }
    }
 
@@ -128,55 +128,63 @@ public final class Modules {
 
    public static synchronized void save() {
       try {
-         LinkedHashMap var0 = new LinkedHashMap();
-         var0.put("theme", theme);
-         var0.put("designVersion", 5L);
-         var0.put("hudTheme", hudTheme);
-         var0.put("hudAccent", (long)hudAccent);
-         var0.put("accent", (long)accent);
-         LinkedHashMap var1 = new LinkedHashMap();
+         Map<String, Object> root = new LinkedHashMap<>();
+         root.put("theme", theme);
+         root.put("designVersion", 5L);
+         root.put("hudTheme", hudTheme);
+         root.put("hudAccent", (long)hudAccent);
+         root.put("accent", (long)accent);
+         Map<String, Object> mods = new LinkedHashMap<>();
 
-         for (Module var3 : ALL) {
-            LinkedHashMap var4 = new LinkedHashMap();
-            var4.put("on", var3.enabled);
-            var4.put("key", (long)var3.key);
-            LinkedHashMap var5 = new LinkedHashMap();
+         for (Module m : ALL) {
+            Map<String, Object> o = new LinkedHashMap<>();
+            o.put("on", m.enabled);
+            o.put("key", (long)m.key);
+            if (m.hidden) {
+               o.put("hidden", true);
+            }
 
-            for (Setting var7 : var3.settings) {
-               Object var8 = var7.save();
-               if (var8 != null) {
-                  var5.put(var7.name, var8);
+            if (m.customName != null) {
+               o.put("customName", m.customName);
+            }
+
+            Map<String, Object> s = new LinkedHashMap<>();
+
+            for (Setting st : m.settings) {
+               Object v = st.save();
+               if (v != null) {
+                  s.put(st.name, v);
                }
             }
 
-            var4.put("settings", var5);
-            if (var3 instanceof HudModule var16) {
-               var4.put("x", var16.fx);
-               var4.put("y", var16.fy);
-               var4.put("scale", var16.scale);
+            o.put("settings", s);
+            if (m instanceof HudModule h) {
+               o.put("x", h.fx);
+               o.put("y", h.fy);
+               o.put("scale", h.scale);
             }
 
-            var1.put(var3.id, var4);
+            mods.put(m.id, o);
          }
 
-         var0.put("modules", var1);
+         root.put("modules", mods);
 
-         for (Entry var13 : EXTRA.entrySet()) {
+         for (Entry<String, Modules.Persist> e : EXTRA.entrySet()) {
             try {
-               Object var15 = ((Modules.Persist)var13.getValue()).save();
-               if (var15 != null) {
-                  var0.put((String)var13.getKey(), var15);
+               Object v = e.getValue().save();
+               if (v != null) {
+                  root.put(e.getKey(), v);
                }
             } catch (Throwable var9) {
-               LegoClient.LOG("Speichern " + (String)var13.getKey() + ": " + var9);
+               LegoClient.LOG("Speichern " + e.getKey() + ": " + var9);
             }
          }
 
-         Path var12 = path();
-         Files.createDirectories(var12.getParent());
-         Path var14 = var12.resolveSibling("legoclient.json.tmp");
-         Files.writeString(var14, Json.write(var0), StandardCharsets.UTF_8);
-         Files.move(var14, var12, StandardCopyOption.REPLACE_EXISTING);
+         Path p = path();
+         Files.createDirectories(p.getParent());
+         Path tmp = p.resolveSibling("legoclient.json.tmp");
+         Files.writeString(tmp, Json.write(root), StandardCharsets.UTF_8);
+         Files.move(tmp, p, StandardCopyOption.REPLACE_EXISTING);
          savedState = stateHash();
       } catch (Throwable var10) {
          LegoClient.LOG("Speichern fehlgeschlagen: " + var10);
@@ -185,17 +193,17 @@ public final class Modules {
 
    public static void load() {
       try {
-         Path var0 = path();
-         if (!Files.exists(var0)) {
+         Path p = path();
+         if (!Files.exists(p)) {
             return;
          }
 
-         Object var1 = Json.parse(Files.readString(var0, StandardCharsets.UTF_8));
-         theme = Json.str(var1, "theme", theme);
-         accent = (int)Json.num(var1, "accent", accent);
-         hudTheme = Json.str(var1, "hudTheme", hudTheme);
-         hudAccent = (int)Json.num(var1, "hudAccent", hudAccent);
-         long designVer = Json.num(var1, "designVersion", 0L);
+         Object root = Json.parse(Files.readString(p, StandardCharsets.UTF_8));
+         theme = Json.str(root, "theme", theme);
+         accent = (int)Json.num(root, "accent", accent);
+         hudTheme = Json.str(root, "hudTheme", hudTheme);
+         hudAccent = (int)Json.num(root, "hudAccent", hudAccent);
+         long designVer = Json.num(root, "designVersion", 0L);
          if (designVer < 3L) {
             hudTheme = theme;
             hudAccent = accent;
@@ -215,46 +223,48 @@ public final class Modules {
             accent = 3;
          }
 
-         if (var1 instanceof Map) {
-            for (Entry var3 : EXTRA.entrySet()) {
-               Object var4 = ((Map)var1).get(var3.getKey());
-               if (var4 != null) {
+         if (root instanceof Map) {
+            for (Entry<String, Modules.Persist> e : EXTRA.entrySet()) {
+               Object v = ((Map)root).get(e.getKey());
+               if (v != null) {
                   try {
-                     ((Modules.Persist)var3.getValue()).load(var4);
+                     e.getValue().load(v);
                   } catch (Throwable var9) {
-                     LegoClient.LOG("Laden " + (String)var3.getKey() + ": " + var9);
+                     LegoClient.LOG("Laden " + e.getKey() + ": " + var9);
                   }
                }
             }
          }
 
-         Map var11 = Json.obj(var1, "modules");
-         if (var11 == null) {
+         Map<String, Object> mods = Json.obj(root, "modules");
+         if (mods == null) {
             return;
          }
 
-         for (Module var13 : ALL) {
-            Object var5 = var11.get(var13.id);
-            if (var5 instanceof Map) {
-               var13.key = (int)Json.num(var5, "key", var13.key);
-               Map var6 = Json.obj(var5, "settings");
-               if (var6 != null) {
-                  for (Setting var8 : var13.settings) {
-                     if (var6.containsKey(var8.name)) {
-                        var8.load(var6.get(var8.name));
+         for (Module m : ALL) {
+            Object o = mods.get(m.id);
+            if (o instanceof Map) {
+               m.key = (int)Json.num(o, "key", m.key);
+               m.hidden = Json.bool(o, "hidden", false);
+               m.customName = Json.str(o, "customName", null);
+               Map<String, Object> s = Json.obj(o, "settings");
+               if (s != null) {
+                  for (Setting st : m.settings) {
+                     if (s.containsKey(st.name)) {
+                        st.load(s.get(st.name));
                      }
                   }
                }
 
-               if (var13 instanceof HudModule var14) {
-                  var14.fx = Math.max(0.0, Math.min(1.0, Json.dbl(var5, "x", var14.fx)));
-                  var14.fy = Math.max(0.0, Math.min(1.0, Json.dbl(var5, "y", var14.fy)));
-                  var14.scale = Math.max(0.4, Math.min(3.0, Json.dbl(var5, "scale", var14.scale)));
+               if (m instanceof HudModule h) {
+                  h.fx = Math.max(0.0, Math.min(1.0, Json.dbl(o, "x", h.fx)));
+                  h.fy = Math.max(0.0, Math.min(1.0, Json.dbl(o, "y", h.fy)));
+                  h.scale = Math.max(0.4, Math.min(3.0, Json.dbl(o, "scale", h.scale)));
                }
 
-               boolean var15 = Json.bool(var5, "on", var13.enabled);
-               if (var13.isToggleable() && var15 != var13.enabled) {
-                  var13.setEnabled(var15);
+               boolean on = Json.bool(o, "on", m.enabled);
+               if (m.isToggleable() && on != m.enabled) {
+                  m.setEnabled(on);
                }
             }
          }

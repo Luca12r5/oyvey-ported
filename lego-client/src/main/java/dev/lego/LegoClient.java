@@ -18,22 +18,27 @@ import dev.lego.games.GameInfo;
 import dev.lego.hud.HudEditorView;
 import dev.lego.hud.HudManager;
 import dev.lego.hud.HudModules;
+import dev.lego.hud.HudModules2;
+import dev.lego.hud.HudPack;
 import dev.lego.perf.Perf;
 import dev.lego.perf.Performance;
 import dev.lego.ui.ConsoleLog;
 import dev.lego.ui.ConsoleView;
-import dev.lego.ui.StartupView;
 import dev.lego.ui.Env;
 import dev.lego.ui.Gx;
+import dev.lego.ui.IntroView;
 import dev.lego.ui.LegoScreen;
 import dev.lego.ui.McBackend;
 import dev.lego.ui.MenuView;
+import dev.lego.ui.SpotifyView;
 import dev.lego.ui.Toasts;
 import dev.lego.ui.UiSettings;
+import dev.lego.util.UtilPack;
 import dev.lego.util.Utility;
 import dev.lego.visual.Overlays;
 import dev.lego.visual.Visuals;
 import dev.lego.visual.Visuals2;
+import dev.lego.visual.Visuals3;
 import dev.lego.visual.sky.SkyPacks;
 import dev.spotifyhud.PlayerState;
 import dev.spotifyhud.SpotifyHudMod;
@@ -52,6 +57,7 @@ import net.minecraft.client.KeyMapping.Category;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -66,19 +72,24 @@ public final class LegoClient implements ClientModInitializer {
    private static KeyMapping ecseeKey;
    private static KeyMapping waypointKey;
    private static KeyMapping hudKey;
+   private static KeyMapping spotifyKey;
+   private static KeyMapping dcMuteKey;
+   private static KeyMapping dcDeafKey;
    private static KeyMapping consoleKey;
    private static KeyMapping perfKey;
    private static KeyMapping knifeKey;
    private static boolean consoleAutoShown = false;
-   private static boolean introShown = false;
    private static SpotifyModule spotify;
    private static long joinedAt = 0L;
+   private static boolean introShown = false;
    private static final boolean[] lastDown = new boolean[512];
    private static final int[] MACRO_KEYS = new int[]{295, 296, 297, 298, 321, 322, 323, 324, 325, 326, 327, 328, 329};
    private static final boolean[] macroDown = new boolean[MACRO_KEYS.length];
 
-   public static void LOG(String var0) {
-      System.out.println("[LegoClient] " + var0);
+   public static void LOG(String msg) {
+      if (DEBUG) {
+         System.out.println("[LegoClient] " + msg);
+      }
    }
 
    public static long sessionSeconds() {
@@ -88,8 +99,8 @@ public final class LegoClient implements ClientModInitializer {
    @Override
    public void onInitializeClient() {
       ConsoleLog.install();
-      boolean var1 = FabricLoader.getInstance().isModLoaded("spotifyhud");
-      if (!var1) {
+      boolean standalone = FabricLoader.getInstance().isModLoaded("spotifyhud");
+      if (!standalone) {
          try {
             new SpotifyHudMod().onInitializeClient();
          } catch (Throwable var3) {
@@ -101,6 +112,8 @@ public final class LegoClient implements ClientModInitializer {
 
       UiSettings.register();
       HudModules.registerAll();
+      HudModules2.registerAll();
+      HudPack.registerAll();
       dev.lego.core.Compat.init();
       Visuals.registerAll();
       dev.lego.cosmetic.KnifeView.register();
@@ -108,6 +121,7 @@ public final class LegoClient implements ClientModInitializer {
       Utility.registerAll();
       dev.lego.net.SessionRefresher.init();
       dev.lego.net.LegoNet.register();
+      UtilPack.registerAll();
       Performance.registerAll();
       Emotes.register();
       spotify = Modules.register(new SpotifyModule());
@@ -120,45 +134,59 @@ public final class LegoClient implements ClientModInitializer {
       // Nothing is lost when the game closes right after a change.
       net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING.register(c -> Modules.save());
       spotify.sync();
-      Category var2 = Category.register(Identifier.fromNamespaceAndPath("legoclient", "main"));
-      guiKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.gui", 345, var2));
-      zoomKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.zoom", 67, var2));
-      emoteKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.emotes", 66, var2));
-      invseeKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.invsee", 86, var2));
-      ecseeKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.ecsee", 71, var2));
-      waypointKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.waypoint", 78, var2));
-      hudKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.hud", -1, var2));
-      consoleKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.console", 299, var2));
-      perfKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.perf", 301, var2));
-      knifeKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.knife", 82, var2));
+      Category cat = Category.register(Identifier.fromNamespaceAndPath("legoclient", "main"));
+      guiKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.gui", 345, cat));
+      zoomKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.zoom", 67, cat));
+      emoteKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.emotes", 66, cat));
+      invseeKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.invsee", 86, cat));
+      ecseeKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.ecsee", 71, cat));
+      waypointKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.waypoint", 78, cat));
+      hudKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.hud", -1, cat));
+      spotifyKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.spotifymenu", 85, cat));
+      dcMuteKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.discordmute", -1, cat));
+      dcDeafKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.discorddeafen", -1, cat));
+      consoleKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.console", 299, cat));
+      perfKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.perf", 301, cat));
+      knifeKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.legoclient.knife", 82, cat));
       setupEnv();
       ClientTickEvents.END_CLIENT_TICK.register(LegoClient::tick);
-      ScreenEvents.AFTER_INIT.register((var0, var1x, var2x, var3x) -> {
-         if (var1x instanceof ChatScreen) {
-            ScreenMouseEvents.allowMouseClick(var1x).register((var0x, var1xx) -> {
+      ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> {
+         if (!introShown && UiSettings.intro && screen instanceof TitleScreen) {
+            if (System.getProperty("legoclient.introPlayed") != null) {
+               introShown = true;
+            } else {
+               System.setProperty("legoclient.introPlayed", "1");
+               introShown = true;
+               client.execute(() -> client.setScreen(new LegoScreen(new IntroView(), screen)));
+            }
+         }
+      });
+      ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> {
+         if (screen instanceof ChatScreen) {
+            ScreenMouseEvents.allowMouseClick(screen).register((s, click) -> {
                try {
-                  return !DiscordHud.click(var1xx.x(), var1xx.y(), dev.lego.compat.McCompat.mouseButton(var1xx.button()));
-               } catch (Throwable var3xx) {
+                  return !DiscordHud.click(click.x(), click.y(), dev.lego.compat.McCompat.mouseButton(click.button()));
+               } catch (Throwable var3x) {
                   return true;
                }
             });
          }
       });
       dev.lego.compat.RenderHooks.register(LegoClient::renderOverlays, LegoClient::renderHud);
-      AttackEntityCallback.EVENT.register((var0, var1x, var2x, var3x, var4) -> {
+      AttackEntityCallback.EVENT.register((player, world, hand, entity, hit) -> {
          try {
-            if (var0 == Mc.player()) {
-               Visuals.onAttack(var3x);
+            if (player == Mc.player()) {
+               Visuals.onAttack(entity);
             }
          } catch (Throwable var6) {
          }
 
          return InteractionResult.PASS;
       });
-      ClientReceiveMessageEvents.ALLOW_CHAT.register((var0, var1x, var2x, var3x, var4) -> Utility.allowMessage(var0, false));
-      ClientReceiveMessageEvents.ALLOW_GAME.register((var0, var1x) -> Utility.allowMessage(var0, var1x));
-      ClientReceiveMessageEvents.CHAT.register((var0, var1x, var2x, var3x, var4) -> Utility.onMessage(var0, false));
-      ClientReceiveMessageEvents.GAME.register((var0, var1x) -> Utility.onMessage(var0, var1x));
+      ClientReceiveMessageEvents.ALLOW_CHAT.register((msg, signed, sender, params, ts) -> Utility.allowMessage(msg, false));
+      ClientReceiveMessageEvents.ALLOW_GAME.register((msg, overlay) -> Utility.allowMessage(msg, overlay));
+      ClientReceiveMessageEvents.CHAT.register((msg, signed, sender, params, ts) -> Utility.onMessage(msg, false));
+      ClientReceiveMessageEvents.GAME.register((msg, overlay) -> Utility.onMessage(msg, overlay));
       ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
          @Override
          public Identifier getFabricId() {
@@ -166,32 +194,26 @@ public final class LegoClient implements ClientModInitializer {
          }
 
          @Override
-         public void onResourceManagerReload(ResourceManager var1) {
+         public void onResourceManagerReload(ResourceManager manager) {
             SkyPacks.invalidate();
          }
       });
-      ScreenEvents.AFTER_INIT
-         .register(
-            (var0, var1x, var2x, var3x) -> {
-               if (var1x instanceof ChatScreen) {
-                  ScreenMouseEvents.allowMouseClick(var1x)
-                     .register((var0x, var1xx) -> !safe(() -> HudManager.mouseDown(var1xx.x(), var1xx.y(), dev.lego.compat.McCompat.mouseButton(var1xx.button()), var0x.width, var0x.height)));
-                  ScreenMouseEvents.allowMouseDrag(var1x)
-                     .register((var0x, var1xx, var2xx, var4) -> !safe(() -> HudManager.mouseDrag(var1xx.x(), var1xx.y(), var0x.width, var0x.height, true)));
-                  ScreenMouseEvents.allowMouseRelease(var1x).register((var0x, var1xx) -> !safe(HudManager::mouseUp));
-                  ScreenMouseEvents.allowMouseScroll(var1x)
-                     .register((var0x, var1xx, var3xx, var5, var7) -> !safe(() -> HudManager.scroll(var1xx, var3xx, var7, var0x.width, var0x.height)));
-                  ScreenEvents.afterRender(var1x).register((var0x, var1xx, var2xx, var3xx, var4) -> {
-                     try {
-                        HudManager.render(var1xx, var1xx.guiWidth(), var1xx.guiHeight(), true, var2xx, var3xx);
-                     } catch (Throwable var6) {
-                        LOG("Chat-HUD: " + var6);
-                     }
-                  });
-                  ScreenEvents.remove(var1x).register(var0x -> HudManager.mouseUp());
+      ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> {
+         if (screen instanceof ChatScreen) {
+            ScreenMouseEvents.allowMouseClick(screen).register((s, c) -> !safe(() -> HudManager.mouseDown(c.x(), c.y(), dev.lego.compat.McCompat.mouseButton(c.button()), s.width, s.height)));
+            ScreenMouseEvents.allowMouseDrag(screen).register((s, c, dx, dy) -> !safe(() -> HudManager.mouseDrag(c.x(), c.y(), s.width, s.height, true)));
+            ScreenMouseEvents.allowMouseRelease(screen).register((s, c) -> !safe(HudManager::mouseUp));
+            ScreenMouseEvents.allowMouseScroll(screen).register((s, mx, my, hz, v) -> !safe(() -> HudManager.scroll(mx, my, v, s.width, s.height)));
+            ScreenEvents.afterRender(screen).register((s, ctx, mx, my, d) -> {
+               try {
+                  HudManager.render(ctx, ctx.guiWidth(), ctx.guiHeight(), true, mx, my);
+               } catch (Throwable var6) {
+                  LOG("Chat-HUD: " + var6);
                }
-            }
-         );
+            });
+            ScreenEvents.remove(screen).register(s -> HudManager.mouseUp());
+         }
+      });
       LOG("geladen - " + Modules.ALL.size() + " Module, " + Cos.ALL.size() + " Kosmetik-Items, " + EmoteLib.ALL.size() + " Emotes");
    }
 
@@ -207,28 +229,33 @@ public final class LegoClient implements ClientModInitializer {
       Env.inWorld = Mc::inGame;
       Env.clipboard = () -> {
          try {
-            String var0 = Mc.mc().keyboardHandler.getClipboard();
-            return var0 == null ? "" : var0;
+            String s = Mc.mc().keyboardHandler.getClipboard();
+            return s == null ? "" : s;
          } catch (Throwable var1) {
             return "";
          }
       };
       Env.nowPlaying = () -> {
          try {
-            PlayerState var0 = null;
+            PlayerState st = null;
             if (SpotifyHudMod.api() != null) {
-               var0 = SpotifyHudMod.api().state();
+               st = SpotifyHudMod.api().state();
             }
 
-            if ((var0 == null || !var0.hasTrack) && SpotifyHudMod.media() != null) {
-               var0 = SpotifyHudMod.media().state();
+            if ((st == null || !st.hasTrack) && SpotifyHudMod.media() != null) {
+               st = SpotifyHudMod.media().state();
             }
 
-            return var0 != null && var0.hasTrack && var0.title != null
-               ? var0.title + (var0.artist != null && !var0.artist.isEmpty() ? " · " + var0.artist : "")
-               : "";
+            return st != null && st.hasTrack && st.title != null ? st.title + (st.artist != null && !st.artist.isEmpty() ? " · " + st.artist : "") : "";
          } catch (Throwable var1) {
             return "";
+         }
+      };
+      Env.loading = () -> {
+         try {
+            return Mc.mc().getOverlay() != null;
+         } catch (Throwable var1) {
+            return false;
          }
       };
       Env.openHudEditor = () -> LegoScreen.show(new HudEditorView());
@@ -237,71 +264,98 @@ public final class LegoClient implements ClientModInitializer {
       Env.playerPreview = CosRender::preview;
    }
 
-   private static boolean safe(LegoClient.BoolAction var0) {
+   private static boolean safe(LegoClient.BoolAction a) {
       try {
-         return var0.run();
+         return a.run();
       } catch (Throwable var2) {
          LOG("Eingabe: " + var2);
          return false;
       }
    }
 
-   private static void renderOverlays(GuiGraphics var0) {
+   private static void renderOverlays(GuiGraphics ctx) {
       try {
          if (Mc.mc().options != null && Mc.mc().options.hideGui) {
             return;
          }
 
-         McBackend.begin(var0);
+         McBackend.begin(ctx);
 
          try {
-            Overlays.render(var0.guiWidth() * Gx.S, var0.guiHeight() * Gx.S);
+            int ow = ctx.guiWidth() * Gx.S;
+            int oh = ctx.guiHeight() * Gx.S;
+            Overlays.render(ow, oh);
+            Visuals2.renderHud(ow, oh);
+            Visuals3.renderHud(ow, oh);
+            if (Utility.auction != null) {
+               Utility.auction.renderHud(ow, oh);
+            }
          } finally {
             Gx.end();
          }
-      } catch (Throwable var5) {
-         LOG("Overlay-Fehler: " + var5);
+      } catch (Throwable var7) {
+         LOG("Overlay-Fehler: " + var7);
       }
    }
 
-   private static void renderHud(GuiGraphics var0) {
+   private static void renderHud(GuiGraphics ctx) {
       Perf.begin("HUD");
 
       try {
-         Minecraft var1 = Mc.mc();
+         Minecraft mc = Mc.mc();
          HudModules.ClickCounter.frame();
          if (!Cutscenes.active()) {
-            boolean var2 = var1.options != null && var1.options.hideGui;
-            boolean var3 = var1.screen instanceof LegoScreen && ((LegoScreen)var1.screen).view() instanceof HudEditorView;
-            if (!var2 && !(var1.screen instanceof ChatScreen) && !var3 && !Cutscenes.active()) {
-               HudManager.render(var0, var0.guiWidth(), var0.guiHeight(), false, -1, -1);
+            boolean f1 = mc.options != null && mc.options.hideGui;
+            boolean editor = mc.screen instanceof LegoScreen && ((LegoScreen)mc.screen).view() instanceof HudEditorView;
+            if (!f1 && !(mc.screen instanceof ChatScreen) && !editor && !Cutscenes.active()) {
+               HudManager.render(ctx, ctx.guiWidth(), ctx.guiHeight(), false, -1, -1);
             }
 
-            if (!var2 && DiscordControl.hudOn()) {
-               McBackend.begin(var0);
+            if (!f1 && DiscordControl.hudOn()) {
+               McBackend.begin(ctx);
 
                try {
-                  DiscordHud.render(var0.guiWidth() * Gx.S, var0.guiHeight() * Gx.S);
+                  DiscordHud.render(ctx.guiWidth() * Gx.S, ctx.guiHeight() * Gx.S);
                } finally {
                   Gx.end();
                }
             }
 
             if (Toasts.active()) {
-               McBackend.begin(var0);
+               McBackend.begin(ctx);
 
                try {
-                  Toasts.render(var0.guiWidth() * Gx.S, var0.guiHeight() * Gx.S);
+                  Toasts.render(ctx.guiWidth() * Gx.S, ctx.guiHeight() * Gx.S);
                } finally {
                   Gx.end();
                }
             }
 
-            if (Performance.monitor != null && Performance.monitor.enabled && !var2) {
-               McBackend.begin(var0);
+            if (Performance.monitor != null && Performance.monitor.enabled && !f1) {
+               McBackend.begin(ctx);
 
                try {
-                  Performance.monitor.draw(var0.guiWidth() * Gx.S, var0.guiHeight() * Gx.S);
+                  Performance.monitor.draw(ctx.guiWidth() * Gx.S, ctx.guiHeight() * Gx.S);
+               } finally {
+                  Gx.end();
+               }
+            }
+
+            if (Performance.moltron != null && Performance.moltron.enabled && !f1) {
+               McBackend.begin(ctx);
+
+               try {
+                  Performance.moltron.drawHud(ctx.guiWidth() * Gx.S, ctx.guiHeight() * Gx.S);
+               } finally {
+                  Gx.end();
+               }
+            }
+
+            if (mc.screen instanceof InventoryScreen && Utility.fightPreset != null) {
+               McBackend.begin(ctx);
+
+               try {
+                  Utility.fightPreset.renderInventoryOverlay(ctx);
                } finally {
                   Gx.end();
                }
@@ -310,22 +364,22 @@ public final class LegoClient implements ClientModInitializer {
             return;
          }
 
-         McBackend.begin(var0);
+         McBackend.begin(ctx);
 
          try {
-            Overlays.cutscene(var0.guiWidth() * Gx.S, var0.guiHeight() * Gx.S);
+            Overlays.cutscene(ctx.guiWidth() * Gx.S, ctx.guiHeight() * Gx.S);
          } finally {
             Gx.end();
          }
-      } catch (Throwable var42) {
-         LOG("HUD-Fehler: " + var42);
+      } catch (Throwable var72) {
+         LOG("HUD-Fehler: " + var72);
          return;
       } finally {
          Perf.end("HUD");
       }
    }
 
-   private static void tick(Minecraft var0) {
+   private static void tick(Minecraft client) {
       Perf.begin("Ticks");
 
       try {
@@ -339,8 +393,15 @@ public final class LegoClient implements ClientModInitializer {
 
          spotify.sync();
 
+         try {
+            HudPack.tick();
+            UtilPack.tick();
+         } catch (Throwable var12) {
+            LOG("Paket-4-Tick: " + var12);
+         }
+
          while (guiKey.consumeClick()) {
-            if (var0.screen == null) {
+            if (client.screen == null) {
                LegoScreen.show(new MenuView());
             }
          }
@@ -354,41 +415,33 @@ public final class LegoClient implements ClientModInitializer {
          }
 
          Perf.report(joinedAt);
-         dev.lego.cosmetic.KnifeTricks.key((var0.screen == null && knifeKey.isDown()) || dev.lego.ci.CiShots.knifeKey());
-         dev.lego.ci.CiShots.tick(var0);
-         dev.lego.ci.CiVr.tick(var0);
-         dev.lego.ci.CiFilter.tick(var0);
+         dev.lego.cosmetic.KnifeTricks.key((client.screen == null && knifeKey.isDown()) || dev.lego.ci.CiShots.knifeKey());
+         dev.lego.ci.CiShots.tick(client);
+         dev.lego.ci.CiVr.tick(client);
+         dev.lego.ci.CiFilter.tick(client);
 
          while (consoleKey.consumeClick()) {
-            if (var0.screen == null || var0.screen instanceof TitleScreen) {
+            if (client.screen == null || client.screen instanceof TitleScreen) {
                LegoScreen.show(new ConsoleView());
             }
          }
 
-         // The launcher asks for the console on start (-Dlegoclient.console=1): show it once on the title screen.
-         // Short LEGO start animation on the first title screen (before the console).
-         if (!introShown && var0.screen instanceof TitleScreen) {
-            introShown = true;
-            if (StartupView.enabled()) {
-               LegoScreen.show(new StartupView());
-            }
-         }
-
-         if (introShown && !consoleAutoShown && var0.screen instanceof TitleScreen && "1".equals(System.getProperty("legoclient.console"))) {
+         // The launcher asks for the console on start (-Dlegoclient.console=1): show it once on the title screen, after the intro.
+         if (!consoleAutoShown && client.screen instanceof TitleScreen && "1".equals(System.getProperty("legoclient.console"))) {
             consoleAutoShown = true;
             LegoScreen.show(new ConsoleView());
          }
 
          while (emoteKey.consumeClick()) {
-            if (var0.screen == null && Emotes.module.enabled && Mc.inGame()) {
-               int var1 = -1;
+            if (client.screen == null && Emotes.module.enabled && Mc.inGame()) {
+               int code = -1;
 
                try {
-                  var1 = dev.lego.compat.McCompat.glfwKey(dev.lego.compat.McCompat.boundKey(emoteKey).getValue());
-               } catch (Throwable var10) {
+                  code = dev.lego.compat.McCompat.glfwKey(dev.lego.compat.McCompat.boundKey(emoteKey).getValue());
+               } catch (Throwable var11) {
                }
 
-               LegoScreen.show(new EmoteWheelView(var1));
+               LegoScreen.show(new EmoteWheelView(code));
             }
          }
 
@@ -407,37 +460,51 @@ public final class LegoClient implements ClientModInitializer {
          }
 
          while (hudKey.consumeClick()) {
-            if (var0.screen == null) {
+            if (client.screen == null) {
                LegoScreen.show(new HudEditorView());
             }
          }
 
+         while (spotifyKey.consumeClick()) {
+            if (client.screen == null) {
+               LegoScreen.show(new SpotifyView());
+            }
+         }
+
+         while (dcMuteKey.consumeClick()) {
+            DiscordControl.toggleMute();
+         }
+
+         while (dcDeafKey.consumeClick()) {
+            DiscordControl.toggleDeafen();
+         }
+
          Visuals.zoom.held = zoomKey.isDown();
-         if (var0.screen == null) {
-            for (Module var2 : Modules.ALL) {
-               if (var2.key >= 0 && var2.key < lastDown.length) {
-                  boolean var3 = Mc.keyDown(var2.key);
-                  if (var3 && !lastDown[var2.key]) {
-                     if (var2.isToggleable()) {
-                        var2.toggle();
+         if (client.screen == null) {
+            for (Module m : Modules.ALL) {
+               if (m.key >= 0 && m.key < lastDown.length) {
+                  boolean down = Mc.keyDown(m.key);
+                  if (down && !lastDown[m.key]) {
+                     if (m.isToggleable()) {
+                        m.toggle();
                         Modules.scheduleSave();
-                        Toasts.show(var2.icon, var2.name, var2.enabled ? "Aktiviert" : "Deaktiviert", var2.enabled ? 0 : -7696487, 1400L);
-                     } else if (!Utility.runAction(var2) && var2 == Performance.memory) {
+                        Toasts.show(m.icon, m.name, m.enabled ? "Aktiviert" : "Deaktiviert", m.enabled ? 0 : -7696487, 1400L);
+                     } else if (!Utility.runAction(m) && m == Performance.memory) {
                         Performance.FreeMemory.run();
                      }
                   }
 
-                  lastDown[var2.key] = var3;
+                  lastDown[m.key] = down;
                }
             }
 
-            for (int var14 = 0; var14 < MACRO_KEYS.length; var14++) {
-               boolean var16 = Mc.keyDown(MACRO_KEYS[var14]);
-               if (var16 && !macroDown[var14]) {
-                  Utility.onKey(MACRO_KEYS[var14]);
+            for (int i = 0; i < MACRO_KEYS.length; i++) {
+               boolean down = Mc.keyDown(MACRO_KEYS[i]);
+               if (down && !macroDown[i]) {
+                  Utility.onKey(MACRO_KEYS[i]);
                }
 
-               macroDown[var14] = var16;
+               macroDown[i] = down;
             }
          }
 
@@ -446,12 +513,12 @@ public final class LegoClient implements ClientModInitializer {
                Emotes.stop();
             }
          } else {
-            for (Module var17 : Modules.ALL) {
-               if (var17.enabled) {
+            for (Module mx : Modules.ALL) {
+               if (mx.enabled) {
                   try {
-                     var17.tick();
-                  } catch (Throwable var9) {
-                     LOG("Tick " + var17.id + ": " + var9);
+                     mx.tick();
+                  } catch (Throwable var10) {
+                     LOG("Tick " + mx.id + ": " + var10);
                   }
                }
             }
@@ -463,11 +530,26 @@ public final class LegoClient implements ClientModInitializer {
          }
 
          Modules.tickSave();
-      } catch (Throwable var11) {
-         LOG("Tick-Fehler: " + var11);
+      } catch (Throwable var13) {
+         LOG("Tick-Fehler: " + var13);
       } finally {
          Perf.end("Ticks");
       }
+   }
+
+   private static void drawSpeedo(int W, int H) {
+      int kmh = VehicleWorld.kmh();
+      int S = Gx.S;
+      int w = 92 * S;
+      int h = 30 * S;
+      int x = W / 2 - w / 2;
+      int y = H - 84 * S;
+      Gx.rect(x, y, w, h, h / 2, -1072688874);
+      Gx.outline(x, y, w, h, h / 2, Math.max(1, S / 2), 872415231);
+      Gx.textCenter(kmh + " km/h", W / 2.0F, y + h / 2.0F - 2 * S, 10 * S, 3, -1);
+      int bw = w - 24 * S;
+      Gx.rect(x + 12 * S, y + h - 7 * S, bw, 3 * S, S, 872415231);
+      Gx.rect(x + 12 * S, y + h - 7 * S, Math.max(S, Math.round(bw * Math.min(1.0F, kmh / 45.0F))), 3 * S, S, kmh > 35 ? -45730 : -14756000);
    }
 
    private interface BoolAction {

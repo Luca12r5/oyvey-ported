@@ -9,13 +9,13 @@ public final class Toasts {
    private Toasts() {
    }
 
-   public static void show(String var0, String var1, String var2) {
-      show(var0, var1, var2, 0, 3500L);
+   public static void show(String icon, String title, String text) {
+      show(icon, title, text, 0, 3500L);
    }
 
-   public static void show(String var0, String var1, String var2, int var3, long var4) {
+   public static void show(String icon, String title, String text, int color, long durMs) {
       synchronized (LIST) {
-         LIST.add(new Toasts.T(var0, var1, var2 == null ? "" : var2, var3, var4));
+         LIST.add(new Toasts.T(icon, title, text == null ? "" : text, color, durMs));
 
          while (LIST.size() > 4) {
             LIST.remove(0);
@@ -29,55 +29,55 @@ public final class Toasts {
       }
    }
 
-   public static void render(int var0, int var1) {
-      ArrayList var2;
+   public static void render(int W, int H) {
+      List<Toasts.T> copy;
       synchronized (LIST) {
-         LIST.removeIf(var0x -> System.currentTimeMillis() - var0x.at > var0x.dur + 400L);
-         var2 = new ArrayList<>(LIST);
+         LIST.removeIf(txx -> System.currentTimeMillis() - txx.at > txx.dur + 400L);
+         copy = new ArrayList<>(LIST);
       }
 
-      if (!var2.isEmpty()) {
+      if (!copy.isEmpty()) {
          Style.update();
-         float var21 = Math.max(1.0F, Math.min(var0 / 680.0F, var1 / 420.0F));
-         int var4 = Math.round(210.0F * var21);
-         int var5 = Math.round(40.0F * var21);
-         int var6 = Math.round(6.0F * var21);
-         float var7 = Math.round(12.0F * var21);
+         float P = Math.max(1.0F, Math.min(W / 680.0F, H / 420.0F));
+         int w = Math.round(210.0F * P);
+         int h = Math.round(40.0F * P);
+         int gap = Math.round(6.0F * P);
+         float targetY = Math.round(12.0F * P);
 
-         for (int var8 = var2.size() - 1; var8 >= 0; var8--) {
-            Toasts.T var9 = (Toasts.T)var2.get(var8);
-            long var10 = System.currentTimeMillis() - var9.at;
-            float var12 = Ease.outBack(Math.min(1.0F, (float)var10 / 380.0F));
-            float var13 = var10 > var9.dur ? Ease.clamp((float)(var10 - var9.dur) / 400.0F) : 0.0F;
-            if (var9.y < 0.0F) {
-               var9.y = var7;
+         for (int i = copy.size() - 1; i >= 0; i--) {
+            Toasts.T t = copy.get(i);
+            long age = System.currentTimeMillis() - t.at;
+            float in = Ease.outBack(Math.min(1.0F, (float)age / 380.0F));
+            float out = age > t.dur ? Ease.clamp((float)(age - t.dur) / 400.0F) : 0.0F;
+            if (t.y < 0.0F) {
+               t.y = targetY;
             }
 
-            var9.y = var9.y + (var7 - var9.y) * Math.min(1.0F, Gx.dt * 12.0F);
-            int var14 = Math.round(var0 - var4 - 12.0F * var21 + (1.0F - var12) * (var4 + 20.0F * var21) + var13 * (var4 + 20.0F * var21));
-            int var15 = Math.round(var9.y);
-            int var16 = var9.color == 0 ? Style.accent : var9.color;
-            Gx.pushAlpha(1.0F - var13);
-            Gx.shadow(var14, var15, var4, var5, Math.round(10.0F * var21), Math.round(6.0F * var21), 0.45F);
-            Gx.rect(var14, var15, var4, var5, Math.round(10.0F * var21), -233696488);
-            Gx.outline(var14, var15, var4, var5, Math.round(10.0F * var21), Math.max(1, Math.round(0.6F * var21)), 536870911);
-            int var17 = Math.round(26.0F * var21);
-            Gx.rect(var14 + Math.round(7.0F * var21), var15 + (var5 - var17) / 2, var17, var17, Math.round(8.0F * var21), Gx.withAlpha(var16, 0.2F));
-            Gx.icon(var9.icon, var14 + Math.round(7.0F * var21) + var17 / 2.0F, var15 + var5 / 2.0F, 14.0F * var21, var16);
-            float var18 = var14 + 40.0F * var21;
-            Gx.text(Fonts.ellipsize(var9.title, 3, 8.6F * var21, var4 - 48.0F * var21), var18, var15 + 7.0F * var21, 8.6F * var21, 3, -1);
-            Gx.text(Fonts.ellipsize(var9.text, 1, 7.4F * var21, var4 - 48.0F * var21), var18, var15 + 21.0F * var21, 7.4F * var21, 1, -6117197);
-            float var19 = Math.max(0.0F, 1.0F - (float)var10 / (float)var9.dur);
+            t.y = t.y + (targetY - t.y) * Math.min(1.0F, Gx.dt * 12.0F);
+            int x = Math.round(W - w - 12.0F * P + (1.0F - in) * (w + 20.0F * P) + out * (w + 20.0F * P));
+            int y = Math.round(t.y);
+            int accent = t.color == 0 ? Style.accent : t.color;
+            Gx.pushAlpha(1.0F - out);
+            Gx.shadow(x, y, w, h, Math.round(10.0F * P), Math.round(6.0F * P), 0.45F);
+            Gx.rect(x, y, w, h, Math.round(10.0F * P), -233696488);
+            Gx.outline(x, y, w, h, Math.round(10.0F * P), Math.max(1, Math.round(0.6F * P)), 536870911);
+            int is = Math.round(26.0F * P);
+            Gx.rect(x + Math.round(7.0F * P), y + (h - is) / 2, is, is, Math.round(8.0F * P), Gx.withAlpha(accent, 0.2F));
+            Gx.icon(t.icon, x + Math.round(7.0F * P) + is / 2.0F, y + h / 2.0F, 14.0F * P, accent);
+            float tx = x + 40.0F * P;
+            Gx.text(Fonts.ellipsize(t.title, 3, 8.6F * P, w - 48.0F * P), tx, y + 7.0F * P, 8.6F * P, 3, -1);
+            Gx.text(Fonts.ellipsize(t.text, 1, 7.4F * P, w - 48.0F * P), tx, y + 21.0F * P, 7.4F * P, 1, -6117197);
+            float frac = Math.max(0.0F, 1.0F - (float)age / (float)t.dur);
             Gx.rect(
-               var14 + Math.round(10.0F * var21),
-               var15 + var5 - Math.round(3.0F * var21),
-               Math.round((var4 - 20.0F * var21) * var19),
-               Math.max(1, Math.round(1.5F * var21)),
+               x + Math.round(10.0F * P),
+               y + h - Math.round(3.0F * P),
+               Math.round((w - 20.0F * P) * frac),
+               Math.max(1, Math.round(1.5F * P)),
                1,
-               Gx.withAlpha(var16, 0.7F)
+               Gx.withAlpha(accent, 0.7F)
             );
             Gx.popAlpha();
-            var7 += var5 + var6;
+            targetY += h + gap;
          }
       }
    }
@@ -91,12 +91,12 @@ public final class Toasts {
       final long dur;
       float y = -1.0F;
 
-      T(String var1, String var2, String var3, int var4, long var5) {
-         this.icon = var1;
-         this.title = var2;
-         this.text = var3;
-         this.color = var4;
-         this.dur = var5;
+      T(String icon, String title, String text, int color, long dur) {
+         this.icon = icon;
+         this.title = title;
+         this.text = text;
+         this.color = color;
+         this.dur = dur;
       }
    }
 }

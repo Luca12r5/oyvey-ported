@@ -18,71 +18,71 @@ public final class H {
    private H() {
    }
 
-   public static double w(String var0, int var1, float var2) {
-      return Fonts.width(var0, var1, var2);
+   public static double w(String s, int weight, float size) {
+      return Fonts.width(s, weight, size);
    }
 
-   public static void text(Graphics2D var0, String var1, double var2, double var4, int var6, float var7, Color var8) {
-      if (var1 != null && !var1.isEmpty()) {
-         var0.setFont(Fonts.get(var6, var7));
+   public static void text(Graphics2D g, String s, double x, double y, int weight, float size, Color c) {
+      if (s != null && !s.isEmpty()) {
+         g.setFont(Fonts.get(weight, size));
          if (UiSettings.hudStyle == 1 && UiSettings.hudShadow) {
-            var0.setColor(new Color(0, 0, 0, Math.min(170, var8.getAlpha())));
-            var0.drawString(var1, (float)(var2 + var7 * 0.07), (float)(var4 + var7 * 0.08));
+            g.setColor(new Color(0, 0, 0, Math.min(170, c.getAlpha())));
+            g.drawString(s, (float)(x + size * 0.07), (float)(y + size * 0.08));
          }
 
-         var0.setColor(var8);
-         var0.drawString(var1, (float)var2, (float)var4);
+         g.setColor(c);
+         g.drawString(s, (float)x, (float)y);
       }
    }
 
-   public static void right(Graphics2D var0, String var1, double var2, double var4, int var6, float var7, Color var8) {
-      text(var0, var1, var2 - w(var1, var6, var7), var4, var6, var7, var8);
+   public static void right(Graphics2D g, String s, double rx, double y, int weight, float size, Color c) {
+      text(g, s, rx - w(s, weight, size), y, weight, size, c);
    }
 
-   public static void center(Graphics2D var0, String var1, double var2, double var4, int var6, float var7, Color var8) {
-      text(var0, var1, var2 - w(var1, var6, var7) / 2.0, var4, var6, var7, var8);
+   public static void center(Graphics2D g, String s, double cx, double y, int weight, float size, Color c) {
+      text(g, s, cx - w(s, weight, size) / 2.0, y, weight, size, c);
    }
 
-   public static double base(double var0, double var2, float var4) {
-      return var0 + var2 / 2.0 + var4 * 0.35;
+   public static double base(double top, double h, float size) {
+      return top + h / 2.0 + size * 0.35;
    }
 
-   public static void icon(Graphics2D var0, String var1, double var2, double var4, double var6, Color var8) {
-      Graphics2D var9 = (Graphics2D)var0.create();
-      var9.translate(var2 - var6 / 2.0, var4 - var6 / 2.0);
-      var9.scale(var6 / 24.0, var6 / 24.0);
-      Icons.paint(var9, var1, 24, var8);
-      var9.dispose();
+   public static void icon(Graphics2D g, String name, double cx, double cy, double size, Color c) {
+      Graphics2D gg = (Graphics2D)g.create();
+      gg.translate(cx - size / 2.0, cy - size / 2.0);
+      gg.scale(size / 24.0, size / 24.0);
+      Icons.paint(gg, name, 24, c);
+      gg.dispose();
    }
 
-   public static void round(Graphics2D var0, double var1, double var3, double var5, double var7, double var9, Color var11) {
-      var0.setColor(var11);
-      var0.fill(new Double(var1, var3, var5, var7, var9 * 2.0, var9 * 2.0));
+   public static void round(Graphics2D g, double x, double y, double w, double h, double r, Color c) {
+      g.setColor(c);
+      g.fill(new Double(x, y, w, h, r * 2.0, r * 2.0));
    }
 
-   public static void bar(Graphics2D var0, double var1, double var3, double var5, double var7, double var9, Color var11) {
-      round(var0, var1, var3, var5, var7, var7 / 2.0, new Color(255, 255, 255, 30));
-      double var12 = Math.max(0.0, Math.min(1.0, var9));
-      if (var12 > 0.0) {
-         round(var0, var1, var3, Math.max(var7, var5 * var12), var7, var7 / 2.0, var11);
+   public static void bar(Graphics2D g, double x, double y, double w, double h, double frac, Color fill) {
+      round(g, x, y, w, h, h / 2.0, new Color(255, 255, 255, 30));
+      double f = Math.max(0.0, Math.min(1.0, frac));
+      if (f > 0.0) {
+         round(g, x, y, Math.max(h, w * f), h, h / 2.0, fill);
       }
    }
 
-   public static Color alpha(Color var0, int var1) {
-      return new Color(var0.getRed(), var0.getGreen(), var0.getBlue(), Math.max(0, Math.min(255, var1)));
+   public static Color alpha(Color c, int a) {
+      return new Color(c.getRed(), c.getGreen(), c.getBlue(), Math.max(0, Math.min(255, a)));
    }
 
-   public static Color mix(Color var0, Color var1, double var2) {
-      var2 = Math.max(0.0, Math.min(1.0, var2));
+   public static Color mix(Color a, Color b, double t) {
+      t = Math.max(0.0, Math.min(1.0, t));
       return new Color(
-         (int)(var0.getRed() + (var1.getRed() - var0.getRed()) * var2),
-         (int)(var0.getGreen() + (var1.getGreen() - var0.getGreen()) * var2),
-         (int)(var0.getBlue() + (var1.getBlue() - var0.getBlue()) * var2),
-         (int)(var0.getAlpha() + (var1.getAlpha() - var0.getAlpha()) * var2)
+         (int)(a.getRed() + (b.getRed() - a.getRed()) * t),
+         (int)(a.getGreen() + (b.getGreen() - a.getGreen()) * t),
+         (int)(a.getBlue() + (b.getBlue() - a.getBlue()) * t),
+         (int)(a.getAlpha() + (b.getAlpha() - a.getAlpha()) * t)
       );
    }
 
-   public static String ellipsize(String var0, double var1, int var3, float var4) {
-      return Fonts.ellipsize(var0, var3, var4, (float)var1);
+   public static String ellipsize(String s, double max, int weight, float size) {
+      return Fonts.ellipsize(s, weight, size, (float)max);
    }
 }

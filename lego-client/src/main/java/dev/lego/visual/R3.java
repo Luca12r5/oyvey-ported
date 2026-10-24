@@ -1,10 +1,15 @@
 package dev.lego.visual;
 
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.pipeline.RenderPipeline.Snippet;
+import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.PoseStack.Pose;
 import dev.lego.LegoClient;
 import dev.lego.core.Mc;
+import dev.lego.visual.shader.ShaderUtil;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -44,6 +49,8 @@ public final class R3 {
    public static int lastVertices;
    public static int lastLayers;
    public static double skyRadius = 0.0;
+   private static RenderType noDepthLayer;
+   private static boolean noDepthBroken;
    public static final int CUTOUT = 0;
    public static final int TRANSLUCENT = 1;
    public static final int GLOW = 2;
@@ -54,55 +61,55 @@ public final class R3 {
    private R3() {
    }
 
-   private static R3.Batch batch(RenderType var0) {
-      if (var0 == lastLayer) {
+   private static R3.Batch batch(RenderType layer) {
+      if (layer == lastLayer) {
          return lastBatch;
       } else {
-         R3.Batch var1 = BATCH.get(var0);
-         if (var1 == null) {
-            var1 = POOL.isEmpty() ? new R3.Batch() : POOL.pop();
-            var1.n = 0;
-            BATCH.put(var0, var1);
+         R3.Batch b = BATCH.get(layer);
+         if (b == null) {
+            b = POOL.isEmpty() ? new R3.Batch() : POOL.pop();
+            b.n = 0;
+            BATCH.put(layer, b);
          }
 
-         lastLayer = var0;
-         lastBatch = var1;
-         return var1;
+         lastLayer = layer;
+         lastBatch = b;
+         return b;
       }
    }
 
    private static void emit() {
-      int var0 = 0;
+      int verts = 0;
 
-      for (Entry var2 : BATCH.entrySet()) {
-         R3.Batch var3 = (R3.Batch)var2.getValue();
-         if (var3.n != 0) {
-            VertexConsumer var4 = consumers.getBuffer((RenderType)var2.getKey());
-            float[] var5 = var3.d;
+      for (Entry<RenderType, R3.Batch> e : BATCH.entrySet()) {
+         R3.Batch b = e.getValue();
+         if (b.n != 0) {
+            VertexConsumer vc = consumers.getBuffer(e.getKey());
+            float[] a = b.d;
 
-            for (int var6 = 0; var6 < var3.n; var6 += 10) {
-               var4.addVertex(entry, var5[var6], var5[var6 + 1], var5[var6 + 2])
-                  .setColor(Float.floatToRawIntBits(var5[var6 + 3]))
-                  .setUv(var5[var6 + 4], var5[var6 + 5])
+            for (int i = 0; i < b.n; i += 10) {
+               vc.addVertex(entry, a[i], a[i + 1], a[i + 2])
+                  .setColor(Float.floatToRawIntBits(a[i + 3]))
+                  .setUv(a[i + 4], a[i + 5])
                   .setOverlay(OverlayTexture.NO_OVERLAY)
-                  .setLight(Float.floatToRawIntBits(var5[var6 + 6]))
-                  .setNormal(entry, var5[var6 + 7], var5[var6 + 8], var5[var6 + 9]);
+                  .setLight(Float.floatToRawIntBits(a[i + 6]))
+                  .setNormal(entry, a[i + 7], a[i + 8], a[i + 9]);
             }
 
-            var0 += var3.n / 10;
+            verts += b.n / 10;
             if (consumers instanceof BufferSource) {
-               ((BufferSource)consumers).endBatch((RenderType)var2.getKey());
+               ((BufferSource)consumers).endBatch(e.getKey());
             }
          }
       }
 
-      lastVertices = var0;
+      lastVertices = verts;
       lastLayers = BATCH.size();
 
-      for (R3.Batch var8 : BATCH.values()) {
-         var8.n = 0;
+      for (R3.Batch b : BATCH.values()) {
+         b.n = 0;
          if (POOL.size() < 64) {
-            POOL.push(var8);
+            POOL.push(b);
          }
       }
 
@@ -111,20 +118,20 @@ public final class R3 {
       lastBatch = null;
    }
 
-   public static boolean begin(WorldRenderContext var0) {
-      consumers = var0.consumers();
-      PoseStack var1 = var0.matrices();
-      if (consumers != null && var1 != null) {
-         entry = var1.last();
-         Vec3 var2 = var0.worldState().cameraRenderState.pos;
-         cx = var2.x;
-         cy = var2.y;
-         cz = var2.z;
+   public static boolean begin(WorldRenderContext ctx) {
+      consumers = ctx.consumers();
+      PoseStack m = ctx.matrices();
+      if (consumers != null && m != null) {
+         entry = m.last();
+         Vec3 cam = ctx.worldState().cameraRenderState.pos;
+         cx = cam.x;
+         cy = cam.y;
+         cz = cam.z;
 
          try {
-            Camera var3 = Mc.mc().gameRenderer.getMainCamera();
-            camYaw = var3.yRot();
-            camPitch = var3.xRot();
+            Camera c = Mc.mc().gameRenderer.getMainCamera();
+            camYaw = c.yRot();
+            camPitch = c.xRot();
          } catch (Throwable var4) {
             camYaw = 0.0F;
             camPitch = 0.0F;
@@ -141,8 +148,8 @@ public final class R3 {
       }
    }
 
-   public static void beginSky(MultiBufferSource var0) {
-      consumers = var0;
+   public static void beginSky(MultiBufferSource imm) {
+      consumers = imm;
       entry = new PoseStack().last();
       cz = 0.0;
       cy = 0.0;
@@ -150,9 +157,9 @@ public final class R3 {
       skyRadius = 90.0;
 
       try {
-         Camera var1 = Mc.mc().gameRenderer.getMainCamera();
-         camYaw = var1.yRot();
-         camPitch = var1.xRot();
+         Camera c = Mc.mc().gameRenderer.getMainCamera();
+         camYaw = c.yRot();
+         camPitch = c.xRot();
       } catch (Throwable var2) {
          camYaw = 0.0F;
          camPitch = 0.0F;
@@ -193,220 +200,251 @@ public final class R3 {
       return batch(quadLayer);
    }
 
-   private static void v(R3.Batch var0, double var1, double var3, double var5, int var7) {
-      var0.v(var1, var3, var5, var7, 0.0F, 0.0F, 15728880, 0.0F, 1.0F, 0.0F);
+   private static R3.Batch qNoDepth() {
+      if (noDepthLayer == null && !noDepthBroken) {
+         try {
+            Field snippetField = RenderPipelines.class.getDeclaredField(dev.lego.util.Remap.field("net.minecraft.class_10799", "field_56860", "Lcom/mojang/blaze3d/pipeline/RenderPipeline$Snippet;"));
+            snippetField.setAccessible(true);
+            Snippet snippet = (Snippet)snippetField.get(null);
+            RenderPipeline pipeline = ShaderUtil.register(
+               RenderPipeline.builder(snippet)
+                  .withLocation("legoclient:pipeline/no_depth_quads")
+                  .withCull(false)
+                  .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+                  .withDepthWrite(false)
+                  .build()
+            );
+            RenderSetup setup = RenderSetup.builder(pipeline).sortOnUpload().createRenderSetup();
+            if (layerOf == null) {
+               layerOf = RenderType.class.getDeclaredMethod(dev.lego.util.Remap.method("net.minecraft.class_1921", "method_75940", "(Ljava/lang/String;Lnet/minecraft/class_12247;)Lnet/minecraft/class_1921;"), String.class, RenderSetup.class);
+               layerOf.setAccessible(true);
+            }
+
+            noDepthLayer = (RenderType)layerOf.invoke(null, "legoclient_no_depth", setup);
+            LegoClient.LOG("No-depth render layer created successfully");
+         } catch (Throwable var4) {
+            noDepthBroken = true;
+            LegoClient.LOG("No-depth layer failed, using debugQuads: " + var4);
+            var4.printStackTrace();
+         }
+      }
+
+      return batch(noDepthLayer != null ? noDepthLayer : (quadLayer != null ? quadLayer : (quadLayer = RenderTypes.debugQuads())));
+   }
+
+   private static void v(R3.Batch vc, double x, double y, double z, int argb) {
+      vc.v(x, y, z, argb, 0.0F, 0.0F, 15728880, 0.0F, 1.0F, 0.0F);
    }
 
    public static void quad(
-      double var0,
-      double var2,
-      double var4,
-      double var6,
-      double var8,
-      double var10,
-      double var12,
-      double var14,
-      double var16,
-      double var18,
-      double var20,
-      double var22,
-      int var24,
-      int var25,
-      int var26,
-      int var27
+      double x1,
+      double y1,
+      double z1,
+      double x2,
+      double y2,
+      double z2,
+      double x3,
+      double y3,
+      double z3,
+      double x4,
+      double y4,
+      double z4,
+      int c1,
+      int c2,
+      int c3,
+      int c4
    ) {
-      R3.Batch var28 = q();
-      v(var28, var0, var2, var4, var24);
-      v(var28, var6, var8, var10, var25);
-      v(var28, var12, var14, var16, var26);
-      v(var28, var18, var20, var22, var27);
+      R3.Batch vc = q();
+      v(vc, x1, y1, z1, c1);
+      v(vc, x2, y2, z2, c2);
+      v(vc, x3, y3, z3, c3);
+      v(vc, x4, y4, z4, c4);
    }
 
    public static void quad(
-      double var0,
-      double var2,
-      double var4,
-      double var6,
-      double var8,
-      double var10,
-      double var12,
-      double var14,
-      double var16,
-      double var18,
-      double var20,
-      double var22,
-      int var24
+      double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3, double x4, double y4, double z4, int c
    ) {
-      quad(var0, var2, var4, var6, var8, var10, var12, var14, var16, var18, var20, var22, var24, var24, var24, var24);
+      quad(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, c, c, c, c);
    }
 
-   public static void ring(double var0, double var2, double var4, double var6, double var8, int var10, int var11, int var12, double var13) {
-      for (int var15 = 0; var15 < var10; var15++) {
-         double var16 = var13 + (Math.PI * 2) * var15 / var10;
-         double var18 = var13 + (Math.PI * 2) * (var15 + 1) / var10;
-         double var20 = Math.cos(var16);
-         double var22 = Math.sin(var16);
-         double var24 = Math.cos(var18);
-         double var26 = Math.sin(var18);
+   public static void ring(double x, double y, double z, double r0, double r1, int seg, int cInner, int cOuter, double rot) {
+      for (int i = 0; i < seg; i++) {
+         double a0 = rot + (Math.PI * 2) * i / seg;
+         double a1 = rot + (Math.PI * 2) * (i + 1) / seg;
+         double c0 = Math.cos(a0);
+         double s0 = Math.sin(a0);
+         double c1 = Math.cos(a1);
+         double s1 = Math.sin(a1);
          quad(
-            var0 + var20 * var6,
-            var2,
-            var4 + var22 * var6,
-            var0 + var20 * var8,
-            var2,
-            var4 + var22 * var8,
-            var0 + var24 * var8,
-            var2,
-            var4 + var26 * var8,
-            var0 + var24 * var6,
-            var2,
-            var4 + var26 * var6,
-            var11,
-            var12,
-            var12,
-            var11
+            x + c0 * r0, y, z + s0 * r0, x + c0 * r1, y, z + s0 * r1, x + c1 * r1, y, z + s1 * r1, x + c1 * r0, y, z + s1 * r0, cInner, cOuter, cOuter, cInner
          );
       }
    }
 
-   public static void ring3(double var0, double var2, double var4, double[] var6, double[] var7, double var8, double var10, int var12, int var13) {
-      for (int var14 = 0; var14 < var12; var14++) {
-         double var15 = (Math.PI * 2) * var14 / var12;
-         double var17 = (Math.PI * 2) * (var14 + 1) / var12;
-         double var19 = Math.cos(var15);
-         double var21 = Math.sin(var15);
-         double var23 = Math.cos(var17);
-         double var25 = Math.sin(var17);
+   public static void ring3(double x, double y, double z, double[] u, double[] w, double r0, double r1, int seg, int c) {
+      for (int i = 0; i < seg; i++) {
+         double a0 = (Math.PI * 2) * i / seg;
+         double a1 = (Math.PI * 2) * (i + 1) / seg;
+         double c0 = Math.cos(a0);
+         double s0 = Math.sin(a0);
+         double c1 = Math.cos(a1);
+         double s1 = Math.sin(a1);
          quad(
-            var0 + (var6[0] * var19 + var7[0] * var21) * var8,
-            var2 + (var6[1] * var19 + var7[1] * var21) * var8,
-            var4 + (var6[2] * var19 + var7[2] * var21) * var8,
-            var0 + (var6[0] * var19 + var7[0] * var21) * var10,
-            var2 + (var6[1] * var19 + var7[1] * var21) * var10,
-            var4 + (var6[2] * var19 + var7[2] * var21) * var10,
-            var0 + (var6[0] * var23 + var7[0] * var25) * var10,
-            var2 + (var6[1] * var23 + var7[1] * var25) * var10,
-            var4 + (var6[2] * var23 + var7[2] * var25) * var10,
-            var0 + (var6[0] * var23 + var7[0] * var25) * var8,
-            var2 + (var6[1] * var23 + var7[1] * var25) * var8,
-            var4 + (var6[2] * var23 + var7[2] * var25) * var8,
-            var13
+            x + (u[0] * c0 + w[0] * s0) * r0,
+            y + (u[1] * c0 + w[1] * s0) * r0,
+            z + (u[2] * c0 + w[2] * s0) * r0,
+            x + (u[0] * c0 + w[0] * s0) * r1,
+            y + (u[1] * c0 + w[1] * s0) * r1,
+            z + (u[2] * c0 + w[2] * s0) * r1,
+            x + (u[0] * c1 + w[0] * s1) * r1,
+            y + (u[1] * c1 + w[1] * s1) * r1,
+            z + (u[2] * c1 + w[2] * s1) * r1,
+            x + (u[0] * c1 + w[0] * s1) * r0,
+            y + (u[1] * c1 + w[1] * s1) * r0,
+            z + (u[2] * c1 + w[2] * s1) * r0,
+            c
          );
       }
    }
 
-   public static void cube(double var0, double var2, double var4, double var6, int var8) {
-      double var9 = var6 / 2.0;
-      box(var0 - var9, var2 - var9, var4 - var9, var0 + var9, var2 + var9, var4 + var9, var8);
+   public static void cube(double x, double y, double z, double s, int c) {
+      double a = s / 2.0;
+      box(x - a, y - a, z - a, x + a, y + a, z + a, c);
    }
 
-   public static void box(double var0, double var2, double var4, double var6, double var8, double var10, int var12) {
-      quad(var0, var2, var4, var6, var2, var4, var6, var8, var4, var0, var8, var4, var12);
-      quad(var0, var2, var10, var6, var2, var10, var6, var8, var10, var0, var8, var10, var12);
-      quad(var0, var2, var4, var0, var2, var10, var0, var8, var10, var0, var8, var4, var12);
-      quad(var6, var2, var4, var6, var2, var10, var6, var8, var10, var6, var8, var4, var12);
-      quad(var0, var8, var4, var6, var8, var4, var6, var8, var10, var0, var8, var10, var12);
-      quad(var0, var2, var4, var6, var2, var4, var6, var2, var10, var0, var2, var10, var12);
+   public static void box(double x0, double y0, double z0, double x1, double y1, double z1, int c) {
+      quad(x0, y0, z0, x1, y0, z0, x1, y1, z0, x0, y1, z0, c);
+      quad(x0, y0, z1, x1, y0, z1, x1, y1, z1, x0, y1, z1, c);
+      quad(x0, y0, z0, x0, y0, z1, x0, y1, z1, x0, y1, z0, c);
+      quad(x1, y0, z0, x1, y0, z1, x1, y1, z1, x1, y1, z0, c);
+      quad(x0, y1, z0, x1, y1, z0, x1, y1, z1, x0, y1, z1, c);
+      quad(x0, y0, z0, x1, y0, z0, x1, y0, z1, x0, y0, z1, c);
    }
 
-   public static void line(double var0, double var2, double var4, double var6, double var8, double var10, double var12, int var14, int var15) {
-      double var16 = var6 - var0;
-      double var18 = var8 - var2;
-      double var20 = var10 - var4;
-      double var22 = (var0 + var6) / 2.0 - cx;
-      double var24 = (var2 + var8) / 2.0 - cy;
-      double var26 = (var4 + var10) / 2.0 - cz;
-      double var28 = var18 * var26 - var20 * var24;
-      double var30 = var20 * var22 - var16 * var26;
-      double var32 = var16 * var24 - var18 * var22;
-      double var34 = Math.sqrt(var28 * var28 + var30 * var30 + var32 * var32);
-      if (!(var34 < 1.0E-9)) {
-         double var36 = var12 / 2.0 / var34;
-         var28 *= var36;
-         var30 *= var36;
-         var32 *= var36;
-         quad(
-            var0 - var28,
-            var2 - var30,
-            var4 - var32,
-            var0 + var28,
-            var2 + var30,
-            var4 + var32,
-            var6 + var28,
-            var8 + var30,
-            var10 + var32,
-            var6 - var28,
-            var8 - var30,
-            var10 - var32,
-            var14,
-            var14,
-            var15,
-            var15
-         );
+   public static void line(double x1, double y1, double z1, double x2, double y2, double z2, double width, int c1, int c2) {
+      double dx = x2 - x1;
+      double dy = y2 - y1;
+      double dz = z2 - z1;
+      double mx = (x1 + x2) / 2.0 - cx;
+      double my = (y1 + y2) / 2.0 - cy;
+      double mz = (z1 + z2) / 2.0 - cz;
+      double sx = dy * mz - dz * my;
+      double sy = dz * mx - dx * mz;
+      double sz = dx * my - dy * mx;
+      double l = Math.sqrt(sx * sx + sy * sy + sz * sz);
+      if (!(l < 1.0E-9)) {
+         double k = width / 2.0 / l;
+         sx *= k;
+         sy *= k;
+         sz *= k;
+         quad(x1 - sx, y1 - sy, z1 - sz, x1 + sx, y1 + sy, z1 + sz, x2 + sx, y2 + sy, z2 + sz, x2 - sx, y2 - sy, z2 - sz, c1, c1, c2, c2);
       }
    }
 
-   public static void boxEdges(double var0, double var2, double var4, double var6, double var8, double var10, double var12, int var14) {
-      double[][] var15 = new double[][]{
-         {var0, var2, var4},
-         {var6, var2, var4},
-         {var6, var2, var10},
-         {var0, var2, var10},
-         {var0, var8, var4},
-         {var6, var8, var4},
-         {var6, var8, var10},
-         {var0, var8, var10}
-      };
-      int[][] var16 = new int[][]{{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
+   public static void boxEdges(double x0, double y0, double z0, double x1, double y1, double z1, double w, int c) {
+      double[][] p = new double[][]{{x0, y0, z0}, {x1, y0, z0}, {x1, y0, z1}, {x0, y0, z1}, {x0, y1, z0}, {x1, y1, z0}, {x1, y1, z1}, {x0, y1, z1}};
+      int[][] e = new int[][]{{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
 
-      for (int[] var20 : var16) {
-         line(var15[var20[0]][0], var15[var20[0]][1], var15[var20[0]][2], var15[var20[1]][0], var15[var20[1]][1], var15[var20[1]][2], var12, var14, var14);
+      for (int[] i : e) {
+         line(p[i[0]][0], p[i[0]][1], p[i[0]][2], p[i[1]][0], p[i[1]][1], p[i[1]][2], w, c, c);
       }
    }
 
-   private static void tv(R3.Batch var0, double var1, double var3, double var5, float var7, float var8, int var9) {
-      var0.v(var1, var3, var5, var9, var7, var8, 15728880, 0.0F, 1.0F, 0.0F);
+   private static void noDepthQuad(
+      double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3, double x4, double y4, double z4, int c
+   ) {
+      R3.Batch vc = qNoDepth();
+      v(vc, x1, y1, z1, c);
+      v(vc, x2, y2, z2, c);
+      v(vc, x3, y3, z3, c);
+      v(vc, x4, y4, z4, c);
    }
 
-   public static void texQuad(Identifier var0, int var1, double[] var2, float[] var3, int var4, int var5, float var6, float var7, float var8) {
-      R3.Batch var9 = layer(
-         var1 == 2 ? RenderTypes.entityTranslucentEmissive(var0) : (var1 == 1 ? RenderTypes.entityTranslucent(var0) : RenderTypes.entityCutoutNoCull(var0))
+   public static void noDepthBox(double x0, double y0, double z0, double x1, double y1, double z1, int c) {
+      noDepthQuad(x0, y0, z0, x1, y0, z0, x1, y1, z0, x0, y1, z0, c);
+      noDepthQuad(x0, y0, z1, x1, y0, z1, x1, y1, z1, x0, y1, z1, c);
+      noDepthQuad(x0, y0, z0, x0, y0, z1, x0, y1, z1, x0, y1, z0, c);
+      noDepthQuad(x1, y0, z0, x1, y0, z1, x1, y1, z1, x1, y1, z0, c);
+      noDepthQuad(x0, y1, z0, x1, y1, z0, x1, y1, z1, x0, y1, z1, c);
+      noDepthQuad(x0, y0, z0, x1, y0, z0, x1, y0, z1, x0, y0, z1, c);
+   }
+
+   private static void noDepthLine(double x1, double y1, double z1, double x2, double y2, double z2, double width, int c) {
+      double dx = x2 - x1;
+      double dy = y2 - y1;
+      double dz = z2 - z1;
+      double mx = (x1 + x2) / 2.0 - cx;
+      double my = (y1 + y2) / 2.0 - cy;
+      double mz = (z1 + z2) / 2.0 - cz;
+      double sx = dy * mz - dz * my;
+      double sy = dz * mx - dx * mz;
+      double sz = dx * my - dy * mx;
+      double l = Math.sqrt(sx * sx + sy * sy + sz * sz);
+      if (!(l < 1.0E-9)) {
+         double k = width / 2.0 / l;
+         sx *= k;
+         sy *= k;
+         sz *= k;
+         R3.Batch vc = qNoDepth();
+         v(vc, x1 - sx, y1 - sy, z1 - sz, c);
+         v(vc, x1 + sx, y1 + sy, z1 + sz, c);
+         v(vc, x2 + sx, y2 + sy, z2 + sz, c);
+         v(vc, x2 - sx, y2 - sy, z2 - sz, c);
+      }
+   }
+
+   public static void noDepthBoxEdges(double x0, double y0, double z0, double x1, double y1, double z1, double w, int c) {
+      double[][] p = new double[][]{{x0, y0, z0}, {x1, y0, z0}, {x1, y0, z1}, {x0, y0, z1}, {x0, y1, z0}, {x1, y1, z0}, {x1, y1, z1}, {x0, y1, z1}};
+      int[][] e = new int[][]{{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
+
+      for (int[] i : e) {
+         noDepthLine(p[i[0]][0], p[i[0]][1], p[i[0]][2], p[i[1]][0], p[i[1]][1], p[i[1]][2], w, c);
+      }
+   }
+
+   private static void tv(R3.Batch vc, double x, double y, double z, float u, float v, int argb) {
+      vc.v(x, y, z, argb, u, v, 15728880, 0.0F, 1.0F, 0.0F);
+   }
+
+   public static void texQuad(Identifier texture, int mode, double[] p, float[] uv, int argb, int light, float nx, float ny, float nz) {
+      R3.Batch vc = layer(
+         mode == 2
+            ? RenderTypes.entityTranslucentEmissive(texture)
+            : (mode == 1 ? RenderTypes.entityTranslucent(texture) : RenderTypes.entityCutoutNoCull(texture))
       );
-      int var10 = var1 == 2 ? 15728880 : var5;
+      int li = mode == 2 ? 15728880 : light;
 
-      for (int var11 = 0; var11 < 4; var11++) {
-         lv(var9, var2, var3, var11, var4, var10, var6, var7, var8);
+      for (int k = 0; k < 4; k++) {
+         lv(vc, p, uv, k, argb, li, nx, ny, nz);
       }
    }
 
-   private static void lv(R3.Batch var0, double[] var1, float[] var2, int var3, int var4, int var5, float var6, float var7, float var8) {
-      var0.v(var1[var3 * 3], var1[var3 * 3 + 1], var1[var3 * 3 + 2], var4, var2[var3 * 2], var2[var3 * 2 + 1], var5, var6, var7, var8);
+   private static void lv(R3.Batch vc, double[] p, float[] uv, int k, int argb, int light, float nx, float ny, float nz) {
+      vc.v(p[k * 3], p[k * 3 + 1], p[k * 3 + 2], argb, uv[k * 2], uv[k * 2 + 1], light, nx, ny, nz);
    }
 
-   private static R3.Batch layer(RenderType var0) {
-      return batch(var0);
+   private static R3.Batch layer(RenderType layer) {
+      return batch(layer);
    }
 
-   public static void billboard(
-      Identifier var0, double var1, double var3, double var5, double var7, double var9, float var11, float var12, float var13, float var14, int var15
-   ) {
-      R3.Batch var16 = layer(RenderTypes.entityTranslucent(var0));
-      double var17 = Math.toRadians(camYaw);
-      double var19 = Math.toRadians(camPitch);
-      double var21 = -Math.cos(var17);
-      double var23 = -Math.sin(var17);
-      double var25 = -Math.sin(var17) * Math.sin(var19);
-      double var27 = Math.cos(var19);
-      double var29 = Math.cos(var17) * Math.sin(var19);
-      double var31 = var7 / 2.0;
-      double var33 = var9 / 2.0;
+   public static void billboard(Identifier texture, double x, double y, double z, double w, double h, float u0, float v0, float u1, float v1, int argb) {
+      R3.Batch vc = layer(RenderTypes.entityTranslucent(texture));
+      double yaw = Math.toRadians(camYaw);
+      double pitch = Math.toRadians(camPitch);
+      double rx = -Math.cos(yaw);
+      double rz = -Math.sin(yaw);
+      double ux = -Math.sin(yaw) * Math.sin(pitch);
+      double uy = Math.cos(pitch);
+      double uz = Math.cos(yaw) * Math.sin(pitch);
+      double hw = w / 2.0;
+      double hh = h / 2.0;
       dquad(
-         var16,
-         var1 - var21 * var31 - var25 * var33, var3 - var27 * var33, var5 - var23 * var31 - var29 * var33, var11, var14,
-         var1 + var21 * var31 - var25 * var33, var3 - var27 * var33, var5 + var23 * var31 - var29 * var33, var13, var14,
-         var1 + var21 * var31 + var25 * var33, var3 + var27 * var33, var5 + var23 * var31 + var29 * var33, var13, var12,
-         var1 - var21 * var31 + var25 * var33, var3 + var27 * var33, var5 - var23 * var31 + var29 * var33, var11, var12,
-         var15
+         vc,
+         x - rx * hw - ux * hh, y - uy * hh, z - rz * hw - uz * hh, u0, v1,
+         x + rx * hw - ux * hh, y - uy * hh, z + rz * hw - uz * hh, u1, v1,
+         x + rx * hw + ux * hh, y + uy * hh, z + rz * hw + uz * hh, u1, v0,
+         x - rx * hw + ux * hh, y + uy * hh, z - rz * hw + uz * hh, u0, v0,
+         argb
       );
    }
 
@@ -429,90 +467,90 @@ public final class R3 {
       tv(b, x0, y0, z0, u0, v0, c);
    }
 
-   public static void billboardRot(Identifier var0, double var1, double var3, double var5, double var7, double var9, int var11) {
-      R3.Batch var12 = layer(RenderTypes.entityTranslucent(var0));
-      double var13 = Math.toRadians(camYaw);
-      double var15 = Math.toRadians(camPitch);
-      double var17 = -Math.cos(var13);
-      double var19 = -Math.sin(var13);
-      double var21 = -Math.sin(var13) * Math.sin(var15);
-      double var23 = Math.cos(var15);
-      double var25 = Math.cos(var13) * Math.sin(var15);
-      double var27 = Math.cos(var9);
-      double var29 = Math.sin(var9);
-      double var31 = var7 / 2.0;
-      double var33 = (var17 * var27 + var21 * var29) * var31;
-      double var35 = var23 * var29 * var31;
-      double var37 = (var19 * var27 + var25 * var29) * var31;
-      double var39 = (-var17 * var29 + var21 * var27) * var31;
-      double var41 = var23 * var27 * var31;
-      double var43 = (-var19 * var29 + var25 * var27) * var31;
+   public static void billboardRot(Identifier texture, double x, double y, double z, double size, double angle, int argb) {
+      R3.Batch vc = layer(RenderTypes.entityTranslucent(texture));
+      double yaw = Math.toRadians(camYaw);
+      double pitch = Math.toRadians(camPitch);
+      double rx = -Math.cos(yaw);
+      double rz = -Math.sin(yaw);
+      double ux = -Math.sin(yaw) * Math.sin(pitch);
+      double uy = Math.cos(pitch);
+      double uz = Math.cos(yaw) * Math.sin(pitch);
+      double c = Math.cos(angle);
+      double s = Math.sin(angle);
+      double h = size / 2.0;
+      double ax = (rx * c + ux * s) * h;
+      double ay = uy * s * h;
+      double az = (rz * c + uz * s) * h;
+      double bx = (-rx * s + ux * c) * h;
+      double by = uy * c * h;
+      double bz = (-rz * s + uz * c) * h;
       dquad(
-         var12,
-         var1 - var33 - var39, var3 - var35 - var41, var5 - var37 - var43, 0.0F, 1.0F,
-         var1 + var33 - var39, var3 + var35 - var41, var5 + var37 - var43, 1.0F, 1.0F,
-         var1 + var33 + var39, var3 + var35 + var41, var5 + var37 + var43, 1.0F, 0.0F,
-         var1 - var33 + var39, var3 - var35 + var41, var5 - var37 + var43, 0.0F, 0.0F,
-         var11
+         vc,
+         x - ax - bx, y - ay - by, z - az - bz, 0.0F, 1.0F,
+         x + ax - bx, y + ay - by, z + az - bz, 1.0F, 1.0F,
+         x + ax + bx, y + ay + by, z + az + bz, 1.0F, 0.0F,
+         x - ax + bx, y - ay + by, z - az + bz, 0.0F, 0.0F,
+         argb
       );
    }
 
-   public static void glowBillboard(Identifier var0, double var1, double var3, double var5, double var7, int var9) {
-      R3.Batch var10 = layer(RenderTypes.entityTranslucentEmissive(var0));
-      double var11 = Math.toRadians(camYaw);
-      double var13 = Math.toRadians(camPitch);
-      double var15 = -Math.cos(var11);
-      double var17 = -Math.sin(var11);
-      double var19 = -Math.sin(var11) * Math.sin(var13);
-      double var21 = Math.cos(var13);
-      double var23 = Math.cos(var11) * Math.sin(var13);
-      double var25 = var7 / 2.0;
+   public static void glowBillboard(Identifier texture, double x, double y, double z, double size, int argb) {
+      R3.Batch vc = layer(RenderTypes.entityTranslucentEmissive(texture));
+      double yaw = Math.toRadians(camYaw);
+      double pitch = Math.toRadians(camPitch);
+      double rx = -Math.cos(yaw);
+      double rz = -Math.sin(yaw);
+      double ux = -Math.sin(yaw) * Math.sin(pitch);
+      double uy = Math.cos(pitch);
+      double uz = Math.cos(yaw) * Math.sin(pitch);
+      double h = size / 2.0;
       dquad(
-         var10,
-         var1 - var15 * var25 - var19 * var25, var3 - var21 * var25, var5 - var17 * var25 - var23 * var25, 0.0F, 1.0F,
-         var1 + var15 * var25 - var19 * var25, var3 - var21 * var25, var5 + var17 * var25 - var23 * var25, 1.0F, 1.0F,
-         var1 + var15 * var25 + var19 * var25, var3 + var21 * var25, var5 + var17 * var25 + var23 * var25, 1.0F, 0.0F,
-         var1 - var15 * var25 + var19 * var25, var3 + var21 * var25, var5 - var17 * var25 + var23 * var25, 0.0F, 0.0F,
-         var9
+         vc,
+         x - rx * h - ux * h, y - uy * h, z - rz * h - uz * h, 0.0F, 1.0F,
+         x + rx * h - ux * h, y - uy * h, z + rz * h - uz * h, 1.0F, 1.0F,
+         x + rx * h + ux * h, y + uy * h, z + rz * h + uz * h, 1.0F, 0.0F,
+         x - rx * h + ux * h, y + uy * h, z - rz * h + uz * h, 0.0F, 0.0F,
+         argb
       );
    }
 
-   public static void billboard(Identifier var0, double var1, double var3, double var5, double var7, int var9) {
-      billboard(var0, var1, var3, var5, var7, var7, 0.0F, 0.0F, 1.0F, 1.0F, var9);
+   public static void billboard(Identifier texture, double x, double y, double z, double size, int argb) {
+      billboard(texture, x, y, z, size, size, 0.0F, 0.0F, 1.0F, 1.0F, argb);
    }
 
-   public static RenderType skyLayer(Identifier var0) {
-      RenderType var1 = SKY.get(var0);
-      if (var1 != null) {
-         return var1;
+   public static RenderType skyLayer(Identifier tex) {
+      RenderType l = SKY.get(tex);
+      if (l != null) {
+         return l;
       } else {
          if (!skyBroken) {
             try {
-               RenderSetup var2 = RenderSetup.builder(RenderPipelines.END_SKY).withTexture("Sampler0", var0).sortOnUpload().createRenderSetup();
+               RenderSetup setup = RenderSetup.builder(RenderPipelines.END_SKY).withTexture("Sampler0", tex).sortOnUpload().createRenderSetup();
                if (layerOf == null) {
                   layerOf = RenderType.class.getDeclaredMethod(dev.lego.util.Remap.method("net.minecraft.class_1921", "method_75940", "(Ljava/lang/String;Lnet/minecraft/class_12247;)Lnet/minecraft/class_1921;"), String.class, RenderSetup.class);
                   layerOf.setAccessible(true);
                }
 
-               var1 = (RenderType)layerOf.invoke(null, "legoclient_sky", var2);
+               l = (RenderType)layerOf.invoke(null, "legoclient_sky", setup);
             } catch (Throwable var3) {
                skyBroken = true;
                LegoClient.LOG("Sky-Layer nicht verfügbar, nutze Ersatz: " + var3);
             }
          }
 
-         if (var1 == null) {
-            var1 = RenderTypes.entityTranslucent(var0);
+         if (l == null) {
+            l = RenderTypes.entityTranslucent(tex);
          }
 
-         SKY.put(var0, var1);
-         return var1;
+         SKY.put(tex, l);
+         return l;
       }
    }
 
-   public static void skyQuad(RenderType var0, double[] var1, double[] var2, double[] var3, double[] var4, float[] var5, int var6) {
-      R3.Batch var7 = layer(var0);
-      dquad(var7, var1[0], var1[1], var1[2], var5[0], var5[1], var2[0], var2[1], var2[2], var5[2], var5[3], var3[0], var3[1], var3[2], var5[4], var5[5], var4[0], var4[1], var4[2], var5[6], var5[7], var6);
+   public static void skyQuad(RenderType layer, double[] p0, double[] p1, double[] p2, double[] p3, float[] uv, int argb) {
+      R3.Batch vc = layer(layer);
+      dquad(vc, p0[0], p0[1], p0[2], uv[0], uv[1], p1[0], p1[1], p1[2], uv[2], uv[3], p2[0], p2[1], p2[2], uv[4], uv[5], p3[0], p3[1], p3[2], uv[6], uv[7], argb);
    }
 
    public static void end() {
@@ -542,33 +580,33 @@ public final class R3 {
       quads = null;
    }
 
-   public static int argb(int var0, double var1) {
-      int var3 = (int)Math.max(0L, Math.min(255L, Math.round(var1 * 255.0)));
-      return var3 << 24 | var0 & 16777215;
+   public static int argb(int rgb, double alpha) {
+      int a = (int)Math.max(0L, Math.min(255L, Math.round(alpha * 255.0)));
+      return a << 24 | rgb & 16777215;
    }
 
    private static final class Batch {
       float[] d = new float[640];
       int n;
 
-      void v(double var1, double var3, double var5, int var7, float var8, float var9, int var10, float var11, float var12, float var13) {
+      void v(double x, double y, double z, int argb, float u, float v, int light, float nx, float ny, float nz) {
          if (this.n + 10 > this.d.length) {
             this.d = Arrays.copyOf(this.d, this.d.length * 2);
          }
 
-         float[] var14 = this.d;
-         int var15 = this.n;
-         var14[var15] = (float)(var1 - R3.cx);
-         var14[var15 + 1] = (float)(var3 - R3.cy);
-         var14[var15 + 2] = (float)(var5 - R3.cz);
-         var14[var15 + 3] = Float.intBitsToFloat(var7);
-         var14[var15 + 4] = var8;
-         var14[var15 + 5] = var9;
-         var14[var15 + 6] = Float.intBitsToFloat(var10);
-         var14[var15 + 7] = var11;
-         var14[var15 + 8] = var12;
-         var14[var15 + 9] = var13;
-         this.n = var15 + 10;
+         float[] a = this.d;
+         int i = this.n;
+         a[i] = (float)(x - R3.cx);
+         a[i + 1] = (float)(y - R3.cy);
+         a[i + 2] = (float)(z - R3.cz);
+         a[i + 3] = Float.intBitsToFloat(argb);
+         a[i + 4] = u;
+         a[i + 5] = v;
+         a[i + 6] = Float.intBitsToFloat(light);
+         a[i + 7] = nx;
+         a[i + 8] = ny;
+         a[i + 9] = nz;
+         this.n = i + 10;
       }
    }
 }

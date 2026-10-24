@@ -14,20 +14,20 @@ public final class Perf {
    private Perf() {
    }
 
-   public static void begin(String var0) {
-      START.put(var0, System.nanoTime());
+   public static void begin(String s) {
+      START.put(s, System.nanoTime());
    }
 
-   public static void end(String var0) {
-      Long var1 = START.remove(var0);
-      if (var1 != null) {
-         double var2 = (System.nanoTime() - var1) / 1000000.0;
-         double[] var4 = SECTIONS.computeIfAbsent(var0, var0x -> new double[1]);
-         var4[0] = var4[0] * 0.95 + var2 * 0.05;
-         if (var4[0] > 8.0 && System.currentTimeMillis() - lastWarn > 60000L) {
+   public static void end(String s) {
+      Long t = START.remove(s);
+      if (t != null) {
+         double ms = (System.nanoTime() - t) / 1000000.0;
+         double[] v = SECTIONS.computeIfAbsent(s, k -> new double[1]);
+         v[0] = v[0] * 0.95 + ms * 0.05;
+         if (v[0] > 8.0 && System.currentTimeMillis() - lastWarn > 60000L) {
             lastWarn = System.currentTimeMillis();
             Toasts.show(
-               "warning", "Leistung: " + var0, String.format(Locale.ROOT, "kostet %.1f ms pro Bild - Leistungs-Monitor zeigt Details", var4[0]), -30208, 6000L
+               "warning", "Leistung: " + s, String.format(Locale.ROOT, "kostet %.1f ms pro Bild - Leistungs-Monitor zeigt Details", v[0]), -30208, 6000L
             );
          }
       }

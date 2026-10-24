@@ -10,24 +10,24 @@ public final class Json {
    private final String s;
    private int i;
 
-   private Json(String var1) {
-      this.s = var1;
+   private Json(String s) {
+      this.s = s;
    }
 
-   public static Object parse(String var0) {
-      if (var0 == null) {
+   public static Object parse(String text) {
+      if (text == null) {
          return null;
       } else {
-         Json var1 = new Json(var0);
-         var1.ws();
-         return var1.i >= var1.s.length() ? null : var1.value();
+         Json p = new Json(text);
+         p.ws();
+         return p.i >= p.s.length() ? null : p.value();
       }
    }
 
    private void ws() {
       while (this.i < this.s.length()) {
-         char var1 = this.s.charAt(this.i);
-         if (var1 == ' ' || var1 == '\n' || var1 == '\r' || var1 == '\t') {
+         char c = this.s.charAt(this.i);
+         if (c == ' ' || c == '\n' || c == '\r' || c == '\t') {
             this.i++;
             continue;
          }
@@ -40,8 +40,8 @@ public final class Json {
       if (this.i >= this.s.length()) {
          throw new IllegalArgumentException("Unexpected end of JSON");
       } else {
-         char var1 = this.s.charAt(this.i);
-         switch (var1) {
+         char c = this.s.charAt(this.i);
+         switch (c) {
             case '"':
                return this.string();
             case '[':
@@ -63,61 +63,61 @@ public final class Json {
       }
    }
 
-   private void expect(String var1) {
-      if (!this.s.startsWith(var1, this.i)) {
+   private void expect(String w) {
+      if (!this.s.startsWith(w, this.i)) {
          throw new IllegalArgumentException("Bad JSON at " + this.i);
       } else {
-         this.i = this.i + var1.length();
+         this.i = this.i + w.length();
       }
    }
 
    private Map<String, Object> object() {
-      LinkedHashMap var1 = new LinkedHashMap();
+      Map<String, Object> m = new LinkedHashMap<>();
       this.i++;
       this.ws();
       if (this.i < this.s.length() && this.s.charAt(this.i) == '}') {
          this.i++;
-         return var1;
+         return m;
       } else {
-         char var3;
+         char c;
          do {
             this.ws();
-            String var2 = this.string();
+            String k = this.string();
             this.ws();
             if (this.s.charAt(this.i) != ':') {
                throw new IllegalArgumentException("Expected : at " + this.i);
             }
 
             this.i++;
-            var1.put(var2, this.value());
+            m.put(k, this.value());
             this.ws();
-            var3 = this.s.charAt(this.i++);
-            if (var3 == '}') {
-               return var1;
+            c = this.s.charAt(this.i++);
+            if (c == '}') {
+               return m;
             }
-         } while (var3 == ',');
+         } while (c == ',');
 
          throw new IllegalArgumentException("Expected , at " + (this.i - 1));
       }
    }
 
    private List<Object> array() {
-      ArrayList var1 = new ArrayList();
+      List<Object> l = new ArrayList<>();
       this.i++;
       this.ws();
       if (this.i < this.s.length() && this.s.charAt(this.i) == ']') {
          this.i++;
-         return var1;
+         return l;
       } else {
-         char var2;
+         char c;
          do {
-            var1.add(this.value());
+            l.add(this.value());
             this.ws();
-            var2 = this.s.charAt(this.i++);
-            if (var2 == ']') {
-               return var1;
+            c = this.s.charAt(this.i++);
+            if (c == ']') {
+               return l;
             }
-         } while (var2 == ',');
+         } while (c == ',');
 
          throw new IllegalArgumentException("Expected , at " + (this.i - 1));
       }
@@ -128,19 +128,19 @@ public final class Json {
          throw new IllegalArgumentException("Expected string at " + this.i);
       } else {
          this.i++;
-         StringBuilder var1 = new StringBuilder();
+         StringBuilder b = new StringBuilder();
 
          while (true) {
-            char var2 = this.s.charAt(this.i++);
-            if (var2 == '"') {
-               return var1.toString();
+            char c = this.s.charAt(this.i++);
+            if (c == '"') {
+               return b.toString();
             }
 
-            if (var2 == '\\') {
-               char var3 = this.s.charAt(this.i++);
-               switch (var3) {
+            if (c == '\\') {
+               char e = this.s.charAt(this.i++);
+               switch (e) {
                   case 'b':
-                     var1.append('\b');
+                     b.append('\b');
                      break;
                   case 'c':
                   case 'd':
@@ -157,197 +157,197 @@ public final class Json {
                   case 'q':
                   case 's':
                   default:
-                     var1.append(var3);
+                     b.append(e);
                      break;
                   case 'f':
-                     var1.append('\f');
+                     b.append('\f');
                      break;
                   case 'n':
-                     var1.append('\n');
+                     b.append('\n');
                      break;
                   case 'r':
-                     var1.append('\r');
+                     b.append('\r');
                      break;
                   case 't':
-                     var1.append('\t');
+                     b.append('\t');
                      break;
                   case 'u':
-                     var1.append((char)Integer.parseInt(this.s.substring(this.i, this.i + 4), 16));
+                     b.append((char)Integer.parseInt(this.s.substring(this.i, this.i + 4), 16));
                      this.i += 4;
                }
             } else {
-               var1.append(var2);
+               b.append(c);
             }
          }
       }
    }
 
    private Object number() {
-      int var1 = this.i;
+      int st = this.i;
 
       while (this.i < this.s.length() && "+-0123456789.eE".indexOf(this.s.charAt(this.i)) >= 0) {
          this.i++;
       }
 
-      String var2 = this.s.substring(var1, this.i);
-      if (var2.isEmpty()) {
-         throw new IllegalArgumentException("Bad JSON value at " + var1);
-      } else if (!var2.contains(".") && !var2.contains("e") && !var2.contains("E")) {
+      String n = this.s.substring(st, this.i);
+      if (n.isEmpty()) {
+         throw new IllegalArgumentException("Bad JSON value at " + st);
+      } else if (!n.contains(".") && !n.contains("e") && !n.contains("E")) {
          try {
-            return Long.parseLong(var2);
+            return Long.parseLong(n);
          } catch (NumberFormatException var4) {
-            return Double.parseDouble(var2);
+            return Double.parseDouble(n);
          }
       } else {
-         return Double.parseDouble(var2);
+         return Double.parseDouble(n);
       }
    }
 
-   public static Map<String, Object> obj(Object var0, String var1) {
-      if (var0 instanceof Map) {
-         Object var2 = ((Map)var0).get(var1);
-         if (var2 instanceof Map) {
-            return (Map<String, Object>)var2;
+   public static Map<String, Object> obj(Object o, String k) {
+      if (o instanceof Map) {
+         Object v = ((Map)o).get(k);
+         if (v instanceof Map) {
+            return (Map<String, Object>)v;
          }
       }
 
       return null;
    }
 
-   public static List<Object> arr(Object var0, String var1) {
-      if (var0 instanceof Map) {
-         Object var2 = ((Map)var0).get(var1);
-         if (var2 instanceof List) {
-            return (List<Object>)var2;
+   public static List<Object> arr(Object o, String k) {
+      if (o instanceof Map) {
+         Object v = ((Map)o).get(k);
+         if (v instanceof List) {
+            return (List<Object>)v;
          }
       }
 
       return null;
    }
 
-   public static String str(Object var0, String var1, String var2) {
-      if (var0 instanceof Map) {
-         Object var3 = ((Map)var0).get(var1);
-         if (var3 instanceof String) {
-            return (String)var3;
+   public static String str(Object o, String k, String def) {
+      if (o instanceof Map) {
+         Object v = ((Map)o).get(k);
+         if (v instanceof String) {
+            return (String)v;
          }
       }
 
-      return var2;
+      return def;
    }
 
-   public static long num(Object var0, String var1, long var2) {
-      if (var0 instanceof Map) {
-         Object var4 = ((Map)var0).get(var1);
-         if (var4 instanceof Number) {
-            return ((Number)var4).longValue();
+   public static long num(Object o, String k, long def) {
+      if (o instanceof Map) {
+         Object v = ((Map)o).get(k);
+         if (v instanceof Number) {
+            return ((Number)v).longValue();
          }
       }
 
-      return var2;
+      return def;
    }
 
-   public static double dbl(Object var0, String var1, double var2) {
-      if (var0 instanceof Map) {
-         Object var4 = ((Map)var0).get(var1);
-         if (var4 instanceof Number) {
-            return ((Number)var4).doubleValue();
+   public static double dbl(Object o, String k, double def) {
+      if (o instanceof Map) {
+         Object v = ((Map)o).get(k);
+         if (v instanceof Number) {
+            return ((Number)v).doubleValue();
          }
       }
 
-      return var2;
+      return def;
    }
 
-   public static boolean bool(Object var0, String var1, boolean var2) {
-      if (var0 instanceof Map) {
-         Object var3 = ((Map)var0).get(var1);
-         if (var3 instanceof Boolean) {
-            return (Boolean)var3;
+   public static boolean bool(Object o, String k, boolean def) {
+      if (o instanceof Map) {
+         Object v = ((Map)o).get(k);
+         if (v instanceof Boolean) {
+            return (Boolean)v;
          }
       }
 
-      return var2;
+      return def;
    }
 
-   public static String write(Object var0) {
-      StringBuilder var1 = new StringBuilder();
-      write(var1, var0, 0);
-      return var1.toString();
+   public static String write(Object v) {
+      StringBuilder b = new StringBuilder();
+      write(b, v, 0);
+      return b.toString();
    }
 
-   private static void write(StringBuilder var0, Object var1, int var2) {
-      if (var1 == null) {
-         var0.append("null");
-      } else if (var1 instanceof String) {
-         quote(var0, (String)var1);
-      } else if (var1 instanceof Boolean || var1 instanceof Long || var1 instanceof Integer) {
-         var0.append(var1);
-      } else if (var1 instanceof Number) {
-         var0.append(((Number)var1).doubleValue());
-      } else if (var1 instanceof Map var3) {
-         var0.append("{\n");
-         int var4 = 0;
+   private static void write(StringBuilder b, Object v, int ind) {
+      if (v == null) {
+         b.append("null");
+      } else if (v instanceof String) {
+         quote(b, (String)v);
+      } else if (v instanceof Boolean || v instanceof Long || v instanceof Integer) {
+         b.append(v);
+      } else if (v instanceof Number) {
+         b.append(((Number)v).doubleValue());
+      } else if (v instanceof Map<String, Object> m) {
+         b.append("{\n");
+         int n = 0;
 
-         for (Entry var6 : (Iterable<Entry>) (Iterable<?>) (var3.entrySet())) {
-            var0.append("  ".repeat(var2 + 1));
-            quote(var0, (String)var6.getKey());
-            var0.append(": ");
-            write(var0, var6.getValue(), var2 + 1);
-            if (++var4 < var3.size()) {
-               var0.append(',');
+         for (Entry<String, Object> e : m.entrySet()) {
+            b.append("  ".repeat(ind + 1));
+            quote(b, e.getKey());
+            b.append(": ");
+            write(b, e.getValue(), ind + 1);
+            if (++n < m.size()) {
+               b.append(',');
             }
 
-            var0.append('\n');
+            b.append('\n');
          }
 
-         var0.append("  ".repeat(var2)).append('}');
-      } else if (var1 instanceof List var7) {
-         var0.append('[');
+         b.append("  ".repeat(ind)).append('}');
+      } else if (v instanceof List<Object> l) {
+         b.append('[');
 
-         for (int var8 = 0; var8 < var7.size(); var8++) {
-            if (var8 > 0) {
-               var0.append(", ");
+         for (int k = 0; k < l.size(); k++) {
+            if (k > 0) {
+               b.append(", ");
             }
 
-            write(var0, var7.get(var8), var2);
+            write(b, l.get(k), ind);
          }
 
-         var0.append(']');
+         b.append(']');
       } else {
-         quote(var0, var1.toString());
+         quote(b, v.toString());
       }
    }
 
-   private static void quote(StringBuilder var0, String var1) {
-      var0.append('"');
+   private static void quote(StringBuilder b, String s) {
+      b.append('"');
 
-      for (int var2 = 0; var2 < var1.length(); var2++) {
-         char var3 = var1.charAt(var2);
-         switch (var3) {
+      for (int k = 0; k < s.length(); k++) {
+         char c = s.charAt(k);
+         switch (c) {
             case '\t':
-               var0.append("\\t");
+               b.append("\\t");
                break;
             case '\n':
-               var0.append("\\n");
+               b.append("\\n");
                break;
             case '\r':
-               var0.append("\\r");
+               b.append("\\r");
                break;
             case '"':
-               var0.append("\\\"");
+               b.append("\\\"");
                break;
             case '\\':
-               var0.append("\\\\");
+               b.append("\\\\");
                break;
             default:
-               if (var3 < ' ') {
-                  var0.append(String.format("\\u%04x", Integer.valueOf(var3)));
+               if (c < ' ') {
+                  b.append(String.format("\\u%04x", Integer.valueOf(c)));
                } else {
-                  var0.append(var3);
+                  b.append(c);
                }
          }
       }
 
-      var0.append('"');
+      b.append('"');
    }
 }

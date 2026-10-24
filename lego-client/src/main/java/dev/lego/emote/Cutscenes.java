@@ -67,27 +67,27 @@ public final class Cutscenes {
       if (id == null) {
          return 0.0F;
       } else {
-         float var0 = time();
-         return Ease.outCubic(Math.min(1.0F, var0 / 0.5F)) * Math.min(1.0F, Math.max(0.0F, (dur - var0) / 0.5F));
+         float t = time();
+         return Ease.outCubic(Math.min(1.0F, t / 0.5F)) * Math.min(1.0F, Math.max(0.0F, (dur - t) / 0.5F));
       }
    }
 
    public static String title() {
-      EmoteLib.Emote var0 = id == null ? null : EmoteLib.get(id);
-      return var0 == null ? "" : var0.name;
+      EmoteLib.Emote e = id == null ? null : EmoteLib.get(id);
+      return e == null ? "" : e.name;
    }
 
-   static void begin(EmoteLib.Emote var0) {
-      LocalPlayer var1 = Mc.player();
-      if (var1 != null) {
+   static void begin(EmoteLib.Emote e) {
+      LocalPlayer p = Mc.player();
+      if (p != null) {
          end();
-         id = var0.id;
-         dur = var0.duration;
+         id = e.id;
+         dur = e.duration;
          start = System.currentTimeMillis();
-         ox = Mc.x(var1);
-         oy = Mc.y(var1);
-         oz = Mc.z(var1);
-         baseYaw = Mc.bodyYaw(var1);
+         ox = Mc.x(p);
+         oy = Mc.y(p);
+         oz = Mc.z(p);
+         baseYaw = Mc.bodyYaw(p);
          savedPerspective = Mc.perspective();
          Mc.perspective(CameraType.THIRD_PERSON_BACK);
          cue = 0;
@@ -95,20 +95,20 @@ public final class Cutscenes {
       }
    }
 
-   private static Cutscenes.Cue c(double var0, String var2, double var3, double var5) {
-      return new Cutscenes.Cue((float)var0, "minecraft:" + var2, (float)var3, (float)var5);
+   private static Cutscenes.Cue c(double t, String id, double pitch, double vol) {
+      return new Cutscenes.Cue((float)t, "minecraft:" + id, (float)pitch, (float)vol);
    }
 
    public static void sounds() {
       if (id != null) {
-         Cutscenes.Cue[] var0 = CUES.get(id);
-         if (var0 != null) {
-            float var1 = time();
+         Cutscenes.Cue[] cs = CUES.get(id);
+         if (cs != null) {
+            float t = time();
 
-            while (cue < var0.length && var0[cue].t <= var1) {
-               Cutscenes.Cue var2 = var0[cue++];
-               if (var1 - var2.t < 0.6F) {
-                  Sound.play(var2.id, var2.pitch, var2.vol);
+            while (cue < cs.length && cs[cue].t <= t) {
+               Cutscenes.Cue q = cs[cue++];
+               if (t - q.t < 0.6F) {
+                  Sound.play(q.id, q.pitch, q.vol);
                }
             }
          }
@@ -130,235 +130,232 @@ public final class Cutscenes {
       }
    }
 
-   public static boolean camera(float var0, double[] var1) {
+   public static boolean camera(float td, double[] out) {
       if (id == null) {
          return false;
       } else {
-         LocalPlayer var2 = Mc.player();
-         if (var2 == null) {
+         LocalPlayer p = Mc.player();
+         if (p == null) {
             return false;
          } else {
-            double[] var3 = Mc.lerpPos(var2, var0);
+            double[] pos = Mc.lerpPos(p, td);
             sounds();
             if ("cs_darkaura".equals(id)) {
-               return darkAuraCam(var3, time(), var1);
+               return darkAuraCam(pos, time(), out);
             } else if ("cs_evillaugh".equals(id)) {
-               return evilCam(var3, time(), var1);
+               return evilCam(pos, time(), out);
             } else {
-               double var4 = var3[0];
-               double var6 = var3[1] + 1.1;
-               double var8 = var3[2];
-               float var10 = time();
-               double var11 = Math.toRadians(baseYaw);
-               double var13 = -Math.sin(var11);
-               double var15 = Math.cos(var11);
-               double var17 = -Math.cos(var11);
-               double var19 = -Math.sin(var11);
-               String var27 = id;
-               double var21;
-               double var23;
-               double var25;
-               switch (var27) {
-                  case "cs_landing":
-                     float var45 = Ease.inOutCubic(Math.min(1.0F, var10 / 1.6F));
-                     var21 = 9.0 - 5.5 * var45;
-                     var23 = Math.toRadians(160.0F - 150.0F * var45);
-                     var25 = 7.0F * (1.0F - var45) - 0.6 * var45 + 0.3 * Math.max(0.0, var10 - 3.5);
-                     if (var10 > 0.9 && var10 < 1.3) {
-                        var25 += Math.sin((var10 - 0.9) * 60.0) * 0.06 * (1.3 - var10) / 0.4;
+               double tx = pos[0];
+               double ty = pos[1] + 1.1;
+               double tz = pos[2];
+               float t = time();
+               double th = Math.toRadians(baseYaw);
+               double fx = -Math.sin(th);
+               double fz = Math.cos(th);
+               double rx = -Math.cos(th);
+               double rz = -Math.sin(th);
+               String cx = id;
+               double dist;
+               double ang;
+               double h;
+               switch (cx) {
+                  case "cs_landing": {
+                     float a = Ease.inOutCubic(Math.min(1.0F, t / 1.6F));
+                     dist = 9.0 - 5.5 * a;
+                     ang = Math.toRadians(160.0F - 150.0F * a);
+                     h = 7.0F * (1.0F - a) - 0.6 * a + 0.3 * Math.max(0.0, t - 3.5);
+                     if (t > 0.9 && t < 1.3) {
+                        h += Math.sin((t - 0.9) * 60.0) * 0.06 * (1.3 - t) / 0.4;
                      }
                      break;
+                  }
                   case "cs_victory":
-                     var21 = 3.6;
-                     var23 = var10 / dur * Math.PI * 2.0 + 0.3;
-                     var25 = 0.6 + Math.sin(var10 * 0.9) * 0.4;
+                     dist = 3.6;
+                     ang = t / dur * Math.PI * 2.0 + 0.3;
+                     h = 0.6 + Math.sin(t * 0.9) * 0.4;
                      break;
-                  case "cs_portal":
-                     float var44 = Ease.inOutCubic(Math.min(1.0F, var10 / dur));
-                     var21 = 8.0 - 4.5 * var44;
-                     var23 = Math.toRadians(20.0F - 40.0F * var44);
-                     var25 = -0.7 + 0.4 * var44;
+                  case "cs_portal": {
+                     float a = Ease.inOutCubic(Math.min(1.0F, t / dur));
+                     dist = 8.0 - 4.5 * a;
+                     ang = Math.toRadians(20.0F - 40.0F * a);
+                     h = -0.7 + 0.4 * a;
                      break;
-                  case "cs_power":
-                     float var43 = Math.min(1.0F, var10 / 3.8F);
-                     var21 = 5.0F - 2.0F * var43;
-                     var23 = var10 * 0.9;
-                     var25 = 0.2;
-                     if (var10 > 3.8 && var10 < 4.4) {
-                        var21 += 2.5 * Ease.outCubic((var10 - 3.8F) / 0.6F);
-                     } else if (var10 >= 4.4) {
-                        var21 += 2.5;
+                  }
+                  case "cs_power": {
+                     float a = Math.min(1.0F, t / 3.8F);
+                     dist = 5.0F - 2.0F * a;
+                     ang = t * 0.9;
+                     h = 0.2;
+                     if (t > 3.8 && t < 4.4) {
+                        dist += 2.5 * Ease.outCubic((t - 3.8F) / 0.6F);
+                     } else if (t >= 4.4) {
+                        dist += 2.5;
                      }
 
-                     double var48 = var10 < 3.8 ? var43 * 0.05 : Math.max(0.0, 0.2 - (var10 - 3.8) * 0.2);
-                     var25 += Math.sin(var10 * 47.0F) * var48;
-                     var23 += Math.cos(var10 * 53.0F) * var48 * 0.3;
+                     double shake = t < 3.8 ? a * 0.05 : Math.max(0.0, 0.2 - (t - 3.8) * 0.2);
+                     h += Math.sin(t * 47.0F) * shake;
+                     ang += Math.cos(t * 53.0F) * shake * 0.3;
                      break;
-                  case "cs_xmas":
-                     float var42 = Ease.inOutCubic(Math.min(1.0F, var10 / 3.0F));
-                     float var47 = Ease.inOutCubic(Math.max(0.0F, Math.min(1.0F, (var10 - 3.2F) / 3.5F)));
-                     var21 = 2.2 + 3.8 * var42 + 1.5 * var47;
-                     var23 = Math.toRadians(10.0F + 25.0F * var42 + 70.0F * var47);
-                     var25 = 0.1 + 1.2 * var42 + 1.4 * var47;
-                     var6 += 0.8 * var42;
-                     if (var10 > 3.2 && var10 < 3.6) {
-                        var25 += Math.sin((var10 - 3.2) * 70.0) * 0.04;
+                  }
+                  case "cs_xmas": {
+                     float a = Ease.inOutCubic(Math.min(1.0F, t / 3.0F));
+                     float b = Ease.inOutCubic(Math.max(0.0F, Math.min(1.0F, (t - 3.2F) / 3.5F)));
+                     dist = 2.2 + 3.8 * a + 1.5 * b;
+                     ang = Math.toRadians(10.0F + 25.0F * a + 70.0F * b);
+                     h = 0.1 + 1.2 * a + 1.4 * b;
+                     ty += 0.8 * a;
+                     if (t > 3.2 && t < 3.6) {
+                        h += Math.sin((t - 3.2) * 70.0) * 0.04;
                      }
                      break;
+                  }
                   case "cs_selfie":
-                     var21 = 1.6;
-                     var23 = Math.toRadians(-18.0);
-                     var25 = 0.35 + Math.sin(var10 * 1.5) * 0.03;
+                     dist = 1.6;
+                     ang = Math.toRadians(-18.0);
+                     h = 0.35 + Math.sin(t * 1.5) * 0.03;
                      break;
                   case "cs_starfall":
-                     float var29 = Ease.inOutCubic(Math.min(1.0F, var10 / 2.5F));
-                     float var30 = Ease.inOutCubic(Math.max(0.0F, (var10 - 4.8F) / 1.6F));
-                     var21 = 3.2 + 3.0F * var29 - 2.0F * var30;
-                     var23 = Math.toRadians(30.0F + var10 * 8.0F);
-                     var25 = -0.4 - 0.4 * var29;
-                     var6 += 6.0F * var29 * (1.0F - var30);
+                     float up = Ease.inOutCubic(Math.min(1.0F, t / 2.5F));
+                     float back = Ease.inOutCubic(Math.max(0.0F, (t - 4.8F) / 1.6F));
+                     dist = 3.2 + 3.0F * up - 2.0F * back;
+                     ang = Math.toRadians(30.0F + t * 8.0F);
+                     h = -0.4 - 0.4 * up;
+                     ty += 6.0F * up * (1.0F - back);
                      break;
                   default:
-                     return false;
+                     if (!id.startsWith("cs_gen_")) {
+                        return false;
+                     }
+
+                     float cycle = t % 6.8F;
+                     float cut = (float)Math.floor(cycle / 1.7F);
+                     double[] ds = new double[]{3.0, 5.5, 2.2, 7.0};
+                     double[] hs = new double[]{0.3, 2.2, -0.5, 1.1};
+                     dist = ds[(int)cut];
+                     ang = Math.toRadians(-35.0F + cycle * 70.0F + cut * 85.0F);
+                     h = hs[(int)cut] + Math.sin(t * 3.0) * 0.08;
                }
 
-               double var41 = var4 + (var13 * Math.cos(var23) + var17 * Math.sin(var23)) * var21;
-               double var46 = var8 + (var15 * Math.cos(var23) + var19 * Math.sin(var23)) * var21;
-               double var31 = var3[1] + 1.3 + var25;
-               double var33 = var4 - var41;
-               double var35 = var6 - var31;
-               double var37 = var8 - var46;
-               var1[0] = var41;
-               var1[1] = var31;
-               var1[2] = var46;
-               var1[3] = Math.toDegrees(Math.atan2(-var33, var37));
-               var1[4] = -Math.toDegrees(Math.atan2(var35, Math.sqrt(var33 * var33 + var37 * var37)));
+               double cx = tx + (fx * Math.cos(ang) + rx * Math.sin(ang)) * dist;
+               double cz = tz + (fz * Math.cos(ang) + rz * Math.sin(ang)) * dist;
+               double cy = pos[1] + 1.3 + h;
+               double dx = tx - cx;
+               double dy = ty - cy;
+               double dz = tz - cz;
+               out[0] = cx;
+               out[1] = cy;
+               out[2] = cz;
+               out[3] = Math.toDegrees(Math.atan2(-dx, dz));
+               out[4] = -Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)));
                return true;
             }
          }
       }
    }
 
-   public static void renderFx(float var0) {
+   public static void renderFx(float td) {
       if (id != null) {
-         LocalPlayer var1 = Mc.player();
-         if (var1 != null) {
+         LocalPlayer p = Mc.player();
+         if (p != null) {
             if (core == null) {
                core = tex("core");
                glow = tex("glow");
                star = tex("glitter");
             }
 
-            double[] var2 = Mc.lerpPos(var1, var0);
-            double var3 = var2[0];
-            double var5 = var2[1];
-            double var7 = var2[2];
-            float var9 = time();
+            double[] pos = Mc.lerpPos(p, td);
+            double x = pos[0];
+            double y = pos[1];
+            double z = pos[2];
+            float t = time();
             String var10 = id;
             switch (var10) {
                case "cs_landing":
-                  if (var9 < 1.0) {
-                     double var37 = var5 + 10.0 * (1.0 - var9 / 1.0);
-                     R3.line(var3, var37 + 3.0, var7, var3, var37, var7, 0.35, R3.argb(10475775, 0.0), R3.argb(16777215, 0.8));
+                  if (t < 1.0) {
+                     double fy = y + 10.0 * (1.0 - t / 1.0);
+                     R3.line(x, fy + 3.0, z, x, fy, z, 0.35, R3.argb(10475775, 0.0), R3.argb(16777215, 0.8));
                   }
 
-                  double var38 = var9 - 1.0;
-                  if (var38 > 0.0 && var38 < 1.6) {
-                     double var42 = 0.4 + var38 * 5.0;
-                     double var51 = 1.0 - var38 / 1.6;
-                     R3.ring(var3, var5 + 0.05, var7, var42 * 0.85, var42, 48, R3.argb(12576511, 0.0), R3.argb(16777215, 0.8 * var51), 0.0);
-                     R3.ring(var3, var5 + 0.04, var7, 0.0, var42 * 0.85, 48, R3.argb(8370431, 0.25 * var51), R3.argb(8370431, 0.0), 0.0);
+                  double s = t - 1.0;
+                  if (s > 0.0 && s < 1.6) {
+                     double r = 0.4 + s * 5.0;
+                     double a = 1.0 - s / 1.6;
+                     R3.ring(x, y + 0.05, z, r * 0.85, r, 48, R3.argb(12576511, 0.0), R3.argb(16777215, 0.8 * a), 0.0);
+                     R3.ring(x, y + 0.04, z, 0.0, r * 0.85, 48, R3.argb(8370431, 0.25 * a), R3.argb(8370431, 0.0), 0.0);
 
-                     for (int var57 = 0; var57 < 40; var57++) {
-                        double var60 = var57 * 2.399;
-                        double var62 = 1.5 + var57 % 7 * 0.4;
-                        double var63 = Math.cos(var60) * var62 * var38;
-                        double var64 = Math.sin(var60) * var62 * var38;
-                        double var65 = 1.8 * var38 - 2.2 * var38 * var38;
-                        if (var65 < 0.0) {
-                           var65 = 0.0;
+                     for (int i = 0; i < 40; i++) {
+                        double an = i * 2.399;
+                        double sp = 1.5 + i % 7 * 0.4;
+                        double dx = Math.cos(an) * sp * s;
+                        double dz = Math.sin(an) * sp * s;
+                        double dy = 1.8 * s - 2.2 * s * s;
+                        if (dy < 0.0) {
+                           dy = 0.0;
                         }
 
-                        R3.billboard(glow, var3 + var63, var5 + 0.1 + var65, var7 + var64, 0.35, R3.argb(13154458, 0.55 * var51));
+                        R3.billboard(glow, x + dx, y + 0.1 + dy, z + dz, 0.35, R3.argb(13154458, 0.55 * a));
                      }
                   }
                   break;
                case "cs_victory":
-                  for (int var36 = 0; var36 < 6; var36++) {
-                     fireworks(var3, var5, var7, var9 - 0.4 - var36 * 0.85, var36);
+                  for (int k = 0; k < 6; k++) {
+                     fireworks(x, y, z, t - 0.4 - k * 0.85, k);
                   }
                   break;
                case "cs_portal":
-                  double var35 = Math.min(1.0, var9 / 1.5) * Math.min(1.0, (dur - var9) / 0.6);
-                  double var41 = Math.min(1.0, var9 / 3.0);
+                  double a = Math.min(1.0, t / 1.5) * Math.min(1.0, (dur - t) / 0.6);
+                  double rise = Math.min(1.0, t / 3.0);
 
-                  for (int var48 = 0; var48 < 3; var48++) {
-                     double var55 = var5 + 0.05 + var48 * 0.8 * var41;
-                     R3.ring(
-                        var3,
-                        var55,
-                        var7,
-                        1.2 + var48 * 0.2,
-                        1.4 + var48 * 0.2,
-                        48,
-                        R3.argb(13134847, 0.7 * var35),
-                        R3.argb(5975039, 0.2 * var35),
-                        var9 * (1.5 + var48)
-                     );
+                  for (int ring = 0; ring < 3; ring++) {
+                     double ry = y + 0.05 + ring * 0.8 * rise;
+                     R3.ring(x, ry, z, 1.2 + ring * 0.2, 1.4 + ring * 0.2, 48, R3.argb(13134847, 0.7 * a), R3.argb(5975039, 0.2 * a), t * (1.5 + ring));
                   }
 
-                  for (int var49 = 0; var49 < 60; var49++) {
-                     double var56 = var49 * 0.61 + var9 * 2.2;
-                     double var59 = 1.3 + Math.sin(var49 * 1.7 + var9) * 0.2;
-                     double var61 = (var49 * 0.37 + var9 * 0.8) % 3.0;
-                     R3.glowBillboard(core, var3 + Math.cos(var56) * var59, var5 + var61, var7 + Math.sin(var56) * var59, 0.12, R3.argb(14721279, 0.9 * var35));
+                  for (int i = 0; i < 60; i++) {
+                     double an = i * 0.61 + t * 2.2;
+                     double r = 1.3 + Math.sin(i * 1.7 + t) * 0.2;
+                     double hy = (i * 0.37 + t * 0.8) % 3.0;
+                     R3.glowBillboard(core, x + Math.cos(an) * r, y + hy, z + Math.sin(an) * r, 0.12, R3.argb(14721279, 0.9 * a));
                   }
 
-                  if (var9 > 2.5) {
-                     double var50 = Math.min(1.0, (var9 - 2.5) / 0.6) * var35;
-                     R3.line(var3, var5, var7, var3, var5 + 60.0, var7, 1.6 * var50, R3.argb(14267391, 0.6 * var50), R3.argb(8076287, 0.0));
-                     R3.line(var3, var5, var7, var3, var5 + 60.0, var7, 0.5 * var50, R3.argb(16777215, 0.9 * var50), R3.argb(16777215, 0.0));
+                  if (t > 2.5) {
+                     double b = Math.min(1.0, (t - 2.5) / 0.6) * a;
+                     R3.line(x, y, z, x, y + 60.0, z, 1.6 * b, R3.argb(14267391, 0.6 * b), R3.argb(8076287, 0.0));
+                     R3.line(x, y, z, x, y + 60.0, z, 0.5 * b, R3.argb(16777215, 0.9 * b), R3.argb(16777215, 0.0));
                   }
                   break;
                case "cs_power":
-                  double var34 = Math.min(1.0, var9 / 3.8);
-                  boolean var14 = var9 > 3.8;
+                  double charge = Math.min(1.0, t / 3.8);
+                  boolean burst = t > 3.8;
 
-                  for (int var45 = 0; var45 < 70; var45++) {
-                     double var16 = var45 * 2.399 + var9 * 3.0F;
-                     double var18 = (var45 * 0.173 + var9 * 1.6) % 1.0;
-                     double var20 = 0.55 + 0.25 * Math.sin(var45 + var9 * 4.0F);
-                     double var22 = var18 * 2.4;
-                     double var24 = (1.0 - var18) * var34 * (var14 ? Math.max(0.0, 1.0 - (var9 - 3.8) / 1.5) : 1.0);
-                     int var26 = var45 % 3 == 0 ? 16774048 : 16756782;
-                     R3.glowBillboard(
-                        glow,
-                        var3 + Math.cos(var16) * var20,
-                        var5 + var22,
-                        var7 + Math.sin(var16) * var20,
-                        0.5 * (1.0 - var18 * 0.5),
-                        R3.argb(var26, 0.55 * var24)
-                     );
+                  for (int i = 0; i < 70; i++) {
+                     double an = i * 2.399 + t * 3.0F;
+                     double life = (i * 0.173 + t * 1.6) % 1.0;
+                     double r = 0.55 + 0.25 * Math.sin(i + t * 4.0F);
+                     double hy = life * 2.4;
+                     double a = (1.0 - life) * charge * (burst ? Math.max(0.0, 1.0 - (t - 3.8) / 1.5) : 1.0);
+                     int c = i % 3 == 0 ? 16774048 : 16756782;
+                     R3.glowBillboard(glow, x + Math.cos(an) * r, y + hy, z + Math.sin(an) * r, 0.5 * (1.0 - life * 0.5), R3.argb(c, 0.55 * a));
                   }
 
-                  if (var14) {
-                     double var46 = var9 - 3.8;
-                     double var53 = Math.max(0.0, 1.0 - var46 / 1.2);
-                     R3.ring(var3, var5 + 1.0, var7, var46 * 8.0, var46 * 8.0 + 0.6, 64, R3.argb(16769162, 0.0), R3.argb(16777215, var53), 0.0);
-                     R3.glowBillboard(glow, var3, var5 + 1.0, var7, 2.0 + var46 * 12.0, R3.argb(16765040, 0.6 * var53));
+                  if (burst) {
+                     double s = t - 3.8;
+                     double a = Math.max(0.0, 1.0 - s / 1.2);
+                     R3.ring(x, y + 1.0, z, s * 8.0, s * 8.0 + 0.6, 64, R3.argb(16769162, 0.0), R3.argb(16777215, a), 0.0);
+                     R3.glowBillboard(glow, x, y + 1.0, z, 2.0 + s * 12.0, R3.argb(16765040, 0.6 * a));
                   }
 
-                  if (!var14 && (int)(var9 * 7.0F) % 3 == 0) {
-                     double var47 = Math.floor(var9 * 7.0F) * 1.3;
-                     double var54 = var3 + Math.cos(var47) * 0.9;
-                     double var58 = var7 + Math.sin(var47) * 0.9;
+                  if (!burst && (int)(t * 7.0F) % 3 == 0) {
+                     double an = Math.floor(t * 7.0F) * 1.3;
+                     double x1 = x + Math.cos(an) * 0.9;
+                     double z1 = z + Math.sin(an) * 0.9;
                      R3.line(
-                        var54,
-                        var5 + 2.2,
-                        var58,
-                        var3 + Math.cos(var47 + 0.4) * 0.6,
-                        var5 + 0.8,
-                        var7 + Math.sin(var47 + 0.4) * 0.6,
+                        x1,
+                        y + 2.2,
+                        z1,
+                        x + Math.cos(an + 0.4) * 0.6,
+                        y + 0.8,
+                        z + Math.sin(an + 0.4) * 0.6,
                         0.06,
                         R3.argb(16777215, 0.9),
                         R3.argb(16769136, 0.9)
@@ -366,48 +363,69 @@ public final class Cutscenes {
                   }
                   break;
                case "cs_selfie":
-                  if (var9 > dur - 0.9 && var9 < dur - 0.5) {
-                     double var32 = 1.0 - Math.abs((var9 - (dur - 0.7)) / 0.2);
-                     R3.glowBillboard(glow, var3, var5 + 1.4, var7, 6.0, R3.argb(16777215, Math.max(0.0, var32)));
+                  if (t > dur - 0.9 && t < dur - 0.5) {
+                     double a = 1.0 - Math.abs((t - (dur - 0.7)) / 0.2);
+                     R3.glowBillboard(glow, x, y + 1.4, z, 6.0, R3.argb(16777215, Math.max(0.0, a)));
                   }
 
-                  for (int var33 = 0; var33 < 6; var33++) {
-                     double var40 = var9 * 1.5 + var33;
-                     double var44 = 1.6 + (var9 * 0.5 + var33 * 0.3) % 1.2;
-                     R3.billboardRot(
-                        star, var3 + Math.cos(var40) * 0.7, var5 + var44, var7 + Math.sin(var40) * 0.7, 0.18, var9 * 3.0F + var33, R3.argb(16770290, 0.9)
-                     );
+                  for (int i = 0; i < 6; i++) {
+                     double an = t * 1.5 + i;
+                     double hy = 1.6 + (t * 0.5 + i * 0.3) % 1.2;
+                     R3.billboardRot(star, x + Math.cos(an) * 0.7, y + hy, z + Math.sin(an) * 0.7, 0.18, t * 3.0F + i, R3.argb(16770290, 0.9));
                   }
                   break;
                case "cs_xmas":
-                  xmasFx(var3, var5, var7, var9);
+                  xmasFx(x, y, z, t);
                   break;
                case "cs_darkaura":
-                  darkAuraFx(var3, var5, var7, var9);
+                  darkAuraFx(x, y, z, t);
                   break;
                case "cs_evillaugh":
-                  evilFx(var3, var5, var7, var9);
+                  evilFx(x, y, z, t);
                   break;
                case "cs_starfall":
-                  for (int var12 = 0; var12 < 14; var12++) {
-                     double var13 = 2.2;
-                     double var15 = (var9 + var12 * 0.37) % var13 / var13;
-                     double var17 = var12 * 2.1;
-                     double var19 = 6 + var12 % 5 * 3;
-                     double var21 = var3 + Math.cos(var17) * var19;
-                     double var23 = var7 + Math.sin(var17) * var19;
-                     double var25 = var5 + 30.0 - var15 * 26.0;
-                     double var27 = var21 - var15 * 4.0;
-                     R3.line(var27 + 3.0, var25 + 3.0, var23, var27, var25, var23, 0.18, R3.argb(11061503, 0.0), R3.argb(16777215, 0.9 * (1.0 - var15)));
-                     R3.glowBillboard(core, var27, var25, var23, 0.8, R3.argb(14214911, 0.9 * (1.0 - var15)));
+                  for (int i = 0; i < 14; i++) {
+                     double period = 2.2;
+                     double local = (t + i * 0.37) % period / period;
+                     double an = i * 2.1;
+                     double r = 6 + i % 5 * 3;
+                     double sx = x + Math.cos(an) * r;
+                     double sz = z + Math.sin(an) * r;
+                     double sy = y + 30.0 - local * 26.0;
+                     double hx = sx - local * 4.0;
+                     R3.line(hx + 3.0, sy + 3.0, sz, hx, sy, sz, 0.18, R3.argb(11061503, 0.0), R3.argb(16777215, 0.9 * (1.0 - local)));
+                     R3.glowBillboard(core, hx, sy, sz, 0.8, R3.argb(14214911, 0.9 * (1.0 - local)));
                   }
 
-                  for (int var31 = 0; var31 < 30; var31++) {
-                     double var39 = var31 * 2.399 + var9 * 0.5;
-                     double var43 = 0.6 + var31 % 5 * 0.35;
-                     double var52 = (var31 * 0.21 + var9 * 0.4) % 2.5;
-                     R3.billboardRot(
-                        star, var3 + Math.cos(var39) * var43, var5 + var52, var7 + Math.sin(var39) * var43, 0.1, var9 + var31, R3.argb(16777215, 0.8)
+                  for (int i = 0; i < 30; i++) {
+                     double an = i * 2.399 + t * 0.5;
+                     double r = 0.6 + i % 5 * 0.35;
+                     double hy = (i * 0.21 + t * 0.4) % 2.5;
+                     R3.billboardRot(star, x + Math.cos(an) * r, y + hy, z + Math.sin(an) * r, 0.1, t + i, R3.argb(16777215, 0.8));
+                  }
+                  break;
+               default:
+                  if (id.startsWith("cs_gen_")) {
+                     double a = Math.min(1.0, t / 0.6) * Math.min(1.0, Math.max(0.0, (dur - t) / 0.6));
+
+                     for (int i = 0; i < 48; i++) {
+                        double an = i * 2.399 + t * 1.8;
+                        double r = 0.8 + i % 8 * 0.35;
+                        double yy = (i * 0.17 + t * 0.9) % 2.8;
+                        R3.glowBillboard(glow, x + Math.cos(an) * r, y + yy, z + Math.sin(an) * r, 0.18 + i % 3 * 0.05, R3.argb(11065599, 0.65 * a));
+                     }
+
+                     double pulse = Math.max(0.0, 1.0 - Math.min(1.0, t / 1.0));
+                     R3.ring(
+                        x,
+                        y + 0.15,
+                        z,
+                        1.0 + Math.sin(t * 4.0F) * 0.2,
+                        2.0 + Math.sin(t * 4.0F) * 0.3,
+                        48,
+                        R3.argb(16777215, 0.0),
+                        R3.argb(10190079, 0.45 * a * pulse),
+                        t * 1.2
                      );
                   }
             }
@@ -415,43 +433,33 @@ public final class Cutscenes {
       }
    }
 
-   private static void fireworks(double var0, double var2, double var4, double var6, int var8) {
-      if (!(var6 < 0.0) && !(var6 > 2.2)) {
-         int[] var9 = new int[]{16731501, 16765503, 4182783, 10181631, 6029211, 16747069};
-         int var10 = var9[var8 % var9.length];
-         double var11 = var8 * 1.9;
-         double var13 = var0 + Math.cos(var11) * 4.0;
-         double var15 = var4 + Math.sin(var11) * 4.0;
-         double var17 = var2 + 7.0 + var8 % 3;
-         if (var6 < 0.5) {
-            double var38 = var6 / 0.5;
-            R3.line(
-               var13,
-               var2 + var38 * (var17 - var2) - 1.2,
-               var15,
-               var13,
-               var2 + var38 * (var17 - var2),
-               var15,
-               0.12,
-               R3.argb(16767392, 0.0),
-               R3.argb(16777215, 0.9)
-            );
+   private static void fireworks(double x, double y, double z, double s, int k) {
+      if (!(s < 0.0) && !(s > 2.2)) {
+         int[] cols = new int[]{16731501, 16765503, 4182783, 10181631, 6029211, 16747069};
+         int c = cols[k % cols.length];
+         double an0 = k * 1.9;
+         double cx = x + Math.cos(an0) * 4.0;
+         double cz = z + Math.sin(an0) * 4.0;
+         double cy = y + 7.0 + k % 3;
+         if (s < 0.5) {
+            double f = s / 0.5;
+            R3.line(cx, y + f * (cy - y) - 1.2, cz, cx, y + f * (cy - y), cz, 0.12, R3.argb(16767392, 0.0), R3.argb(16777215, 0.9));
          } else {
-            double var19 = var6 - 0.5;
-            double var21 = Math.max(0.0, 1.0 - var19 / 1.7);
+            double e = s - 0.5;
+            double a = Math.max(0.0, 1.0 - e / 1.7);
 
-            for (int var23 = 0; var23 < 48; var23++) {
-               double var24 = (var23 + 0.5) / 48.0;
-               double var26 = Math.acos(1.0 - 2.0 * var24);
-               double var28 = var23 * 2.399;
-               double var30 = 4.5 * (1.0 - Math.exp(-var19 * 3.0));
-               double var32 = var13 + Math.sin(var26) * Math.cos(var28) * var30;
-               double var34 = var17 + Math.cos(var26) * var30 - var19 * var19 * 1.2;
-               double var36 = var15 + Math.sin(var26) * Math.sin(var28) * var30;
-               R3.glowBillboard(core, var32, var34, var36, 0.35, R3.argb(var10, var21));
+            for (int i = 0; i < 48; i++) {
+               double u = (i + 0.5) / 48.0;
+               double phi = Math.acos(1.0 - 2.0 * u);
+               double th = i * 2.399;
+               double sp = 4.5 * (1.0 - Math.exp(-e * 3.0));
+               double px = cx + Math.sin(phi) * Math.cos(th) * sp;
+               double py = cy + Math.cos(phi) * sp - e * e * 1.2;
+               double pz = cz + Math.sin(phi) * Math.sin(th) * sp;
+               R3.glowBillboard(core, px, py, pz, 0.35, R3.argb(c, a));
             }
 
-            R3.glowBillboard(glow, var13, var17, var15, 6.0 * var21, R3.argb(var10, 0.3 * var21));
+            R3.glowBillboard(glow, cx, cy, cz, 6.0 * a, R3.argb(c, 0.3 * a));
          }
       }
    }
@@ -465,26 +473,26 @@ public final class Cutscenes {
    }
 
    public static int shot() {
-      float[] var0 = cuts();
-      if (var0 == null) {
+      float[] cs = cuts();
+      if (cs == null) {
          return -1;
       } else {
-         float var1 = time();
-         int var2 = 0;
+         float t = time();
+         int s = 0;
 
-         for (int var3 = 0; var3 < var0.length; var3++) {
-            if (var1 >= var0[var3]) {
-               var2 = var3;
+         for (int i = 0; i < cs.length; i++) {
+            if (t >= cs[i]) {
+               s = i;
             }
          }
 
-         return var2;
+         return s;
       }
    }
 
    public static float shotTime() {
-      int var0 = shot();
-      return var0 < 0 ? 0.0F : time() - cuts()[var0];
+      int s = shot();
+      return s < 0 ? 0.0F : time() - cuts()[s];
    }
 
    public static float lockYaw() {
@@ -495,725 +503,645 @@ public final class Cutscenes {
       return "cs_darkaura".equals(id) || "cs_evillaugh".equals(id);
    }
 
-   static double[] eye(double var0, double var2, double var4) {
-      double var6 = Math.toRadians(baseYaw);
-      double var8 = -Math.sin(var6);
-      double var10 = Math.cos(var6);
-      double var12 = -Math.cos(var6);
-      double var14 = -Math.sin(var6);
-      return new double[]{var0 + var8 * 0.245 + var12 * 0.117, var2 + 1.611, var4 + var10 * 0.245 + var14 * 0.117};
+   static double[] eye(double x, double y, double z) {
+      double th = Math.toRadians(baseYaw);
+      double fx = -Math.sin(th);
+      double fz = Math.cos(th);
+      double rx = -Math.cos(th);
+      double rz = -Math.sin(th);
+      return new double[]{x + fx * 0.245 + rx * 0.117, y + 1.611, z + fz * 0.245 + rz * 0.117};
    }
 
-   private static boolean darkAuraCam(double[] var0, float var1, double[] var2) {
-      double var3 = Math.toRadians(baseYaw);
-      double var5 = -Math.sin(var3);
-      double var7 = Math.cos(var3);
-      double var9 = -Math.cos(var3);
-      double var11 = -Math.sin(var3);
-      double var13 = var0[0];
-      double var15 = var0[1];
-      double var17 = var0[2];
-      int var31 = shot();
-      float var32 = shotTime();
-      double var19;
-      double var21;
-      double var23;
-      double var25;
-      double var27;
-      double var29;
-      switch (var31) {
-         case 0:
-            double var43 = 5.6 - var32 * 0.55;
-            double var46 = Math.toRadians(28.0F - var32 * 8.0F);
-            var19 = var13 + (var5 * Math.cos(var46) + var9 * Math.sin(var46)) * var43;
-            var23 = var17 + (var7 * Math.cos(var46) + var11 * Math.sin(var46)) * var43;
-            var21 = var15 + 0.35;
-            var25 = var13;
-            var27 = var15 + 1.25;
-            var29 = var17;
+   private static boolean darkAuraCam(double[] pos, float t, double[] out) {
+      double th = Math.toRadians(baseYaw);
+      double fx = -Math.sin(th);
+      double fz = Math.cos(th);
+      double rx = -Math.cos(th);
+      double rz = -Math.sin(th);
+      double x = pos[0];
+      double y = pos[1];
+      double z = pos[2];
+      int s = shot();
+      float l = shotTime();
+      double cx;
+      double cy;
+      double cz;
+      double lx;
+      double ly;
+      double lz;
+      switch (s) {
+         case 0: {
+            double d = 5.6 - l * 0.55;
+            double a = Math.toRadians(28.0F - l * 8.0F);
+            cx = x + (fx * Math.cos(a) + rx * Math.sin(a)) * d;
+            cz = z + (fz * Math.cos(a) + rz * Math.sin(a)) * d;
+            cy = y + 0.35;
+            lx = x;
+            ly = y + 1.25;
+            lz = z;
             break;
+         }
          case 1:
-            double var42 = 0.9 - var32 * 0.5;
-            var19 = var13 + var5 * 1.5 + var9 * var42;
-            var23 = var17 + var7 * 1.5 + var11 * var42;
-            var21 = var15 + 0.22;
-            var25 = var13 + var9 * 0.1;
-            var27 = var15 + 0.2;
-            var29 = var17 + var11 * 0.1;
+            double side = 0.9 - l * 0.5;
+            cx = x + fx * 1.5 + rx * side;
+            cz = z + fz * 1.5 + rz * side;
+            cy = y + 0.22;
+            lx = x + rx * 0.1;
+            ly = y + 0.2;
+            lz = z + rz * 0.1;
             break;
-         case 2:
-            double var41 = 1.35 - var32 * 0.12;
-            var19 = var13 + var9 * var41 + var5 * 0.15;
-            var23 = var17 + var11 * var41 + var7 * 0.15;
-            var21 = var15 + 1.55 + var32 * 0.04;
-            var25 = var13 + var5 * 0.1;
-            var27 = var15 + 1.55;
-            var29 = var17 + var7 * 0.1;
+         case 2: {
+            double d = 1.35 - l * 0.12;
+            cx = x + rx * d + fx * 0.15;
+            cz = z + rz * d + fz * 0.15;
+            cy = y + 1.55 + l * 0.04;
+            lx = x + fx * 0.1;
+            ly = y + 1.55;
+            lz = z + fz * 0.1;
             break;
-         case 3:
-            double[] var40 = eye(var13, var15, var17);
-            double var45 = 0.55 - Math.min(1.0, var32 / 1.3) * 0.14;
-            double var48 = Math.max(0.0, var32 - 0.35) * 0.0025;
-            var19 = var40[0] + var5 * var45 + Math.sin(var1 * 61.0F) * var48;
-            var23 = var40[2] + var7 * var45 + Math.cos(var1 * 57.0F) * var48;
-            var21 = var40[1] + Math.sin(var1 * 53.0F) * var48;
-            var25 = var40[0];
-            var27 = var40[1];
-            var29 = var40[2];
+         }
+         case 3: {
+            double[] e = eye(x, y, z);
+            double d = 0.55 - Math.min(1.0, l / 1.3) * 0.14;
+            double tr = Math.max(0.0, l - 0.35) * 0.0025;
+            cx = e[0] + fx * d + Math.sin(t * 61.0F) * tr;
+            cz = e[2] + fz * d + Math.cos(t * 57.0F) * tr;
+            cy = e[1] + Math.sin(t * 53.0F) * tr;
+            lx = e[0];
+            ly = e[1];
+            lz = e[2];
             break;
-         case 4:
-            double var39 = Math.max(0.0, 0.18 - var32 * 0.2);
-            double var35 = Math.toRadians(-20.0);
-            var19 = var13 + (var5 * Math.cos(var35) + var9 * Math.sin(var35)) * 2.6 + Math.sin(var1 * 71.0F) * var39;
-            var23 = var17 + (var7 * Math.cos(var35) + var11 * Math.sin(var35)) * 2.6;
-            var21 = var15 + 1.2 + Math.cos(var1 * 67.0F) * var39;
-            var25 = var13;
-            var27 = var15 + 1.15;
-            var29 = var17;
+         }
+         case 4: {
+            double sh = Math.max(0.0, 0.18 - l * 0.2);
+            double a = Math.toRadians(-20.0);
+            cx = x + (fx * Math.cos(a) + rx * Math.sin(a)) * 2.6 + Math.sin(t * 71.0F) * sh;
+            cz = z + (fz * Math.cos(a) + rz * Math.sin(a)) * 2.6;
+            cy = y + 1.2 + Math.cos(t * 67.0F) * sh;
+            lx = x;
+            ly = y + 1.15;
+            lz = z;
             break;
-         default:
-            float var33 = Ease.inOutCubic(Math.min(1.0F, var32 / 1.5F));
-            double var34 = 2.8 + 3.6 * var33;
-            double var36 = Math.toRadians(-20.0F + 50.0F * var33);
-            var19 = var13 + (var5 * Math.cos(var36) + var9 * Math.sin(var36)) * var34;
-            var23 = var17 + (var7 * Math.cos(var36) + var11 * Math.sin(var36)) * var34;
-            var21 = var15 + 1.2 + 1.6 * var33;
-            var25 = var13;
-            var27 = var15 + 1.1;
-            var29 = var17;
+         }
+         default: {
+            float k = Ease.inOutCubic(Math.min(1.0F, l / 1.5F));
+            double d = 2.8 + 3.6 * k;
+            double a = Math.toRadians(-20.0F + 50.0F * k);
+            cx = x + (fx * Math.cos(a) + rx * Math.sin(a)) * d;
+            cz = z + (fz * Math.cos(a) + rz * Math.sin(a)) * d;
+            cy = y + 1.2 + 1.6 * k;
+            lx = x;
+            ly = y + 1.1;
+            lz = z;
+         }
       }
 
-      double var44 = var25 - var19;
-      double var47 = var27 - var21;
-      double var37 = var29 - var23;
-      var2[0] = var19;
-      var2[1] = var21;
-      var2[2] = var23;
-      var2[3] = Math.toDegrees(Math.atan2(-var44, var37));
-      var2[4] = -Math.toDegrees(Math.atan2(var47, Math.sqrt(var44 * var44 + var37 * var37)));
+      double dx = lx - cx;
+      double dy = ly - cy;
+      double dz = lz - cz;
+      out[0] = cx;
+      out[1] = cy;
+      out[2] = cz;
+      out[3] = Math.toDegrees(Math.atan2(-dx, dz));
+      out[4] = -Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)));
       return true;
    }
 
-   private static void darkAuraFx(double var0, double var2, double var4, float var6) {
+   private static void darkAuraFx(double x, double y, double z, float t) {
       if (bat0 == null) {
          bat0 = tex("bat0");
          bat1 = tex("bat1");
       }
 
-      double var7 = Math.min(1.0, var6 / 0.6);
-      double var9 = Math.min(1.0, Math.max(0.0, (dur - var6) / 0.8));
-      double var11 = var7 * var9;
-      boolean var13 = var6 > DA_CUTS[4];
-      double var14 = var13 ? var6 - DA_CUTS[4] : 0.0;
+      double fadeIn = Math.min(1.0, t / 0.6);
+      double fadeOut = Math.min(1.0, Math.max(0.0, (dur - t) / 0.8));
+      double a0 = fadeIn * fadeOut;
+      boolean burst = t > DA_CUTS[4];
+      double bt = burst ? t - DA_CUTS[4] : 0.0;
 
-      for (int var16 = 0; var16 < 110; var16++) {
-         double var17 = var16 * 2.399;
-         double var19 = (var16 * 0.137 + var6 * (0.28 + var16 % 5 * 0.04)) % 1.0;
-         double var21 = 0.35 + var16 % 7 * 0.26 + var19 * 0.8 + var14 * 1.5;
-         double var23 = var17 + var6 * 0.4 * ((var16 & 1) == 0 ? 1 : -1) + var19 * 1.3;
-         double var25 = var19 * (2.4 + var16 % 4 * 0.4);
-         double var27 = 0.5 + var19 * 1.3 + var16 % 3 * 0.2;
-         double var29 = Math.sin(var19 * Math.PI) * var11 * (var13 ? Math.max(0.35, 1.0 - var14 * 0.5) : 1.0);
-         int var31 = var16 % 6 == 0 ? 3801096 : (var16 % 4 == 0 ? 1442822 : 328196);
-         R3.billboard(glow, var0 + Math.cos(var23) * var21, var2 + 0.05 + var25, var4 + Math.sin(var23) * var21, var27, R3.argb(var31, 0.62 * var29));
+      for (int i = 0; i < 110; i++) {
+         double seed = i * 2.399;
+         double life = (i * 0.137 + t * (0.28 + i % 5 * 0.04)) % 1.0;
+         double r = 0.35 + i % 7 * 0.26 + life * 0.8 + bt * 1.5;
+         double an = seed + t * 0.4 * ((i & 1) == 0 ? 1 : -1) + life * 1.3;
+         double hy = life * (2.4 + i % 4 * 0.4);
+         double sz = 0.5 + life * 1.3 + i % 3 * 0.2;
+         double a = Math.sin(life * Math.PI) * a0 * (burst ? Math.max(0.35, 1.0 - bt * 0.5) : 1.0);
+         int c = i % 6 == 0 ? 3801096 : (i % 4 == 0 ? 1442822 : 328196);
+         R3.billboard(glow, x + Math.cos(an) * r, y + 0.05 + hy, z + Math.sin(an) * r, sz, R3.argb(c, 0.62 * a));
       }
 
-      R3.ring(var0, var2 + 0.03, var4, 0.0, 2.4 + var14 * 3.0, 48, R3.argb(0, 0.7 * var11), R3.argb(0, 0.0), 0.0);
-      R3.ring(var0, var2 + 0.04, var4, 1.5, 1.62, 64, R3.argb(16715824, 0.55 * var11), R3.argb(8388624, 0.25 * var11), var6 * 0.6);
+      R3.ring(x, y + 0.03, z, 0.0, 2.4 + bt * 3.0, 48, R3.argb(0, 0.7 * a0), R3.argb(0, 0.0), 0.0);
+      R3.ring(x, y + 0.04, z, 1.5, 1.62, 64, R3.argb(16715824, 0.55 * a0), R3.argb(8388624, 0.25 * a0), t * 0.6);
 
-      for (int var48 = 0; var48 < 26; var48++) {
-         double var52 = (var48 * 0.31 + var6 * 0.5) % 1.0;
-         double var55 = var48 * 1.7 + var6 * 0.8;
-         double var58 = 0.5 + var48 % 5 * 0.35;
-         R3.glowBillboard(
-            core, var0 + Math.cos(var55) * var58, var2 + var52 * 3.0, var4 + Math.sin(var55) * var58, 0.06, R3.argb(16722490, 0.9 * (1.0 - var52) * var11)
-         );
+      for (int i = 0; i < 26; i++) {
+         double life = (i * 0.31 + t * 0.5) % 1.0;
+         double an = i * 1.7 + t * 0.8;
+         double r = 0.5 + i % 5 * 0.35;
+         R3.glowBillboard(core, x + Math.cos(an) * r, y + life * 3.0, z + Math.sin(an) * r, 0.06, R3.argb(16722490, 0.9 * (1.0 - life) * a0));
       }
 
-      for (int var49 = 0; var49 < 30; var49++) {
-         double var53 = 1.1 + var49 % 5 * 0.25;
-         double var56 = var49 * 2.1 + var6 * var53 * (var49 % 3 == 0 ? -1 : 1);
-         double var59 = 1.3 + var49 % 6 * 0.45 + Math.sin(var6 * 2.0F + var49) * 0.25 + var14 * var14 * 4.0;
-         double var60 = 0.4 + var49 % 7 * 0.45 + Math.sin(var6 * 3.1 + var49 * 1.3) * 0.25 + var14 * 1.2;
-         Identifier var61 = (int)(var6 * 13.0F + var49) % 2 == 0 ? bat0 : bat1;
-         R3.billboard(
-            var61, var0 + Math.cos(var56) * var59, var2 + var60, var4 + Math.sin(var56) * var59, 0.34 + var49 % 3 * 0.08, R3.argb(1706514, 0.95 * var11)
-         );
+      for (int i = 0; i < 30; i++) {
+         double sp = 1.1 + i % 5 * 0.25;
+         double an = i * 2.1 + t * sp * (i % 3 == 0 ? -1 : 1);
+         double r = 1.3 + i % 6 * 0.45 + Math.sin(t * 2.0F + i) * 0.25 + bt * bt * 4.0;
+         double hy = 0.4 + i % 7 * 0.45 + Math.sin(t * 3.1 + i * 1.3) * 0.25 + bt * 1.2;
+         Identifier f = (int)(t * 13.0F + i) % 2 == 0 ? bat0 : bat1;
+         R3.billboard(f, x + Math.cos(an) * r, y + hy, z + Math.sin(an) * r, 0.34 + i % 3 * 0.08, R3.argb(1706514, 0.95 * a0));
       }
 
-      if (var6 > DA_CUTS[2] + 0.6) {
-         double var50 = Math.min(1.0, (var6 - DA_CUTS[2] - 0.6) / 0.5) * var9;
-         double var18 = 0.85 + 0.15 * Math.sin(var6 * 31.0F);
-         double[] var20 = eye(var0, var2, var4);
-         R3.glowBillboard(glow, var20[0], var20[1], var20[2], 0.32 * var50 * var18, R3.argb(16714270, 0.8 * var50));
-         R3.glowBillboard(core, var20[0], var20[1], var20[2], 0.07 * var50, R3.argb(16765136, var50));
+      if (t > DA_CUTS[2] + 0.6) {
+         double e = Math.min(1.0, (t - DA_CUTS[2] - 0.6) / 0.5) * fadeOut;
+         double flick = 0.85 + 0.15 * Math.sin(t * 31.0F);
+         double[] ep = eye(x, y, z);
+         R3.glowBillboard(glow, ep[0], ep[1], ep[2], 0.32 * e * flick, R3.argb(16714270, 0.8 * e));
+         R3.glowBillboard(core, ep[0], ep[1], ep[2], 0.07 * e, R3.argb(16765136, e));
          if (shot() >= 4) {
             R3.line(
-               var20[0],
-               var20[1],
-               var20[2],
-               var20[0] - Math.cos(Math.toRadians(baseYaw)) * 0.6,
-               var20[1] + 0.05,
-               var20[2] - Math.sin(Math.toRadians(baseYaw)) * 0.6,
+               ep[0],
+               ep[1],
+               ep[2],
+               ep[0] - Math.cos(Math.toRadians(baseYaw)) * 0.6,
+               ep[1] + 0.05,
+               ep[2] - Math.sin(Math.toRadians(baseYaw)) * 0.6,
                0.04,
-               R3.argb(16715824, 0.8 * var50),
+               R3.argb(16715824, 0.8 * e),
                R3.argb(16715824, 0.0)
             );
          }
       }
 
-      if (var13 && var14 < 0.7) {
-         double var51 = var14 / 0.7;
-         double var54 = Math.toRadians(baseYaw);
-         double var57 = -Math.sin(var54);
-         double var22 = Math.cos(var54);
-         double var24 = -Math.cos(var54);
-         double var26 = -Math.sin(var54);
+      if (burst && bt < 0.7) {
+         double k = bt / 0.7;
+         double th = Math.toRadians(baseYaw);
+         double fx = -Math.sin(th);
+         double fz = Math.cos(th);
+         double rx = -Math.cos(th);
+         double rz = -Math.sin(th);
 
-         for (int var28 = 0; var28 < 3; var28++) {
-            double var62 = (var28 - 1) * 0.35;
-            double var63 = 0.0;
-            double var33 = 0.0;
-            double var35 = 0.0;
+         for (int s = 0; s < 3; s++) {
+            double off = (s - 1) * 0.35;
+            double px = 0.0;
+            double py = 0.0;
+            double pz = 0.0;
 
-            for (int var37 = 0; var37 <= 16; var37++) {
-               double var38 = var37 / 16.0 * Math.min(1.0, var51 * 3.0);
-               double var40 = -1.2 + var38 * 2.4;
-               double var42 = var0 + var57 * (1.0 + var62 * 0.3) + var24 * Math.sin(var40) * 1.6;
-               double var44 = var2 + 1.2 + Math.cos(var40) * 0.9 + var62;
-               double var46 = var4 + var22 * (1.0 + var62 * 0.3) + var26 * Math.sin(var40) * 1.6;
-               if (var37 > 0) {
-                  R3.line(
-                     var63,
-                     var33,
-                     var35,
-                     var42,
-                     var44,
-                     var46,
-                     0.09 * (1.0 - var51),
-                     R3.argb(16715824, 0.9 * (1.0 - var51)),
-                     R3.argb(16765136, 0.9 * (1.0 - var51))
-                  );
+            for (int j = 0; j <= 16; j++) {
+               double u = j / 16.0 * Math.min(1.0, k * 3.0);
+               double an = -1.2 + u * 2.4;
+               double qx = x + fx * (1.0 + off * 0.3) + rx * Math.sin(an) * 1.6;
+               double qy = y + 1.2 + Math.cos(an) * 0.9 + off;
+               double qz = z + fz * (1.0 + off * 0.3) + rz * Math.sin(an) * 1.6;
+               if (j > 0) {
+                  R3.line(px, py, pz, qx, qy, qz, 0.09 * (1.0 - k), R3.argb(16715824, 0.9 * (1.0 - k)), R3.argb(16765136, 0.9 * (1.0 - k)));
                }
 
-               var63 = var42;
-               var33 = var44;
-               var35 = var46;
+               px = qx;
+               py = qy;
+               pz = qz;
             }
          }
       }
    }
 
    private static float[] pose() {
-      EmoteLib.Emote var0 = EmoteLib.get(id);
-      return var0 == null ? null : var0.pose(time());
+      EmoteLib.Emote e = EmoteLib.get(id);
+      return e == null ? null : e.pose(time());
    }
 
-   static double[] eyeAt(double var0, double var2, double var4) {
-      float[] var6 = pose();
-      double var7 = var6 != null && !Float.isNaN(var6[0]) ? var6[0] : 0.0;
-      double var9 = var6 != null && !Float.isNaN(var6[3]) ? var6[3] : 0.0;
-      double var11 = Math.toRadians(baseYaw);
-      double var13 = -Math.sin(var11);
-      double var15 = Math.cos(var11);
-      double var17 = -Math.cos(var11);
-      double var19 = -Math.sin(var11);
-      double var21 = 0.75 + 0.75 * Math.cos(var9);
-      double var23 = 0.75 * Math.sin(var9);
-      double var25 = var7 + var9;
-      double var27 = var21 + 0.111 * Math.cos(var25) - 0.245 * Math.sin(var25);
-      double var29 = var23 + 0.245 * Math.cos(var25) + 0.111 * Math.sin(var25);
-      return new double[]{var0 + var13 * var29 + var17 * 0.117, var2 + var27, var4 + var15 * var29 + var19 * 0.117};
+   static double[] eyeAt(double x, double y, double z) {
+      float[] p = pose();
+      double hp = p != null && !Float.isNaN(p[0]) ? p[0] : 0.0;
+      double b = p != null && !Float.isNaN(p[3]) ? p[3] : 0.0;
+      double th = Math.toRadians(baseYaw);
+      double fx = -Math.sin(th);
+      double fz = Math.cos(th);
+      double rx = -Math.cos(th);
+      double rz = -Math.sin(th);
+      double neckUp = 0.75 + 0.75 * Math.cos(b);
+      double neckFwd = 0.75 * Math.sin(b);
+      double a = hp + b;
+      double up = neckUp + 0.111 * Math.cos(a) - 0.245 * Math.sin(a);
+      double fwd = neckFwd + 0.245 * Math.cos(a) + 0.111 * Math.sin(a);
+      return new double[]{x + fx * fwd + rx * 0.117, y + up, z + fz * fwd + rz * 0.117};
    }
 
-   private static boolean evilCam(double[] var0, float var1, double[] var2) {
-      double var3 = Math.toRadians(baseYaw);
-      double var5 = -Math.sin(var3);
-      double var7 = Math.cos(var3);
-      double var9 = -Math.cos(var3);
-      double var11 = -Math.sin(var3);
-      double var13 = var0[0];
-      double var15 = var0[1];
-      double var17 = var0[2];
-      int var31 = shot();
-      float var32 = shotTime();
-      double var19;
-      double var21;
-      double var23;
-      double var25;
-      double var27;
-      double var29;
-      switch (var31) {
-         case 0:
-            float var43 = Ease.inOutCubic(Math.min(1.0F, var32 / 2.6F));
-            double var46 = 5.4 - 2.3 * var43;
-            double var49 = Math.toRadians(24.0F - 16.0F * var43);
-            var19 = var13 + (var5 * Math.cos(var49) + var9 * Math.sin(var49)) * var46;
-            var23 = var17 + (var7 * Math.cos(var49) + var11 * Math.sin(var49)) * var46;
-            var21 = var15 + 0.9 + 0.15 * var43;
-            var25 = var13;
-            var27 = var15 + 1.35 + 0.1 * var43;
-            var29 = var17;
+   private static boolean evilCam(double[] pos, float t, double[] out) {
+      double th = Math.toRadians(baseYaw);
+      double fx = -Math.sin(th);
+      double fz = Math.cos(th);
+      double rx = -Math.cos(th);
+      double rz = -Math.sin(th);
+      double x = pos[0];
+      double y = pos[1];
+      double z = pos[2];
+      int s = shot();
+      float l = shotTime();
+      double cx;
+      double cy;
+      double cz;
+      double lx;
+      double ly;
+      double lz;
+      switch (s) {
+         case 0: {
+            float k = Ease.inOutCubic(Math.min(1.0F, l / 2.6F));
+            double d = 5.4 - 2.3 * k;
+            double a = Math.toRadians(24.0F - 16.0F * k);
+            cx = x + (fx * Math.cos(a) + rx * Math.sin(a)) * d;
+            cz = z + (fz * Math.cos(a) + rz * Math.sin(a)) * d;
+            cy = y + 0.9 + 0.15 * k;
+            lx = x;
+            ly = y + 1.35 + 0.1 * k;
+            lz = z;
             break;
-         case 1:
-            double var42 = 1.05 - Math.min(1.0, var32 / 1.8) * 0.15;
-            double var47 = 0.012;
-            var19 = var13 + var5 * var42 + var9 * 0.18 + Math.sin(var1 * 43.0F) * var47;
-            var23 = var17 + var7 * var42 + var11 * 0.18 + Math.cos(var1 * 39.0F) * var47;
-            var21 = var15 + 0.95 + Math.sin(var1 * 47.0F) * var47;
-            var25 = var13 + var5 * 0.05;
-            var27 = var15 + 1.72;
-            var29 = var17 + var7 * 0.05;
+         }
+         case 1: {
+            double d = 1.05 - Math.min(1.0, l / 1.8) * 0.15;
+            double tr = 0.012;
+            cx = x + fx * d + rx * 0.18 + Math.sin(t * 43.0F) * tr;
+            cz = z + fz * d + rz * 0.18 + Math.cos(t * 39.0F) * tr;
+            cy = y + 0.95 + Math.sin(t * 47.0F) * tr;
+            lx = x + fx * 0.05;
+            ly = y + 1.72;
+            lz = z + fz * 0.05;
             break;
-         case 2:
-            double[] var41 = eyeAt(var13, var15, var17);
-            double var45 = 0.52 - Math.min(1.0, var32 / 1.5) * 0.14;
-            double var36 = Math.max(0.0, var32 - 0.5) * 0.0028;
-            var19 = var41[0] + var5 * var45 + Math.sin(var1 * 61.0F) * var36;
-            var23 = var41[2] + var7 * var45 + Math.cos(var1 * 57.0F) * var36;
-            var21 = var41[1] + Math.sin(var1 * 53.0F) * var36;
-            var25 = var41[0];
-            var27 = var41[1];
-            var29 = var41[2];
+         }
+         case 2: {
+            double[] e = eyeAt(x, y, z);
+            double d = 0.52 - Math.min(1.0, l / 1.5) * 0.14;
+            double tr = Math.max(0.0, l - 0.5) * 0.0028;
+            cx = e[0] + fx * d + Math.sin(t * 61.0F) * tr;
+            cz = e[2] + fz * d + Math.cos(t * 57.0F) * tr;
+            cy = e[1] + Math.sin(t * 53.0F) * tr;
+            lx = e[0];
+            ly = e[1];
+            lz = e[2];
             break;
-         default:
-            float var33 = Ease.inOutCubic(Math.min(1.0F, var32 / 1.4F));
-            float var34 = Ease.inOutCubic(Math.min(1.0F, var32 / 4.0F));
-            double var35 = 2.6 + 3.0 * var33;
-            double var37 = 8.168140899333462 * var34 + Math.toRadians(10.0);
-            double var39 = Math.max(0.0, 0.12 - var32 * 0.12) + bolt(var1) * 0.06;
-            var19 = var13 + (var5 * Math.cos(var37) + var9 * Math.sin(var37)) * var35 + Math.sin(var1 * 71.0F) * var39;
-            var23 = var17 + (var7 * Math.cos(var37) + var11 * Math.sin(var37)) * var35;
-            var21 = var15 + 0.45 + 1.3 * var33 + Math.cos(var1 * 67.0F) * var39;
-            var25 = var13;
-            var27 = var15 + 1.25;
-            var29 = var17;
-      }
-
-      double var44 = var25 - var19;
-      double var48 = var27 - var21;
-      double var50 = var29 - var23;
-      var2[0] = var19;
-      var2[1] = var21;
-      var2[2] = var23;
-      var2[3] = Math.toDegrees(Math.atan2(-var44, var50));
-      var2[4] = -Math.toDegrees(Math.atan2(var48, Math.sqrt(var44 * var44 + var50 * var50)));
-      return true;
-   }
-
-   public static float bolt(float var0) {
-      float var1 = 0.0F;
-
-      for (float var5 : EL_BOLTS) {
-         if (var0 >= var5 && var0 < var5 + 0.45F) {
-            var1 = Math.max(var1, (float)Math.exp(-(var0 - var5) * 9.0F) * (0.6F + 0.4F * (float)Math.abs(Math.sin((var0 - var5) * 60.0F))));
+         }
+         default: {
+            float k = Ease.inOutCubic(Math.min(1.0F, l / 1.4F));
+            float spin = Ease.inOutCubic(Math.min(1.0F, l / 4.0F));
+            double d = 2.6 + 3.0 * k;
+            double a = 8.168140899333462 * spin + Math.toRadians(10.0);
+            double sh = Math.max(0.0, 0.12 - l * 0.12) + bolt(t) * 0.06;
+            cx = x + (fx * Math.cos(a) + rx * Math.sin(a)) * d + Math.sin(t * 71.0F) * sh;
+            cz = z + (fz * Math.cos(a) + rz * Math.sin(a)) * d;
+            cy = y + 0.45 + 1.3 * k + Math.cos(t * 67.0F) * sh;
+            lx = x;
+            ly = y + 1.25;
+            lz = z;
          }
       }
 
-      return var1;
+      double dx = lx - cx;
+      double dy = ly - cy;
+      double dz = lz - cz;
+      out[0] = cx;
+      out[1] = cy;
+      out[2] = cz;
+      out[3] = Math.toDegrees(Math.atan2(-dx, dz));
+      out[4] = -Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)));
+      return true;
    }
 
-   public static double heartbeat(float var0) {
-      double var1 = 0.0;
+   public static float bolt(float t) {
+      float f = 0.0F;
 
-      for (Cutscenes.Cue var6 : CUES.get("cs_evillaugh")) {
-         if (var6.id().endsWith("heartbeat")) {
-            double var7 = var0 - var6.t();
-            if (var7 >= 0.0 && var7 < 0.7) {
-               var1 = Math.max(var1, Math.exp(-var7 * 9.0) + 0.6 * (var7 > 0.22 ? Math.exp(-(var7 - 0.22) * 9.0) : 0.0));
+      for (float b : EL_BOLTS) {
+         if (t >= b && t < b + 0.45F) {
+            f = Math.max(f, (float)Math.exp(-(t - b) * 9.0F) * (0.6F + 0.4F * (float)Math.abs(Math.sin((t - b) * 60.0F))));
+         }
+      }
+
+      return f;
+   }
+
+   public static double heartbeat(float t) {
+      double v = 0.0;
+
+      for (Cutscenes.Cue q : CUES.get("cs_evillaugh")) {
+         if (q.id().endsWith("heartbeat")) {
+            double d = t - q.t();
+            if (d >= 0.0 && d < 0.7) {
+               v = Math.max(v, Math.exp(-d * 9.0) + 0.6 * (d > 0.22 ? Math.exp(-(d - 0.22) * 9.0) : 0.0));
             }
          }
       }
 
-      return Math.min(1.0, var1);
+      return Math.min(1.0, v);
    }
 
-   private static void arc(
-      double var0, double var2, double var4, double var6, double var8, double var10, long var12, int var14, double var15, double var17, double var19
-   ) {
-      Random var21 = new Random(var12);
-      double var22 = var0;
-      double var24 = var2;
-      double var26 = var4;
+   private static void arc(double x1, double y1, double z1, double x2, double y2, double z2, long seed, int segs, double jit, double w, double a) {
+      Random r = new Random(seed);
+      double px = x1;
+      double py = y1;
+      double pz = z1;
 
-      for (int var28 = 1; var28 <= var14; var28++) {
-         double var29 = (double)var28 / var14;
-         double var31 = var28 == var14 ? 0.0 : var15 * Math.sin(var29 * Math.PI);
-         double var33 = var0 + (var6 - var0) * var29 + (var21.nextDouble() - 0.5) * 2.0 * var31;
-         double var35 = var2 + (var8 - var2) * var29 + (var21.nextDouble() - 0.5) * var31;
-         double var37 = var4 + (var10 - var4) * var29 + (var21.nextDouble() - 0.5) * 2.0 * var31;
-         R3.line(var22, var24, var26, var33, var35, var37, var17 * 3.0, R3.argb(16714270, 0.35 * var19), R3.argb(16714270, 0.35 * var19));
-         R3.line(var22, var24, var26, var33, var35, var37, var17, R3.argb(16769252, var19), R3.argb(16736368, var19));
-         if (var28 == var14 / 2 && var21.nextBoolean()) {
-            double var39 = var33 + (var21.nextDouble() - 0.5) * var15 * 3.0;
-            double var41 = var35 - var15 * 1.5;
-            double var43 = var37 + (var21.nextDouble() - 0.5) * var15 * 3.0;
-            R3.line(var33, var35, var37, var39, var41, var43, var17 * 0.6, R3.argb(16744592, var19), R3.argb(16715824, 0.0));
+      for (int i = 1; i <= segs; i++) {
+         double u = (double)i / segs;
+         double j = i == segs ? 0.0 : jit * Math.sin(u * Math.PI);
+         double qx = x1 + (x2 - x1) * u + (r.nextDouble() - 0.5) * 2.0 * j;
+         double qy = y1 + (y2 - y1) * u + (r.nextDouble() - 0.5) * j;
+         double qz = z1 + (z2 - z1) * u + (r.nextDouble() - 0.5) * 2.0 * j;
+         R3.line(px, py, pz, qx, qy, qz, w * 3.0, R3.argb(16714270, 0.35 * a), R3.argb(16714270, 0.35 * a));
+         R3.line(px, py, pz, qx, qy, qz, w, R3.argb(16769252, a), R3.argb(16736368, a));
+         if (i == segs / 2 && r.nextBoolean()) {
+            double bx = qx + (r.nextDouble() - 0.5) * jit * 3.0;
+            double by = qy - jit * 1.5;
+            double bz = qz + (r.nextDouble() - 0.5) * jit * 3.0;
+            R3.line(qx, qy, qz, bx, by, bz, w * 0.6, R3.argb(16744592, a), R3.argb(16715824, 0.0));
          }
 
-         var22 = var33;
-         var24 = var35;
-         var26 = var37;
+         px = qx;
+         py = qy;
+         pz = qz;
       }
    }
 
-   private static void evilFx(double var0, double var2, double var4, float var6) {
+   private static void evilFx(double x, double y, double z, float t) {
       if (page == null) {
          page = tex("confetti");
          ash = tex("ash");
       }
 
-      double var7 = Math.min(1.0, var6 / 0.6);
-      double var9 = Math.min(1.0, Math.max(0.0, (dur - var6) / 0.8));
-      double var11 = var7 * var9;
-      double var13 = heartbeat(var6);
-      int var15 = shot();
-      boolean var16 = var15 >= 3;
-      double var17 = var16 ? var6 - EL_CUTS[3] : 0.0;
+      double fadeIn = Math.min(1.0, t / 0.6);
+      double fadeOut = Math.min(1.0, Math.max(0.0, (dur - t) / 0.8));
+      double a0 = fadeIn * fadeOut;
+      double hb = heartbeat(t);
+      int s = shot();
+      boolean wide = s >= 3;
+      double wt = wide ? t - EL_CUTS[3] : 0.0;
 
-      for (int var19 = 0; var19 < 80; var19++) {
-         double var20 = (var19 * 0.137 + var6 * (0.32 + var19 % 5 * 0.05)) % 1.0;
-         double var22 = var19 * 2.399 + var6 * 0.5 * ((var19 & 1) == 0 ? 1 : -1) + var20 * 1.6;
-         double var24 = 0.3 + var19 % 6 * 0.14 + var20 * 0.5 + var13 * 0.25 + (var16 ? Math.min(1.0, var17) * 0.6 : 0.0);
-         double var26 = 0.45 + var20 * 1.1 + var13 * 0.3;
-         double var28 = Math.sin(var20 * Math.PI) * var11 * (0.75 + 0.25 * var13);
-         int var30 = var19 % 5 == 0 ? 4849676 : (var19 % 3 == 0 ? 1704710 : 262402);
-         R3.billboard(
-            glow,
-            var0 + Math.cos(var22) * var24,
-            var2 + 0.05 + var20 * (2.2 + var19 % 3 * 0.3),
-            var4 + Math.sin(var22) * var24,
-            var26,
-            R3.argb(var30, 0.6 * var28)
-         );
+      for (int i = 0; i < 80; i++) {
+         double life = (i * 0.137 + t * (0.32 + i % 5 * 0.05)) % 1.0;
+         double an = i * 2.399 + t * 0.5 * ((i & 1) == 0 ? 1 : -1) + life * 1.6;
+         double r = 0.3 + i % 6 * 0.14 + life * 0.5 + hb * 0.25 + (wide ? Math.min(1.0, wt) * 0.6 : 0.0);
+         double sz = 0.45 + life * 1.1 + hb * 0.3;
+         double a = Math.sin(life * Math.PI) * a0 * (0.75 + 0.25 * hb);
+         int c = i % 5 == 0 ? 4849676 : (i % 3 == 0 ? 1704710 : 262402);
+         R3.billboard(glow, x + Math.cos(an) * r, y + 0.05 + life * (2.2 + i % 3 * 0.3), z + Math.sin(an) * r, sz, R3.argb(c, 0.6 * a));
       }
 
-      R3.glowBillboard(glow, var0, var2 + 1.0, var4, 2.6 + var13 * 0.8, R3.argb(11534362, (0.18 + 0.22 * var13) * var11));
-      R3.ring(var0, var2 + 0.03, var4, 0.0, 2.6, 48, R3.argb(0, 0.75 * var11), R3.argb(0, 0.0), 0.0);
-      R3.ring(
-         var0,
-         var2 + 0.04,
-         var4,
-         1.3 + var13 * 0.12,
-         1.4 + var13 * 0.16,
-         64,
-         R3.argb(16715824, (0.45 + 0.4 * var13) * var11),
-         R3.argb(8388624, 0.2 * var11),
-         -var6 * 0.4
-      );
-      R3.ring(var0, var2 + 0.045, var4, 1.85, 1.9, 64, R3.argb(16715824, 0.3 * var11), R3.argb(16715824, 0.1 * var11), var6 * 0.25);
-      if (var13 > 0.05) {
-         R3.ring(
-            var0,
-            var2 + 0.05,
-            var4,
-            0.4 + (1.0 - var13) * 2.5,
-            0.5 + (1.0 - var13) * 2.6,
-            48,
-            R3.argb(16719936, 0.0),
-            R3.argb(16719936, 0.5 * var13 * var11),
-            0.0
-         );
+      R3.glowBillboard(glow, x, y + 1.0, z, 2.6 + hb * 0.8, R3.argb(11534362, (0.18 + 0.22 * hb) * a0));
+      R3.ring(x, y + 0.03, z, 0.0, 2.6, 48, R3.argb(0, 0.75 * a0), R3.argb(0, 0.0), 0.0);
+      R3.ring(x, y + 0.04, z, 1.3 + hb * 0.12, 1.4 + hb * 0.16, 64, R3.argb(16715824, (0.45 + 0.4 * hb) * a0), R3.argb(8388624, 0.2 * a0), -t * 0.4);
+      R3.ring(x, y + 0.045, z, 1.85, 1.9, 64, R3.argb(16715824, 0.3 * a0), R3.argb(16715824, 0.1 * a0), t * 0.25);
+      if (hb > 0.05) {
+         R3.ring(x, y + 0.05, z, 0.4 + (1.0 - hb) * 2.5, 0.5 + (1.0 - hb) * 2.6, 48, R3.argb(16719936, 0.0), R3.argb(16719936, 0.5 * hb * a0), 0.0);
       }
 
-      for (int var39 = 0; var39 < 90; var39++) {
-         double var41 = (var39 * 0.083 + var6 * (0.09 + var39 % 4 * 0.015)) % 1.0;
-         double var48 = var39 * 2.399;
-         double var53 = 0.5 + var39 % 11 * 0.45;
-         double var60 = var0 + Math.cos(var48) * var53 + Math.sin(var6 * 0.8 + var39) * 0.3;
-         double var64 = var4 + Math.sin(var48) * var53 + Math.cos(var6 * 0.7 + var39) * 0.3;
+      for (int i = 0; i < 90; i++) {
+         double life = (i * 0.083 + t * (0.09 + i % 4 * 0.015)) % 1.0;
+         double an = i * 2.399;
+         double r = 0.5 + i % 11 * 0.45;
+         double ax = x + Math.cos(an) * r + Math.sin(t * 0.8 + i) * 0.3;
+         double az = z + Math.sin(an) * r + Math.cos(t * 0.7 + i) * 0.3;
          R3.billboardRot(
-            ash,
-            var60,
-            var2 + 5.5 - var41 * 5.6,
-            var64,
-            0.06 + var39 % 3 * 0.03,
-            var6 * 0.6 + var39,
-            R3.argb(var39 % 7 == 0 ? 5904926 : 2763310, 0.85 * var11 * Math.min(1.0, var41 * 5.0))
+            ash, ax, y + 5.5 - life * 5.6, az, 0.06 + i % 3 * 0.03, t * 0.6 + i, R3.argb(i % 7 == 0 ? 5904926 : 2763310, 0.85 * a0 * Math.min(1.0, life * 5.0))
          );
       }
 
-      int var40 = var16 ? 44 : 12;
+      int np = wide ? 44 : 12;
 
-      for (int var42 = 0; var42 < var40; var42++) {
-         double var29 = 0.2 + var42 % 4 * 0.04;
-         double var21;
-         double var23;
-         double var25;
-         double var27;
-         if (!var16) {
-            double var31 = (var42 * 0.27 + var6 * 0.11) % 1.0;
-            double var33 = var42 * 2.1;
-            double var35 = 1.4 + var42 % 4 * 0.6;
-            var21 = var0 + Math.cos(var33) * var35 + Math.sin(var6 * 1.3 + var42) * 0.35;
-            var25 = var4 + Math.sin(var33) * var35 + Math.cos(var6 * 1.1 + var42) * 0.35;
-            var23 = var2 + 3.6 - var31 * 3.5;
-            var27 = Math.sin(var6 * 2.0F + var42) * 1.2;
+      for (int i = 0; i < np; i++) {
+         double sz = 0.2 + i % 4 * 0.04;
+         double px;
+         double py;
+         double pz;
+         double ang;
+         if (!wide) {
+            double life = (i * 0.27 + t * 0.11) % 1.0;
+            double an = i * 2.1;
+            double r = 1.4 + i % 4 * 0.6;
+            px = x + Math.cos(an) * r + Math.sin(t * 1.3 + i) * 0.35;
+            pz = z + Math.sin(an) * r + Math.cos(t * 1.1 + i) * 0.35;
+            py = y + 3.6 - life * 3.5;
+            ang = Math.sin(t * 2.0F + i) * 1.2;
          } else {
-            double var68 = Math.min(1.0, var17 / 0.6);
-            double var72 = 1.6 + var42 % 5 * 0.3;
-            double var74 = var42 * 2.399 + var17 * var72 * (1.0 + 0.8 * Math.max(0.0, 1.0 - var17));
-            double var37 = 0.5 + var68 * (1.1 + var42 % 7 * 0.35) + Math.sin(var17 * 2.0 + var42) * 0.2;
-            var21 = var0 + Math.cos(var74) * var37;
-            var25 = var4 + Math.sin(var74) * var37;
-            var23 = var2 + 0.3 + (var42 * 0.23 + var17 * (0.35 + var42 % 3 * 0.1)) % 1.0 * 3.4 * var68 + (1.0 - var68) * 1.0;
-            var27 = var17 * (4 + var42 % 5) + var42;
+            double k = Math.min(1.0, wt / 0.6);
+            double sp = 1.6 + i % 5 * 0.3;
+            double an = i * 2.399 + wt * sp * (1.0 + 0.8 * Math.max(0.0, 1.0 - wt));
+            double r = 0.5 + k * (1.1 + i % 7 * 0.35) + Math.sin(wt * 2.0 + i) * 0.2;
+            px = x + Math.cos(an) * r;
+            pz = z + Math.sin(an) * r;
+            py = y + 0.3 + (i * 0.23 + wt * (0.35 + i % 3 * 0.1)) % 1.0 * 3.4 * k + (1.0 - k) * 1.0;
+            ang = wt * (4 + i % 5) + i;
          }
 
-         double var69 = var11 * (var16 ? 1.0 : Math.min(1.0, var6 / 1.0));
-         R3.glowBillboard(page, var21, var23, var25, var29 * 1.25, R3.argb(16715824, 0.35 * var69));
-         R3.billboardRot(page, var21, var23, var25, var29, var27, R3.argb(657416, 0.95 * var69));
+         double a = a0 * (wide ? 1.0 : Math.min(1.0, t / 1.0));
+         R3.glowBillboard(page, px, py, pz, sz * 1.25, R3.argb(16715824, 0.35 * a));
+         R3.billboardRot(page, px, py, pz, sz, ang, R3.argb(657416, 0.95 * a));
       }
 
-      for (float var52 : EL_BOLTS) {
-         float var54 = var6 - var52;
-         if (!(var54 < 0.0F) && !(var54 > 0.4F)) {
-            double var57 = Math.exp(-var54 * 7.0F) * (0.5 + 0.5 * Math.abs(Math.sin(var54 * 55.0F)));
-            double var61 = var52 * 2.3;
-            double var65 = var52 == EL_BOLTS[0] ? 7.0 : 3.2;
-            double var70 = var0 + Math.cos(var61) * var65;
-            double var73 = var4 + Math.sin(var61) * var65;
-            arc(var70 + 1.5, var2 + 18.0, var73 - 1.0, var70, var2, var73, (long)(var52 * 100.0F) + (long)(var54 * 20.0F), 14, 0.9, 0.12, var57 * var11);
-            R3.glowBillboard(glow, var70, var2 + 0.3, var73, 3.0 * var57, R3.argb(16719936, 0.6 * var57 * var11));
+      for (float b : EL_BOLTS) {
+         float d = t - b;
+         if (!(d < 0.0F) && !(d > 0.4F)) {
+            double fl = Math.exp(-d * 7.0F) * (0.5 + 0.5 * Math.abs(Math.sin(d * 55.0F)));
+            double an = b * 2.3;
+            double r = b == EL_BOLTS[0] ? 7.0 : 3.2;
+            double sx = x + Math.cos(an) * r;
+            double sz2 = z + Math.sin(an) * r;
+            arc(sx + 1.5, y + 18.0, sz2 - 1.0, sx, y, sz2, (long)(b * 100.0F) + (long)(d * 20.0F), 14, 0.9, 0.12, fl * a0);
+            R3.glowBillboard(glow, sx, y + 0.3, sz2, 3.0 * fl, R3.argb(16719936, 0.6 * fl * a0));
          }
       }
 
-      if (var15 == 1 || var16) {
-         int var44 = var16 ? 3 : 1;
+      if (s == 1 || wide) {
+         int n = wide ? 3 : 1;
 
-         for (int var47 = 0; var47 < var44; var47++) {
-            long var50 = (long)(var6 * 14.0F) * 7L + var47;
-            Random var55 = new Random(var50);
-            if (!(var55.nextDouble() > (var16 ? 0.75 : 0.4))) {
-               double var58 = var55.nextDouble() * Math.PI * 2.0;
-               double var62 = var58 + 0.6 + var55.nextDouble();
-               double var66 = 0.6 + var55.nextDouble() * 0.5;
-               double var71 = 0.8 + var55.nextDouble() * 0.9;
+         for (int k = 0; k < n; k++) {
+            long seed = (long)(t * 14.0F) * 7L + k;
+            Random r = new Random(seed);
+            if (!(r.nextDouble() > (wide ? 0.75 : 0.4))) {
+               double an = r.nextDouble() * Math.PI * 2.0;
+               double an2 = an + 0.6 + r.nextDouble();
+               double r1 = 0.6 + r.nextDouble() * 0.5;
+               double r2 = 0.8 + r.nextDouble() * 0.9;
                arc(
-                  var0 + Math.cos(var58) * var66,
-                  var2 + 1.4 + var55.nextDouble() * 0.9,
-                  var4 + Math.sin(var58) * var66,
-                  var0 + Math.cos(var62) * var71,
-                  var2 + 0.1 + var55.nextDouble() * 0.5,
-                  var4 + Math.sin(var62) * var71,
-                  var50,
+                  x + Math.cos(an) * r1,
+                  y + 1.4 + r.nextDouble() * 0.9,
+                  z + Math.sin(an) * r1,
+                  x + Math.cos(an2) * r2,
+                  y + 0.1 + r.nextDouble() * 0.5,
+                  z + Math.sin(an2) * r2,
+                  seed,
                   7,
                   0.22,
                   0.035,
-                  0.9 * var11
+                  0.9 * a0
                );
             }
          }
       }
 
-      if (var6 > EL_CUTS[2] - 0.1) {
-         double var45 = Math.min(1.0, (var6 - EL_CUTS[2] + 0.1) / 0.5) * var9;
-         double var51 = 0.85 + 0.15 * Math.sin(var6 * 31.0F);
-         double[] var56 = eyeAt(var0, var2, var4);
-         R3.glowBillboard(glow, var56[0], var56[1], var56[2], (0.32 + 0.1 * var13) * var45 * var51, R3.argb(16714270, 0.85 * var45));
-         R3.glowBillboard(core, var56[0], var56[1], var56[2], 0.07 * var45, R3.argb(16765136, var45));
-         if (var16) {
-            double var59 = Math.toRadians(baseYaw);
-            double var63 = -Math.cos(var59);
-            double var67 = -Math.sin(var59);
-            R3.line(
-               var56[0],
-               var56[1],
-               var56[2],
-               var56[0] + var63 * 0.7,
-               var56[1] + 0.08,
-               var56[2] + var67 * 0.7,
-               0.045,
-               R3.argb(16715824, 0.85 * var45),
-               R3.argb(16715824, 0.0)
-            );
+      if (t > EL_CUTS[2] - 0.1) {
+         double e = Math.min(1.0, (t - EL_CUTS[2] + 0.1) / 0.5) * fadeOut;
+         double flick = 0.85 + 0.15 * Math.sin(t * 31.0F);
+         double[] ep = eyeAt(x, y, z);
+         R3.glowBillboard(glow, ep[0], ep[1], ep[2], (0.32 + 0.1 * hb) * e * flick, R3.argb(16714270, 0.85 * e));
+         R3.glowBillboard(core, ep[0], ep[1], ep[2], 0.07 * e, R3.argb(16765136, e));
+         if (wide) {
+            double th = Math.toRadians(baseYaw);
+            double rx = -Math.cos(th);
+            double rz = -Math.sin(th);
+            R3.line(ep[0], ep[1], ep[2], ep[0] + rx * 0.7, ep[1] + 0.08, ep[2] + rz * 0.7, 0.045, R3.argb(16715824, 0.85 * e), R3.argb(16715824, 0.0));
          }
       }
    }
 
-   private static void cone(double var0, double var2, double var4, double var6, double var8, int var10, int var11, int var12) {
-      for (int var13 = 0; var13 < var10; var13++) {
-         double var14 = var13 * Math.PI * 2.0 / var10;
-         double var16 = (var13 + 1) * Math.PI * 2.0 / var10;
-         double var18 = var0 + Math.cos(var14) * var6;
-         double var20 = var4 + Math.sin(var14) * var6;
-         double var22 = var0 + Math.cos(var16) * var6;
-         double var24 = var4 + Math.sin(var16) * var6;
-         int var26 = var13 % 2 == 0
-            ? var11
-            : R3.argb((var11 >> 16 & 0xFF) * 9 / 10 << 16 | (var11 >> 8 & 0xFF) * 9 / 10 << 8 | (var11 & 0xFF) * 9 / 10, (var11 >>> 24) / 255.0);
-         R3.quad(var18, var2, var20, var22, var2, var24, var0, var2 + var8, var4, var0, var2 + var8, var4, var26, var26, var12, var12);
-         R3.quad(var18, var2, var20, var22, var2, var24, var0, var2 + 0.05, var4, var0, var2 + 0.05, var4, var11, var11, var11, var11);
+   private static void cone(double x, double y0, double z, double r, double h, int seg, int cBottom, int cTop) {
+      for (int i = 0; i < seg; i++) {
+         double a0 = i * Math.PI * 2.0 / seg;
+         double a1 = (i + 1) * Math.PI * 2.0 / seg;
+         double x0 = x + Math.cos(a0) * r;
+         double z0 = z + Math.sin(a0) * r;
+         double x1 = x + Math.cos(a1) * r;
+         double z1 = z + Math.sin(a1) * r;
+         int shade = i % 2 == 0
+            ? cBottom
+            : R3.argb((cBottom >> 16 & 0xFF) * 9 / 10 << 16 | (cBottom >> 8 & 0xFF) * 9 / 10 << 8 | (cBottom & 0xFF) * 9 / 10, (cBottom >>> 24) / 255.0);
+         R3.quad(x0, y0, z0, x1, y0, z1, x, y0 + h, z, x, y0 + h, z, shade, shade, cTop, cTop);
+         R3.quad(x0, y0, z0, x1, y0, z1, x, y0 + 0.05, z, x, y0 + 0.05, z, cBottom, cBottom, cBottom, cBottom);
       }
    }
 
-   private static void box(double var0, double var2, double var4, double var6, double var8, double var10, int var12, int var13) {
-      R3.quad(var0, var8, var4, var6, var8, var4, var6, var8, var10, var0, var8, var10, var12);
-      R3.quad(var0, var2, var4, var6, var2, var4, var6, var8, var4, var0, var8, var4, var13);
-      R3.quad(var0, var2, var10, var6, var2, var10, var6, var8, var10, var0, var8, var10, var13);
-      R3.quad(var0, var2, var4, var0, var2, var10, var0, var8, var10, var0, var8, var4, var13);
-      R3.quad(var6, var2, var4, var6, var2, var10, var6, var8, var10, var6, var8, var4, var13);
+   private static void box(double x0, double y0, double z0, double x1, double y1, double z1, int top, int side) {
+      R3.quad(x0, y1, z0, x1, y1, z0, x1, y1, z1, x0, y1, z1, top);
+      R3.quad(x0, y0, z0, x1, y0, z0, x1, y1, z0, x0, y1, z0, side);
+      R3.quad(x0, y0, z1, x1, y0, z1, x1, y1, z1, x0, y1, z1, side);
+      R3.quad(x0, y0, z0, x0, y0, z1, x0, y1, z1, x0, y1, z0, side);
+      R3.quad(x1, y0, z0, x1, y0, z1, x1, y1, z1, x1, y1, z0, side);
    }
 
-   private static void xmasFx(double var0, double var2, double var4, float var6) {
-      double var7 = Math.toRadians(baseYaw);
-      double var9 = -Math.sin(var7);
-      double var11 = Math.cos(var7);
-      double var13 = Math.min(1.0, Math.max(0.0, (dur - var6) / 0.8));
-      double var15 = var0 - var9 * 2.2;
-      double var17 = var4 - var11 * 2.2;
-      double var19 = Ease.outBack(Math.max(0.0F, Math.min(1.0F, (var6 - 0.5F) / 2.0F)));
-      if (var19 > 0.01) {
-         double var21 = var19;
-         box(
-            var15 - 0.15 * var19,
-            var2,
-            var17 - 0.15 * var19,
-            var15 + 0.15 * var19,
-            var2 + 0.5 * var19,
-            var17 + 0.15 * var19,
-            R3.argb(5913118, var13),
-            R3.argb(4861462, var13)
-         );
-         double[][] var23 = new double[][]{{0.45, 1.3, 1.2}, {1.05, 1.05, 1.0}, {1.6, 0.8, 0.85}, {2.1, 0.5, 0.7}};
+   private static void xmasFx(double x, double y, double z, float t) {
+      double th = Math.toRadians(baseYaw);
+      double fx = -Math.sin(th);
+      double fz = Math.cos(th);
+      double out = Math.min(1.0, Math.max(0.0, (dur - t) / 0.8));
+      double tx = x - fx * 2.2;
+      double tz = z - fz * 2.2;
+      double grow = Ease.outBack(Math.max(0.0F, Math.min(1.0F, (t - 0.5F) / 2.0F)));
+      if (grow > 0.01) {
+         double sc = grow;
+         box(tx - 0.15 * grow, y, tz - 0.15 * grow, tx + 0.15 * grow, y + 0.5 * grow, tz + 0.15 * grow, R3.argb(5913118, out), R3.argb(4861462, out));
+         double[][] tiers = new double[][]{{0.45, 1.3, 1.2}, {1.05, 1.05, 1.0}, {1.6, 0.8, 0.85}, {2.1, 0.5, 0.7}};
 
-         for (double[] var27 : var23) {
-            cone(var15, var2 + var27[0] * var21, var17, var27[1] * var21, var27[2] * var21, 20, R3.argb(944692, var13), R3.argb(3127391, var13));
+         for (double[] tr : tiers) {
+            cone(tx, y + tr[0] * sc, tz, tr[1] * sc, tr[2] * sc, 20, R3.argb(944692, out), R3.argb(3127391, out));
          }
 
-         for (double[] var58 : var23) {
-            R3.ring(
-               var15,
-               var2 + var58[0] * var21 + 0.02,
-               var17,
-               var58[1] * var21 * 0.82,
-               var58[1] * var21 * 0.98,
-               28,
-               R3.argb(16777215, 0.55 * var13),
-               R3.argb(15266559, 0.2 * var13),
-               0.0
-            );
+         for (double[] tr : tiers) {
+            R3.ring(tx, y + tr[0] * sc + 0.02, tz, tr[1] * sc * 0.82, tr[1] * sc * 0.98, 28, R3.argb(16777215, 0.55 * out), R3.argb(15266559, 0.2 * out), 0.0);
          }
 
-         double var51 = Math.max(0.0, Math.min(1.0, (var6 - 2.2) / 1.0));
-         byte var56 = 46;
+         double lit = Math.max(0.0, Math.min(1.0, (t - 2.2) / 1.0));
+         int n = 46;
 
-         for (int var59 = 0; var59 < var56 * var51; var59++) {
-            double var28 = (double)var59 / var56;
-            double var30 = 0.5 + var28 * 2.3;
-            double var32 = (1.3 - var28 * 1.15) * 0.98;
-            double var34 = var28 * Math.PI * 9.0 + 0.4;
-            double var36 = 0.6 + 0.4 * Math.sin(var6 * 5.0F + var59 * 1.7);
-            int var38 = XB[var59 % XB.length];
-            double var39 = var15 + Math.cos(var34) * var32 * var21;
-            double var41 = var2 + var30 * var21;
-            double var43 = var17 + Math.sin(var34) * var32 * var21;
-            R3.glowBillboard(glow, var39, var41, var43, 0.28 * var36, R3.argb(var38, 0.55 * var13));
-            R3.glowBillboard(core, var39, var41, var43, 0.07, R3.argb(var38, var13));
+         for (int i = 0; i < n * lit; i++) {
+            double u = (double)i / n;
+            double hy = 0.5 + u * 2.3;
+            double r = (1.3 - u * 1.15) * 0.98;
+            double an = u * Math.PI * 9.0 + 0.4;
+            double tw = 0.6 + 0.4 * Math.sin(t * 5.0F + i * 1.7);
+            int c = XB[i % XB.length];
+            double px = tx + Math.cos(an) * r * sc;
+            double py = y + hy * sc;
+            double pz = tz + Math.sin(an) * r * sc;
+            R3.glowBillboard(glow, px, py, pz, 0.28 * tw, R3.argb(c, 0.55 * out));
+            R3.glowBillboard(core, px, py, pz, 0.07, R3.argb(c, out));
          }
 
-         double var60 = Math.max(0.0, Math.min(1.0, (var6 - 3.1) / 0.3));
-         if (var60 > 0.0) {
-            double var29 = var2 + 2.95 * var21;
-            double var31 = 0.85 + 0.15 * Math.sin(var6 * 6.0F);
-            R3.glowBillboard(glow, var15, var29, var17, 1.4 * var60 * var31, R3.argb(16766571, 0.8 * var13));
-            R3.billboardRot(star, var15, var29, var17, 0.55 * var60, var6 * 0.8, R3.argb(16773808, var13));
-            double var33 = var6 - 3.1;
-            if (var33 > 0.0 && var33 < 1.4) {
-               double var35 = 1.0 - var33 / 1.4;
-               R3.ring(var15, var29, var17, var33 * 4.0, var33 * 4.0 + 0.25, 48, R3.argb(16769162, 0.0), R3.argb(16774864, 0.8 * var35), 0.0);
+         double st = Math.max(0.0, Math.min(1.0, (t - 3.1) / 0.3));
+         if (st > 0.0) {
+            double ty = y + 2.95 * sc;
+            double pul = 0.85 + 0.15 * Math.sin(t * 6.0F);
+            R3.glowBillboard(glow, tx, ty, tz, 1.4 * st * pul, R3.argb(16766571, 0.8 * out));
+            R3.billboardRot(star, tx, ty, tz, 0.55 * st, t * 0.8, R3.argb(16773808, out));
+            double b = t - 3.1;
+            if (b > 0.0 && b < 1.4) {
+               double a = 1.0 - b / 1.4;
+               R3.ring(tx, ty, tz, b * 4.0, b * 4.0 + 0.25, 48, R3.argb(16769162, 0.0), R3.argb(16774864, 0.8 * a), 0.0);
 
-               for (int var37 = 0; var37 < 40; var37++) {
-                  double var75 = (var37 + 0.5) / 40.0;
-                  double var40 = Math.acos(1.0 - 2.0 * var75);
-                  double var42 = var37 * 2.399;
-                  double var44 = 3.5 * (1.0 - Math.exp(-var33 * 3.0));
+               for (int i = 0; i < 40; i++) {
+                  double u = (i + 0.5) / 40.0;
+                  double phi = Math.acos(1.0 - 2.0 * u);
+                  double an = i * 2.399;
+                  double sp = 3.5 * (1.0 - Math.exp(-b * 3.0));
                   R3.glowBillboard(
                      core,
-                     var15 + Math.sin(var40) * Math.cos(var42) * var44,
-                     var29 + Math.cos(var40) * var44 - var33 * var33 * 0.8,
-                     var17 + Math.sin(var40) * Math.sin(var42) * var44,
+                     tx + Math.sin(phi) * Math.cos(an) * sp,
+                     ty + Math.cos(phi) * sp - b * b * 0.8,
+                     tz + Math.sin(phi) * Math.sin(an) * sp,
                      0.18,
-                     R3.argb(XB[var37 % XB.length], var35)
+                     R3.argb(XB[i % XB.length], a)
                   );
                }
             }
          }
 
-         int[][] var63 = new int[][]{{14033464, 16040274}, {1739342, 14886459}, {1982074, 16040274}, {15249978, 11867436}, {7024560, 16050640}};
+         int[][] gc = new int[][]{{14033464, 16040274}, {1739342, 14886459}, {1982074, 16040274}, {15249978, 11867436}, {7024560, 16050640}};
 
-         for (int var65 = 0; var65 < 5; var65++) {
-            double var67 = Math.max(0.0, Math.min(1.0, (var6 - 3.5 - var65 * 0.18) / 0.35));
-            if (!(var67 <= 0.0)) {
-               double var69 = Ease.outBack((float)var67);
-               double var72 = var65 * 1.25 + 0.3;
-               double var74 = 1.25;
-               double var77 = var15 + Math.cos(var72) * var74;
-               double var79 = var17 + Math.sin(var72) * var74;
-               double var80 = (0.22 + var65 % 2 * 0.06) * var69;
-               int var45 = R3.argb(var63[var65][0], var13);
-               int var46 = R3.argb(var63[var65][1], var13);
-               box(var77 - var80, var2, var79 - var80, var77 + var80, var2 + var80 * 1.6, var79 + var80, var45, var45);
-               box(
-                  var77 - var80 * 1.02, var2 + var80 * 1.6, var79 - var80 * 0.18, var77 + var80 * 1.02, var2 + var80 * 1.62, var79 + var80 * 0.18, var46, var46
-               );
-               box(
-                  var77 - var80 * 0.18, var2 + var80 * 1.6, var79 - var80 * 1.02, var77 + var80 * 0.18, var2 + var80 * 1.62, var79 + var80 * 1.02, var46, var46
-               );
+         for (int i = 0; i < 5; i++) {
+            double gt = Math.max(0.0, Math.min(1.0, (t - 3.5 - i * 0.18) / 0.35));
+            if (!(gt <= 0.0)) {
+               double pop = Ease.outBack((float)gt);
+               double an = i * 1.25 + 0.3;
+               double r = 1.25;
+               double gx = tx + Math.cos(an) * r;
+               double gz = tz + Math.sin(an) * r;
+               double s2 = (0.22 + i % 2 * 0.06) * pop;
+               int bc = R3.argb(gc[i][0], out);
+               int rc = R3.argb(gc[i][1], out);
+               box(gx - s2, y, gz - s2, gx + s2, y + s2 * 1.6, gz + s2, bc, bc);
+               box(gx - s2 * 1.02, y + s2 * 1.6, gz - s2 * 0.18, gx + s2 * 1.02, y + s2 * 1.62, gz + s2 * 0.18, rc, rc);
+               box(gx - s2 * 0.18, y + s2 * 1.6, gz - s2 * 1.02, gx + s2 * 0.18, y + s2 * 1.62, gz + s2 * 1.02, rc, rc);
             }
          }
       }
 
-      for (int var47 = 0; var47 < 140; var47++) {
-         double var22 = (var47 * 0.071 + var6 * 0.12) % 1.0;
-         double var52 = var47 * 2.399;
-         double var57 = 0.6 + var47 % 9 * 0.6;
-         double var62 = var0 + Math.cos(var52) * var57 + Math.sin(var6 + var47) * 0.2;
-         double var66 = var4 + Math.sin(var52) * var57;
-         R3.glowBillboard(core, var62, var2 + 6.0 - var22 * 6.2, var66, 0.05 + var47 % 3 * 0.02, R3.argb(16777215, 0.85 * var13 * Math.min(1.0, var22 * 4.0)));
+      for (int ix = 0; ix < 140; ix++) {
+         double life = (ix * 0.071 + t * 0.12) % 1.0;
+         double an = ix * 2.399;
+         double r = 0.6 + ix % 9 * 0.6;
+         double sx = x + Math.cos(an) * r + Math.sin(t + ix) * 0.2;
+         double sz = z + Math.sin(an) * r;
+         R3.glowBillboard(core, sx, y + 6.0 - life * 6.2, sz, 0.05 + ix % 3 * 0.02, R3.argb(16777215, 0.85 * out * Math.min(1.0, life * 4.0)));
       }
 
-      double var48 = (var6 - 4.3) / 2.6;
-      if (var48 > 0.0 && var48 < 1.0) {
-         double var49 = -Math.cos(var7);
-         double var54 = -Math.sin(var7);
-         double var61 = var0 - var49 * (14.0 - 28.0 * var48) - var9 * 8.0;
-         double var64 = var4 - var54 * (14.0 - 28.0 * var48) - var11 * 8.0;
-         double var68 = var2 + 9.0 + Math.sin(var48 * Math.PI) * 2.0;
-         R3.glowBillboard(glow, var61, var68, var64, 1.2, R3.argb(16769952, 0.8 * var13));
-         R3.glowBillboard(core, var61, var68, var64, 0.35, R3.argb(16724032, var13));
+      double sl = (t - 4.3) / 2.6;
+      if (sl > 0.0 && sl < 1.0) {
+         double rx = -Math.cos(th);
+         double rz = -Math.sin(th);
+         double sx = x - rx * (14.0 - 28.0 * sl) - fx * 8.0;
+         double sz = z - rz * (14.0 - 28.0 * sl) - fz * 8.0;
+         double sy = y + 9.0 + Math.sin(sl * Math.PI) * 2.0;
+         R3.glowBillboard(glow, sx, sy, sz, 1.2, R3.argb(16769952, 0.8 * out));
+         R3.glowBillboard(core, sx, sy, sz, 0.35, R3.argb(16724032, out));
 
-         for (int var70 = 1; var70 < 30; var70++) {
-            double var71 = var48 - var70 * 0.012;
-            if (var71 < 0.0) {
+         for (int k = 1; k < 30; k++) {
+            double q = sl - k * 0.012;
+            if (q < 0.0) {
                break;
             }
 
-            double var73 = var0 - var49 * (14.0 - 28.0 * var71) - var9 * 8.0;
-            double var76 = var4 - var54 * (14.0 - 28.0 * var71) - var11 * 8.0;
-            double var78 = var2 + 9.0 + Math.sin(var71 * Math.PI) * 2.0;
-            R3.glowBillboard(
-               star,
-               var73,
-               var78 + Math.sin(var70 * 1.3 + var6 * 9.0F) * 0.1,
-               var76,
-               0.25 * (1.0 - var70 / 30.0),
-               R3.argb(XB[var70 % XB.length], (1.0 - var70 / 30.0) * var13)
-            );
+            double px = x - rx * (14.0 - 28.0 * q) - fx * 8.0;
+            double pz = z - rz * (14.0 - 28.0 * q) - fz * 8.0;
+            double py = y + 9.0 + Math.sin(q * Math.PI) * 2.0;
+            R3.glowBillboard(star, px, py + Math.sin(k * 1.3 + t * 9.0F) * 0.1, pz, 0.25 * (1.0 - k / 30.0), R3.argb(XB[k % XB.length], (1.0 - k / 30.0) * out));
          }
       }
    }
 
-   private static Identifier tex(String var0) {
-      return TEX.computeIfAbsent(var0, var0x -> {
-         Identifier var1 = Identifier.fromNamespaceAndPath("legoclient", "cutscene/" + var0x);
+   private static Identifier tex(String id) {
+      return TEX.computeIfAbsent(id, k -> {
+         Identifier t = Identifier.fromNamespaceAndPath("legoclient", "cutscene/" + k);
 
          try {
-            Tx.register(var1, AmbientTex.paint(var0x), 128, 128, true);
+            Tx.register(t, AmbientTex.paint(k), 128, 128, true);
          } catch (Throwable var3) {
          }
 
-         return var1;
+         return t;
       });
    }
 
@@ -1364,8 +1292,8 @@ public final class Cutscenes {
          }
       );
 
-      for (Cutscenes.Cue[] var1 : CUES.values()) {
-         Arrays.sort(var1, (var0, var1x) -> Float.compare(var0.t, var1x.t));
+      for (Cutscenes.Cue[] cs : CUES.values()) {
+         Arrays.sort(cs, (a, b) -> Float.compare(a.t, b.t));
       }
 
       DA_CUTS = new float[]{0.0F, 1.7F, 2.7F, 3.9F, 5.2F, 6.1F};

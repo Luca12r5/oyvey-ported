@@ -23,8 +23,8 @@ public final class EmoteWheelView extends View {
    private int lastSel = -1;
    private boolean played;
 
-   public EmoteWheelView(int var1) {
-      this.holdKey = var1;
+   public EmoteWheelView(int holdKey) {
+      this.holdKey = holdKey;
    }
 
    @Override
@@ -54,37 +54,37 @@ public final class EmoteWheelView extends View {
    @Override
    public void draw() {
       Style.update();
-      float var1 = Ease.outCubic(this.open);
-      int var2 = this.p(118.0);
-      int var3 = Math.round(var2 * 0.42F);
-      int var4 = this.W / 2;
-      int var5 = this.H / 2;
-      Gx.pushAlpha(var1);
-      Gx.Img var6 = Gx.painted(
+      float o = Ease.outCubic(this.open);
+      int R = this.p(118.0);
+      int r0 = Math.round(R * 0.42F);
+      int cx = this.W / 2;
+      int cy = this.H / 2;
+      Gx.pushAlpha(o);
+      Gx.Img dim = Gx.painted(
          "wheel:dim",
          256,
          256,
-         var0 -> {
-            var0.setPaint(
+         g -> {
+            g.setPaint(
                new RadialGradientPaint(new Float(128.0F, 128.0F), 181.0F, new float[]{0.0F, 1.0F}, new Color[]{new Color(0, 0, 0, 150), new Color(0, 0, 0, 60)})
             );
-            var0.fillRect(0, 0, 256, 256);
+            g.fillRect(0, 0, 256, 256);
          }
       );
-      if (var6 != null) {
-         Gx.image(var6, 0, 0, this.W, this.H, -1);
+      if (dim != null) {
+         Gx.image(dim, 0, 0, this.W, this.H, -1);
       }
 
       Gx.popAlpha();
-      int var7 = this.count();
-      float var8 = this.mx - var4;
-      float var9 = this.my - var5;
-      double var10 = Math.sqrt(var8 * var8 + var9 * var9);
+      int n = this.count();
+      float dx = this.mx - cx;
+      float dy = this.my - cy;
+      double dist = Math.sqrt(dx * dx + dy * dy);
       this.sel = -1;
-      if (var7 > 0 && var10 > var3 * 0.55) {
-         double var12 = Math.atan2(var9, var8) + (Math.PI / 2) + Math.PI / var7;
-         var12 = (var12 % (Math.PI * 2) + (Math.PI * 2)) % (Math.PI * 2);
-         this.sel = Math.min(var7 - 1, (int)(var12 / ((Math.PI * 2) / Math.max(1, var7))));
+      if (n > 0 && dist > r0 * 0.55) {
+         double ang = Math.atan2(dy, dx) + (Math.PI / 2) + Math.PI / n;
+         ang = (ang % (Math.PI * 2) + (Math.PI * 2)) % (Math.PI * 2);
+         this.sel = Math.min(n - 1, (int)(ang / ((Math.PI * 2) / Math.max(1, n))));
       }
 
       if (this.sel != this.lastSel && this.sel >= 0) {
@@ -93,139 +93,118 @@ public final class EmoteWheelView extends View {
 
       this.lastSel = this.sel;
       Gx.push();
-      Gx.scaleAt(var4, var5, 0.85F + 0.15F * Ease.outBack(this.open));
-      Gx.pushAlpha(var1);
-      int var32 = var2 * 2 + this.p(24.0);
-      int var13 = this.p(12.0);
-      int var14 = Math.max(1, var7);
-      float var15 = this.P;
-      int var16 = Style.surface;
-      int var17 = Style.accent;
-      Gx.shadow(var4 - var2, var5 - var2, var2 * 2, var2 * 2, var2, this.p(18.0), 0.55F);
-      Gx.Img var18 = Gx.painted(
-         "wheel:base:" + var14 + ":" + var32 + ":" + Integer.toHexString(var16) + ":" + Integer.toHexString(Style.stroke),
-         var32,
-         var32,
-         var6x -> {
-            double var7x = var32 / 2.0;
-            Area var9x = new Area(new Double(var7x - var2, var7x - var2, var2 * 2, var2 * 2));
-            var9x.subtract(new Area(new Double(var7x - var3, var7x - var3, var3 * 2, var3 * 2)));
-            var6x.setColor(new Color(var16, true));
-            var6x.fill(var9x);
-            var6x.setColor(new Color(Style.stroke, true));
-            var6x.setStroke(new BasicStroke(Math.max(1.0F, var15 * 0.8F)));
+      Gx.scaleAt(cx, cy, 0.85F + 0.15F * Ease.outBack(this.open));
+      Gx.pushAlpha(o);
+      int size = R * 2 + this.p(24.0);
+      int pad = this.p(12.0);
+      int nn = Math.max(1, n);
+      float P0 = this.P;
+      int base = Style.surface;
+      int accent = Style.accent;
+      Gx.shadow(cx - R, cy - R, R * 2, R * 2, R, this.p(18.0), 0.55F);
+      Gx.Img wheel = Gx.painted(
+         "wheel:base:" + nn + ":" + size + ":" + Integer.toHexString(base) + ":" + Integer.toHexString(Style.stroke),
+         size,
+         size,
+         g -> {
+            double c = size / 2.0;
+            Area ring = new Area(new Double(c - R, c - R, R * 2, R * 2));
+            ring.subtract(new Area(new Double(c - r0, c - r0, r0 * 2, r0 * 2)));
+            g.setColor(new Color(base, true));
+            g.fill(ring);
+            g.setColor(new Color(Style.stroke, true));
+            g.setStroke(new BasicStroke(Math.max(1.0F, P0 * 0.8F)));
 
-            for (int var10x = 0; var10x < var14; var10x++) {
-               double var11 = (-Math.PI / 2) + (Math.PI * 2) * (var10x + 0.5) / var14;
-               var6x.drawLine(
-                  (int)(var7x + Math.cos(var11) * (var3 + 2)),
-                  (int)(var7x + Math.sin(var11) * (var3 + 2)),
-                  (int)(var7x + Math.cos(var11) * (var2 - 2)),
-                  (int)(var7x + Math.sin(var11) * (var2 - 2))
+            for (int i = 0; i < nn; i++) {
+               double a = (-Math.PI / 2) + (Math.PI * 2) * (i + 0.5) / nn;
+               g.drawLine(
+                  (int)(c + Math.cos(a) * (r0 + 2)), (int)(c + Math.sin(a) * (r0 + 2)), (int)(c + Math.cos(a) * (R - 2)), (int)(c + Math.sin(a) * (R - 2))
                );
             }
 
-            var6x.draw(new Double(var7x - var2 + 0.5, var7x - var2 + 0.5, var2 * 2 - 1, var2 * 2 - 1));
-            var6x.draw(new Double(var7x - var3, var7x - var3, var3 * 2, var3 * 2));
+            g.draw(new Double(c - R + 0.5, c - R + 0.5, R * 2 - 1, R * 2 - 1));
+            g.draw(new Double(c - r0, c - r0, r0 * 2, r0 * 2));
          }
       );
-      if (var18 != null) {
-         Gx.image(var18, var4 - var32 / 2, var5 - var32 / 2, var32, var32, -1);
+      if (wheel != null) {
+         Gx.image(wheel, cx - size / 2, cy - size / 2, size, size, -1);
       }
 
-      for (int var19 = 0; var19 < var7; var19++) {
-         float var20 = Ease.to("wheel:h" + var19, var19 == this.sel ? 1.0F : 0.0F, 16.0F);
-         if (!(var20 < 0.01F)) {
-            final int slotIndex = var19;
-            Gx.Img var22 = Gx.painted(
-               "wheel:w" + var14 + ":" + var19 + ":" + var32,
-               var32,
-               var32,
-               var6x -> {
-                  double var7x = var32 / 2.0;
-                  double var9x = 90.0 - 360.0 * (slotIndex - 0.5) / var14;
-                  Area var11 = new Area(
-                     new java.awt.geom.Arc2D.Double(
-                        var7x - var2 - var13 * 0.4,
-                        var7x - var2 - var13 * 0.4,
-                        (var2 + var13 * 0.4) * 2.0,
-                        (var2 + var13 * 0.4) * 2.0,
-                        var9x,
-                        -360.0 / var14,
-                        2
-                     )
+      for (int i = 0; i < n; i++) {
+         float h = Ease.to("wheel:h" + i, i == this.sel ? 1.0F : 0.0F, 16.0F);
+         if (!(h < 0.01F)) {
+            Gx.Img wedge = Gx.painted(
+               "wheel:w" + nn + ":" + i + ":" + size,
+               size,
+               size,
+               g -> {
+                  double c = size / 2.0;
+                  double start = 90.0 - 360.0 * (i - 0.5) / nn;
+                  Area a = new Area(
+                     new java.awt.geom.Arc2D.Double(c - R - pad * 0.4, c - R - pad * 0.4, (R + pad * 0.4) * 2.0, (R + pad * 0.4) * 2.0, start, -360.0 / nn, 2)
                   );
-                  var11.subtract(new Area(new Double(var7x - var3, var7x - var3, var3 * 2, var3 * 2)));
-                  var6x.setColor(Color.WHITE);
-                  var6x.fill(var11);
+                  a.subtract(new Area(new Double(c - r0, c - r0, r0 * 2, r0 * 2)));
+                  g.setColor(Color.WHITE);
+                  g.fill(a);
                }
             );
-            if (var22 != null) {
-               Gx.image(var22, var4 - var32 / 2, var5 - var32 / 2, var32, var32, Gx.withAlpha(var17, 0.28F * var20));
+            if (wedge != null) {
+               Gx.image(wedge, cx - size / 2, cy - size / 2, size, size, Gx.withAlpha(accent, 0.28F * h));
             }
          }
       }
 
-      for (int var33 = 0; var33 < var7; var33++) {
-         EmoteLib.Emote var36 = EmoteLib.get(EmoteLib.WHEEL.get(var33));
-         if (var36 != null) {
-            float var21 = Ease.to("wheel:h" + var33, var33 == this.sel ? 1.0F : 0.0F, 16.0F);
-            double var39 = (-Math.PI / 2) + (Math.PI * 2) * var33 / var7;
-            float var24 = (var2 + var3) / 2.0F + this.pf(4.0) * var21;
-            float var25 = var4 + (float)Math.cos(var39) * var24;
-            float var26 = var5 + (float)Math.sin(var39) * var24;
-            int var27 = Math.round(this.pf(40.0) * (1.0F + 0.15F * var21));
-            int var28 = Math.max(16, this.p(44.0));
-            Gx.Img var29 = Thumbs.get(
-               "emote:w:" + var36.id, var28, var28, () -> Raster.renderPose(var36.pose(Math.min(var36.duration * 0.4F, 1.1F)), var28, var28, 22.0F, 8.0F, 0)
-            );
-            if (var29 != null) {
-               Gx.image(var29, Math.round(var25 - var27 / 2.0F), Math.round(var26 - var27 / 2.0F - this.pf(5.0)), var27, var27, -1);
+      for (int ix = 0; ix < n; ix++) {
+         EmoteLib.Emote e = EmoteLib.get(EmoteLib.WHEEL.get(ix));
+         if (e != null) {
+            float h = Ease.to("wheel:h" + ix, ix == this.sel ? 1.0F : 0.0F, 16.0F);
+            double a = (-Math.PI / 2) + (Math.PI * 2) * ix / n;
+            float mid = (R + r0) / 2.0F + this.pf(4.0) * h;
+            float ixx = cx + (float)Math.cos(a) * mid;
+            float iy = cy + (float)Math.sin(a) * mid;
+            int ts = Math.round(this.pf(40.0) * (1.0F + 0.15F * h));
+            int px = Math.max(16, this.p(44.0));
+            Gx.Img th = Thumbs.get("emote:w:" + e.id, px, px, () -> Raster.renderPose(e.pose(Math.min(e.duration * 0.4F, 1.1F)), px, px, 22.0F, 8.0F, 0));
+            if (th != null) {
+               Gx.image(th, Math.round(ixx - ts / 2.0F), Math.round(iy - ts / 2.0F - this.pf(5.0)), ts, ts, -1);
             } else {
-               Gx.icon(var36.icon, var25, var26 - this.pf(5.0), this.pf(16.0), Gx.mix(Style.sub, var17, var21));
+               Gx.icon(e.icon, ixx, iy - this.pf(5.0), this.pf(16.0), Gx.mix(Style.sub, accent, h));
             }
 
-            float var30 = this.pf(6.8F);
-            Gx.textCenter(
-               Fonts.ellipsize(var36.name, 3, var30, (var2 - var3) * 0.95F), var25, var26 + this.pf(19.0), var30, 3, Gx.mix(Style.sub, Style.text, var21)
-            );
+            float fs = this.pf(6.8F);
+            Gx.textCenter(Fonts.ellipsize(e.name, 3, fs, (R - r0) * 0.95F), ixx, iy + this.pf(19.0), fs, 3, Gx.mix(Style.sub, Style.text, h));
          }
       }
 
-      Gx.circle(var4, var5, var3 - this.p(4.0), Style.bg);
-      if (this.sel >= 0 && this.sel < var7) {
-         EmoteLib.Emote var34 = EmoteLib.get(EmoteLib.WHEEL.get(this.sel));
-         if (var34 != null) {
-            Gx.glow(var4, var5, var3, Gx.withAlpha(var17, 0.18F));
-            Gx.textCenter(var34.name, var4, var5 - this.pf(4.0), this.pf(10.0), 3, Style.text);
+      Gx.circle(cx, cy, r0 - this.p(4.0), Style.bg);
+      if (this.sel >= 0 && this.sel < n) {
+         EmoteLib.Emote e = EmoteLib.get(EmoteLib.WHEEL.get(this.sel));
+         if (e != null) {
+            Gx.glow(cx, cy, r0, Gx.withAlpha(accent, 0.18F));
+            Gx.textCenter(e.name, cx, cy - this.pf(4.0), this.pf(10.0), 3, Style.text);
             Gx.textCenter(
-               var34.loop ? "Loop · bewegen stoppt" : String.format(Locale.ROOT, "%.1f s", var34.duration),
-               var4,
-               var5 + this.pf(10.0),
-               this.pf(6.6F),
-               2,
-               Style.sub
+               e.loop ? "Loop · bewegen stoppt" : String.format(Locale.ROOT, "%.1f s", e.duration), cx, cy + this.pf(10.0), this.pf(6.6F), 2, Style.sub
             );
          }
-      } else if (var7 == 0) {
-         Gx.textCenter("Keine Favoriten", var4, var5 - this.pf(4.0), this.pf(8.4F), 3, Style.text);
-         Gx.textCenter("Stern im Emote-Menü", var4, var5 + this.pf(9.0), this.pf(6.4F), 1, Style.sub);
+      } else if (n == 0) {
+         Gx.textCenter("Keine Favoriten", cx, cy - this.pf(4.0), this.pf(8.4F), 3, Style.text);
+         Gx.textCenter("Stern im Emote-Menü", cx, cy + this.pf(9.0), this.pf(6.4F), 1, Style.sub);
       } else {
-         Gx.icon("emote", var4, var5 - this.pf(6.0), this.pf(20.0), Style.sub);
-         Gx.textCenter("Emote wählen", var4, var5 + this.pf(14.0), this.pf(6.8F), 2, Style.muted);
+         Gx.icon("emote", cx, cy - this.pf(6.0), this.pf(20.0), Style.sub);
+         Gx.textCenter("Emote wählen", cx, cy + this.pf(14.0), this.pf(6.8F), 2, Style.muted);
       }
 
       Gx.popAlpha();
       Gx.pop();
-      Gx.pushAlpha(var1);
-      String var35 = "Maus zeigen · loslassen oder klicken = abspielen · Esc = abbrechen";
-      float var37 = this.pf(7.2F);
-      int var38 = Math.round(Gx.width(var35, var37, 2)) + this.p(24.0);
-      int var40 = this.p(22.0);
-      int var23 = var4 - var38 / 2;
-      int var41 = var5 + var2 + this.p(22.0);
-      Gx.rect(var23, var41, var38, var40, var40 / 2, Gx.withAlpha(Style.bg, 0.85F));
-      Gx.textCenter(var35, var4, var41 + var40 / 2.0F, var37, 2, Style.sub);
+      Gx.pushAlpha(o);
+      String hint = "Maus zeigen · loslassen oder klicken = abspielen · Esc = abbrechen";
+      float fs = this.pf(7.2F);
+      int hw = Math.round(Gx.width(hint, fs, 2)) + this.p(24.0);
+      int hh = this.p(22.0);
+      int hx = cx - hw / 2;
+      int hy = cy + R + this.p(22.0);
+      Gx.rect(hx, hy, hw, hh, hh / 2, Gx.withAlpha(Style.bg, 0.85F));
+      Gx.textCenter(hint, cx, hy + hh / 2.0F, fs, 2, Style.sub);
       Gx.popAlpha();
    }
 
@@ -233,8 +212,8 @@ public final class EmoteWheelView extends View {
       if (!this.played && this.host != null) {
          this.played = true;
          if (this.sel >= 0 && this.sel < this.count()) {
-            int var1 = EmoteLib.index(EmoteLib.WHEEL.get(this.sel));
-            this.host.closeThen(() -> Env.playEmote.accept(var1));
+            int idx = EmoteLib.index(EmoteLib.WHEEL.get(this.sel));
+            this.host.closeThen(() -> Env.playEmote.accept(idx));
          } else {
             this.host.close();
          }
@@ -242,8 +221,8 @@ public final class EmoteWheelView extends View {
    }
 
    @Override
-   public boolean mouseDown(float var1, float var2, int var3, boolean var4) {
-      if (var3 == 0) {
+   public boolean mouseDown(float x, float y, int button, boolean dbl) {
+      if (button == 0) {
          this.playSelected();
       } else if (this.host != null) {
          this.host.close();
@@ -253,8 +232,8 @@ public final class EmoteWheelView extends View {
    }
 
    @Override
-   public boolean key(int var1, int var2) {
-      if (var1 == -1 - this.holdKey) {
+   public boolean key(int key, int mods) {
+      if (key == -1 - this.holdKey) {
          this.playSelected();
          return true;
       } else {

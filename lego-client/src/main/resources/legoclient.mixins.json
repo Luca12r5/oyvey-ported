@@ -23,7 +23,10 @@
     "WindowTitleMixin",
     "FirstPersonKnifeMixin",
     "ItemInHandKnifeMixin",
-    "FovRangeMixin"
+    "FovRangeMixin",
+    "GlintMixin",
+    "HeldItemRendererMixin",
+    "SpatialMouseAccessor"
   ],
   "injectors": {
     "defaultRequire": 0

@@ -73,11 +73,11 @@ public final class Mc {
    }
 
    public static int ping() {
-      LocalPlayer var0 = player();
-      ClientPacketListener var1 = mc().getConnection();
-      if (var0 != null && var1 != null) {
-         PlayerInfo var2 = var1.getPlayerInfo(var0.getUUID());
-         return var2 == null ? -1 : var2.getLatency();
+      LocalPlayer p = player();
+      ClientPacketListener nh = mc().getConnection();
+      if (p != null && nh != null) {
+         PlayerInfo e = nh.getPlayerInfo(p.getUUID());
+         return e == null ? -1 : e.getLatency();
       } else {
          return -1;
       }
@@ -87,215 +87,213 @@ public final class Mc {
       if (mc().isLocalServer()) {
          return "Einzelspieler";
       } else {
-         ServerData var0 = mc().getCurrentServer();
-         return var0 == null ? "-" : var0.ip;
+         ServerData s = mc().getCurrentServer();
+         return s == null ? "-" : s.ip;
       }
    }
 
-   public static void command(String var0) {
-      ClientPacketListener var1 = mc().getConnection();
-      if (var1 != null) {
-         var1.sendCommand(var0);
+   public static void command(String cmd) {
+      ClientPacketListener nh = mc().getConnection();
+      if (nh != null) {
+         nh.sendCommand(cmd);
       }
    }
 
-   public static void actionBar(String var0) {
-      LocalPlayer var1 = player();
-      if (var1 != null) {
-         var1.displayClientMessage(Component.literal(var0), true);
+   public static void actionBar(String msg) {
+      LocalPlayer p = player();
+      if (p != null) {
+         p.displayClientMessage(Component.literal(msg), true);
       }
    }
 
-   public static void chat(String var0) {
-      LocalPlayer var1 = player();
-      if (var1 != null) {
-         var1.displayClientMessage(Component.literal(var0), false);
+   public static void chat(String msg) {
+      LocalPlayer p = player();
+      if (p != null) {
+         p.displayClientMessage(Component.literal(msg), false);
       }
    }
 
-   public static double x(Entity var0) {
-      return var0.getX();
+   public static double x(Entity e) {
+      return e.getX();
    }
 
-   public static double y(Entity var0) {
-      return var0.getY();
+   public static double y(Entity e) {
+      return e.getY();
    }
 
-   public static double z(Entity var0) {
-      return var0.getZ();
+   public static double z(Entity e) {
+      return e.getZ();
    }
 
-   public static double lastX(Entity var0) {
-      return var0.xo;
+   public static double lastX(Entity e) {
+      return e.xo;
    }
 
-   public static double lastY(Entity var0) {
-      return var0.yo;
+   public static double lastY(Entity e) {
+      return e.yo;
    }
 
-   public static double lastZ(Entity var0) {
-      return var0.zo;
+   public static double lastZ(Entity e) {
+      return e.zo;
    }
 
-   public static double[] lerpPos(Entity var0, float var1) {
-      return new double[]{
-         lastX(var0) + (x(var0) - lastX(var0)) * var1, lastY(var0) + (y(var0) - lastY(var0)) * var1, lastZ(var0) + (z(var0) - lastZ(var0)) * var1
-      };
+   public static double[] lerpPos(Entity e, float td) {
+      return new double[]{lastX(e) + (x(e) - lastX(e)) * td, lastY(e) + (y(e) - lastY(e)) * td, lastZ(e) + (z(e) - lastZ(e)) * td};
    }
 
-   public static float yaw(Entity var0) {
-      return var0.getYRot();
+   public static float yaw(Entity e) {
+      return e.getYRot();
    }
 
-   public static float pitch(Entity var0) {
-      return var0.getXRot();
+   public static float pitch(Entity e) {
+      return e.getXRot();
    }
 
-   public static float height(Entity var0) {
-      return var0.getBbHeight();
+   public static float height(Entity e) {
+      return e.getBbHeight();
    }
 
-   public static float width(Entity var0) {
-      return var0.getBbWidth();
+   public static float width(Entity e) {
+      return e.getBbWidth();
    }
 
-   public static boolean onGround(Entity var0) {
-      return var0.onGround();
+   public static boolean onGround(Entity e) {
+      return e.onGround();
    }
 
-   public static int id(Entity var0) {
-      return var0.getId();
+   public static int id(Entity e) {
+      return e.getId();
    }
 
-   public static String name(Entity var0) {
-      return var0.getName().getString();
+   public static String name(Entity e) {
+      return e.getName().getString();
    }
 
-   public static double[] velocity(Entity var0) {
-      Vec3 var1 = var0.getDeltaMovement();
-      return new double[]{var1.x, var1.y, var1.z};
+   public static double[] velocity(Entity e) {
+      Vec3 v = e.getDeltaMovement();
+      return new double[]{v.x, v.y, v.z};
    }
 
-   public static boolean isPlayer(Entity var0) {
-      return var0 instanceof Player;
+   public static boolean isPlayer(Entity e) {
+      return e instanceof Player;
    }
 
-   public static boolean isLiving(Entity var0) {
-      return var0 instanceof LivingEntity;
+   public static boolean isLiving(Entity e) {
+      return e instanceof LivingEntity;
    }
 
-   public static boolean isEndCrystal(Entity var0) {
-      return var0 instanceof EndCrystal;
+   public static boolean isEndCrystal(Entity e) {
+      return e instanceof EndCrystal;
    }
 
-   public static boolean isSpectator(Entity var0) {
-      return var0.isSpectator();
+   public static boolean isSpectator(Entity e) {
+      return e.isSpectator();
    }
 
-   public static boolean isSneaking(Entity var0) {
-      return var0.isShiftKeyDown();
+   public static boolean isSneaking(Entity e) {
+      return e.isShiftKeyDown();
    }
 
-   public static float health(LivingEntity var0) {
-      return var0.getHealth();
+   public static float health(LivingEntity e) {
+      return e.getHealth();
    }
 
-   public static float maxHealth(LivingEntity var0) {
-      return var0.getMaxHealth();
+   public static float maxHealth(LivingEntity e) {
+      return e.getMaxHealth();
    }
 
-   public static float absorption(LivingEntity var0) {
-      return var0.getAbsorptionAmount();
+   public static float absorption(LivingEntity e) {
+      return e.getAbsorptionAmount();
    }
 
-   public static float bodyYaw(LivingEntity var0) {
-      return var0.yBodyRot;
+   public static float bodyYaw(LivingEntity e) {
+      return e.yBodyRot;
    }
 
-   public static float lastBodyYaw(LivingEntity var0) {
-      return var0.yBodyRotO;
+   public static float lastBodyYaw(LivingEntity e) {
+      return e.yBodyRotO;
    }
 
-   public static void setBodyYaw(LivingEntity var0, float var1) {
-      var0.yBodyRot = var1;
+   public static void setBodyYaw(LivingEntity e, float v) {
+      e.yBodyRot = v;
    }
 
    public static List<Entity> entities() {
-      ArrayList var0 = new ArrayList();
-      ClientLevel var1 = world();
-      if (var1 == null) {
-         return var0;
+      List<Entity> out = new ArrayList<>();
+      ClientLevel w = world();
+      if (w == null) {
+         return out;
       } else {
-         for (Entity var3 : var1.entitiesForRendering()) {
-            var0.add(var3);
+         for (Entity e : w.entitiesForRendering()) {
+            out.add(e);
          }
 
-         return var0;
+         return out;
       }
    }
 
    public static List<Player> players() {
-      ClientLevel var0 = world();
-      return var0 == null ? new ArrayList<>() : new ArrayList<>(var0.players());
+      ClientLevel w = world();
+      return w == null ? new ArrayList<>() : new ArrayList<>(w.players());
    }
 
    public static int invSize() {
-      LocalPlayer var0 = player();
-      return var0 == null ? 0 : var0.getInventory().getContainerSize();
+      LocalPlayer p = player();
+      return p == null ? 0 : p.getInventory().getContainerSize();
    }
 
-   public static ItemStack invStack(int var0) {
-      LocalPlayer var1 = player();
-      return var1 == null ? null : var1.getInventory().getItem(var0);
+   public static ItemStack invStack(int i) {
+      LocalPlayer p = player();
+      return p == null ? null : p.getInventory().getItem(i);
    }
 
-   public static ItemStack armor(int var0) {
-      return invStack(var0);
+   public static ItemStack armor(int slot) {
+      return invStack(slot);
    }
 
-   public static boolean empty(ItemStack var0) {
-      return var0 == null || var0.isEmpty();
+   public static boolean empty(ItemStack s) {
+      return s == null || s.isEmpty();
    }
 
-   public static int count(ItemStack var0) {
-      return empty(var0) ? 0 : var0.getCount();
+   public static int count(ItemStack s) {
+      return empty(s) ? 0 : s.getCount();
    }
 
-   public static String itemKey(ItemStack var0) {
-      return empty(var0) ? "" : var0.getItem().getDescriptionId();
+   public static String itemKey(ItemStack s) {
+      return empty(s) ? "" : s.getItem().getDescriptionId();
    }
 
-   public static int damage(ItemStack var0) {
-      return var0.getDamageValue();
+   public static int damage(ItemStack s) {
+      return s.getDamageValue();
    }
 
-   public static int maxDamage(ItemStack var0) {
-      return var0.getMaxDamage();
+   public static int maxDamage(ItemStack s) {
+      return s.getMaxDamage();
    }
 
-   public static boolean damageable(ItemStack var0) {
-      return var0.isDamageableItem();
+   public static boolean damageable(ItemStack s) {
+      return s.isDamageableItem();
    }
 
-   public static int countItem(String var0) {
-      int var1 = 0;
-      int var2 = invSize();
+   public static int countItem(String idPath) {
+      int n = 0;
+      int size = invSize();
 
-      for (int var3 = 0; var3 < var2; var3++) {
-         ItemStack var4 = invStack(var3);
-         if (!empty(var4) && itemKey(var4).endsWith("." + var0)) {
-            var1 += count(var4);
+      for (int i = 0; i < size; i++) {
+         ItemStack s = invStack(i);
+         if (!empty(s) && itemKey(s).endsWith("." + idPath)) {
+            n += count(s);
          }
       }
 
-      return var1;
+      return n;
    }
 
-   public static ItemStack icon(String var0) {
-      return ICONS.computeIfAbsent(var0, var0x -> {
+   public static ItemStack icon(String idPath) {
+      return ICONS.computeIfAbsent(idPath, k -> {
          try {
-            Object var1 = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("minecraft", var0x));
-            return var1 instanceof Item ? new ItemStack((Item)var1) : null;
+            Object item = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("minecraft", k));
+            return item instanceof Item ? new ItemStack((Item)item) : null;
          } catch (Throwable var2) {
             return null;
          }
@@ -303,35 +301,35 @@ public final class Mc {
    }
 
    public static Collection<MobEffectInstance> effects() {
-      LocalPlayer var0 = player();
-      return (Collection<MobEffectInstance>)(var0 == null ? new ArrayList<>() : var0.getActiveEffects());
+      LocalPlayer p = player();
+      return (Collection<MobEffectInstance>)(p == null ? new ArrayList<>() : p.getActiveEffects());
    }
 
    public static int food() {
-      LocalPlayer var0 = player();
-      return var0 == null ? 0 : var0.getFoodData().getFoodLevel();
+      LocalPlayer p = player();
+      return p == null ? 0 : p.getFoodData().getFoodLevel();
    }
 
    public static float saturation() {
-      LocalPlayer var0 = player();
-      if (var0 == null) {
+      LocalPlayer p = player();
+      if (p == null) {
          return 0.0F;
       } else {
-         FoodData var1 = var0.getFoodData();
-         return var1.getSaturationLevel();
+         FoodData h = p.getFoodData();
+         return h.getSaturationLevel();
       }
    }
 
    public static String biome() {
-      LocalPlayer var0 = player();
-      ClientLevel var1 = world();
-      if (var0 != null && var1 != null) {
+      LocalPlayer p = player();
+      ClientLevel w = world();
+      if (p != null && w != null) {
          try {
-            BlockPos var2 = var0.blockPosition();
-            Holder var3 = var1.getBiome(var2);
-            Optional var4 = var3.unwrapKey();
-            if (var4.isPresent()) {
-               return ((ResourceKey)var4.get()).identifier().getPath();
+            BlockPos pos = p.blockPosition();
+            Holder<?> b = w.getBiome(pos);
+            Optional<?> key = b.unwrapKey();
+            if (key.isPresent()) {
+               return ((ResourceKey)key.get()).identifier().getPath();
             }
          } catch (Throwable var5) {
          }
@@ -343,23 +341,23 @@ public final class Mc {
    }
 
    public static long timeOfDay() {
-      ClientLevel var0 = world();
-      return var0 == null ? 0L : var0.getDayTime();
+      ClientLevel w = world();
+      return w == null ? 0L : w.getDayTime();
    }
 
-   public static void setTimeOfDay(long var0) {
-      ClientLevel var2 = world();
-      if (var2 != null) {
-         var2.getLevelData().setDayTime(var0);
+   public static void setTimeOfDay(long t) {
+      ClientLevel w = world();
+      if (w != null) {
+         w.getLevelData().setDayTime(t);
       }
    }
 
    public static int blockLight() {
-      LocalPlayer var0 = player();
-      ClientLevel var1 = world();
-      if (var0 != null && var1 != null) {
+      LocalPlayer p = player();
+      ClientLevel w = world();
+      if (p != null && w != null) {
          try {
-            return var1.getBrightness(LightLayer.BLOCK, var0.blockPosition());
+            return w.getBrightness(LightLayer.BLOCK, p.blockPosition());
          } catch (Throwable var3) {
             return -1;
          }
@@ -368,9 +366,9 @@ public final class Mc {
       }
    }
 
-   public static void clipboard(String var0) {
+   public static void clipboard(String s) {
       try {
-         mc().keyboardHandler.setClipboard(var0);
+         mc().keyboardHandler.setClipboard(s);
       } catch (Throwable var2) {
       }
    }
@@ -387,42 +385,42 @@ public final class Mc {
       }
    }
 
-   public static String typeId(Entity var0) {
+   public static String typeId(Entity e) {
       try {
-         return BuiltInRegistries.ENTITY_TYPE.getKey(var0.getType()).getPath();
+         return BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).getPath();
       } catch (Throwable var2) {
          return "";
       }
    }
 
-   public static boolean isDead(LivingEntity var0) {
-      return var0.isDeadOrDying();
+   public static boolean isDead(LivingEntity e) {
+      return e.isDeadOrDying();
    }
 
    public static void clearWeather() {
-      ClientLevel var0 = world();
-      if (var0 != null) {
-         var0.setRainLevel(0.0F);
-         var0.setThunderLevel(0.0F);
+      ClientLevel w = world();
+      if (w != null) {
+         w.setRainLevel(0.0F);
+         w.setThunderLevel(0.0F);
       }
    }
 
-   public static ParticleOptions particle(String var0) {
-      return PARTICLES.computeIfAbsent(var0, var0x -> {
+   public static ParticleOptions particle(String id) {
+      return PARTICLES.computeIfAbsent(id, k -> {
          try {
-            Object var1 = BuiltInRegistries.PARTICLE_TYPE.getValue(Identifier.fromNamespaceAndPath("minecraft", var0x));
-            return var1 instanceof ParticleOptions ? (ParticleOptions)var1 : null;
+            Object o = BuiltInRegistries.PARTICLE_TYPE.getValue(Identifier.fromNamespaceAndPath("minecraft", k));
+            return o instanceof ParticleOptions ? (ParticleOptions)o : null;
          } catch (Throwable var2) {
             return null;
          }
       });
    }
 
-   public static void spawn(String var0, double var1, double var3, double var5, double var7, double var9, double var11) {
-      ParticleOptions var13 = particle(var0);
-      if (var13 != null) {
+   public static void spawn(String id, double x, double y, double z, double vx, double vy, double vz) {
+      ParticleOptions p = particle(id);
+      if (p != null) {
          try {
-            mc().particleEngine.createParticle(var13, var1, var3, var5, var7, var9, var11);
+            mc().particleEngine.createParticle(p, x, y, z, vx, vy, vz);
          } catch (Throwable var15) {
          }
       }
@@ -431,8 +429,8 @@ public final class Mc {
    public static Holder nightVision() {
       if (nightVision == null) {
          try {
-            Optional var0 = BuiltInRegistries.MOB_EFFECT.get(Identifier.fromNamespaceAndPath("minecraft", "night_vision"));
-            nightVision = (Holder<?>)var0.orElse(null);
+            Optional<?> e = BuiltInRegistries.MOB_EFFECT.get(Identifier.fromNamespaceAndPath("minecraft", "night_vision"));
+            nightVision = (Holder<?>)e.orElse(null);
          } catch (Throwable var1) {
          }
       }
@@ -444,44 +442,44 @@ public final class Mc {
       return mc().getWindow();
    }
 
-   public static boolean keyDown(int var0) {
-      if (var0 < 0) {
+   public static boolean keyDown(int key) {
+      if (key < 0) {
          return false;
       } else {
          try {
-            return var0 <= 7 ? GLFW.glfwGetMouseButton(window().handle(), var0) == 1 : InputConstants.isKeyDown(window(), var0);
+            return key <= 7 ? GLFW.glfwGetMouseButton(window().handle(), key) == 1 : InputConstants.isKeyDown(window(), key);
          } catch (Throwable var2) {
             return false;
          }
       }
    }
 
-   public static boolean mouseDown(int var0) {
+   public static boolean mouseDown(int button) {
       try {
-         return GLFW.glfwGetMouseButton(window().handle(), var0) == 1;
+         return GLFW.glfwGetMouseButton(window().handle(), button) == 1;
       } catch (Throwable var2) {
          return false;
       }
    }
 
    public static boolean firstPerson() {
-      CameraType var0 = mc().options.getCameraType();
-      return var0 == null || var0.isFirstPerson();
+      CameraType p = mc().options.getCameraType();
+      return p == null || p.isFirstPerson();
    }
 
    public static CameraType perspective() {
       return mc().options.getCameraType();
    }
 
-   public static void perspective(CameraType var0) {
-      mc().options.setCameraType(var0);
+   public static void perspective(CameraType p) {
+      mc().options.setCameraType(p);
    }
 
    public static boolean screenOpen() {
       return mc().screen != null;
    }
 
-   public static boolean pressed(KeyMapping var0) {
-      return var0 != null && var0.isDown();
+   public static boolean pressed(KeyMapping k) {
+      return k != null && k.isDown();
    }
 }

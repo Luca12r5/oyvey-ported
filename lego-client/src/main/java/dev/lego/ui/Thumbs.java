@@ -10,11 +10,11 @@ import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
 public final class Thumbs {
-   private static final ExecutorService POOL = Executors.newFixedThreadPool(2, var0 -> {
-      Thread var1 = new Thread(var0, "LegoClient-Thumbs");
-      var1.setDaemon(true);
-      var1.setPriority(1);
-      return var1;
+   private static final ExecutorService POOL = Executors.newFixedThreadPool(2, r -> {
+      Thread t = new Thread(r, "LegoClient-Thumbs");
+      t.setDaemon(true);
+      t.setPriority(1);
+      return t;
    });
    private static final Map<String, int[]> READY = new HashMap<>();
    private static final Set<String> PENDING = new HashSet<>();
@@ -22,39 +22,39 @@ public final class Thumbs {
    private Thumbs() {
    }
 
-   public static Gx.Img get(String var0, int var1, int var2, Supplier<int[]> var3) {
-      String var4 = var0 + "@" + var1 + "x" + var2;
-      int[] var5;
+   public static Gx.Img get(String key, int w, int h, Supplier<int[]> painter) {
+      String k = key + "@" + w + "x" + h;
+      int[] px;
       synchronized (READY) {
-         var5 = READY.remove(var4);
+         px = READY.remove(k);
       }
 
-      if (var5 != null) {
-         return Gx.get("th:" + var4, 0, () -> new int[][]{var5, {var1, var2}});
+      if (px != null) {
+         return Gx.get("th:" + k, 0, () -> new int[][]{px, {w, h}});
       } else {
-         Gx.Img var11 = Gx.peek("th:" + var4);
-         if (var11 != null) {
-            return var11;
+         Gx.Img cached = Gx.peek("th:" + k);
+         if (cached != null) {
+            return cached;
          } else {
             synchronized (READY) {
-               if (PENDING.contains(var4)) {
+               if (PENDING.contains(k)) {
                   return null;
                }
 
-               PENDING.add(var4);
+               PENDING.add(k);
             }
 
             POOL.execute(() -> {
                try {
-                  int[] var2x = (int[])var3.get();
+                  int[] r = painter.get();
                   synchronized (READY) {
-                     READY.put(var4, var2x);
+                     READY.put(k, r);
                   }
                } catch (Throwable var18) {
                   LegoClient.LOG("Vorschau-Fehler: " + var18);
                } finally {
                   synchronized (READY) {
-                     PENDING.remove(var4);
+                     PENDING.remove(k);
                   }
                }
             });

@@ -29,15 +29,15 @@ public final class SpotifyCape {
       }
 
       ensurePainter();
-      int[] var0 = pending;
-      if (var0 != null) {
+      int[] px = pending;
+      if (px != null) {
          pending = null;
 
          try {
             if (tex == null) {
-               tex = Tx.register(ID, var0, pw, ph, true);
+               tex = Tx.register(ID, px, pw, ph, true);
             } else {
-               Tx.update(tex, var0, pw, ph);
+               Tx.update(tex, px, pw, ph);
             }
          } catch (Throwable var2) {
             LegoClient.LOG("Spotify-Cape: " + var2);
@@ -57,28 +57,28 @@ public final class SpotifyCape {
    }
 
    private static void loop() {
-      long var0 = System.nanoTime();
+      long last = System.nanoTime();
 
       while (System.currentTimeMillis() - wanted < 5000L) {
-         long var2 = System.nanoTime();
-         float var4 = Math.min(0.2F, (float)(var2 - var0) / 1.0E9F);
-         var0 = var2;
+         long t0 = System.nanoTime();
+         float dt = Math.min(0.2F, (float)(t0 - last) / 1.0E9F);
+         last = t0;
 
          try {
-            step(var4);
+            step(dt);
             if (pending == null) {
                LIVE.set(state);
 
-               CTex.T var5;
+               CTex.T t;
                try {
-                  var5 = Capes.paint("spotify");
+                  t = Capes.paint("spotify");
                } finally {
                   LIVE.remove();
                }
 
-               pw = var5.w;
-               ph = var5.h;
-               pending = var5.argb;
+               pw = t.w;
+               ph = t.h;
+               pending = t.argb;
             }
          } catch (Throwable var15) {
             LegoClient.LOG("Spotify-Cape: " + var15);
@@ -90,10 +90,10 @@ public final class SpotifyCape {
             }
          }
 
-         long var16 = (System.nanoTime() - var2) / 1000000L;
+         long took = (System.nanoTime() - t0) / 1000000L;
 
          try {
-            Thread.sleep(Math.max(15L, 66L - var16));
+            Thread.sleep(Math.max(15L, 66L - took));
          } catch (InterruptedException var12) {
             return;
          }
@@ -102,66 +102,66 @@ public final class SpotifyCape {
 
    private static PlayerState player() {
       try {
-         PlayerState var0 = null;
+         PlayerState st = null;
          if (SpotifyHudMod.api() != null) {
-            var0 = SpotifyHudMod.api().state();
+            st = SpotifyHudMod.api().state();
          }
 
-         if ((var0 == null || !var0.hasTrack) && SpotifyHudMod.media() != null) {
-            var0 = SpotifyHudMod.media().state();
+         if ((st == null || !st.hasTrack) && SpotifyHudMod.media() != null) {
+            st = SpotifyHudMod.media().state();
          }
 
-         return var0;
+         return st;
       } catch (Throwable var1) {
          return null;
       }
    }
 
-   private static void step(float var0) {
-      PlayerState var1 = player();
-      SpotifyCape.Live var2 = state;
-      boolean var3 = var1 != null && var1.hasTrack;
-      var2.playing = var3 && var1.playing;
-      var2.title = var3 ? var1.title : "Kein Song";
-      var2.artist = var3 ? var1.artist : "Spotify öffnen";
-      var2.progress = var3 && var1.durationMs > 0L ? (double)var1.currentProgress() / var1.durationMs : 0.0;
-      double var4 = var3 ? var1.currentProgress() / 1000.0 : System.currentTimeMillis() / 1000.0;
-      String var6 = var3 ? (var1.trackId != null ? var1.trackId : var1.title + var1.artist) : "";
-      int var7 = var6.hashCode();
-      double var8 = 86 + Math.floorMod(var7, 60);
-      double var10 = var4 * var8 / 60.0;
-      double var12 = Math.pow(Math.max(0.0, Math.cos(var10 * Math.PI * 2.0)), 6.0);
-      double var14 = Math.pow(Math.max(0.0, Math.cos((var10 + 0.5) * Math.PI * 2.0)), 10.0) * (Math.floorMod((int)Math.floor(var10), 2) == 1 ? 1.0 : 0.4);
-      double var16 = 0.75 + 0.25 * Math.sin(var4 / 17.0 + var7);
-      var2.beat = var2.playing ? var12 : 0.0;
+   private static void step(float dt) {
+      PlayerState st = player();
+      SpotifyCape.Live L = state;
+      boolean has = st != null && st.hasTrack;
+      L.playing = has && st.playing;
+      L.title = has ? st.title : "Kein Song";
+      L.artist = has ? st.artist : "Spotify öffnen";
+      L.progress = has && st.durationMs > 0L ? (double)st.currentProgress() / st.durationMs : 0.0;
+      double sec = has ? st.currentProgress() / 1000.0 : System.currentTimeMillis() / 1000.0;
+      String key = has ? (st.trackId != null ? st.trackId : st.title + st.artist) : "";
+      int h = key.hashCode();
+      double bpm = 86 + Math.floorMod(h, 60);
+      double bt = sec * bpm / 60.0;
+      double kick = Math.pow(Math.max(0.0, Math.cos(bt * Math.PI * 2.0)), 6.0);
+      double snare = Math.pow(Math.max(0.0, Math.cos((bt + 0.5) * Math.PI * 2.0)), 10.0) * (Math.floorMod((int)Math.floor(bt), 2) == 1 ? 1.0 : 0.4);
+      double section = 0.75 + 0.25 * Math.sin(sec / 17.0 + h);
+      L.beat = L.playing ? kick : 0.0;
 
-      for (int var18 = 0; var18 < 11; var18++) {
-         double var19 = var18 / 10.0;
-         double var21;
-         if (var2.playing) {
-            double var23 = var12 * (1.0 - var19) * 1.1;
-            double var25 = var14 * Math.exp(-Math.pow((var19 - 0.5) / 0.25, 2.0));
-            double var27 = (0.5 + 0.5 * Math.sin(var4 * (9.0 + var18 * 1.7) + var18 * 2.3)) * 0.35 * var19;
-            double var29 = 0.5 + 0.5 * Math.sin(var4 * (3.1 + var18 * 0.73) + var7 * 0.001 + var18);
-            var21 = Math.min(1.0, (0.18 + var23 * 0.7 + var25 * 0.6 + var27 + var29 * 0.25) * var16);
+      for (int i = 0; i < 11; i++) {
+         double f = i / 10.0;
+         double target;
+         if (L.playing) {
+            double low = kick * (1.0 - f) * 1.1;
+            double mid = snare * Math.exp(-Math.pow((f - 0.5) / 0.25, 2.0));
+            double hi = (0.5 + 0.5 * Math.sin(sec * (9.0 + i * 1.7) + i * 2.3)) * 0.35 * f;
+            double noise = 0.5 + 0.5 * Math.sin(sec * (3.1 + i * 0.73) + h * 0.001 + i);
+            target = Math.min(1.0, (0.18 + low * 0.7 + mid * 0.6 + hi + noise * 0.25) * section);
          } else {
-            var21 = 0.04;
+            target = 0.04;
          }
 
-         double var31 = var2.bars[var18];
-         if (var21 > var31) {
-            var31 += (var21 - var31) * Math.min(1.0F, var0 * 22.0F);
+         double cur = L.bars[i];
+         if (target > cur) {
+            cur += (target - cur) * Math.min(1.0F, dt * 22.0F);
          } else {
-            vel[var18] = vel[var18] + var0 * 2.6;
-            var31 = Math.max(var21, var31 - vel[var18] * var0);
+            vel[i] = vel[i] + dt * 2.6;
+            cur = Math.max(target, cur - vel[i] * dt);
          }
 
-         if (var21 > var31 - 0.001) {
-            vel[var18] = 0.0;
+         if (target > cur - 0.001) {
+            vel[i] = 0.0;
          }
 
-         var2.bars[var18] = var31;
-         var2.peaks[var18] = Math.max(var31, var2.peaks[var18] - var0 * 0.35);
+         L.bars[i] = cur;
+         L.peaks[i] = Math.max(cur, L.peaks[i] - dt * 0.35);
       }
    }
 

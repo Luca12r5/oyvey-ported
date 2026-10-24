@@ -26,17 +26,17 @@ public final class Fonts {
 
    private static synchronized void load() {
       if (!loaded) {
-         for (int var0 = 0; var0 < 4; var0++) {
-            try (InputStream var1 = Fonts.class.getResourceAsStream("/assets/legoclient/fonts/" + FILES[var0])) {
-               if (var1 != null) {
-                  BASE[var0] = Font.createFont(0, var1);
+         for (int i = 0; i < 4; i++) {
+            try (InputStream in = Fonts.class.getResourceAsStream("/assets/legoclient/fonts/" + FILES[i])) {
+               if (in != null) {
+                  BASE[i] = Font.createFont(0, in);
                }
             } catch (Throwable var6) {
-               BASE[var0] = null;
+               BASE[i] = null;
             }
 
-            if (BASE[var0] == null) {
-               BASE[var0] = new Font("SansSerif", var0 == 3 ? 1 : 0, 12);
+            if (BASE[i] == null) {
+               BASE[i] = new Font("SansSerif", i == 3 ? 1 : 0, 12);
             }
          }
 
@@ -44,104 +44,104 @@ public final class Fonts {
       }
    }
 
-   public static Font get(int var0, float var1) {
+   public static Font get(int weight, float size) {
       if (!loaded) {
          load();
       }
 
-      int var2 = Math.max(0, Math.min(3, var0));
-      int var3 = Math.max(1, Math.round(var1 * 4.0F));
-      long var4 = (long)var2 << 32 | var3;
-      return SIZED.computeIfAbsent(var4, var2x -> BASE[var2].deriveFont(var3 / 4.0F));
+      int w = Math.max(0, Math.min(3, weight));
+      int q = Math.max(1, Math.round(size * 4.0F));
+      long key = (long)w << 32 | q;
+      return SIZED.computeIfAbsent(key, k -> BASE[w].deriveFont(q / 4.0F));
    }
 
-   public static float width(String var0, int var1, float var2) {
-      if (var0 != null && !var0.isEmpty()) {
-         String var3 = var1 + "|" + Math.round(var2 * 4.0F) + "|" + var0;
-         Float var4 = WIDTHS.get(var3);
-         if (var4 != null) {
-            return var4;
+   public static float width(String s, int weight, float size) {
+      if (s != null && !s.isEmpty()) {
+         String key = weight + "|" + Math.round(size * 4.0F) + "|" + s;
+         Float cached = WIDTHS.get(key);
+         if (cached != null) {
+            return cached;
          } else {
-            Rectangle2D var5 = get(var1, var2).getStringBounds(var0, FRC);
-            float var6 = (float)var5.getWidth();
+            Rectangle2D r = get(weight, size).getStringBounds(s, FRC);
+            float w = (float)r.getWidth();
             if (WIDTHS.size() > 20000) {
                WIDTHS.clear();
             }
 
-            WIDTHS.put(var3, var6);
-            return var6;
+            WIDTHS.put(key, w);
+            return w;
          }
       } else {
          return 0.0F;
       }
    }
 
-   public static float ascent(int var0, float var1) {
-      return get(var0, var1).getLineMetrics("Hg", FRC).getAscent();
+   public static float ascent(int weight, float size) {
+      return get(weight, size).getLineMetrics("Hg", FRC).getAscent();
    }
 
-   public static float descent(int var0, float var1) {
-      return get(var0, var1).getLineMetrics("Hg", FRC).getDescent();
+   public static float descent(int weight, float size) {
+      return get(weight, size).getLineMetrics("Hg", FRC).getDescent();
    }
 
-   public static String ellipsize(String var0, int var1, float var2, float var3) {
-      if (var0 == null) {
+   public static String ellipsize(String s, int weight, float size, float maxW) {
+      if (s == null) {
          return "";
-      } else if (width(var0, var1, var2) <= var3) {
-         return var0;
+      } else if (width(s, weight, size) <= maxW) {
+         return s;
       } else {
-         String var4 = "…";
-         int var5 = 0;
-         int var6 = var0.length();
+         String e = "…";
+         int lo = 0;
+         int hi = s.length();
 
-         while (var5 < var6) {
-            int var7 = (var5 + var6 + 1) / 2;
-            if (width(var0.substring(0, var7).trim() + var4, var1, var2) <= var3) {
-               var5 = var7;
+         while (lo < hi) {
+            int mid = (lo + hi + 1) / 2;
+            if (width(s.substring(0, mid).trim() + e, weight, size) <= maxW) {
+               lo = mid;
             } else {
-               var6 = var7 - 1;
+               hi = mid - 1;
             }
          }
 
-         return var5 <= 0 ? var4 : var0.substring(0, var5).trim() + var4;
+         return lo <= 0 ? e : s.substring(0, lo).trim() + e;
       }
    }
 
-   public static List<String> wrap(String var0, int var1, float var2, float var3, int var4) {
-      ArrayList var5 = new ArrayList();
-      if (var0 != null && !var0.isEmpty()) {
-         String[] var6 = var0.split(" ");
-         StringBuilder var7 = new StringBuilder();
+   public static List<String> wrap(String s, int weight, float size, float maxW, int maxLines) {
+      List<String> out = new ArrayList<>();
+      if (s != null && !s.isEmpty()) {
+         String[] words = s.split(" ");
+         StringBuilder line = new StringBuilder();
 
-         for (int var8 = 0; var8 < var6.length; var8++) {
-            String var9 = var7.length() == 0 ? var6[var8] : var7 + " " + var6[var8];
-            if (!(width(var9, var1, var2) <= var3) && var7.length() != 0) {
-               var5.add(var7.toString());
-               var7.setLength(0);
-               var7.append(var6[var8]);
-               if (var5.size() == var4 - 1) {
-                  StringBuilder var10 = new StringBuilder(var7);
+         for (int i = 0; i < words.length; i++) {
+            String test = line.length() == 0 ? words[i] : line + " " + words[i];
+            if (!(width(test, weight, size) <= maxW) && line.length() != 0) {
+               out.add(line.toString());
+               line.setLength(0);
+               line.append(words[i]);
+               if (out.size() == maxLines - 1) {
+                  StringBuilder rest = new StringBuilder(line);
 
-                  for (int var11 = var8 + 1; var11 < var6.length; var11++) {
-                     var10.append(' ').append(var6[var11]);
+                  for (int j = i + 1; j < words.length; j++) {
+                     rest.append(' ').append(words[j]);
                   }
 
-                  var5.add(ellipsize(var10.toString(), var1, var2, var3));
-                  return var5;
+                  out.add(ellipsize(rest.toString(), weight, size, maxW));
+                  return out;
                }
             } else {
-               var7.setLength(0);
-               var7.append(var9);
+               line.setLength(0);
+               line.append(test);
             }
          }
 
-         if (var7.length() > 0) {
-            var5.add(var7.toString());
+         if (line.length() > 0) {
+            out.add(line.toString());
          }
 
-         return var5;
+         return out;
       } else {
-         return var5;
+         return out;
       }
    }
 }

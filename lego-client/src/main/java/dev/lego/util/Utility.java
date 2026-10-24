@@ -1,5 +1,6 @@
 package dev.lego.util;
 
+import com.mojang.authlib.GameProfile;
 import dev.lego.LegoClient;
 import dev.lego.core.Category;
 import dev.lego.core.Mc;
@@ -19,17 +20,26 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.gui.screens.DeathScreen;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ResolvableProfile;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.SkullBlockEntity;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.HitResult.Type;
 
 public final class Utility {
    public static Utility.SeeModule invsee;
@@ -41,10 +51,6 @@ public final class Utility {
    public static Utility.AutoRespawn autoRespawn;
    public static Utility.Waypoints waypoints;
    public static Utility.DeathPoint deathPoint;
-   public static Utility.LowHpWarning lowHp;
-   public static Utility.TotemWarning totemWarn;
-   public static Utility.ArmorWarning armorWarn;
-   public static Utility.EffectWarning effectWarn;
    public static Utility.HitSound hitSound;
    public static Utility.KillSound killSound;
    public static Utility.MentionPing mention;
@@ -52,7 +58,10 @@ public final class Utility {
    public static Utility.WordFilter wordFilter;
    public static Utility.Macros macros;
    public static Utility.ShareCoords shareCoords;
-   public static Utility.BreakReminder breakReminder;
+   public static FakeCheck fakeCheck;
+   public static Auction auction;
+   public static FightPreset fightPreset;
+   public static Utility.HeadSearch headSearch;
    private static final Set<Integer> KILLED = new HashSet<>();
    public static final List<Utility.Waypoint> POINTS = new ArrayList<>();
    private static final int[] WP_COLORS = new int[]{-14756000, -16735270, -13053, -36939, -6599222, -30208, -8587265};
@@ -94,10 +103,6 @@ public final class Utility {
       // Auto-Respawn removed: automation that plays for you is not a fair helper.
       waypoints = Modules.register(new Utility.Waypoints());
       deathPoint = Modules.register(new Utility.DeathPoint());
-      lowHp = Modules.register(new Utility.LowHpWarning());
-      totemWarn = Modules.register(new Utility.TotemWarning());
-      armorWarn = Modules.register(new Utility.ArmorWarning());
-      effectWarn = Modules.register(new Utility.EffectWarning());
       hitSound = Modules.register(new Utility.HitSound());
       killSound = Modules.register(new Utility.KillSound());
       mention = Modules.register(new Utility.MentionPing());
@@ -105,11 +110,14 @@ public final class Utility {
       wordFilter = Modules.register(new Utility.WordFilter());
       macros = Modules.register(new Utility.Macros());
       shareCoords = Modules.register(new Utility.ShareCoords());
-      breakReminder = Modules.register(new Utility.BreakReminder());
       Utility.Waypoints.registerPersist();
+      fakeCheck = Modules.register(new FakeCheck());
+      auction = Modules.register(new Auction());
+      fightPreset = Modules.register(new FightPreset());
+      headSearch = Modules.register(new Utility.HeadSearch());
    }
 
-   public static void onHit(Entity var0) {
+   public static void onHit(Entity target) {
       try {
          if (hitSound.enabled) {
             hitSound.play();
@@ -124,9 +132,9 @@ public final class Utility {
       }
    }
 
-   public static void onKill(Entity var0) {
+   public static void onKill(Entity e) {
       try {
-         if (!KILLED.add(Mc.id(var0))) {
+         if (!KILLED.add(Mc.id(e))) {
             return;
          }
 
@@ -143,7 +151,7 @@ public final class Utility {
             Overlays.hitmarker.onKill();
          }
 
-         if (autoGG.enabled && var0 instanceof Player) {
+         if (autoGG.enabled && e instanceof Player) {
             autoGG.trigger();
          }
       } catch (Throwable var2) {
@@ -151,15 +159,15 @@ public final class Utility {
       }
    }
 
-   public static boolean allowMessage(Component var0, boolean var1) {
-      if (!var1 && var0 != null) {
+   public static boolean allowMessage(Component msg, boolean overlay) {
+      if (!overlay && msg != null) {
          try {
-            String var2 = var0.getString();
-            if (wordFilter.enabled && wordFilter.blocks(var2)) {
+            String s = msg.getString();
+            if (wordFilter.enabled && wordFilter.blocks(s)) {
                return false;
             }
 
-            if (antiSpam.enabled && antiSpam.blocks(var2)) {
+            if (antiSpam.enabled && antiSpam.blocks(s)) {
                return false;
             }
          } catch (Throwable var3) {
@@ -172,11 +180,16 @@ public final class Utility {
       }
    }
 
-   public static void onMessage(Component var0, boolean var1) {
-      if (!var1 && var0 != null) {
+   public static void onMessage(Component msg, boolean overlay) {
+      if (!overlay && msg != null) {
          try {
+            String s = msg.getString();
             if (mention.enabled) {
-               mention.check(var0.getString());
+               mention.check(s);
+            }
+
+            if (auction != null) {
+               auction.onChat(s);
             }
          } catch (Throwable var3) {
             LegoClient.LOG("Chat: " + var3);
@@ -184,15 +197,19 @@ public final class Utility {
       }
    }
 
-   public static void renderWorld(float var0) {
+   public static void renderWorld(float td) {
       if (waypoints != null) {
          waypoints.render();
       }
+
+      if (headSearch != null && headSearch.enabled) {
+         headSearch.render();
+      }
    }
 
-   public static void onKey(int var0) {
+   public static void onKey(int key) {
       if (macros.enabled) {
-         macros.onKey(var0);
+         macros.onKey(key);
       }
    }
 
@@ -204,51 +221,51 @@ public final class Utility {
       }
    }
 
-   static String dimName(String var0) {
-      if (var0.endsWith("the_nether")) {
+   static String dimName(String dim) {
+      if (dim.endsWith("the_nether")) {
          return "Nether";
-      } else if (var0.endsWith("the_end")) {
+      } else if (dim.endsWith("the_end")) {
          return "End";
       } else {
-         return var0.endsWith("overworld") ? "Oberwelt" : var0;
+         return dim.endsWith("overworld") ? "Oberwelt" : dim;
       }
    }
 
-   public static Player lookedAtPlayer(double var0) {
-      LocalPlayer var2 = Mc.player();
-      if (var2 == null) {
+   public static Player lookedAtPlayer(double maxRange) {
+      LocalPlayer me = Mc.player();
+      if (me == null) {
          return null;
       } else {
-         Vec3 var3 = var2.getEyePosition(1.0F);
-         Vec3 var4 = var2.getViewVector(1.0F);
-         Player var5 = null;
-         double var6 = Double.MAX_VALUE;
+         Vec3 eye = me.getEyePosition(1.0F);
+         Vec3 look = me.getViewVector(1.0F);
+         Player best = null;
+         double bestDist = Double.MAX_VALUE;
 
-         for (Player var9 : Mc.players()) {
-            if (var9 != var2 && !Mc.isSpectator(var9)) {
-               double var10 = Mc.x(var9) - var3.x;
-               double var12 = Mc.y(var9) + Mc.height(var9) / 2.0F - var3.y;
-               double var14 = Mc.z(var9) - var3.z;
-               double var16 = var10 * var4.x + var12 * var4.y + var14 * var4.z;
-               if (!(var16 <= 0.0) && !(var16 > var0)) {
-                  double var18 = var10 - var4.x * var16;
-                  double var20 = var12 - var4.y * var16;
-                  double var22 = var14 - var4.z * var16;
-                  double var24 = Math.sqrt(var18 * var18 + var22 * var22);
-                  if (var24 <= Mc.width(var9) / 2.0F + 0.3 && Math.abs(var20) <= Mc.height(var9) / 2.0F + 0.3 && var16 < var6) {
-                     var6 = var16;
-                     var5 = var9;
+         for (Player p : Mc.players()) {
+            if (p != me && !Mc.isSpectator(p)) {
+               double cx = Mc.x(p) - eye.x;
+               double cy = Mc.y(p) + Mc.height(p) / 2.0F - eye.y;
+               double cz = Mc.z(p) - eye.z;
+               double along = cx * look.x + cy * look.y + cz * look.z;
+               if (!(along <= 0.0) && !(along > maxRange)) {
+                  double px = cx - look.x * along;
+                  double py = cy - look.y * along;
+                  double pz = cz - look.z * along;
+                  double horiz = Math.sqrt(px * px + pz * pz);
+                  if (horiz <= Mc.width(p) / 2.0F + 0.3 && Math.abs(py) <= Mc.height(p) / 2.0F + 0.3 && along < bestDist) {
+                     bestDist = along;
+                     best = p;
                   }
                }
             }
          }
 
-         return var5;
+         return best;
       }
    }
 
-   public static boolean runAction(Module var0) {
-      if (var0 == shareCoords) {
+   public static boolean runAction(Module m) {
+      if (m == shareCoords) {
          shareCoords.share();
          return true;
       } else {
@@ -267,64 +284,30 @@ public final class Utility {
          this.fresh();
       }
 
-      boolean blocks(String var1) {
-         long var2 = System.currentTimeMillis();
+      boolean blocks(String s) {
+         long now = System.currentTimeMillis();
 
-         while (!this.recent.isEmpty() && var2 - (Long)this.recent.peekFirst()[1] > this.window.get() * 1000.0) {
+         while (!this.recent.isEmpty() && now - this.recent.peekFirst()[1] > this.window.get() * 1000.0) {
             this.recent.pollFirst();
          }
 
-         String var4 = var1.trim().toLowerCase(Locale.ROOT);
-         if (var4.isEmpty()) {
+         String k = s.trim().toLowerCase(Locale.ROOT);
+         if (k.isEmpty()) {
             return false;
          } else {
-            for (Object[] var6 : this.recent) {
-               if (var6[0].equals(var4)) {
+            for (Object[] r : this.recent) {
+               if (r[0].equals(k)) {
                   this.hidden++;
                   return true;
                }
             }
 
-            this.recent.add(new Object[]{var4, var2});
+            this.recent.add(new Object[]{k, now});
             if (this.recent.size() > 100) {
                this.recent.pollFirst();
             }
 
             return false;
-         }
-      }
-   }
-
-   public static final class ArmorWarning extends Module {
-      final Setting.Num limit = this.add(new Setting.Num("Grenze", 5.0, 40.0, 5.0, 15.0, "%"));
-      private final boolean[] warned = new boolean[4];
-      private static final String[] NAMES = new String[]{"Helm", "Brustplatte", "Hose", "Schuhe"};
-
-      ArmorWarning() {
-         super("armorwarn", "Rüstungs-Warnung", "Warnt, wenn ein Rüstungsteil fast kaputt ist", Category.UTILITY);
-         this.icon("armor");
-         this.enabled = true;
-         this.fresh();
-      }
-
-      @Override
-      public void tick() {
-         for (int var1 = 0; var1 < 4; var1++) {
-            ItemStack var2 = Mc.armor(39 - var1);
-            if (!Mc.empty(var2) && Mc.damageable(var2)) {
-               double var3 = 1.0 - (double)Mc.damage(var2) / Math.max(1, Mc.maxDamage(var2));
-               if (var3 * 100.0 <= this.limit.get()) {
-                  if (!this.warned[var1]) {
-                     this.warned[var1] = true;
-                     Toasts.show("armor", NAMES[var1] + " fast kaputt", Math.round(var3 * 100.0) + "% Haltbarkeit", -30208, 3500L);
-                     Sound.play("minecraft:entity.item.break", 1.3F, 0.5F);
-                  }
-               } else if (var3 * 100.0 > this.limit.get() + 5.0) {
-                  this.warned[var1] = false;
-               }
-            } else {
-               this.warned[var1] = false;
-            }
          }
       }
    }
@@ -343,10 +326,10 @@ public final class Utility {
       }
 
       void trigger() {
-         long var1 = System.currentTimeMillis();
-         if (!(var1 - this.last < this.cooldown.get() * 1000.0)) {
-            this.last = var1;
-            this.pendingAt = var1 + (long)(this.delay.get() * 1000.0);
+         long now = System.currentTimeMillis();
+         if (!(now - this.last < this.cooldown.get() * 1000.0)) {
+            this.last = now;
+            this.pendingAt = now + (long)(this.delay.get() * 1000.0);
          }
       }
 
@@ -354,9 +337,9 @@ public final class Utility {
       public void tick() {
          if (this.pendingAt != 0L && System.currentTimeMillis() >= this.pendingAt) {
             this.pendingAt = 0L;
-            String var1 = this.message.get().trim();
-            if (!var1.isEmpty() && Mc.mc().getConnection() != null) {
-               Mc.mc().getConnection().sendChat(var1);
+            String m = this.message.get().trim();
+            if (!m.isEmpty() && Mc.mc().getConnection() != null) {
+               Mc.mc().getConnection().sendChat(m);
             }
          }
       }
@@ -374,9 +357,9 @@ public final class Utility {
 
       @Override
       public void tick() {
-         LocalPlayer var1 = Mc.player();
-         if (var1 != null) {
-            if (!(Mc.mc().screen instanceof DeathScreen) && !Mc.isDead(var1)) {
+         LocalPlayer p = Mc.player();
+         if (p != null) {
+            if (!(Mc.mc().screen instanceof DeathScreen) && !Mc.isDead(p)) {
                this.seen = 0L;
             } else {
                if (this.seen == 0L) {
@@ -384,7 +367,7 @@ public final class Utility {
                }
 
                if (System.currentTimeMillis() - this.seen >= this.delay.get() * 1000.0) {
-                  var1.respawn();
+                  p.respawn();
                   if (Mc.mc().screen instanceof DeathScreen) {
                      Mc.mc().setScreen(null);
                   }
@@ -393,36 +376,6 @@ public final class Utility {
                }
             }
          }
-      }
-   }
-
-   public static final class BreakReminder extends Module {
-      final Setting.Num minutes = this.add(new Setting.Num("Alle", 15.0, 180.0, 15.0, 60.0, " min"));
-      private long since = 0L;
-
-      BreakReminder() {
-         super("breakreminder", "Pausen-Erinnerung", "Erinnert dich nach einer Weile an eine kurze Pause", Category.UTILITY);
-         this.icon("clock");
-         this.fresh();
-      }
-
-      @Override
-      public void tick() {
-         long var1 = System.currentTimeMillis();
-         if (this.since == 0L) {
-            this.since = var1;
-         }
-
-         if (var1 - this.since >= this.minutes.get() * 60000.0) {
-            this.since = var1;
-            Toasts.show("clock", "Zeit für eine Pause", "Du spielst seit " + this.minutes.getI() + " Minuten - kurz aufstehen & trinken", -16735270, 8000L);
-            Sound.play("minecraft:block.note_block.chime", 1.2F, 0.6F);
-         }
-      }
-
-      @Override
-      public void onEnable() {
-         this.since = 0L;
       }
    }
 
@@ -439,57 +392,25 @@ public final class Utility {
 
       @Override
       public void tick() {
-         LocalPlayer var1 = Mc.player();
-         if (var1 != null) {
-            boolean var2 = Mc.isDead(var1);
-            if (var2 && !this.wasDead) {
-               Utility.POINTS.removeIf(var0 -> var0.death);
-               double var3 = Math.floor(Mc.x(var1)) + 0.5;
-               double var5 = Math.floor(Mc.y(var1));
-               double var7 = Math.floor(Mc.z(var1)) + 0.5;
-               Utility.POINTS.add(new Utility.Waypoint("Tod", Utility.dimension(), var3, var5, var7, -50356, true));
+         LocalPlayer p = Mc.player();
+         if (p != null) {
+            boolean dead = Mc.isDead(p);
+            if (dead && !this.wasDead) {
+               Utility.POINTS.removeIf(w -> w.death);
+               double x = Math.floor(Mc.x(p)) + 0.5;
+               double y = Math.floor(Mc.y(p));
+               double z = Math.floor(Mc.z(p)) + 0.5;
+               Utility.POINTS.add(new Utility.Waypoint("Tod", Utility.dimension(), x, y, z, -50356, true));
                Modules.scheduleSave();
-               String var9 = (int)var3 + " " + (int)var5 + " " + (int)var7;
-               Toasts.show("skull", "Todespunkt gespeichert", var9 + " · " + Utility.dimName(Utility.dimension()), -45730, 5000L);
+               String c = (int)x + " " + (int)y + " " + (int)z;
+               Toasts.show("skull", "Todespunkt gespeichert", c + " · " + Utility.dimName(Utility.dimension()), -45730, 5000L);
                if (this.chat.get()) {
-                  Mc.chat("§c☠ §7Todespunkt: §f" + var9 + " §8(" + Utility.dimName(Utility.dimension()) + ")");
+                  Mc.chat("§c☠ §7Todespunkt: §f" + c + " §8(" + Utility.dimName(Utility.dimension()) + ")");
                }
             }
 
-            this.wasDead = var2;
+            this.wasDead = dead;
          }
-      }
-   }
-
-   public static final class EffectWarning extends Module {
-      final Setting.Num seconds = this.add(new Setting.Num("Vorwarnung", 3.0, 30.0, 1.0, 5.0, " s"));
-      private final Set<String> warned = new HashSet<>();
-
-      EffectWarning() {
-         super("effectwarn", "Effekt-Warnung", "Meldet, kurz bevor ein Trank-Effekt ausläuft", Category.UTILITY);
-         this.icon("potion");
-         this.fresh();
-      }
-
-      @Override
-      public void tick() {
-         HashSet var1 = new HashSet();
-
-         for (MobEffectInstance var4 : Mc.effects()) {
-            String var5 = var4.getDescriptionId();
-            var1.add(var5);
-            int var6 = var4.getDuration();
-            if (var6 > 0 && var6 <= this.seconds.get() * 20.0) {
-               if (this.warned.add(var5)) {
-                  Toasts.show("potion", Component.translatable(var5).getString() + " läuft aus", "noch " + Math.max(1, var6 / 20) + " s", -6599222, 2500L);
-                  Sound.play("minecraft:block.note_block.chime", 1.4F, 0.5F);
-               }
-            } else if (var6 > this.seconds.get() * 20.0 + 40.0) {
-               this.warned.remove(var5);
-            }
-         }
-
-         this.warned.retainAll(var1);
       }
    }
 
@@ -537,37 +458,37 @@ public final class Utility {
          return this.pitch;
       }
 
-      public void look(double var1, double var3) {
-         this.yaw += (float)var1 * 0.15F;
-         this.pitch = Math.max(-90.0F, Math.min(90.0F, this.pitch + (float)var3 * 0.15F));
+      public void look(double dx, double dy) {
+         this.yaw += (float)dx * 0.15F;
+         this.pitch = Math.max(-90.0F, Math.min(90.0F, this.pitch + (float)dy * 0.15F));
       }
 
       @Override
       public void tick() {
-         LocalPlayer var1 = Mc.player();
-         if (var1 != null) {
-            boolean var2 = this.keyDown() && !Mc.screenOpen();
-            boolean var3;
+         LocalPlayer p = Mc.player();
+         if (p != null) {
+            boolean down = this.keyDown() && !Mc.screenOpen();
+            boolean want;
             if (this.toggle.get()) {
-               if (var2 && !this.lastDown) {
+               if (down && !this.lastDown) {
                   this.toggled = !this.toggled;
                }
 
-               var3 = this.toggled;
+               want = this.toggled;
             } else {
-               var3 = var2;
+               want = down;
             }
 
-            this.lastDown = var2;
-            if (var3 && !this.active) {
+            this.lastDown = down;
+            if (want && !this.active) {
                this.active = true;
-               this.yaw = Mc.yaw(var1);
-               this.pitch = Mc.pitch(var1);
+               this.yaw = Mc.yaw(p);
+               this.pitch = Mc.pitch(p);
                if (this.front.get()) {
                   this.savedPerspective = Mc.perspective();
                   Mc.perspective(CameraType.THIRD_PERSON_BACK);
                }
-            } else if (!var3 && this.active) {
+            } else if (!want && this.active) {
                this.stop();
             }
          }
@@ -586,6 +507,142 @@ public final class Utility {
          this.toggled = false;
          if (this.active) {
             this.stop();
+         }
+      }
+   }
+
+   public static final class HeadSearch extends Module {
+      final Setting.Mode mode = this.add(new Setting.Mode("Modus", 0, "Profil", "FindEventHead"));
+      final Setting.Color color = this.add(new Setting.Color("ESP-Farbe", 0));
+      final Setting.Num range = this.add(new Setting.Num("Reichweite", 16.0, 256.0, 8.0, 128.0, " Blöcke"));
+      private final Set<Long> collected = ConcurrentHashMap.newKeySet();
+      private boolean lastUse;
+      private long lastCount;
+
+      HeadSearch() {
+         super("headsearch", "Head Search", "Zeigt Spieler-Köpfe mit ESP durch Wände", Category.UTILITY);
+         this.icon("search");
+         this.fresh();
+         this.add(new Setting.Action("Gesammelte zurücksetzen", "Reset", () -> {
+            this.collected.clear();
+            Toasts.show("search", "Head Search", "Alle Köpfe wieder sichtbar");
+         }));
+      }
+
+      @Override
+      public void onEnable() {
+         this.lastCount = System.currentTimeMillis();
+      }
+
+      @Override
+      public void tick() {
+         if (this.enabled) {
+            LocalPlayer p = Mc.player();
+            if (p != null && !Mc.screenOpen()) {
+               boolean use = Mc.mouseDown(1);
+               if (use && !this.lastUse) {
+                  HitResult hit = Mc.mc().hitResult;
+                  if (hit instanceof BlockHitResult && hit.getType() == Type.BLOCK) {
+                     BlockPos pos = ((BlockHitResult)hit).getBlockPos();
+                     long packed = pos.asLong();
+                     if (!this.collected.contains(packed)) {
+                        this.collected.add(packed);
+                        Toasts.show("search", "Head Search", "Eingesammelt (" + this.collected.size() + ")", -16735270, 1500L);
+                     }
+                  }
+               }
+
+               this.lastUse = use;
+            } else {
+               this.lastUse = false;
+            }
+         }
+      }
+
+      private boolean matchesFilter(SkullBlockEntity skull) {
+         try {
+            ResolvableProfile owner = skull.getOwnerProfile();
+            if (owner == null) {
+               return false;
+            } else if ("Profil".equals(this.mode.get())) {
+               return true;
+            } else {
+               Optional<String> name = owner.name();
+               if (name.isPresent() && name.get().equals("FindEventHead")) {
+                  return true;
+               } else {
+                  GameProfile gp = owner.partialProfile();
+                  return gp != null && "FindEventHead".equals(gp.name());
+               }
+            }
+         } catch (Throwable var5) {
+            return false;
+         }
+      }
+
+      void render() {
+         LocalPlayer p = Mc.player();
+         if (p != null) {
+            double cx = R3.camX();
+            double cy = R3.camY();
+            double cz = R3.camZ();
+            double maxR = this.range.get();
+            int rgb = this.color.argb() & 16777215;
+            double t = System.currentTimeMillis() / 1000.0;
+            double pulse = 0.6 + 0.2 * Math.sin(t * 3.0);
+            int pcx = (int)Math.floor(Mc.x(p)) >> 4;
+            int pcz = (int)Math.floor(Mc.z(p)) >> 4;
+            int cr = (int)Math.ceil(maxR / 16.0);
+            int found = 0;
+
+            try {
+               for (int ddx = -cr; ddx <= cr; ddx++) {
+                  for (int ddz = -cr; ddz <= cr; ddz++) {
+                     LevelChunk chunk;
+                     try {
+                        chunk = Mc.world().getChunk(pcx + ddx, pcz + ddz);
+                     } catch (Throwable var40) {
+                        continue;
+                     }
+
+                     if (chunk != null) {
+                        Map<BlockPos, BlockEntity> bes;
+                        try {
+                           bes = chunk.getBlockEntities();
+                        } catch (Throwable var39) {
+                           continue;
+                        }
+
+                        if (bes != null && !bes.isEmpty()) {
+                           for (Entry<BlockPos, BlockEntity> entry : bes.entrySet()) {
+                              if (entry.getValue() instanceof SkullBlockEntity skull && this.matchesFilter(skull)) {
+                                 BlockPos pos = entry.getKey();
+                                 if (!this.collected.contains(pos.asLong())) {
+                                    double bx = pos.getX() + 0.5 - cx;
+                                    double by = pos.getY() + 0.5 - cy;
+                                    double bz = pos.getZ() + 0.5 - cz;
+                                    if (!(bx * bx + by * by + bz * bz > maxR * maxR)) {
+                                       found++;
+                                       double x0 = pos.getX();
+                                       double y0 = pos.getY();
+                                       double z0 = pos.getZ();
+                                       R3.noDepthBox(x0 - 0.01, y0 - 0.01, z0 - 0.01, x0 + 1.01, y0 + 1.01, z0 + 1.01, R3.argb(rgb, 0.3 * pulse));
+                                       R3.noDepthBoxEdges(x0 - 0.01, y0 - 0.01, z0 - 0.01, x0 + 1.01, y0 + 1.01, z0 + 1.01, 0.012, R3.argb(rgb, 0.95));
+                                    }
+                                 }
+                              }
+                           }
+                        }
+                     }
+                  }
+               }
+            } catch (Throwable var41) {
+            }
+
+            if (System.currentTimeMillis() - this.lastCount > 5000L) {
+               this.lastCount = System.currentTimeMillis();
+               Mc.actionBar("§7Head Search: §a" + found + " §7Köpfe gefunden");
+            }
          }
       }
    }
@@ -622,71 +679,37 @@ public final class Utility {
       }
    }
 
-   public static final class LowHpWarning extends Module {
-      final Setting.Num limit = this.add(new Setting.Num("Grenze", 2.0, 14.0, 1.0, 6.0, " ♥"));
-      final Setting.Bool sound = this.add(new Setting.Bool("Warnton", true));
-      private boolean warned;
-
-      LowHpWarning() {
-         super("lowhp", "Low-HP-Warnung", "Warnt dich mit Ton + Hinweis, wenn dein Leben niedrig ist", Category.UTILITY);
-         this.icon("heart");
-         this.enabled = true;
-         this.fresh();
-      }
-
-      @Override
-      public void tick() {
-         LocalPlayer var1 = Mc.player();
-         if (var1 != null && !var1.isCreative() && !Mc.isDead(var1)) {
-            float var2 = Mc.health(var1) + Mc.absorption(var1);
-            if (var2 <= this.limit.get() * 2.0) {
-               if (!this.warned) {
-                  this.warned = true;
-                  Toasts.show("heart", "Wenig Leben!", String.format(Locale.ROOT, "%.1f ♥ übrig", var2 / 2.0F), -50356, 2500L);
-                  if (this.sound.get()) {
-                     Sound.play("minecraft:block.note_block.bit", 0.7F, 0.9F);
-                  }
-               }
-            } else if (var2 > this.limit.get() * 2.0 + 2.0) {
-               this.warned = false;
-            }
-         } else {
-            this.warned = false;
-         }
-      }
-   }
-
    public static final class Macros extends Module {
       final Setting.Text[] text = new Setting.Text[4];
       final Setting.Mode[] key = new Setting.Mode[4];
       private long last = 0L;
 
       Macros() {
-         super("macros", "Makros", "Taste drückt = Nachricht oder /Befehl senden (z.B. /home, /spawn)", Category.UTILITY);
+         super("macros", "Auto Text", "Taste drücken = Nachricht oder /Befehl senden (z.B. /home, /spawn)", Category.UTILITY);
          this.icon("macro");
          this.fresh();
-         String[] var1 = new String[]{"/spawn", "/home", "", ""};
+         String[] defs = new String[]{"/spawn", "/home", "", ""};
 
-         for (int var2 = 0; var2 < 4; var2++) {
-            this.text[var2] = this.add(new Setting.Text("Makro " + (var2 + 1), var1[var2], 120, "Text oder /befehl"));
-            this.key[var2] = this.add(new Setting.Mode("Taste " + (var2 + 1), var2 < 2 ? var2 + 1 : 0, Utility.KEY_NAMES));
+         for (int i = 0; i < 4; i++) {
+            this.text[i] = this.add(new Setting.Text("Auto Text " + (i + 1), defs[i], 120, "Text oder /befehl"));
+            this.key[i] = this.add(new Setting.Mode("Taste " + (i + 1), i < 2 ? i + 1 : 0, Utility.KEY_NAMES));
          }
       }
 
-      void onKey(int var1) {
+      void onKey(int k) {
          if (System.currentTimeMillis() - this.last >= 400L) {
-            for (int var2 = 0; var2 < 4; var2++) {
-               if (Utility.KEY_CODES[this.key[var2].index] == var1) {
-                  String var3 = this.text[var2].get().trim();
-                  if (!var3.isEmpty() && Mc.mc().getConnection() != null) {
+            for (int i = 0; i < 4; i++) {
+               if (Utility.KEY_CODES[this.key[i].index] == k) {
+                  String s = this.text[i].get().trim();
+                  if (!s.isEmpty() && Mc.mc().getConnection() != null) {
                      this.last = System.currentTimeMillis();
-                     if (var3.startsWith("/")) {
-                        Mc.command(var3.substring(1));
+                     if (s.startsWith("/")) {
+                        Mc.command(s.substring(1));
                      } else {
-                        Mc.mc().getConnection().sendChat(var3);
+                        Mc.mc().getConnection().sendChat(s);
                      }
 
-                     Toasts.show("macro", "Makro " + (var2 + 1), var3, 0, 1500L);
+                     Toasts.show("macro", "Auto Text " + (i + 1), s, 0, 1500L);
                   }
                }
             }
@@ -700,32 +723,32 @@ public final class Utility {
       private long last = 0L;
 
       MentionPing() {
-         super("mention", "Erwähnungs-Ping", "Ton + Hinweis, wenn jemand deinen Namen im Chat schreibt", Category.UTILITY);
+         super("mention", "Erwähnungs-Ping", "Ton + Hinweis bei @Name im Chat", Category.UTILITY);
          this.icon("bell");
          this.enabled = true;
          this.fresh();
       }
 
-      void check(String var1) {
-         LocalPlayer var2 = Mc.player();
-         if (var2 != null) {
-            String var3 = Mc.name(var2);
-            String var4 = var1.toLowerCase(Locale.ROOT);
-            if (!var4.startsWith("<" + var3.toLowerCase(Locale.ROOT) + ">") && !var4.startsWith(var3.toLowerCase(Locale.ROOT) + ":")) {
-               boolean var5 = var4.contains(var3.toLowerCase(Locale.ROOT));
+      void check(String s) {
+         LocalPlayer p = Mc.player();
+         if (p != null) {
+            String me = Mc.name(p);
+            String low = s.toLowerCase(Locale.ROOT);
+            if (!low.startsWith("<" + me.toLowerCase(Locale.ROOT) + ">") && !low.startsWith(me.toLowerCase(Locale.ROOT) + ":")) {
+               boolean hit = low.contains("@" + me.toLowerCase(Locale.ROOT));
 
-               for (String var9 : this.extra.get().split(",")) {
-                  var9 = var9.trim().toLowerCase(Locale.ROOT);
-                  if (var9.length() >= 2 && var4.contains(var9)) {
-                     var5 = true;
+               for (String w : this.extra.get().split(",")) {
+                  w = w.trim().toLowerCase(Locale.ROOT);
+                  if (w.length() >= 2 && low.contains("@" + w)) {
+                     hit = true;
                   }
                }
 
-               if (var5 && System.currentTimeMillis() - this.last >= 1500L) {
+               if (hit && System.currentTimeMillis() - this.last >= 1500L) {
                   this.last = System.currentTimeMillis();
                   Sound.play("minecraft:block.note_block.pling", 1.8F, 0.8F);
                   if (this.toast.get()) {
-                     Toasts.show("chat", "Du wurdest erwähnt", var1.length() > 80 ? var1.substring(0, 80) + "…" : var1);
+                     Toasts.show("chat", "Du wurdest erwähnt", s.length() > 80 ? s.substring(0, 80) + "…" : s);
                   }
                }
             }
@@ -737,20 +760,20 @@ public final class Utility {
       final Setting.Mode command;
       final Setting.Num range = this.add(new Setting.Num("Reichweite", 4.0, 128.0, 2.0, 64.0, " Blöcke"));
 
-      SeeModule(String var1, String var2, String var3, String[] var4) {
-         super(var1, var2, var3, Category.UTILITY);
-         this.command = this.add(new Setting.Mode("Befehl", 0, var4));
+      SeeModule(String id, String name, String desc, String[] commands) {
+         super(id, name, desc, Category.UTILITY);
+         this.command = this.add(new Setting.Mode("Befehl", 0, commands));
          this.enabled = true;
-         this.icon(var1.equals("invsee") ? "backpack" : "box");
+         this.icon(id.equals("invsee") ? "backpack" : "box");
       }
 
       public void use() {
          if (this.enabled) {
-            Player var1 = Utility.lookedAtPlayer(this.range.get());
-            if (var1 == null) {
+            Player target = Utility.lookedAtPlayer(this.range.get());
+            if (target == null) {
                Toasts.show("user", this.name, "Kein Spieler im Fadenkreuz", -45730, 1800L);
             } else {
-               Mc.command(this.command.get() + " " + Mc.name(var1));
+               Mc.command(this.command.get() + " " + Mc.name(target));
             }
          }
       }
@@ -772,24 +795,24 @@ public final class Utility {
       }
 
       public void share() {
-         LocalPlayer var1 = Mc.player();
-         if (var1 == null) {
+         LocalPlayer p = Mc.player();
+         if (p == null) {
             Toasts.show("copy", this.name, "Nur in einer Welt möglich");
          } else {
-            String var2 = "X: "
-               + (int)Math.floor(Mc.x(var1))
+            String s = "X: "
+               + (int)Math.floor(Mc.x(p))
                + " Y: "
-               + (int)Math.floor(Mc.y(var1))
+               + (int)Math.floor(Mc.y(p))
                + " Z: "
-               + (int)Math.floor(Mc.z(var1))
+               + (int)Math.floor(Mc.z(p))
                + " ("
                + Utility.dimName(Utility.dimension())
                + ")";
             if (this.target.index == 1 && Mc.mc().getConnection() != null) {
-               Mc.mc().getConnection().sendChat(var2);
+               Mc.mc().getConnection().sendChat(s);
             } else {
-               Mc.clipboard(var2);
-               Toasts.show("copy", "Koordinaten kopiert", var2);
+               Mc.clipboard(s);
+               Toasts.show("copy", "Koordinaten kopiert", s);
             }
          }
       }
@@ -834,11 +857,11 @@ public final class Utility {
 
       @Override
       public void tick() {
-         LocalPlayer var1 = Mc.player();
-         if (var1 != null && !Mc.screenOpen()) {
+         LocalPlayer p = Mc.player();
+         if (p != null && !Mc.screenOpen()) {
             if (!Boolean.TRUE.equals(Mc.options().toggleSprint().get())) {
                Mc.options().keySprint.setDown(true);
-               if (this.hud.get() && var1.isSprinting()) {
+               if (this.hud.get() && p.isSprinting()) {
                   Mc.actionBar("§7[§aSprint§7]");
                }
             }
@@ -854,36 +877,6 @@ public final class Utility {
       }
    }
 
-   public static final class TotemWarning extends Module {
-      final Setting.Bool sound = this.add(new Setting.Bool("Warnton", true));
-      private int last = -1;
-
-      TotemWarning() {
-         super("totemwarn", "Totem-Warnung", "Meldet, wenn du ein Totem verbrauchst und wie viele noch übrig sind", Category.UTILITY);
-         this.icon("totem");
-         this.enabled = true;
-         this.fresh();
-      }
-
-      @Override
-      public void tick() {
-         int var1 = Mc.countItem("totem_of_undying");
-         if (this.last > 0 && var1 < this.last) {
-            Toasts.show("totem", var1 == 0 ? "Letztes Totem weg!" : "Totem verbraucht", var1 + " übrig", var1 == 0 ? -50356 : -13053, 3000L);
-            if (this.sound.get()) {
-               Sound.play("minecraft:block.note_block.bell", var1 == 0 ? 0.6F : 1.2F, 0.8F);
-            }
-         }
-
-         this.last = var1;
-      }
-
-      @Override
-      public void onDisable() {
-         this.last = -1;
-      }
-   }
-
    public static final class Waypoint {
       public String name;
       public String dim;
@@ -893,14 +886,14 @@ public final class Utility {
       public int color;
       public boolean death;
 
-      Waypoint(String var1, String var2, double var3, double var5, double var7, int var9, boolean var10) {
-         this.name = var1;
-         this.dim = var2;
-         this.x = var3;
-         this.y = var5;
-         this.z = var7;
-         this.color = var9;
-         this.death = var10;
+      Waypoint(String name, String dim, double x, double y, double z, int color, boolean death) {
+         this.name = name;
+         this.dim = dim;
+         this.x = x;
+         this.y = y;
+         this.z = z;
+         this.color = color;
+         this.death = death;
       }
    }
 
@@ -916,9 +909,9 @@ public final class Utility {
          this.fresh();
          this.add(new Setting.Action("Hier setzen", "Wegpunkt setzen", Utility.Waypoints::addHere));
          this.add(new Setting.Action("Letzten löschen", "Löschen", () -> {
-            for (int var0 = Utility.POINTS.size() - 1; var0 >= 0; var0--) {
-               if (Utility.POINTS.get(var0).dim.equals(Utility.dimension())) {
-                  Toasts.show("trash", "Wegpunkt gelöscht", Utility.POINTS.remove(var0).name);
+            for (int i = Utility.POINTS.size() - 1; i >= 0; i--) {
+               if (Utility.POINTS.get(i).dim.equals(Utility.dimension())) {
+                  Toasts.show("trash", "Wegpunkt gelöscht", Utility.POINTS.remove(i).name);
                   Modules.scheduleSave();
                   return;
                }
@@ -927,112 +920,80 @@ public final class Utility {
             Toasts.show("waypoint", "Wegpunkte", "Keine Wegpunkte in dieser Dimension");
          }));
          this.add(new Setting.Action("Alle löschen", "Alle löschen", () -> {
-            Utility.POINTS.removeIf(var0 -> var0.dim.equals(Utility.dimension()));
+            Utility.POINTS.removeIf(w -> w.dim.equals(Utility.dimension()));
             Modules.scheduleSave();
             Toasts.show("trash", "Wegpunkte", "Alle Wegpunkte dieser Dimension gelöscht");
          }));
       }
 
       public static void addHere() {
-         LocalPlayer var0 = Mc.player();
-         if (var0 == null) {
+         LocalPlayer p = Mc.player();
+         if (p == null) {
             Toasts.show("waypoint", "Wegpunkte", "Nur in einer Welt möglich");
          } else {
-            int var1 = 1;
+            int n = 1;
 
-            for (Utility.Waypoint var3 : Utility.POINTS) {
-               if (!var3.death) {
-                  var1++;
+            for (Utility.Waypoint w : Utility.POINTS) {
+               if (!w.death) {
+                  n++;
                }
             }
 
-            String var4 = "Punkt " + var1;
+            String name = "Punkt " + n;
             Utility.POINTS
                .add(
                   new Utility.Waypoint(
-                     var4,
+                     name,
                      Utility.dimension(),
-                     Math.floor(Mc.x(var0)) + 0.5,
-                     Math.floor(Mc.y(var0)),
-                     Math.floor(Mc.z(var0)) + 0.5,
-                     Utility.WP_COLORS[(var1 - 1) % Utility.WP_COLORS.length],
+                     Math.floor(Mc.x(p)) + 0.5,
+                     Math.floor(Mc.y(p)),
+                     Math.floor(Mc.z(p)) + 0.5,
+                     Utility.WP_COLORS[(n - 1) % Utility.WP_COLORS.length],
                      false
                   )
                );
             Modules.scheduleSave();
             Toasts.show(
-               "waypoint",
-               "Wegpunkt gesetzt",
-               var4 + " · " + (int)Math.floor(Mc.x(var0)) + " " + (int)Math.floor(Mc.y(var0)) + " " + (int)Math.floor(Mc.z(var0))
+               "waypoint", "Wegpunkt gesetzt", name + " · " + (int)Math.floor(Mc.x(p)) + " " + (int)Math.floor(Mc.y(p)) + " " + (int)Math.floor(Mc.z(p))
             );
          }
       }
 
       void render() {
-         LocalPlayer var1 = Mc.player();
-         if (var1 != null) {
-            String var2 = Utility.dimension();
-            double var3 = R3.camX();
-            double var5 = R3.camY();
-            double var7 = R3.camZ();
-            double var9 = System.currentTimeMillis() / 1000.0;
+         LocalPlayer p = Mc.player();
+         if (p != null) {
+            String dim = Utility.dimension();
+            double cx = R3.camX();
+            double cy = R3.camY();
+            double cz = R3.camZ();
+            double t = System.currentTimeMillis() / 1000.0;
 
-            for (Utility.Waypoint var12 : new ArrayList<>(Utility.POINTS)) {
-               if (var12.dim.equals(var2) && (var12.death ? Utility.deathPoint.enabled : this.enabled)) {
-                  double var13 = var12.x - var3;
-                  double var15 = var12.y + 1.0 - var5;
-                  double var17 = var12.z - var7;
-                  double var19 = Math.sqrt(var13 * var13 + var15 * var15 + var17 * var17);
-                  if (!(var19 > this.maxDist.get())) {
-                     int var21 = var12.color & 16777215;
-                     double var22 = var19 > 96.0 ? 96.0 / var19 : 1.0;
-                     double var24 = var3 + var13 * var22;
-                     double var26 = var7 + var17 * var22;
-                     double var28 = var5 + (var12.y - var5) * var22;
+            for (Utility.Waypoint w : new ArrayList<>(Utility.POINTS)) {
+               if (w.dim.equals(dim) && (w.death ? Utility.deathPoint.enabled : this.enabled)) {
+                  double dx = w.x - cx;
+                  double dy = w.y + 1.0 - cy;
+                  double dz = w.z - cz;
+                  double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                  if (!(dist > this.maxDist.get())) {
+                     int rgb = w.color & 16777215;
+                     double k = dist > 96.0 ? 96.0 / dist : 1.0;
+                     double x = cx + dx * k;
+                     double z = cz + dz * k;
+                     double baseY = cy + (w.y - cy) * k;
                      if (this.beams.get()) {
-                        double var30 = 0.18 * var22 * Math.max(1.0, var19 / 24.0);
-                        double var32 = 0.35 + 0.1 * Math.sin(var9 * 2.0 + var12.x);
-                        R3.box(var24 - var30, var28, var26 - var30, var24 + var30, var28 + 220.0 * var22, var26 + var30, R3.argb(var21, var32));
-                        R3.box(
-                           var24 - var30 * 0.35,
-                           var28,
-                           var26 - var30 * 0.35,
-                           var24 + var30 * 0.35,
-                           var28 + 220.0 * var22,
-                           var26 + var30 * 0.35,
-                           R3.argb(16777215, 0.5)
-                        );
-                        R3.ring(
-                           var24,
-                           var28 + 0.03 * var22,
-                           var26,
-                           0.3 * var22,
-                           0.9 * var22 * Math.max(1.0, var19 / 24.0),
-                           32,
-                           R3.argb(var21, 0.6),
-                           R3.argb(var21, 0.0),
-                           var9
-                        );
+                        double bw = 0.18 * k * Math.max(1.0, dist / 24.0);
+                        double pulse = 0.35 + 0.1 * Math.sin(t * 2.0 + w.x);
+                        R3.box(x - bw, baseY, z - bw, x + bw, baseY + 220.0 * k, z + bw, R3.argb(rgb, pulse));
+                        R3.box(x - bw * 0.35, baseY, z - bw * 0.35, x + bw * 0.35, baseY + 220.0 * k, z + bw * 0.35, R3.argb(16777215, 0.5));
+                        R3.ring(x, baseY + 0.03 * k, z, 0.3 * k, 0.9 * k * Math.max(1.0, dist / 24.0), 32, R3.argb(rgb, 0.6), R3.argb(rgb, 0.0), t);
                      }
 
                      if (this.labels.get()) {
-                        long var36 = var19 < 50.0 ? Math.round(var19) : (var19 < 500.0 ? Math.round(var19 / 5.0) * 5L : Math.round(var19 / 25.0) * 25L);
-                        String var37 = var12.name + "  " + var36 + "m";
-                        Identifier var33 = Visuals2.TextTex.get(var37, 0xFF000000 | var21);
-                        double var34 = Math.max(0.35, var19 * var22 * 0.045);
-                        R3.billboard(
-                           var33,
-                           var24,
-                           var28 + 2.4 * var22 + var34,
-                           var26,
-                           var34 * Visuals2.TextTex.aspect(var37, 0xFF000000 | var21),
-                           var34,
-                           0.0F,
-                           0.0F,
-                           1.0F,
-                           1.0F,
-                           -1
-                        );
+                        long dd = dist < 50.0 ? Math.round(dist) : (dist < 500.0 ? Math.round(dist / 5.0) * 5L : Math.round(dist / 25.0) * 25L);
+                        String s = w.name + "  " + dd + "m";
+                        Identifier tex = Visuals2.TextTex.get(s, 0xFF000000 | rgb);
+                        double h = Math.max(0.35, dist * k * 0.045);
+                        R3.billboard(tex, x, baseY + 2.4 * k + h, z, h * Visuals2.TextTex.aspect(s, 0xFF000000 | rgb), h, 0.0F, 0.0F, 1.0F, 1.0F, -1);
                      }
                   }
                }
@@ -1046,42 +1007,42 @@ public final class Utility {
             new Modules.Persist() {
                @Override
                public Object save() {
-                  ArrayList var1 = new ArrayList();
+                  List<Object> out = new ArrayList<>();
 
-                  for (Utility.Waypoint var3 : Utility.POINTS) {
-                     LinkedHashMap var4 = new LinkedHashMap();
-                     var4.put("name", var3.name);
-                     var4.put("dim", var3.dim);
-                     var4.put("x", var3.x);
-                     var4.put("y", var3.y);
-                     var4.put("z", var3.z);
-                     var4.put("color", (long)var3.color);
-                     var4.put("death", var3.death);
-                     var4.put("server", Mc.inGame() ? Mc.serverAddress() : "");
-                     var1.add(var4);
+                  for (Utility.Waypoint w : Utility.POINTS) {
+                     Map<String, Object> m = new LinkedHashMap<>();
+                     m.put("name", w.name);
+                     m.put("dim", w.dim);
+                     m.put("x", w.x);
+                     m.put("y", w.y);
+                     m.put("z", w.z);
+                     m.put("color", (long)w.color);
+                     m.put("death", w.death);
+                     m.put("server", Mc.inGame() ? Mc.serverAddress() : "");
+                     out.add(m);
                   }
 
-                  return var1;
+                  return out;
                }
 
                @Override
-               public void load(Object var1) {
-                  if (var1 instanceof List) {
+               public void load(Object o) {
+                  if (o instanceof List) {
                      Utility.POINTS.clear();
 
-                     for (Object var3 : (List)var1) {
-                        if (var3 instanceof Map var4) {
+                     for (Object e : (List)o) {
+                        if (e instanceof Map<String, Object> m) {
                            try {
                               Utility.POINTS
                                  .add(
                                     new Utility.Waypoint(
-                                       String.valueOf(var4.get("name")),
-                                       String.valueOf(var4.get("dim")),
-                                       ((Number)var4.get("x")).doubleValue(),
-                                       ((Number)var4.get("y")).doubleValue(),
-                                       ((Number)var4.get("z")).doubleValue(),
-                                       ((Number)var4.get("color")).intValue(),
-                                       Boolean.TRUE.equals(var4.get("death"))
+                                       String.valueOf(m.get("name")),
+                                       String.valueOf(m.get("dim")),
+                                       ((Number)m.get("x")).doubleValue(),
+                                       ((Number)m.get("y")).doubleValue(),
+                                       ((Number)m.get("z")).doubleValue(),
+                                       ((Number)m.get("color")).intValue(),
+                                       Boolean.TRUE.equals(m.get("death"))
                                     )
                                  );
                            } catch (Throwable var6) {
@@ -1104,12 +1065,12 @@ public final class Utility {
          this.fresh();
       }
 
-      boolean blocks(String var1) {
-         String var2 = var1.toLowerCase(Locale.ROOT);
+      boolean blocks(String s) {
+         String low = s.toLowerCase(Locale.ROOT);
 
-         for (String var6 : this.words.get().split(",")) {
-            var6 = var6.trim().toLowerCase(Locale.ROOT);
-            if (var6.length() >= 2 && var2.contains(var6)) {
+         for (String w : this.words.get().split(",")) {
+            w = w.trim().toLowerCase(Locale.ROOT);
+            if (w.length() >= 2 && low.contains(w)) {
                return true;
             }
          }

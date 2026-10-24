@@ -33,8 +33,10 @@ public final class SpotifyHudMod implements ClientModInitializer {
    private static KeyMapping likeKey;
    public static volatile boolean editorOpen = false;
 
-   public static void LOG(String var0) {
-      System.out.println("[SpotifyHUD] " + var0);
+   public static void LOG(String msg) {
+      if (Boolean.getBoolean("legoclient.debug")) {
+         System.out.println("[SpotifyHUD] " + msg);
+      }
    }
 
    public static SpotifyApi api() {
@@ -63,59 +65,58 @@ public final class SpotifyHudMod implements ClientModInitializer {
       hud = new HudRenderer();
       chatInteraction = new HudInteraction(config, hud);
       smtc.start();
-      Category var1 = Category.register(Identifier.fromNamespaceAndPath("spotifyhud", "main"));
-      openKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.spotifyhud.open", 72, var1));
-      lyricsKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.spotifyhud.lyrics", 75, var1));
-      playKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.spotifyhud.playpause", -1, var1));
-      nextKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.spotifyhud.next", -1, var1));
-      prevKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.spotifyhud.previous", -1, var1));
-      likeKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.spotifyhud.like", -1, var1));
+      Category cat = Category.register(Identifier.fromNamespaceAndPath("spotifyhud", "main"));
+      openKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.spotifyhud.open", 72, cat));
+      lyricsKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.spotifyhud.lyrics", 75, cat));
+      playKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.spotifyhud.playpause", -1, cat));
+      nextKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.spotifyhud.next", -1, cat));
+      prevKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.spotifyhud.previous", -1, cat));
+      likeKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.spotifyhud.like", -1, cat));
       ClientTickEvents.END_CLIENT_TICK.register(SpotifyHudMod::onTick);
-      HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("spotifyhud", "hud"), (var0, var1x) -> renderHud(var0));
+      HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("spotifyhud", "hud"), (ctx, tickCounter) -> renderHud(ctx));
       ScreenEvents.AFTER_INIT
          .register(
-            (var0, var1x, var2, var3) -> {
-               if (var1x instanceof ChatScreen) {
-                  ScreenMouseEvents.allowMouseClick(var1x)
-                     .register((var0x, var1xx) -> !safe(() -> chatInteraction.mouseDown(var1xx.x(), var1xx.y(), dev.lego.compat.McCompat.mouseButton(var1xx.button()), var0x.width, var0x.height)));
-                  ScreenMouseEvents.allowMouseDrag(var1x)
-                     .register((var0x, var1xx, var2x, var4) -> !safe(() -> chatInteraction.mouseDrag(var1xx.x(), var1xx.y(), var0x.width, var0x.height)));
-                  ScreenMouseEvents.allowMouseRelease(var1x).register((var0x, var1xx) -> !safe(chatInteraction::mouseUp));
-                  ScreenMouseEvents.allowMouseScroll(var1x)
-                     .register((var0x, var1xx, var3x, var5, var7) -> !safe(() -> chatInteraction.scroll(var1xx, var3x, var7, var0x.width, var0x.height)));
-                  ScreenEvents.afterRender(var1x).register((var0x, var1xx, var2x, var3x, var4) -> {
+            (client, screen, w, h) -> {
+               if (screen instanceof ChatScreen) {
+                  ScreenMouseEvents.allowMouseClick(screen)
+                     .register((s, click) -> !safe(() -> chatInteraction.mouseDown(click.x(), click.y(), dev.lego.compat.McCompat.mouseButton(click.button()), s.width, s.height)));
+                  ScreenMouseEvents.allowMouseDrag(screen)
+                     .register((s, click, dx, dy) -> !safe(() -> chatInteraction.mouseDrag(click.x(), click.y(), s.width, s.height)));
+                  ScreenMouseEvents.allowMouseRelease(screen).register((s, click) -> !safe(chatInteraction::mouseUp));
+                  ScreenMouseEvents.allowMouseScroll(screen).register((s, mx, my, hz, v) -> !safe(() -> chatInteraction.scroll(mx, my, v, s.width, s.height)));
+                  ScreenEvents.afterRender(screen).register((s, ctx, mx, my, d) -> {
                      try {
-                        chatInteraction.render(var1xx, var2x, var3x, var1xx.guiWidth(), var1xx.guiHeight());
+                        chatInteraction.render(ctx, mx, my, ctx.guiWidth(), ctx.guiHeight());
                      } catch (Throwable var6) {
                         LOG("Chat-Renderfehler: " + var6);
                      }
                   });
-                  ScreenEvents.remove(var1x).register(var0x -> chatInteraction.mouseUp());
+                  ScreenEvents.remove(screen).register(s -> chatInteraction.mouseUp());
                }
             }
          );
       LOG("geladen");
    }
 
-   public static boolean editorDown(double var0, double var2, int var4, int var5, int var6) {
-      return chatInteraction != null && chatInteraction.mouseDown(var0, var2, var4, var5, var6);
+   public static boolean editorDown(double mx, double my, int b, int sw, int sh) {
+      return chatInteraction != null && chatInteraction.mouseDown(mx, my, b, sw, sh);
    }
 
-   public static boolean editorDrag(double var0, double var2, int var4, int var5) {
-      return chatInteraction != null && chatInteraction.mouseDrag(var0, var2, var4, var5);
+   public static boolean editorDrag(double mx, double my, int sw, int sh) {
+      return chatInteraction != null && chatInteraction.mouseDrag(mx, my, sw, sh);
    }
 
    public static boolean editorUp() {
       return chatInteraction != null && chatInteraction.mouseUp();
    }
 
-   public static boolean editorScroll(double var0, double var2, double var4, int var6, int var7) {
-      return chatInteraction != null && chatInteraction.scroll(var0, var2, var4, var6, var7);
+   public static boolean editorScroll(double mx, double my, double v, int sw, int sh) {
+      return chatInteraction != null && chatInteraction.scroll(mx, my, v, sw, sh);
    }
 
-   public static void editorRender(GuiGraphics var0, int var1, int var2, int var3, int var4) {
+   public static void editorRender(GuiGraphics ctx, int mx, int my, int sw, int sh) {
       if (chatInteraction != null) {
-         chatInteraction.render(var0, var1, var2, var3, var4);
+         chatInteraction.render(ctx, mx, my, sw, sh);
       }
    }
 
@@ -123,16 +124,16 @@ public final class SpotifyHudMod implements ClientModInitializer {
       return config != null;
    }
 
-   private static boolean safe(SpotifyHudMod.BoolAction var0) {
+   private static boolean safe(SpotifyHudMod.BoolAction a) {
       try {
-         return var0.run();
+         return a.run();
       } catch (Throwable var2) {
          LOG("Eingabefehler: " + var2);
          return false;
       }
    }
 
-   private static void onTick(Minecraft var0) {
+   private static void onTick(Minecraft client) {
       media.tick();
       if (config.lyrics) {
          lyrics.update(media.state());
@@ -145,14 +146,14 @@ public final class SpotifyHudMod implements ClientModInitializer {
 
       if (openSettings) {
          openSettings = false;
-         if (!(var0.screen instanceof SettingsScreen)) {
-            var0.setScreen(new SettingsScreen(config, media, hud));
+         if (!(client.screen instanceof SettingsScreen)) {
+            client.setScreen(new SettingsScreen(config, media, hud));
          }
       }
 
       while (openKey.consumeClick()) {
-         if (var0.screen == null) {
-            var0.setScreen(new SettingsScreen(config, media, hud));
+         if (client.screen == null) {
+            client.setScreen(new SettingsScreen(config, media, hud));
          }
       }
 
@@ -195,12 +196,12 @@ public final class SpotifyHudMod implements ClientModInitializer {
       saveAt = System.currentTimeMillis() + 800L;
    }
 
-   static void copyToClipboard(String var0) {
+   static void copyToClipboard(String s) {
       try {
-         Minecraft var1 = Minecraft.getInstance();
-         var1.execute(() -> {
+         Minecraft mc = Minecraft.getInstance();
+         mc.execute(() -> {
             try {
-               var1.keyboardHandler.setClipboard(var0);
+               mc.keyboardHandler.setClipboard(s);
             } catch (Throwable var3) {
             }
          });
@@ -208,83 +209,85 @@ public final class SpotifyHudMod implements ClientModInitializer {
       }
    }
 
-   static void onBridgeCommandFailed(String var0, String var1) {
-      if (var1 != null && !var1.isEmpty()) {
-         LOG("Befehl '" + var0 + "' fehlgeschlagen: " + var1);
+   static void onBridgeCommandFailed(String cmd, String err) {
+      if (err != null && !err.isEmpty()) {
+         LOG("Befehl '" + cmd + "' fehlgeschlagen: " + err);
       }
 
-      media.onBridgeFailed(var0);
+      media.onBridgeFailed(cmd);
    }
 
-   private static void renderHud(GuiGraphics var0) {
+   private static void renderHud(GuiGraphics ctx) {
       try {
          if (!config.visible) {
             return;
          }
 
-         Minecraft var1 = Minecraft.getInstance();
-         if (var1.options != null && var1.options.hideGui) {
+         Minecraft mc = Minecraft.getInstance();
+         if (mc.options != null && mc.options.hideGui) {
             return;
          }
 
-         if (var1.screen instanceof SettingsScreen) {
+         if (mc.screen instanceof SettingsScreen) {
             return;
          }
 
-         if (var1.screen instanceof ChatScreen) {
+         if (mc.screen instanceof ChatScreen) {
             return;
          }
 
-         if (editorOpen || var1.screen != null && var1.screen.getClass().getName().endsWith("HudEditorScreen")) {
+         if (editorOpen || mc.screen != null && mc.screen.getClass().getName().endsWith("HudEditorScreen")) {
             return;
          }
 
-         drawAll(var0, var0.guiWidth(), var0.guiHeight(), false, null, false, -1.0, -1);
+         drawAll(ctx, ctx.guiWidth(), ctx.guiHeight(), false, null, false, -1.0, -1);
       } catch (Throwable var2) {
          LOG("HUD-Renderfehler: " + var2);
       }
    }
 
-   static void drawAll(GuiGraphics var0, int var1, int var2, boolean var3, HudLayout.Region var4, boolean var5, double var6, int var8) {
+   static void drawAll(
+      GuiGraphics ctx, int sw, int sh, boolean interactive, HudLayout.Region hover, boolean lyricsHover, double progressPreview, int volumePreview
+   ) {
       if (config.visible) {
-         PlayerState var9 = media.state();
-         if (var3 || !config.hideWhenIdle || var9.hasTrack) {
-            int[] var10 = hud.bounds(var1, var2, config);
-            hud.render(var0, var10[0], var10[1], var10[2], var10[3], buildView(var3, var4, var6, var8));
-            int[] var11 = null;
-            if (config.lyrics && var9.hasTrack) {
-               lyrics.update(var9);
-               var11 = hud.lyricsBounds(var10, var1, var2, config);
-               hud.renderLyrics(var0, var11, lyrics.current(), var9, config, var3, var5);
+         PlayerState st = media.state();
+         if (interactive || !config.hideWhenIdle || st.hasTrack) {
+            int[] hb = hud.bounds(sw, sh, config);
+            hud.render(ctx, hb[0], hb[1], hb[2], hb[3], buildView(interactive, hover, progressPreview, volumePreview));
+            int[] lb = null;
+            if (config.lyrics && st.hasTrack) {
+               lyrics.update(st);
+               lb = hud.lyricsBounds(hb, sw, sh, config);
+               hud.renderLyrics(ctx, lb, lyrics.current(), st, config, interactive, lyricsHover);
             }
 
-            hud.renderToast(var0, var10, var11, var2, media.toast(), media.toastAt());
+            hud.renderToast(ctx, hb, lb, sh, media.toast(), media.toastAt());
          }
       }
    }
 
-   static HudPainter.View buildView(boolean var0, HudLayout.Region var1, double var2, int var4) {
-      HudPainter.View var5 = new HudPainter.View();
-      PlayerState var6 = media.state();
-      var5.st = var6;
-      var5.interactive = var0;
-      var5.hover = var1;
-      var5.progressPreview = var2;
-      var5.volumePreview = var4;
-      var5.showControls = true;
-      if (var6.hasTrack) {
-         var5.title = var6.title;
-         var5.artist = var6.artist;
-         var5.showTime = var6.durationMs > 0L;
-         var5.art = media.art();
+   static HudPainter.View buildView(boolean interactive, HudLayout.Region hover, double progressPreview, int volumePreview) {
+      HudPainter.View v = new HudPainter.View();
+      PlayerState st = media.state();
+      v.st = st;
+      v.interactive = interactive;
+      v.hover = hover;
+      v.progressPreview = progressPreview;
+      v.volumePreview = volumePreview;
+      v.showControls = true;
+      if (st.hasTrack) {
+         v.title = st.title;
+         v.artist = st.artist;
+         v.showTime = st.durationMs > 0L;
+         v.art = media.art();
       } else {
-         var5.title = "Kein Song erkannt";
-         var5.artist = smtc.fatal() != null && !api.isLoggedIn() ? "Erkennung nicht verfügbar - H drücken" : "Starte Spotify - wird automatisch erkannt";
-         var5.showTime = false;
-         var5.art = null;
+         v.title = "Kein Song erkannt";
+         v.artist = smtc.fatal() != null && !api.isLoggedIn() ? "Erkennung nicht verfügbar - H drücken" : "Starte Spotify - wird automatisch erkannt";
+         v.showTime = false;
+         v.art = null;
       }
 
-      return var5;
+      return v;
    }
 
    private interface BoolAction {

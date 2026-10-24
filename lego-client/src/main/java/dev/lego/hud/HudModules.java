@@ -59,20 +59,21 @@ public final class HudModules {
       Modules.register(new HudModules.Combo());
       Modules.register(new HudModules.ElytraInfo());
       Modules.register(new HudModules.ChunkInfo());
+      Modules.register(new HudModules.InventoryHud());
    }
 
    static String sessionTime() {
-      long var0 = LegoClient.sessionSeconds();
-      return var0 >= 3600L ? String.format("%02d:%02d:%02d", var0 / 3600L, var0 % 3600L / 60L, var0 % 60L) : String.format("%02d:%02d", var0 / 60L, var0 % 60L);
+      long s = LegoClient.sessionSeconds();
+      return s >= 3600L ? String.format("%02d:%02d:%02d", s / 3600L, s % 3600L / 60L, s % 60L) : String.format("%02d:%02d", s / 60L, s % 60L);
    }
 
-   static void drawItem(GuiGraphics var0, ItemStack var1, double var2, double var4, double var6) {
-      Matrix3x2fStack var8 = var0.pose();
-      var8.pushMatrix();
-      var8.translate((float)var2, (float)var4);
-      var8.scale((float)var6, (float)var6);
-      var0.renderItem(var1, 0, 0);
-      var8.popMatrix();
+   static void drawItem(GuiGraphics ctx, ItemStack s, double x, double y, double k) {
+      Matrix3x2fStack m = ctx.pose();
+      m.pushMatrix();
+      m.translate((float)x, (float)y);
+      m.scale((float)k, (float)k);
+      ctx.renderItem(s, 0, 0);
+      m.popMatrix();
    }
 
    static final class Armor extends HudModule {
@@ -108,8 +109,8 @@ public final class HudModules {
 
       @Override
       public boolean visible() {
-         for (int var1 = 0; var1 < 4; var1++) {
-            if (!Mc.empty(Mc.armor(39 - var1))) {
+         for (int i = 0; i < 4; i++) {
+            if (!Mc.empty(Mc.armor(39 - i))) {
                return true;
             }
          }
@@ -119,68 +120,68 @@ public final class HudModules {
 
       @Override
       public String key() {
-         StringBuilder var1 = new StringBuilder();
-         String[] var2 = new String[5];
-         int[] var3 = new int[5];
+         StringBuilder k = new StringBuilder();
+         String[] p = new String[5];
+         int[] pv = new int[5];
 
-         for (int var4 = 0; var4 < 5; var4++) {
-            ItemStack var5;
-            if (var4 < 4) {
-               var5 = Mc.armor(39 - var4);
+         for (int i = 0; i < 5; i++) {
+            ItemStack s;
+            if (i < 4) {
+               s = Mc.armor(39 - i);
             } else {
-               var5 = this.hand.get() && Mc.player() != null ? Mc.player().getMainHandItem() : null;
+               s = this.hand.get() && Mc.player() != null ? Mc.player().getMainHandItem() : null;
             }
 
-            this.stacks[var4] = var5;
-            var3[var4] = 100;
-            if (Mc.empty(var5)) {
-               var2[var4] = "";
-               var1.append("-");
+            this.stacks[i] = s;
+            pv[i] = 100;
+            if (Mc.empty(s)) {
+               p[i] = "";
+               k.append("-");
             } else {
-               if (Mc.damageable(var5) && Mc.maxDamage(var5) > 0) {
-                  int var6 = (int)Math.round(100.0 * (Mc.maxDamage(var5) - Mc.damage(var5)) / Mc.maxDamage(var5));
-                  var2[var4] = var6 + "%";
-                  var3[var4] = var6;
+               if (Mc.damageable(s) && Mc.maxDamage(s) > 0) {
+                  int pc = (int)Math.round(100.0 * (Mc.maxDamage(s) - Mc.damage(s)) / Mc.maxDamage(s));
+                  p[i] = pc + "%";
+                  pv[i] = pc;
                } else {
-                  var2[var4] = Mc.count(var5) > 1 ? String.valueOf(Mc.count(var5)) : "";
+                  p[i] = Mc.count(s) > 1 ? String.valueOf(Mc.count(s)) : "";
                }
 
-               var1.append(Mc.itemKey(var5)).append(var2[var4]).append(';');
+               k.append(Mc.itemKey(s)).append(p[i]).append(';');
             }
          }
 
-         this.pct = var2;
-         this.pctVal = var3;
-         return var1.toString() + this.layout.index;
+         this.pct = p;
+         this.pctVal = pv;
+         return k.toString() + this.layout.index;
       }
 
       @Override
-      public void paint(Graphics2D var1, Color var2) {
-         String[] var3 = this.pct;
-         int[] var4 = this.pctVal;
+      public void paint(Graphics2D g, Color accent) {
+         String[] p = this.pct;
+         int[] pv = this.pctVal;
 
-         for (int var5 = 0; var5 < this.n(); var5++) {
-            if (var3[var5] != null && !var3[var5].isEmpty()) {
-               int var6 = var4[var5];
-               Color var7 = var6 > 60 ? H.TXT : (var6 > 25 ? new Color(255, 205, 3) : new Color(255, 80, 80));
+         for (int i = 0; i < this.n(); i++) {
+            if (p[i] != null && !p[i].isEmpty()) {
+               int v = pv[i];
+               Color c = v > 60 ? H.TXT : (v > 25 ? new Color(255, 205, 3) : new Color(255, 80, 80));
                if (this.horiz()) {
-                  H.center(var1, var3[var5], 2 + var5 * 22 + 11, 27.5, 3, 5.8F, var7);
+                  H.center(g, p[i], 2 + i * 22 + 11, 27.5, 3, 5.8F, c);
                } else {
-                  H.text(var1, var3[var5], 21.0, var5 * 19 + 13, 3, 6.4F, var7);
+                  H.text(g, p[i], 21.0, i * 19 + 13, 3, 6.4F, c);
                }
             }
          }
       }
 
       @Override
-      public void overlay(GuiGraphics var1, int var2, int var3, double var4) {
-         for (int var6 = 0; var6 < this.n(); var6++) {
-            ItemStack var7 = this.stacks[var6];
-            if (!Mc.empty(var7)) {
+      public void overlay(GuiGraphics ctx, int x, int y, double k) {
+         for (int i = 0; i < this.n(); i++) {
+            ItemStack s = this.stacks[i];
+            if (!Mc.empty(s)) {
                if (this.horiz()) {
-                  HudModules.drawItem(var1, var7, var2 + (2 + var6 * 22 + 3) * var4, var3 + 3.0 * var4, var4);
+                  HudModules.drawItem(ctx, s, x + (2 + i * 22 + 3) * k, y + 3.0 * k, k);
                } else {
-                  HudModules.drawItem(var1, var7, var2 + 3.0 * var4, var3 + (var6 * 19 + 2) * var4, var4);
+                  HudModules.drawItem(ctx, s, x + 3.0 * k, y + (i * 19 + 2) * k, k);
                }
             }
          }
@@ -194,8 +195,8 @@ public final class HudModules {
 
       @Override
       void compute() {
-         String var1 = Mc.biome().replace('_', ' ');
-         this.value = var1.isEmpty() ? "-" : Character.toUpperCase(var1.charAt(0)) + var1.substring(1);
+         String b = Mc.biome().replace('_', ' ');
+         this.value = b.isEmpty() ? "-" : Character.toUpperCase(b.charAt(0)) + b.substring(1);
          this.unit = "";
       }
    }
@@ -207,26 +208,26 @@ public final class HudModules {
       private static boolean lastR;
 
       public static void frame() {
-         boolean var0 = Mc.mouseDown(0);
-         boolean var1 = Mc.mouseDown(1);
-         long var2 = System.currentTimeMillis();
-         boolean var4 = !Mc.screenOpen();
-         if (var0 && !lastL && var4) {
-            L.add(var2);
+         boolean l = Mc.mouseDown(0);
+         boolean r = Mc.mouseDown(1);
+         long now = System.currentTimeMillis();
+         boolean count = !Mc.screenOpen();
+         if (l && !lastL && count) {
+            L.add(now);
          }
 
-         if (var1 && !lastR && var4) {
-            R.add(var2);
+         if (r && !lastR && count) {
+            R.add(now);
          }
 
-         lastL = var0;
-         lastR = var1;
+         lastL = l;
+         lastR = r;
 
-         while (!L.isEmpty() && var2 - L.peekFirst() > 1000L) {
+         while (!L.isEmpty() && now - L.peekFirst() > 1000L) {
             L.pollFirst();
          }
 
-         while (!R.isEmpty() && var2 - R.peekFirst() > 1000L) {
+         while (!R.isEmpty() && now - R.peekFirst() > 1000L) {
             R.pollFirst();
          }
       }
@@ -250,18 +251,16 @@ public final class HudModules {
 
       @Override
       void compute() {
-         LocalTime var1 = LocalTime.now();
-         int var2 = var1.getHour();
-         String var3 = "";
+         LocalTime t = LocalTime.now();
+         int h = t.getHour();
+         String ampm = "";
          if (this.h12.get()) {
-            var3 = var2 < 12 ? "AM" : "PM";
-            var2 = var2 % 12 == 0 ? 12 : var2 % 12;
+            ampm = h < 12 ? "AM" : "PM";
+            h = h % 12 == 0 ? 12 : h % 12;
          }
 
-         this.value = this.seconds.get()
-            ? String.format("%02d:%02d:%02d", var2, var1.getMinute(), var1.getSecond())
-            : String.format("%02d:%02d", var2, var1.getMinute());
-         this.unit = var3;
+         this.value = this.seconds.get() ? String.format("%02d:%02d:%02d", h, t.getMinute(), t.getSecond()) : String.format("%02d:%02d", h, t.getMinute());
+         this.unit = ampm;
       }
    }
 
@@ -271,30 +270,30 @@ public final class HudModules {
       private static int combo;
       private static double reach;
 
-      public static void onAttack(Entity var0) {
-         LocalPlayer var1 = Mc.player();
-         long var2 = System.currentTimeMillis();
-         if (var0 == last && var2 - lastAt < 2500L) {
+      public static void onAttack(Entity target) {
+         LocalPlayer p = Mc.player();
+         long now = System.currentTimeMillis();
+         if (target == last && now - lastAt < 2500L) {
             combo++;
          } else {
             combo = 1;
          }
 
-         last = var0;
-         lastAt = var2;
-         if (var1 != null) {
-            reach = Math.sqrt(var1.distanceToSqr(var0)) - Mc.width(var0) / 2.0;
+         last = target;
+         lastAt = now;
+         if (p != null) {
+            reach = Math.sqrt(p.distanceToSqr(target)) - Mc.width(target) / 2.0;
          }
       }
 
       public static Entity target() {
-         Entity var0 = Mc.mc().crosshairPickEntity;
-         if (var0 instanceof Player) {
-            return var0;
+         Entity looked = Mc.mc().crosshairPickEntity;
+         if (looked instanceof Player) {
+            return looked;
          } else if (last != null && System.currentTimeMillis() - lastAt < 8000L && last.isAlive()) {
             return last;
          } else {
-            return var0 instanceof LivingEntity ? var0 : null;
+            return looked instanceof LivingEntity ? looked : null;
          }
       }
 
@@ -342,9 +341,9 @@ public final class HudModules {
 
       @Override
       public double w() {
-         double var1 = H.w(this.l1, 3, 8.0F) + (this.facing.get() ? H.w(this.dir, 2, 7.0F) + 8.0 : 0.0);
-         double var3 = this.nether.get() ? H.w(this.l2, 1, 6.8F) : 0.0;
-         return Math.ceil((Math.max(var1, var3) + (icons() ? 13 : 0) + 16.0) / 4.0) * 4.0;
+         double a = H.w(this.l1, 3, 8.0F) + (this.facing.get() ? H.w(this.dir, 2, 7.0F) + 8.0 : 0.0);
+         double b = this.nether.get() ? H.w(this.l2, 1, 6.8F) : 0.0;
+         return Math.ceil((Math.max(a, b) + (icons() ? 13 : 0) + 16.0) / 4.0) * 4.0;
       }
 
       @Override
@@ -354,46 +353,46 @@ public final class HudModules {
 
       @Override
       public String key() {
-         LocalPlayer var1 = Mc.player();
-         if (var1 == null) {
+         LocalPlayer p = Mc.player();
+         if (p == null) {
             this.l1 = "-";
             this.l2 = "";
             return "none";
          } else {
-            int var2 = (int)Math.floor(Mc.x(var1));
-            int var3 = (int)Math.floor(Mc.y(var1));
-            int var4 = (int)Math.floor(Mc.z(var1));
-            this.l1 = var2 + "  " + var3 + "  " + var4;
-            boolean var5 = false;
+            int x = (int)Math.floor(Mc.x(p));
+            int y = (int)Math.floor(Mc.y(p));
+            int z = (int)Math.floor(Mc.z(p));
+            this.l1 = x + "  " + y + "  " + z;
+            boolean inNether = false;
 
             try {
-               var5 = Mc.world().dimension().identifier().getPath().contains("nether");
+               inNether = Mc.world().dimension().identifier().getPath().contains("nether");
             } catch (Throwable var8) {
             }
 
-            this.l2 = var5 ? "Oberwelt  " + var2 * 8 + "  " + var4 * 8 : "Nether  " + Math.floorDiv(var2, 8) + "  " + Math.floorDiv(var4, 8);
-            float var6 = (Mc.yaw(var1) % 360.0F + 360.0F) % 360.0F;
-            String[] var7 = new String[]{"S", "SW", "W", "NW", "N", "NO", "O", "SO"};
-            this.dir = var7[Math.round(var6 / 45.0F) % 8];
+            this.l2 = inNether ? "Oberwelt  " + x * 8 + "  " + z * 8 : "Nether  " + Math.floorDiv(x, 8) + "  " + Math.floorDiv(z, 8);
+            float yaw = (Mc.yaw(p) % 360.0F + 360.0F) % 360.0F;
+            String[] d = new String[]{"S", "SW", "W", "NW", "N", "NO", "O", "SO"};
+            this.dir = d[Math.round(yaw / 45.0F) % 8];
             return this.l1 + "|" + (this.nether.get() ? this.l2 : "") + "|" + (this.facing.get() ? this.dir : "") + icons();
          }
       }
 
       @Override
-      public void paint(Graphics2D var1, Color var2) {
-         double var3 = 7.0;
+      public void paint(Graphics2D g, Color accent) {
+         double x = 7.0;
          if (icons()) {
-            H.icon(var1, "pin", var3 + 4.5, 8.0, 9.0, var2);
-            var3 += 13.0;
+            H.icon(g, "pin", x + 4.5, 8.0, 9.0, accent);
+            x += 13.0;
          }
 
-         H.text(var1, this.l1, var3, H.base(0.0, 16.0, 8.0F), 3, 8.0F, H.TXT);
+         H.text(g, this.l1, x, H.base(0.0, 16.0, 8.0F), 3, 8.0F, H.TXT);
          if (this.facing.get()) {
-            H.text(var1, this.dir, var3 + H.w(this.l1, 3, 8.0F) + 7.0, H.base(0.0, 16.0, 8.0F), 2, 7.0F, var2);
+            H.text(g, this.dir, x + H.w(this.l1, 3, 8.0F) + 7.0, H.base(0.0, 16.0, 8.0F), 2, 7.0F, accent);
          }
 
          if (this.nether.get()) {
-            H.text(var1, this.l2, var3, 22.5, 1, 6.8F, H.SUB);
+            H.text(g, this.l2, x, 22.5, 1, 6.8F, H.SUB);
          }
       }
    }
@@ -442,37 +441,37 @@ public final class HudModules {
 
       @Override
       public String key() {
-         LocalPlayer var1 = Mc.player();
-         this.yaw = var1 == null ? 0.0F : Mc.yaw(var1);
+         LocalPlayer p = Mc.player();
+         this.yaw = p == null ? 0.0F : Mc.yaw(p);
          return String.valueOf(Math.round(this.yaw * 2.0F));
       }
 
       @Override
-      public void paint(Graphics2D var1, Color var2) {
-         double var3 = this.w();
-         double var5 = (this.yaw % 360.0F + 360.0F) % 360.0F;
-         Shape var7 = var1.getClip();
-         var1.clip(new Double(4.0, 0.0, var3 - 8.0, 17.0, 8.0, 8.0));
-         String[] var8 = new String[]{"S", "SW", "W", "NW", "N", "NO", "O", "SO"};
+      public void paint(Graphics2D g, Color accent) {
+         double w = this.w();
+         double yw = (this.yaw % 360.0F + 360.0F) % 360.0F;
+         Shape old = g.getClip();
+         g.clip(new Double(4.0, 0.0, w - 8.0, 17.0, 8.0, 8.0));
+         String[] dirs = new String[]{"S", "SW", "W", "NW", "N", "NO", "O", "SO"};
 
-         for (int var9 = -16; var9 <= 16; var9++) {
-            double var10 = Math.floor(var5 / 15.0) * 15.0 + var9 * 15;
-            double var12 = var3 / 2.0 + (var10 - var5) * 1.25;
-            double var14 = Math.max(0.0, 1.0 - Math.abs(var12 - var3 / 2.0) / (var3 / 2.0));
-            int var16 = (int)Math.round((var10 % 360.0 + 360.0) % 360.0);
-            if (var16 % 45 == 0) {
-               String var17 = var8[var16 / 45 % 8];
-               boolean var18 = var17.length() == 1;
-               H.center(var1, var17, var12, 11.6, var18 ? 3 : 2, var18 ? 8.0F : 6.6F, H.alpha(var18 ? H.TXT : H.SUB, (int)(255.0 * var14)));
+         for (int i = -16; i <= 16; i++) {
+            double deg = Math.floor(yw / 15.0) * 15.0 + i * 15;
+            double x = w / 2.0 + (deg - yw) * 1.25;
+            double fade = Math.max(0.0, 1.0 - Math.abs(x - w / 2.0) / (w / 2.0));
+            int d = (int)Math.round((deg % 360.0 + 360.0) % 360.0);
+            if (d % 45 == 0) {
+               String s = dirs[d / 45 % 8];
+               boolean main = s.length() == 1;
+               H.center(g, s, x, 11.6, main ? 3 : 2, main ? 8.0F : 6.6F, H.alpha(main ? H.TXT : H.SUB, (int)(255.0 * fade)));
             } else {
-               var1.setColor(new Color(255, 255, 255, (int)(80.0 * var14)));
-               var1.fill(new java.awt.geom.Rectangle2D.Double(var12 - 0.35, 6.0, 0.7, 5.0));
+               g.setColor(new Color(255, 255, 255, (int)(80.0 * fade)));
+               g.fill(new java.awt.geom.Rectangle2D.Double(x - 0.35, 6.0, 0.7, 5.0));
             }
          }
 
-         var1.setClip(var7);
-         var1.setColor(var2);
-         var1.fill(new Double(var3 / 2.0 - 3.0, 14.0, 6.0, 1.8, 1.8, 1.8));
+         g.setClip(old);
+         g.setColor(accent);
+         g.fill(new Double(w / 2.0 - 3.0, 14.0, 6.0, 1.8, 1.8, 1.8));
       }
    }
 
@@ -491,13 +490,13 @@ public final class HudModules {
 
       @Override
       public double w() {
-         double var1 = 70.0;
+         double m = 70.0;
 
-         for (String[] var4 : this.rows) {
-            var1 = Math.max(var1, H.w(var4[0], 2, 7.2F) + H.w(var4[1], 3, 7.2F) + 26.0);
+         for (String[] r : this.rows) {
+            m = Math.max(m, H.w(r[0], 2, 7.2F) + H.w(r[1], 3, 7.2F) + 26.0);
          }
 
-         return Math.ceil(var1 / 4.0) * 4.0;
+         return Math.ceil(m / 4.0) * 4.0;
       }
 
       @Override
@@ -507,45 +506,45 @@ public final class HudModules {
 
       @Override
       public String key() {
-         ArrayList var1 = new ArrayList();
+         List<String[]> out = new ArrayList<>();
 
-         for (MobEffectInstance var4 : Mc.effects()) {
-            String var5 = Component.translatable(var4.getDescriptionId()).getString();
-            int var6 = var4.getAmplifier();
-            if (var6 > 0) {
-               var5 = var5 + " " + roman(var6 + 1);
+         for (MobEffectInstance e : Mc.effects()) {
+            String name = Component.translatable(e.getDescriptionId()).getString();
+            int amp = e.getAmplifier();
+            if (amp > 0) {
+               name = name + " " + roman(amp + 1);
             }
 
-            int var7 = var4.getDuration();
-            String var8 = var7 >= 0 && var7 <= 360000 ? String.format("%d:%02d", var7 / 20 / 60, var7 / 20 % 60) : "∞";
-            var1.add(new String[]{var5, var8, var7 > 0 && var7 < 200 ? "1" : "0"});
+            int d = e.getDuration();
+            String t = d >= 0 && d <= 360000 ? String.format("%d:%02d", d / 20 / 60, d / 20 % 60) : "∞";
+            out.add(new String[]{name, t, d > 0 && d < 200 ? "1" : "0"});
          }
 
-         this.rows = var1;
-         StringBuilder var9 = new StringBuilder();
+         this.rows = out;
+         StringBuilder k = new StringBuilder();
 
-         for (String[] var11 : (Iterable<String[]>) (Iterable<?>) (var1)) {
-            var9.append(var11[0]).append(var11[1]);
+         for (String[] r : out) {
+            k.append(r[0]).append(r[1]);
          }
 
-         return var9.toString();
+         return k.toString();
       }
 
-      private static String roman(int var0) {
-         return new String[]{"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"}[Math.min(10, var0)];
+      private static String roman(int n) {
+         return new String[]{"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"}[Math.min(10, n)];
       }
 
       @Override
-      public void paint(Graphics2D var1, Color var2) {
-         List var3 = this.rows;
-         double var4 = this.w();
+      public void paint(Graphics2D g, Color accent) {
+         List<String[]> r = this.rows;
+         double w = this.w();
 
-         for (int var6 = 0; var6 < var3.size(); var6++) {
-            double var7 = 2 + var6 * 14;
-            boolean var9 = ((String[])var3.get(var6))[2].equals("1");
-            H.round(var1, 6.0, var7 + 4.5, 5.0, 5.0, 2.5, var9 ? new Color(255, 80, 80) : var2);
-            H.text(var1, ((String[])var3.get(var6))[0], 15.0, var7 + 10.0, 2, 7.2F, H.TXT);
-            H.right(var1, ((String[])var3.get(var6))[1], var4 - 7.0, var7 + 10.0, 3, 7.2F, var9 ? new Color(255, 120, 120) : H.SUB);
+         for (int i = 0; i < r.size(); i++) {
+            double y = 2 + i * 14;
+            boolean ending = r.get(i)[2].equals("1");
+            H.round(g, 6.0, y + 4.5, 5.0, 5.0, 2.5, ending ? new Color(255, 80, 80) : accent);
+            H.text(g, r.get(i)[0], 15.0, y + 10.0, 2, 7.2F, H.TXT);
+            H.right(g, r.get(i)[1], w - 7.0, y + 10.0, 3, 7.2F, ending ? new Color(255, 120, 120) : H.SUB);
          }
       }
    }
@@ -569,12 +568,12 @@ public final class HudModules {
 
       @Override
       void compute() {
-         long var1 = (Mc.timeOfDay() + 6000L) % 24000L;
-         int var3 = (int)(var1 / 1000L);
-         int var4 = (int)(var1 % 1000L * 60L / 1000L);
-         this.value = String.format("%02d:%02d", var3, var4);
-         long var5 = Mc.timeOfDay() % 24000L;
-         this.unit = var5 >= 13000L && var5 < 23000L ? "Nacht" : "Tag";
+         long t = (Mc.timeOfDay() + 6000L) % 24000L;
+         int h = (int)(t / 1000L);
+         int m = (int)(t % 1000L * 60L / 1000L);
+         this.value = String.format("%02d:%02d", h, m);
+         long d = Mc.timeOfDay() % 24000L;
+         this.unit = d >= 13000L && d < 23000L ? "Nacht" : "Tag";
       }
    }
 
@@ -600,26 +599,26 @@ public final class HudModules {
 
       @Override
       public String key() {
-         LocalPlayer var1 = Mc.player();
-         if (var1 == null) {
+         LocalPlayer p = Mc.player();
+         if (p == null) {
             return "-";
          } else {
-            this.hp = Mc.health(var1);
-            this.max = Math.max(1.0F, Mc.maxHealth(var1));
-            this.abs = Mc.absorption(var1);
+            this.hp = Mc.health(p);
+            this.max = Math.max(1.0F, Mc.maxHealth(p));
+            this.abs = Mc.absorption(p);
             return this.hp + "|" + this.abs + "|" + this.max;
          }
       }
 
       @Override
-      public void paint(Graphics2D var1, Color var2) {
-         H.icon(var1, "heart-fill", 11.0, 9.0, 9.0, new Color(255, 70, 90));
-         H.bar(var1, 20.0, 7.5, 50.0, 3.5, this.hp / this.max, new Color(255, 70, 90));
+      public void paint(Graphics2D g, Color accent) {
+         H.icon(g, "heart-fill", 11.0, 9.0, 9.0, new Color(255, 70, 90));
+         H.bar(g, 20.0, 7.5, 50.0, 3.5, this.hp / this.max, new Color(255, 70, 90));
          if (this.abs > 0.0F) {
-            H.round(var1, 20.0, 7.5, Math.max(3.5, (double)(50.0F * Math.min(1.0F, this.abs / this.max))), 3.5, 1.75, new Color(255, 205, 3, 220));
+            H.round(g, 20.0, 7.5, Math.max(3.5, (double)(50.0F * Math.min(1.0F, this.abs / this.max))), 3.5, 1.75, new Color(255, 205, 3, 220));
          }
 
-         H.right(var1, String.format(Locale.ROOT, "%.1f", (this.hp + this.abs) / 2.0F), 93.0, H.base(0.0, 18.0, 7.6F), 3, 7.6F, H.TXT);
+         H.right(g, String.format(Locale.ROOT, "%.1f", (this.hp + this.abs) / 2.0F), 93.0, H.base(0.0, 18.0, 7.6F), 3, 7.6F, H.TXT);
       }
    }
 
@@ -650,11 +649,11 @@ public final class HudModules {
       }
 
       @Override
-      public void paint(Graphics2D var1, Color var2) {
-         H.text(var1, "Hunger", 7.0, 10.5, 2, 6.6F, H.SUB);
-         H.right(var1, this.food + "/20  •  " + String.format(Locale.ROOT, "%.1f", this.sat), 93.0, 10.5, 3, 6.6F, H.TXT);
-         H.bar(var1, 7.0, 14.0, 86.0, 3.2, this.food / 20.0, new Color(255, 170, 60));
-         H.bar(var1, 7.0, 19.5, 86.0, 3.2, this.sat / 20.0, new Color(255, 215, 60));
+      public void paint(Graphics2D g, Color accent) {
+         H.text(g, "Hunger", 7.0, 10.5, 2, 6.6F, H.SUB);
+         H.right(g, this.food + "/20  •  " + String.format(Locale.ROOT, "%.1f", this.sat), 93.0, 10.5, 3, 6.6F, H.TXT);
+         H.bar(g, 7.0, 14.0, 86.0, 3.2, this.food / 20.0, new Color(255, 170, 60));
+         H.bar(g, 7.0, 19.5, 86.0, 3.2, this.sat / 20.0, new Color(255, 215, 60));
       }
    }
 
@@ -677,17 +676,17 @@ public final class HudModules {
 
       @Override
       public double w() {
-         double var1 = 8.0;
-         List var3 = this.parts;
+         double w = 8.0;
+         List<String> p = this.parts;
          if (this.logo.get()) {
-            var1 += H.w("Lego", 3, 8.4F) + 12.0;
+            w += H.w("Lego", 3, 8.4F) + 12.0;
          }
 
-         for (int var4 = 0; var4 < var3.size(); var4++) {
-            var1 += H.w((String)var3.get(var4), 2, 7.8F) + (var4 < var3.size() - 1 ? 13 : 0);
+         for (int i = 0; i < p.size(); i++) {
+            w += H.w(p.get(i), 2, 7.8F) + (i < p.size() - 1 ? 13 : 0);
          }
 
-         return Math.ceil((var1 + 8.0) / 4.0) * 4.0;
+         return Math.ceil((w + 8.0) / 4.0) * 4.0;
       }
 
       @Override
@@ -697,68 +696,222 @@ public final class HudModules {
 
       @Override
       public String key() {
-         ArrayList var1 = new ArrayList();
+         List<String> p = new ArrayList<>();
          if (this.fps.get()) {
-            var1.add(Mc.fps() + " FPS");
+            p.add(Mc.fps() + " FPS");
          }
 
          if (this.ping.get()) {
-            int var2 = Mc.ping();
-            var1.add(var2 < 0 ? "- ms" : var2 + "ms");
+            int pg = Mc.ping();
+            p.add(pg < 0 ? "- ms" : pg + "ms");
          }
 
          if (this.cps.get()) {
-            var1.add(HudModules.ClickCounter.left() + " CPS");
+            p.add(HudModules.ClickCounter.left() + " CPS");
          }
 
          if (this.clock.get()) {
-            var1.add(LocalTime.now().toString().substring(0, 5));
+            p.add(LocalTime.now().toString().substring(0, 5));
          }
 
          if (this.session.get()) {
-            var1.add(HudModules.sessionTime());
+            p.add(HudModules.sessionTime());
          }
 
          if (this.coords.get()) {
-            LocalPlayer var3 = Mc.player();
-            if (var3 != null) {
-               var1.add((int)Math.floor(Mc.x(var3)) + " " + (int)Math.floor(Mc.y(var3)) + " " + (int)Math.floor(Mc.z(var3)));
+            LocalPlayer pl = Mc.player();
+            if (pl != null) {
+               p.add((int)Math.floor(Mc.x(pl)) + " " + (int)Math.floor(Mc.y(pl)) + " " + (int)Math.floor(Mc.z(pl)));
             }
          }
 
-         this.parts = var1;
-         return String.join("|", var1) + this.logo.get();
+         this.parts = p;
+         return String.join("|", p) + this.logo.get();
       }
 
       @Override
-      public void paint(Graphics2D var1, Color var2) {
-         double var3 = 8.0;
-         double var5 = H.base(0.0, 17.0, 7.8F);
+      public void paint(Graphics2D g, Color accent) {
+         double x = 8.0;
+         double base = H.base(0.0, 17.0, 7.8F);
          if (this.logo.get()) {
-            var1.setPaint(new GradientPaint((float)var3, 0.0F, var2, (float)(var3 + 22.0), 0.0F, H.mix(var2, Color.WHITE, 0.45)));
-            var1.setFont(Fonts.get(3, 8.4F));
-            var1.drawString("Lego", (float)var3, (float)H.base(0.0, 17.0, 8.4F));
-            var3 += H.w("Lego", 3, 8.4F) + 6.0;
-            sep(var1, var3, var2);
-            var3 += 6.0;
+            g.setPaint(new GradientPaint((float)x, 0.0F, accent, (float)(x + 22.0), 0.0F, H.mix(accent, Color.WHITE, 0.45)));
+            g.setFont(Fonts.get(3, 8.4F));
+            g.drawString("Lego", (float)x, (float)H.base(0.0, 17.0, 8.4F));
+            x += H.w("Lego", 3, 8.4F) + 6.0;
+            sep(g, x, accent);
+            x += 6.0;
          }
 
-         List var7 = this.parts;
+         List<String> p = this.parts;
 
-         for (int var8 = 0; var8 < var7.size(); var8++) {
-            H.text(var1, (String)var7.get(var8), var3, var5, 2, 7.8F, H.TXT);
-            var3 += H.w((String)var7.get(var8), 2, 7.8F);
-            if (var8 < var7.size() - 1) {
-               var3 += 6.5;
-               sep(var1, var3, var2);
-               var3 += 6.5;
+         for (int i = 0; i < p.size(); i++) {
+            H.text(g, p.get(i), x, base, 2, 7.8F, H.TXT);
+            x += H.w(p.get(i), 2, 7.8F);
+            if (i < p.size() - 1) {
+               x += 6.5;
+               sep(g, x, accent);
+               x += 6.5;
             }
          }
       }
 
-      private static void sep(Graphics2D var0, double var1, Color var3) {
-         var0.setColor(new Color(255, 255, 255, 60));
-         var0.fill(new Double(var1 - 0.5, 4.5, 1.0, 8.0, 1.0, 1.0));
+      private static void sep(Graphics2D g, double x, Color accent) {
+         g.setColor(new Color(255, 255, 255, 60));
+         g.fill(new Double(x - 0.5, 4.5, 1.0, 8.0, 1.0, 1.0));
+      }
+   }
+
+   static final class InventoryHud extends HudModule {
+      private final Setting.Bool showHotbar = this.add(new Setting.Bool("Hotbar zeigen", true));
+      private final Setting.Bool showArmor = this.add(new Setting.Bool("Rüstung zeigen", true));
+      private final Setting.Bool showOffhand = this.add(new Setting.Bool("Offhand zeigen", true));
+      private final ItemStack[] items = new ItemStack[41];
+      private volatile int held;
+
+      InventoryHud() {
+         super("invhud", "Inventar HUD", "Dein Inventar als Overlay auf dem Bildschirm", 0.5, 0.75);
+         this.icon("backpack");
+      }
+
+      private int rows() {
+         return (this.showHotbar.get() ? 4 : 3) + (this.showArmor.get() ? 1 : 0);
+      }
+
+      @Override
+      public double w() {
+         return 186.0;
+      }
+
+      @Override
+      public double h() {
+         int r = this.rows();
+         double base = r * 20 + 6;
+         if (this.showHotbar.get()) {
+            base += 4.0;
+         }
+
+         return base;
+      }
+
+      @Override
+      public boolean visible() {
+         return Mc.player() != null;
+      }
+
+      @Override
+      public String key() {
+         StringBuilder k = new StringBuilder();
+         LocalPlayer p = Mc.player();
+         if (p == null) {
+            return "-";
+         } else {
+            ItemStack main = p.getMainHandItem();
+            this.held = -1;
+
+            for (int s = 0; s < 9; s++) {
+               if (Mc.invStack(s) == main) {
+                  this.held = s;
+                  break;
+               }
+            }
+
+            for (int i = 0; i < 36; i++) {
+               this.items[i] = Mc.invStack(i);
+               k.append(Mc.itemKey(this.items[i])).append(Mc.count(this.items[i])).append(';');
+            }
+
+            for (int i = 36; i < 40; i++) {
+               this.items[i] = Mc.armor(i);
+               k.append(Mc.itemKey(this.items[i])).append(';');
+            }
+
+            this.items[40] = p.getOffhandItem();
+            k.append(Mc.itemKey(this.items[40])).append(this.showHotbar.get()).append(this.showArmor.get()).append(this.showOffhand.get()).append(this.held);
+            return k.toString();
+         }
+      }
+
+      @Override
+      public void paint(Graphics2D g, Color accent) {
+         Color slot = new Color(30, 32, 40, 140);
+         Color slotA = new Color(30, 32, 40, 180);
+         double y = 3.0;
+         if (this.showArmor.get()) {
+            for (int i = 0; i < 4; i++) {
+               H.round(g, 3 + i * 20, y, 18.0, 18.0, 3.0, slotA);
+            }
+
+            if (this.showOffhand.get()) {
+               H.round(g, 103.0, y, 18.0, 18.0, 3.0, slotA);
+               H.center(g, "OH", 112.0, y + 14.0, 1, 4.5F, H.DIM);
+            }
+
+            y += 22.0;
+         }
+
+         for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+               H.round(g, 3 + col * 20, y, 18.0, 18.0, 3.0, slot);
+            }
+
+            y += 20.0;
+         }
+
+         if (this.showHotbar.get()) {
+            y += 4.0;
+
+            for (int col = 0; col < 9; col++) {
+               boolean sel = col == this.held;
+               H.round(g, 3 + col * 20, y, 18.0, 18.0, 3.0, sel ? H.alpha(accent, 80) : new Color(30, 32, 40, 160));
+               if (sel) {
+                  H.round(g, 3 + col * 20, y, 18.0, 18.0, 3.0, H.alpha(accent, 40));
+               }
+            }
+         }
+      }
+
+      @Override
+      public void overlay(GuiGraphics ctx, int x, int y, double k) {
+         double dy = 3.0 * k;
+         if (this.showArmor.get()) {
+            for (int i = 0; i < 4; i++) {
+               ItemStack s = this.items[39 - i];
+               if (!Mc.empty(s)) {
+                  HudModules.drawItem(ctx, s, x + (3 + i * 20 + 1) * k, y + (dy + 1.0 * k), k);
+               }
+            }
+
+            if (this.showOffhand.get()) {
+               ItemStack s = this.items[40];
+               if (!Mc.empty(s)) {
+                  HudModules.drawItem(ctx, s, x + 104.0 * k, y + (dy + 1.0 * k), k);
+               }
+            }
+
+            dy += 22.0 * k;
+         }
+
+         for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+               ItemStack s = this.items[9 + row * 9 + col];
+               if (!Mc.empty(s)) {
+                  HudModules.drawItem(ctx, s, x + (3 + col * 20 + 1) * k, y + dy + 1.0 * k, k);
+               }
+            }
+
+            dy += 20.0 * k;
+         }
+
+         if (this.showHotbar.get()) {
+            dy += 4.0 * k;
+
+            for (int colx = 0; colx < 9; colx++) {
+               ItemStack s = this.items[colx];
+               if (!Mc.empty(s)) {
+                  HudModules.drawItem(ctx, s, x + (3 + colx * 20 + 1) * k, y + dy + 1.0 * k, k);
+               }
+            }
+         }
       }
    }
 
@@ -787,47 +940,47 @@ public final class HudModules {
 
       @Override
       public String key() {
-         Options var1 = Mc.mc().options;
-         int var2 = 0;
-         if (Mc.pressed(var1.keyUp)) {
-            var2 |= 1;
+         Options o = Mc.mc().options;
+         int m = 0;
+         if (Mc.pressed(o.keyUp)) {
+            m |= 1;
          }
 
-         if (Mc.pressed(var1.keyLeft)) {
-            var2 |= 2;
+         if (Mc.pressed(o.keyLeft)) {
+            m |= 2;
          }
 
-         if (Mc.pressed(var1.keyDown)) {
-            var2 |= 4;
+         if (Mc.pressed(o.keyDown)) {
+            m |= 4;
          }
 
-         if (Mc.pressed(var1.keyRight)) {
-            var2 |= 8;
+         if (Mc.pressed(o.keyRight)) {
+            m |= 8;
          }
 
-         if (Mc.pressed(var1.keyJump)) {
-            var2 |= 16;
+         if (Mc.pressed(o.keyJump)) {
+            m |= 16;
          }
 
-         if (Mc.pressed(var1.keyAttack)) {
-            var2 |= 32;
+         if (Mc.pressed(o.keyAttack)) {
+            m |= 32;
          }
 
-         if (Mc.pressed(var1.keyUse)) {
-            var2 |= 64;
+         if (Mc.pressed(o.keyUse)) {
+            m |= 64;
          }
 
-         this.mask = var2;
+         this.mask = m;
          this.cps = HudModules.ClickCounter.left() + "|" + HudModules.ClickCounter.right();
-         boolean var3 = false;
+         boolean fading = false;
 
-         for (float var7 : this.glow) {
-            if (var7 > 0.01F && var7 < 0.99F) {
-               var3 = true;
+         for (float f : this.glow) {
+            if (f > 0.01F && f < 0.99F) {
+               fading = true;
             }
          }
 
-         return var2 + "|" + this.cps + "|" + this.mouse.get() + this.space.get() + (var3 ? System.nanoTime() / 16000000L : 0L);
+         return m + "|" + this.cps + "|" + this.mouse.get() + this.space.get() + (fading ? System.nanoTime() / 16000000L : 0L);
       }
 
       @Override
@@ -836,49 +989,47 @@ public final class HudModules {
       }
 
       @Override
-      public void paint(Graphics2D var1, Color var2) {
-         long var3 = System.nanoTime();
-         float var5 = Math.min(0.1F, (float)(var3 - this.lastPaint) / 1.0E9F);
-         this.lastPaint = var3;
-         int var6 = this.mask;
+      public void paint(Graphics2D g, Color accent) {
+         long now = System.nanoTime();
+         float dt = Math.min(0.1F, (float)(now - this.lastPaint) / 1.0E9F);
+         this.lastPaint = now;
+         int m = this.mask;
 
-         for (int var7 = 0; var7 < 7; var7++) {
-            boolean var8 = (var6 & 1 << var7) != 0;
-            this.glow[var7] = var8 ? 1.0F : Math.max(0.0F, this.glow[var7] - var5 * 6.0F);
+         for (int i = 0; i < 7; i++) {
+            boolean down = (m & 1 << i) != 0;
+            this.glow[i] = down ? 1.0F : Math.max(0.0F, this.glow[i] - dt * 6.0F);
          }
 
-         key(var1, "W", 22.0, 0.0, 20.0, 20.0, this.glow[0], var2);
-         key(var1, "A", 0.0, 21.0, 20.0, 20.0, this.glow[1], var2);
-         key(var1, "S", 22.0, 21.0, 20.0, 20.0, this.glow[2], var2);
-         key(var1, "D", 44.0, 21.0, 20.0, 20.0, this.glow[3], var2);
-         double var10 = 42.0;
+         key(g, "W", 22.0, 0.0, 20.0, 20.0, this.glow[0], accent);
+         key(g, "A", 0.0, 21.0, 20.0, 20.0, this.glow[1], accent);
+         key(g, "S", 22.0, 21.0, 20.0, 20.0, this.glow[2], accent);
+         key(g, "D", 44.0, 21.0, 20.0, 20.0, this.glow[3], accent);
+         double y = 42.0;
          if (this.mouse.get()) {
-            String[] var9 = this.cps.split("\\|");
-            key(var1, "LMB", 0.0, var10, 31.0, 20.0, this.glow[5], var2);
-            key(var1, "RMB", 33.0, var10, 31.0, 20.0, this.glow[6], var2);
-            H.center(var1, (var9.length > 0 ? var9[0] : "0") + " CPS", 15.5, var10 + 17.0, 2, 4.6F, H.mix(H.SUB, Color.BLACK, this.glow[5]));
-            H.center(var1, (var9.length > 1 ? var9[1] : "0") + " CPS", 48.5, var10 + 17.0, 2, 4.6F, H.mix(H.SUB, Color.BLACK, this.glow[6]));
-            var10 += 21.0;
+            String[] c = this.cps.split("\\|");
+            key(g, "LMB", 0.0, y, 31.0, 20.0, this.glow[5], accent);
+            key(g, "RMB", 33.0, y, 31.0, 20.0, this.glow[6], accent);
+            H.center(g, (c.length > 0 ? c[0] : "0") + " CPS", 15.5, y + 17.0, 2, 4.6F, H.mix(H.SUB, Color.BLACK, this.glow[5]));
+            H.center(g, (c.length > 1 ? c[1] : "0") + " CPS", 48.5, y + 17.0, 2, 4.6F, H.mix(H.SUB, Color.BLACK, this.glow[6]));
+            y += 21.0;
          }
 
          if (this.space.get()) {
-            key(var1, "", 0.0, var10, 64.0, 13.0, this.glow[4], var2);
-            var1.setColor(H.mix(H.TXT, new Color(20, 20, 20), this.glow[4]));
-            var1.fill(new Double(22.0, var10 + 5.7, 20.0, 1.6, 1.6, 1.6));
+            key(g, "", 0.0, y, 64.0, 13.0, this.glow[4], accent);
+            g.setColor(H.mix(H.TXT, new Color(20, 20, 20), this.glow[4]));
+            g.fill(new Double(22.0, y + 5.7, 20.0, 1.6, 1.6, 1.6));
          }
       }
 
-      private static void key(Graphics2D var0, String var1, double var2, double var4, double var6, double var8, float var10, Color var11) {
-         int var12 = (int)(255.0 * Math.max(0.35, UiSettings.hudOpacity + 0.2));
-         var0.setColor(H.mix(new Color(12, 12, 16, Math.min(255, var12)), var11, var10));
-         var0.fill(new Double(var2, var4, var6, var8, 7.0, 7.0));
-         var0.setColor(new Color(255, 255, 255, (int)(18.0F * (1.0F - var10))));
-         var0.draw(new Double(var2 + 0.3, var4 + 0.3, var6 - 0.6, var8 - 0.6, 7.0, 7.0));
-         if (!var1.isEmpty()) {
-            boolean var13 = var1.length() > 1;
-            H.center(
-               var0, var1, var2 + var6 / 2.0, var13 ? var4 + 9.5 : var4 + var8 / 2.0 + 3.0, 3, var13 ? 6.2F : 8.4F, H.mix(H.TXT, new Color(18, 18, 18), var10)
-            );
+      private static void key(Graphics2D g, String s, double x, double y, double w, double h, float down, Color accent) {
+         int a = (int)(255.0 * Math.max(0.35, UiSettings.hudOpacity + 0.2));
+         g.setColor(H.mix(new Color(12, 12, 16, Math.min(255, a)), accent, down));
+         g.fill(new Double(x, y, w, h, 7.0, 7.0));
+         g.setColor(new Color(255, 255, 255, (int)(18.0F * (1.0F - down))));
+         g.draw(new Double(x + 0.3, y + 0.3, w - 0.6, h - 0.6, 7.0, 7.0));
+         if (!s.isEmpty()) {
+            boolean small = s.length() > 1;
+            H.center(g, s, x + w / 2.0, small ? y + 9.5 : y + h / 2.0 + 3.0, 3, small ? 6.2F : 8.4F, H.mix(H.TXT, new Color(18, 18, 18), down));
          }
       }
    }
@@ -891,9 +1042,9 @@ public final class HudModules {
 
       @Override
       void compute() {
-         int var1 = Mc.blockLight();
-         this.value = var1 < 0 ? "-" : String.valueOf(var1);
-         this.unit = var1 == 0 ? "Monster!" : "Licht";
+         int l = Mc.blockLight();
+         this.value = l < 0 ? "-" : String.valueOf(l);
+         this.unit = l == 0 ? "Monster!" : "Licht";
       }
    }
 
@@ -904,11 +1055,11 @@ public final class HudModules {
 
       @Override
       void compute() {
-         Runtime var1 = Runtime.getRuntime();
-         long var2 = var1.totalMemory() - var1.freeMemory() >> 20;
-         long var4 = var1.maxMemory() >> 20;
-         this.value = var2 * 100L / Math.max(1L, var4) + "%";
-         this.unit = var2 / 10L * 10L + "/" + var4 + " MB";
+         Runtime r = Runtime.getRuntime();
+         long used = r.totalMemory() - r.freeMemory() >> 20;
+         long max = r.maxMemory() >> 20;
+         this.value = used * 100L / Math.max(1L, max) + "%";
+         this.unit = used / 10L * 10L + "/" + max + " MB";
       }
    }
 
@@ -919,8 +1070,8 @@ public final class HudModules {
 
       @Override
       void compute() {
-         int var1 = Mc.ping();
-         this.value = var1 < 0 ? "-" : String.valueOf(var1);
+         int p = Mc.ping();
+         this.value = p < 0 ? "-" : String.valueOf(p);
          this.unit = "ms";
       }
    }
@@ -946,33 +1097,33 @@ public final class HudModules {
 
       @Override
       public String key() {
-         int[] var1 = new int[IDS.length];
-         StringBuilder var2 = new StringBuilder();
+         int[] c = new int[IDS.length];
+         StringBuilder k = new StringBuilder();
 
-         for (int var3 = 0; var3 < IDS.length; var3++) {
-            var1[var3] = Mc.countItem(IDS[var3]);
-            var2.append(var1[var3]).append(',');
+         for (int i = 0; i < IDS.length; i++) {
+            c[i] = Mc.countItem(IDS[i]);
+            k.append(c[i]).append(',');
          }
 
-         this.counts = var1;
-         return var2.toString();
+         this.counts = c;
+         return k.toString();
       }
 
       @Override
-      public void paint(Graphics2D var1, Color var2) {
-         int[] var3 = this.counts;
+      public void paint(Graphics2D g, Color accent) {
+         int[] c = this.counts;
 
-         for (int var4 = 0; var4 < var3.length; var4++) {
-            H.center(var1, String.valueOf(var3[var4]), 2 + var4 * 24 + 12, 26.5, 3, 6.2F, var3[var4] == 0 ? H.DIM : H.TXT);
+         for (int i = 0; i < c.length; i++) {
+            H.center(g, String.valueOf(c[i]), 2 + i * 24 + 12, 26.5, 3, 6.2F, c[i] == 0 ? H.DIM : H.TXT);
          }
       }
 
       @Override
-      public void overlay(GuiGraphics var1, int var2, int var3, double var4) {
-         for (int var6 = 0; var6 < IDS.length; var6++) {
-            ItemStack var7 = Mc.icon(IDS[var6]);
-            if (var7 != null) {
-               HudModules.drawItem(var1, var7, var2 + (2 + var6 * 24 + 4) * var4, var3 + 2.0 * var4, var4);
+      public void overlay(GuiGraphics ctx, int x, int y, double k) {
+         for (int i = 0; i < IDS.length; i++) {
+            ItemStack icon = Mc.icon(IDS[i]);
+            if (icon != null) {
+               HudModules.drawItem(ctx, icon, x + (2 + i * 24 + 4) * k, y + 2.0 * k, k);
             }
          }
       }
@@ -1007,10 +1158,10 @@ public final class HudModules {
       protected volatile String value = "";
       protected volatile String unit = "";
 
-      Simple(String var1, String var2, String var3, String var4, double var5, double var7) {
-         super(var1, var2, var3, var5, var7);
-         this.icon = var4;
-         this.icon(var4);
+      Simple(String id, String name, String desc, String icon, double fx, double fy) {
+         super(id, name, desc, fx, fy);
+         this.icon = icon;
+         this.icon(icon);
       }
 
       abstract void compute();
@@ -1032,8 +1183,8 @@ public final class HudModules {
       }
 
       @Override
-      public void paint(Graphics2D var1, Color var2) {
-         simplePaint(var1, this.icon, this.value, this.unit, this.w(), var2);
+      public void paint(Graphics2D g, Color accent) {
+         simplePaint(g, this.icon, this.value, this.unit, this.w(), accent);
       }
    }
 
@@ -1091,14 +1242,14 @@ public final class HudModules {
 
       @Override
       void compute() {
-         LocalPlayer var1 = Mc.player();
-         if (var1 == null) {
+         LocalPlayer p = Mc.player();
+         if (p == null) {
             this.value = "-";
             this.unit = "";
          } else {
-            double var2 = Mc.x(var1) - Mc.lastX(var1);
-            double var4 = Mc.z(var1) - Mc.lastZ(var1);
-            this.value = String.format(Locale.ROOT, "%.1f", Math.sqrt(var2 * var2 + var4 * var4) * 20.0);
+            double dx = Mc.x(p) - Mc.lastX(p);
+            double dz = Mc.z(p) - Mc.lastZ(p);
+            this.value = String.format(Locale.ROOT, "%.1f", Math.sqrt(dx * dx + dz * dz) * 20.0);
             this.unit = "b/s";
          }
       }
@@ -1136,22 +1287,22 @@ public final class HudModules {
 
       @Override
       public String key() {
-         Entity var1 = HudModules.CombatTracker.target();
-         LocalPlayer var2 = Mc.player();
-         if (var1 instanceof LivingEntity && var2 != null) {
-            LivingEntity var3 = (LivingEntity)var1;
+         Entity t = HudModules.CombatTracker.target();
+         LocalPlayer p = Mc.player();
+         if (t instanceof LivingEntity && p != null) {
+            LivingEntity l = (LivingEntity)t;
             this.has = true;
-            this.name = Mc.name(var1);
-            this.hp = Mc.health(var3);
-            this.max = Math.max(1.0F, Mc.maxHealth(var3));
-            this.abs = Mc.absorption(var3);
-            this.info = String.format(Locale.ROOT, "%.1f m", Math.sqrt(var2.distanceToSqr(var1)));
+            this.name = Mc.name(t);
+            this.hp = Mc.health(l);
+            this.max = Math.max(1.0F, Mc.maxHealth(l));
+            this.abs = Mc.absorption(l);
+            this.info = String.format(Locale.ROOT, "%.1f m", Math.sqrt(p.distanceToSqr(t)));
             if (this.shownHp < 0.0) {
                this.shownHp = this.hp;
             }
 
-            boolean var4 = Math.abs(this.shownHp - this.hp) > 0.05;
-            return this.name + this.hp + "|" + this.abs + "|" + this.info + (var4 ? "|" + System.nanoTime() / 16000000L : "");
+            boolean animating = Math.abs(this.shownHp - this.hp) > 0.05;
+            return this.name + this.hp + "|" + this.abs + "|" + this.info + (animating ? "|" + System.nanoTime() / 16000000L : "");
          } else {
             this.has = false;
             this.shownHp = -1.0;
@@ -1160,24 +1311,24 @@ public final class HudModules {
       }
 
       @Override
-      public void paint(Graphics2D var1, Color var2) {
-         double var3 = this.w();
+      public void paint(Graphics2D g, Color accent) {
+         double w = this.w();
          this.shownHp = this.shownHp + (this.hp - this.shownHp) * 0.25;
-         H.round(var1, 5.0, 5.0, 26.0, 26.0, 8.0, H.alpha(var2, 50));
-         H.center(var1, this.name.isEmpty() ? "?" : this.name.substring(0, 1).toUpperCase(Locale.ROOT), 18.0, 22.5, 3, 13.0F, var2);
-         H.text(var1, H.ellipsize(this.name, var3 - 80.0, 3, 8.0F), 37.0, 14.0, 3, 8.0F, H.TXT);
-         H.right(var1, this.info, var3 - 7.0, 14.0, 2, 6.6F, H.SUB);
-         double var5 = this.hp / this.max;
-         double var7 = this.shownHp / this.max;
-         Color var9 = var5 > 0.6 ? var2 : (var5 > 0.3 ? new Color(255, 205, 3) : new Color(255, 70, 70));
-         H.bar(var1, 37.0, 19.0, var3 - 44.0, 4.5, Math.max(var5, var7), new Color(255, 255, 255, 90));
-         H.round(var1, 37.0, 19.0, Math.max(4.5, (var3 - 44.0) * Math.max(0.0, Math.min(1.0, var5))), 4.5, 2.25, var9);
+         H.round(g, 5.0, 5.0, 26.0, 26.0, 8.0, H.alpha(accent, 50));
+         H.center(g, this.name.isEmpty() ? "?" : this.name.substring(0, 1).toUpperCase(Locale.ROOT), 18.0, 22.5, 3, 13.0F, accent);
+         H.text(g, H.ellipsize(this.name, w - 80.0, 3, 8.0F), 37.0, 14.0, 3, 8.0F, H.TXT);
+         H.right(g, this.info, w - 7.0, 14.0, 2, 6.6F, H.SUB);
+         double frac = this.hp / this.max;
+         double shown = this.shownHp / this.max;
+         Color hc = frac > 0.6 ? accent : (frac > 0.3 ? new Color(255, 205, 3) : new Color(255, 70, 70));
+         H.bar(g, 37.0, 19.0, w - 44.0, 4.5, Math.max(frac, shown), new Color(255, 255, 255, 90));
+         H.round(g, 37.0, 19.0, Math.max(4.5, (w - 44.0) * Math.max(0.0, Math.min(1.0, frac))), 4.5, 2.25, hc);
          if (this.abs > 0.0F) {
-            H.round(var1, 37.0, 19.0, Math.max(4.5, (var3 - 44.0) * Math.min(1.0F, this.abs / this.max)), 4.5, 2.25, new Color(255, 205, 3, 210));
+            H.round(g, 37.0, 19.0, Math.max(4.5, (w - 44.0) * Math.min(1.0F, this.abs / this.max)), 4.5, 2.25, new Color(255, 205, 3, 210));
          }
 
-         H.text(var1, String.format(Locale.ROOT, "%.1f", (this.hp + this.abs) / 2.0F), 37.0, 31.5, 3, 6.8F, H.TXT);
-         H.text(var1, "Herzen", 37.0 + H.w(String.format(Locale.ROOT, "%.1f", (this.hp + this.abs) / 2.0F), 3, 6.8F) + 3.0, 31.5, 1, 6.2F, H.SUB);
+         H.text(g, String.format(Locale.ROOT, "%.1f", (this.hp + this.abs) / 2.0F), 37.0, 31.5, 3, 6.8F, H.TXT);
+         H.text(g, "Herzen", 37.0 + H.w(String.format(Locale.ROOT, "%.1f", (this.hp + this.abs) / 2.0F), 3, 6.8F) + 3.0, 31.5, 1, 6.2F, H.SUB);
       }
    }
 
@@ -1206,15 +1357,15 @@ public final class HudModules {
       }
 
       @Override
-      public void paint(Graphics2D var1, Color var2) {
-         H.text(var1, String.valueOf(this.n), 23.0, H.base(0.0, 20.0, 9.0F), 3, 9.0F, this.n == 0 ? new Color(255, 90, 90) : H.TXT);
+      public void paint(Graphics2D g, Color accent) {
+         H.text(g, String.valueOf(this.n), 23.0, H.base(0.0, 20.0, 9.0F), 3, 9.0F, this.n == 0 ? new Color(255, 90, 90) : H.TXT);
       }
 
       @Override
-      public void overlay(GuiGraphics var1, int var2, int var3, double var4) {
-         ItemStack var6 = Mc.icon("totem_of_undying");
-         if (var6 != null) {
-            HudModules.drawItem(var1, var6, var2 + 4.0 * var4, var3 + 2.0 * var4, var4);
+      public void overlay(GuiGraphics ctx, int x, int y, double k) {
+         ItemStack icon = Mc.icon("totem_of_undying");
+         if (icon != null) {
+            HudModules.drawItem(ctx, icon, x + 4.0 * k, y + 2.0 * k, k);
          }
       }
    }

@@ -9,82 +9,82 @@ public final class Ease {
    private Ease() {
    }
 
-   public static float clamp(float var0) {
-      return var0 < 0.0F ? 0.0F : (var0 > 1.0F ? 1.0F : var0);
+   public static float clamp(float t) {
+      return t < 0.0F ? 0.0F : (t > 1.0F ? 1.0F : t);
    }
 
-   public static float outCubic(float var0) {
-      var0 = clamp(var0);
-      float var1 = 1.0F - var0;
-      return 1.0F - var1 * var1 * var1;
+   public static float outCubic(float t) {
+      t = clamp(t);
+      float f = 1.0F - t;
+      return 1.0F - f * f * f;
    }
 
-   public static float outQuint(float var0) {
-      var0 = clamp(var0);
-      float var1 = 1.0F - var0;
-      return 1.0F - var1 * var1 * var1 * var1 * var1;
+   public static float outQuint(float t) {
+      t = clamp(t);
+      float f = 1.0F - t;
+      return 1.0F - f * f * f * f * f;
    }
 
-   public static float inOutCubic(float var0) {
-      var0 = clamp(var0);
-      return var0 < 0.5F ? 4.0F * var0 * var0 * var0 : 1.0F - (float)Math.pow(-2.0F * var0 + 2.0F, 3.0) / 2.0F;
+   public static float inOutCubic(float t) {
+      t = clamp(t);
+      return t < 0.5F ? 4.0F * t * t * t : 1.0F - (float)Math.pow(-2.0F * t + 2.0F, 3.0) / 2.0F;
    }
 
-   public static float outBack(float var0) {
-      var0 = clamp(var0);
-      float var1 = 1.70158F;
-      float var2 = var1 + 1.0F;
-      return 1.0F + var2 * (float)Math.pow(var0 - 1.0F, 3.0) + var1 * (float)Math.pow(var0 - 1.0F, 2.0);
+   public static float outBack(float t) {
+      t = clamp(t);
+      float c1 = 1.70158F;
+      float c3 = c1 + 1.0F;
+      return 1.0F + c3 * (float)Math.pow(t - 1.0F, 3.0) + c1 * (float)Math.pow(t - 1.0F, 2.0);
    }
 
-   public static float outElastic(float var0) {
-      var0 = clamp(var0);
-      return var0 != 0.0F && var0 != 1.0F ? (float)(Math.pow(2.0, -10.0F * var0) * Math.sin((var0 * 10.0F - 0.75) * (Math.PI * 2.0 / 3.0)) + 1.0) : var0;
+   public static float outElastic(float t) {
+      t = clamp(t);
+      return t != 0.0F && t != 1.0F ? (float)(Math.pow(2.0, -10.0F * t) * Math.sin((t * 10.0F - 0.75) * (Math.PI * 2.0 / 3.0)) + 1.0) : t;
    }
 
-   public static float lerp(float var0, float var1, float var2) {
-      return var0 + (var1 - var0) * var2;
+   public static float lerp(float a, float b, float t) {
+      return a + (b - a) * t;
    }
 
-   public static float stagger(float var0, int var1, float var2, float var3) {
-      return clamp((var0 - var1 * var2) / var3);
+   public static float stagger(float t, int i, float delay, float dur) {
+      return clamp((t - i * delay) / dur);
    }
 
-   public static float to(String var0, float var1, float var2) {
-      float[] var3 = VALUES.get(var0);
-      if (var3 == null) {
-         var3 = new float[]{var1};
-         VALUES.put(var0, var3);
-         return var1;
+   public static float to(String key, float target, float speed) {
+      float[] v = VALUES.get(key);
+      if (v == null) {
+         v = new float[]{target};
+         VALUES.put(key, v);
+         return target;
       } else {
-         float var4 = 1.0F - (float)Math.exp(-Gx.dt * var2 * UiSettings.anim());
-         var3[0] += (var1 - var3[0]) * var4;
-         if (Math.abs(var1 - var3[0]) < 5.0E-4F) {
-            var3[0] = var1;
+         float k = 1.0F - (float)Math.exp(-Gx.dt * speed * UiSettings.anim());
+         v[0] += (target - v[0]) * k;
+         if (Math.abs(target - v[0]) < 5.0E-4F) {
+            v[0] = target;
          }
 
-         return var3[0];
+         return v[0];
       }
    }
 
-   public static float to(String var0, float var1, float var2, float var3) {
-      if (!VALUES.containsKey(var0)) {
-         VALUES.put(var0, new float[]{var3});
+   public static float to(String key, float target, float speed, float from) {
+      if (!VALUES.containsKey(key)) {
+         VALUES.put(key, new float[]{from});
       }
 
-      return to(var0, var1, var2);
+      return to(key, target, speed);
    }
 
-   public static void set(String var0, float var1) {
-      VALUES.put(var0, new float[]{var1});
+   public static void set(String key, float v) {
+      VALUES.put(key, new float[]{v});
    }
 
-   public static void reset(String var0) {
-      VALUES.keySet().removeIf(var1 -> var1.startsWith(var0));
+   public static void reset(String prefix) {
+      VALUES.keySet().removeIf(k -> k.startsWith(prefix));
    }
 
-   public static float get(String var0, float var1) {
-      float[] var2 = VALUES.get(var0);
-      return var2 == null ? var1 : var2[0];
+   public static float get(String key, float def) {
+      float[] v = VALUES.get(key);
+      return v == null ? def : v[0];
    }
 }

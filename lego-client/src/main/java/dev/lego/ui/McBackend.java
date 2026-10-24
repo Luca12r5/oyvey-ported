@@ -18,8 +18,8 @@ public final class McBackend implements Gx.Backend {
    private McBackend() {
    }
 
-   public static void begin(GuiGraphics var0) {
-      INSTANCE.ctx = var0;
+   public static void begin(GuiGraphics c) {
+      INSTANCE.ctx = c;
       Gx.begin(INSTANCE);
    }
 
@@ -43,37 +43,37 @@ public final class McBackend implements Gx.Backend {
    }
 
    @Override
-   public void translate(float var1, float var2) {
-      this.ctx.pose().translate(var1, var2);
+   public void translate(float x, float y) {
+      this.ctx.pose().translate(x, y);
    }
 
    @Override
-   public void scale(float var1, float var2) {
-      this.ctx.pose().scale(var1, var2);
+   public void scale(float x, float y) {
+      this.ctx.pose().scale(x, y);
    }
 
    @Override
-   public void fill(int var1, int var2, int var3, int var4, int var5) {
-      this.ctx.fill(var1, var2, var1 + var3, var2 + var4, var5);
+   public void fill(int x, int y, int w, int h, int argb) {
+      this.ctx.fill(x, y, x + w, y + h, argb);
    }
 
    @Override
-   public void gradV(int var1, int var2, int var3, int var4, int var5, int var6) {
-      this.ctx.fillGradient(var1, var2, var1 + var3, var2 + var4, var5, var6);
+   public void gradV(int x, int y, int w, int h, int top, int bottom) {
+      this.ctx.fillGradient(x, y, x + w, y + h, top, bottom);
    }
 
    @Override
-   public void tex(Gx.Img var1, int var2, int var3, int var4, int var5, int var6, int var7, int var8, int var9, int var10) {
-      this.ctx.blit(RenderPipelines.GUI_TEXTURED, (Identifier)var1.handle, var2, var3, var6, var7, var4, var5, var8, var9, var1.w, var1.h, var10);
+   public void tex(Gx.Img t, int x, int y, int w, int h, int u, int v, int rw, int rh, int argb) {
+      this.ctx.blit(RenderPipelines.GUI_TEXTURED, (Identifier)t.handle, x, y, u, v, w, h, rw, rh, t.w, t.h, argb);
    }
 
-   public void texture(Identifier var1, int var2, int var3, int var4, int var5, int var6, int var7, int var8) {
-      this.ctx.blit(RenderPipelines.GUI_TEXTURED, var1, var2, var3, 0.0F, 0.0F, var4, var5, var6, var7, var6, var7, var8);
+   public void texture(Identifier id, int x, int y, int w, int h, int texW, int texH, int argb) {
+      this.ctx.blit(RenderPipelines.GUI_TEXTURED, id, x, y, 0.0F, 0.0F, w, h, texW, texH, texW, texH, argb);
    }
 
    @Override
-   public void clip(int var1, int var2, int var3, int var4) {
-      this.ctx.enableScissor(var1, var2, var1 + var3, var2 + var4);
+   public void clip(int x, int y, int w, int h) {
+      this.ctx.enableScissor(x, y, x + w, y + h);
    }
 
    @Override
@@ -82,31 +82,31 @@ public final class McBackend implements Gx.Backend {
    }
 
    @Override
-   public Object register(int[] var1, int var2, int var3) {
-      Identifier var4 = Identifier.fromNamespaceAndPath("legoclient", "ui/" + counter++);
-      TEX.put(var4, Tx.register(var4, var1, var2, var3, true));
-      return var4;
+   public Object register(int[] argb, int w, int h) {
+      Identifier id = Identifier.fromNamespaceAndPath("legoclient", "ui/" + counter++);
+      TEX.put(id, Tx.register(id, argb, w, h, true));
+      return id;
    }
 
    @Override
-   public void update(Gx.Img var1, int[] var2) {
-      DynamicTexture var3 = TEX.get((Identifier)var1.handle);
-      if (var3 != null) {
-         Tx.update(var3, var2, var1.w, var1.h);
+   public void update(Gx.Img t, int[] argb) {
+      DynamicTexture tex = TEX.get((Identifier)t.handle);
+      if (tex != null) {
+         Tx.update(tex, argb, t.w, t.h);
       }
    }
 
    @Override
-   public void destroy(Gx.Img var1) {
-      TEX.remove((Identifier)var1.handle);
-      Tx.destroy((Identifier)var1.handle);
+   public void destroy(Gx.Img t) {
+      TEX.remove((Identifier)t.handle);
+      Tx.destroy((Identifier)t.handle);
    }
 
    @Override
    public int[] screenPx() {
       try {
-         Window var1 = Minecraft.getInstance().getWindow();
-         return new int[]{var1.getWidth(), var1.getHeight()};
+         Window w = Minecraft.getInstance().getWindow();
+         return new int[]{w.getWidth(), w.getHeight()};
       } catch (Throwable var2) {
          return new int[]{1920, 1080};
       }

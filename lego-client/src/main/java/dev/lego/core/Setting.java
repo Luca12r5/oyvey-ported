@@ -5,8 +5,13 @@ import java.util.Locale;
 public abstract class Setting {
    public final String name;
 
-   protected Setting(String var1) {
-      this.name = var1;
+   protected Setting(String name) {
+      this.name = name;
+   }
+
+   public String displayName() {
+      String t = Lang.get("s." + this.name);
+      return t != null ? t : this.name;
    }
 
    public abstract Object save();
@@ -17,10 +22,10 @@ public abstract class Setting {
       public final Runnable action;
       public final String label;
 
-      public Action(String var1, String var2, Runnable var3) {
-         super(var1);
-         this.label = var2;
-         this.action = var3;
+      public Action(String name, String label, Runnable action) {
+         super(name);
+         this.label = label;
+         this.action = action;
       }
 
       @Override
@@ -29,16 +34,16 @@ public abstract class Setting {
       }
 
       @Override
-      public void load(Object var1) {
+      public void load(Object o) {
       }
    }
 
    public static final class Bool extends Setting {
       public boolean value;
 
-      public Bool(String var1, boolean var2) {
-         super(var1);
-         this.value = var2;
+      public Bool(String name, boolean def) {
+         super(name);
+         this.value = def;
       }
 
       public boolean get() {
@@ -51,9 +56,9 @@ public abstract class Setting {
       }
 
       @Override
-      public void load(Object var1) {
-         if (var1 instanceof Boolean) {
-            this.value = (Boolean)var1;
+      public void load(Object o) {
+         if (o instanceof Boolean) {
+            this.value = (Boolean)o;
          }
       }
    }
@@ -62,18 +67,29 @@ public abstract class Setting {
       public static final int[] PALETTE = new int[]{
          -14756000, -1900533, -13053, -16749385, -16735270, -6599222, -36939, -30208, -1, -8587265, -4653233, -16777201
       };
-      public static final String[] NAMES = new String[]{
+      private static final String[] NAMES_DE = new String[]{
          "Grün", "Rot", "Gelb", "Blau", "Hellblau", "Lila", "Pink", "Orange", "Weiß", "Eis", "Lime", "Regenbogen"
       };
+      public static String[] NAMES = NAMES_DE;
       /** Index into PALETTE, or CUSTOM for an own colour chosen with the HSV picker. */
       public int index;
       public static final int CUSTOM = PALETTE.length;
       /** Own colour (hue 0..1, saturation 0..1, brightness 0..1), used when index == CUSTOM. */
       public float hue = 0.07F, sat = 0.9F, bri = 1.0F;
 
-      public Color(String var1, int var2) {
-         super(var1);
-         this.index = var2;
+      public static void updateNames() {
+         String[] n = new String[NAMES_DE.length];
+
+         for (int i = 0; i < n.length; i++) {
+            n[i] = Lang.get("color." + i, NAMES_DE[i]);
+         }
+
+         NAMES = n;
+      }
+
+      public Color(String name, int def) {
+         super(name);
+         this.index = def;
       }
 
       public boolean rainbow() {
@@ -92,14 +108,14 @@ public abstract class Setting {
          return this.custom() ? String.format("#%06X", this.customArgb() & 16777215) : NAMES[Math.max(0, Math.min(NAMES.length - 1, this.index))];
       }
 
-      public int argb(double var1) {
+      public int argb(double phase) {
          if (this.custom()) {
             return this.customArgb();
          } else if (!this.rainbow()) {
             return PALETTE[this.index];
          } else {
-            double var3 = System.currentTimeMillis() / 2600.0 + var1;
-            return 0xFF000000 | java.awt.Color.HSBtoRGB((float)(var3 - Math.floor(var3)), 0.75F, 1.0F) & 16777215;
+            double t = System.currentTimeMillis() / 2600.0 + phase;
+            return 0xFF000000 | java.awt.Color.HSBtoRGB((float)(t - Math.floor(t)), 0.75F, 1.0F) & 16777215;
          }
       }
 
@@ -113,10 +129,10 @@ public abstract class Setting {
       }
 
       @Override
-      public void load(Object var1) {
-         if (var1 instanceof Number) {
-            this.index = Math.max(0, Math.min(PALETTE.length - 1, ((Number)var1).intValue()));
-         } else if (var1 instanceof String str && str.matches("#[0-9A-Fa-f]{6}")) {
+      public void load(Object o) {
+         if (o instanceof Number) {
+            this.index = Math.max(0, Math.min(PALETTE.length - 1, ((Number)o).intValue()));
+         } else if (o instanceof String str && str.matches("#[0-9A-Fa-f]{6}")) {
             int rgb = Integer.parseInt(str.substring(1), 16);
             float[] hsb = java.awt.Color.RGBtoHSB(rgb >> 16 & 255, rgb >> 8 & 255, rgb & 255, null);
             this.hue = hsb[0];
@@ -131,22 +147,22 @@ public abstract class Setting {
       public final String[] options;
       public int index;
 
-      public Mode(String var1, int var2, String... var3) {
-         super(var1);
-         this.options = var3;
-         this.index = var2;
+      public Mode(String name, int def, String... options) {
+         super(name);
+         this.options = options;
+         this.index = def;
       }
 
       public String get() {
          return this.options[Math.max(0, Math.min(this.options.length - 1, this.index))];
       }
 
-      public boolean is(String var1) {
-         return this.get().equals(var1);
+      public boolean is(String s) {
+         return this.get().equals(s);
       }
 
-      public void cycle(int var1) {
-         this.index = Math.floorMod(this.index + var1, this.options.length);
+      public void cycle(int d) {
+         this.index = Math.floorMod(this.index + d, this.options.length);
       }
 
       @Override
@@ -155,11 +171,11 @@ public abstract class Setting {
       }
 
       @Override
-      public void load(Object var1) {
-         if (var1 instanceof String) {
-            for (int var2 = 0; var2 < this.options.length; var2++) {
-               if (this.options[var2].equals(var1)) {
-                  this.index = var2;
+      public void load(Object o) {
+         if (o instanceof String) {
+            for (int i = 0; i < this.options.length; i++) {
+               if (this.options[i].equals(o)) {
+                  this.index = i;
                }
             }
          }
@@ -173,13 +189,13 @@ public abstract class Setting {
       public final String unit;
       public double value;
 
-      public Num(String var1, double var2, double var4, double var6, double var8, String var10) {
-         super(var1);
-         this.min = var2;
-         this.max = var4;
-         this.step = var6;
-         this.value = var8;
-         this.unit = var10;
+      public Num(String name, double min, double max, double step, double def, String unit) {
+         super(name);
+         this.min = min;
+         this.max = max;
+         this.step = step;
+         this.value = def;
+         this.unit = unit;
       }
 
       public double get() {
@@ -194,26 +210,26 @@ public abstract class Setting {
          return (int)Math.round(this.value);
       }
 
-      public void set(double var1) {
-         var1 = Math.max(this.min, Math.min(this.max, var1));
+      public void set(double v) {
+         v = Math.max(this.min, Math.min(this.max, v));
          if (this.step > 0.0) {
-            var1 = Math.round((var1 - this.min) / this.step) * this.step + this.min;
+            v = Math.round((v - this.min) / this.step) * this.step + this.min;
          }
 
-         this.value = Math.round(var1 * 1000.0) / 1000.0;
+         this.value = Math.round(v * 1000.0) / 1000.0;
       }
 
       public double frac() {
          return this.max > this.min ? (this.value - this.min) / (this.max - this.min) : 0.0;
       }
 
-      public void setFrac(double var1) {
-         this.set(this.min + Math.max(0.0, Math.min(1.0, var1)) * (this.max - this.min));
+      public void setFrac(double f) {
+         this.set(this.min + Math.max(0.0, Math.min(1.0, f)) * (this.max - this.min));
       }
 
       public String display() {
-         String var1 = this.step >= 1.0 ? String.valueOf(Math.round(this.value)) : String.format(Locale.ROOT, this.step >= 0.1 ? "%.1f" : "%.2f", this.value);
-         return var1 + (this.unit == null ? "" : this.unit);
+         String v = this.step >= 1.0 ? String.valueOf(Math.round(this.value)) : String.format(Locale.ROOT, this.step >= 0.1 ? "%.1f" : "%.2f", this.value);
+         return v + (this.unit == null ? "" : this.unit);
       }
 
       @Override
@@ -222,9 +238,9 @@ public abstract class Setting {
       }
 
       @Override
-      public void load(Object var1) {
-         if (var1 instanceof Number) {
-            this.set(((Number)var1).doubleValue());
+      public void load(Object o) {
+         if (o instanceof Number) {
+            this.set(((Number)o).doubleValue());
          }
       }
    }
@@ -234,11 +250,11 @@ public abstract class Setting {
       public final int max;
       public final String hint;
 
-      public Text(String var1, String var2, int var3, String var4) {
-         super(var1);
-         this.value = var2;
-         this.max = var3;
-         this.hint = var4;
+      public Text(String name, String def, int max, String hint) {
+         super(name);
+         this.value = def;
+         this.max = max;
+         this.hint = hint;
       }
 
       public String get() {
@@ -251,9 +267,9 @@ public abstract class Setting {
       }
 
       @Override
-      public void load(Object var1) {
-         if (var1 instanceof String) {
-            this.value = ((String)var1).length() > this.max ? ((String)var1).substring(0, this.max) : (String)var1;
+      public void load(Object o) {
+         if (o instanceof String) {
+            this.value = ((String)o).length() > this.max ? ((String)o).substring(0, this.max) : (String)o;
          }
       }
    }

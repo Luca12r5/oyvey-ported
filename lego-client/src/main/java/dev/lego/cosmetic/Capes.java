@@ -30,469 +30,462 @@ public final class Capes {
    private Capes() {
    }
 
-   static void def(String var0, int var1, float var2, int var3, int var4, int var5, Capes.Painter var6) {
-      SPECS.put(var0, new Capes.Spec(var0, Math.max(1, Math.min(16, var1)), var1 > 1 ? var2 : 0.0F, var3, var4, var5, var6));
+   static void def(String id, int frames, float fps, int trimHi, int trimLo, int lining, Capes.Painter p) {
+      SPECS.put(id, new Capes.Spec(id, Math.max(1, Math.min(16, frames)), frames > 1 ? fps : 0.0F, trimHi, trimLo, lining, p));
    }
 
-   private static Capes.Spec spec(String var0) {
-      if (var0 == null) {
+   private static Capes.Spec spec(String capeTex) {
+      if (capeTex == null) {
          return null;
       } else {
-         String var1 = var0.startsWith("cape_") ? var0.substring(5) : var0;
-         int var2 = var1.indexOf(35);
-         if (var2 >= 0) {
-            var1 = var1.substring(0, var2);
+         String s = capeTex.startsWith("cape_") ? capeTex.substring(5) : capeTex;
+         int h = s.indexOf(35);
+         if (h >= 0) {
+            s = s.substring(0, h);
          }
 
-         return SPECS.get(var1);
+         return SPECS.get(s);
       }
    }
 
    /** Designed/catalog spec capes ("cape_m_*", "capespec_*") that animate. */
-   private static boolean specAnimated(String var0) {
-      if (var0 == null) return false;
-      if (var0.startsWith("capespec_")) return CapeSpecs.animated("spec_" + var0.substring(9));
-      return var0.startsWith("cape_") && CapeSpecs.isPreset(var0.substring(5)) && CapeSpecs.animated(var0.substring(5));
+   private static boolean specAnimated(String t) {
+      if (t == null) return false;
+      if (t.startsWith("capespec_")) return CapeSpecs.animated("spec_" + t.substring(9));
+      return t.startsWith("cape_") && CapeSpecs.isPreset(t.substring(5)) && CapeSpecs.animated(t.substring(5));
    }
 
-   public static int frames(String var0) {
-      if (specAnimated(var0)) return CapeSpecs.FRAMES;
-      Capes.Spec var1 = spec(var0);
-      return var1 == null ? 1 : var1.frames;
+   public static int frames(String capeTex) {
+      if (specAnimated(capeTex)) return CapeSpecs.FRAMES;
+      Capes.Spec s = spec(capeTex);
+      return s == null ? 1 : s.frames;
    }
 
-   public static float fps(String var0) {
-      if (specAnimated(var0)) return 10.0F;
-      Capes.Spec var1 = spec(var0);
-      return var1 != null && var1.frames > 1 ? var1.fps : 0.0F;
+   public static float fps(String capeTex) {
+      if (specAnimated(capeTex)) return 10.0F;
+      Capes.Spec s = spec(capeTex);
+      return s != null && s.frames > 1 ? s.fps : 0.0F;
    }
 
-   public static String frameName(String var0, float var1) {
-      int var2 = frames(var0);
-      if (var2 <= 1) {
-         return var0;
+   public static String frameName(String capeTex, float time) {
+      int n = frames(capeTex);
+      if (n <= 1) {
+         return capeTex;
       } else {
-         int var3 = Math.floorMod((int)Math.floor(var1 * fps(var0)), var2);
-         return var3 == 0 ? var0 : var0 + "#" + var3;
+         int k = Math.floorMod((int)Math.floor(time * fps(capeTex)), n);
+         return k == 0 ? capeTex : capeTex + "#" + k;
       }
    }
 
-   static CTex.T paint(String var0) {
-      int var1 = 0;
-      int var2 = var0.indexOf(35);
-      if (var2 >= 0) {
+   static CTex.T paint(String d) {
+      int k = 0;
+      int h = d.indexOf(35);
+      if (h >= 0) {
          try {
-            var1 = Integer.parseInt(var0.substring(var2 + 1));
+            k = Integer.parseInt(d.substring(h + 1));
          } catch (NumberFormatException var15) {
          }
 
-         var0 = var0.substring(0, var2);
+         d = d.substring(0, h);
       }
 
-      Capes.Spec var3 = SPECS.get(var0);
-      if (var3 == null) {
-         var3 = SPECS.get("lego");
+      Capes.Spec s = SPECS.get(d);
+      if (s == null) {
+         s = SPECS.get("lego");
       }
 
-      int var4 = var3.frames;
-      var1 = Math.floorMod(var1, var4);
-      double var5 = (Math.PI * 2) * var1 / var4;
-      BufferedImage var7 = new BufferedImage(160, 256, 2);
-      Graphics2D var8 = var7.createGraphics();
-      Gx.hints(var8);
-      var8.setColor(new Color(var3.lining));
-      var8.fillRect(0, 0, 160, 256);
+      int n = s.frames;
+      k = Math.floorMod(k, n);
+      double ph = (Math.PI * 2) * k / n;
+      BufferedImage f = new BufferedImage(160, 256, 2);
+      Graphics2D fg = f.createGraphics();
+      Gx.hints(fg);
+      fg.setColor(new Color(s.lining));
+      fg.fillRect(0, 0, 160, 256);
 
       try {
-         var3.p.paint(var8, var7, var5, var1, var4);
+         s.p.paint(fg, f, ph, k, n);
       } catch (RuntimeException var14) {
       }
 
-      var8.dispose();
-      cloth(var7, 0.9);
-      trim(var7, var3);
-      BufferedImage var9 = down(var7);
-      grain(var9, 31);
-      BufferedImage var10 = new BufferedImage(160, 256, 2);
-      lining(var10, var3);
-      cloth(var10, 0.7);
-      trim(var10, var3);
-      BufferedImage var11 = down(var10);
-      grain(var11, 57);
-      BufferedImage var12 = new BufferedImage(512, 256, 2);
-      Graphics2D var13 = var12.createGraphics();
-      var13.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-      var13.setColor(new Color(var3.lining));
-      var13.fillRect(0, 0, 512, 256);
-      var13.drawImage(var9, 176, 0, 192, 176, null);
-      var13.drawImage(var9, 192, 16, 80, 160, null);
-      var13.drawImage(var9, 288, 16, 80, 160, null);
-      var13.drawImage(var9, 8, 8, null);
-      var13.drawImage(var11, 96, 8, null);
-      edge(var13, 0, 8, 8, 128, var3, true);
-      edge(var13, 88, 8, 8, 128, var3, true);
-      edge(var13, 8, 0, 80, 8, var3, false);
-      edge(var13, 88, 0, 80, 8, var3, false);
-      var13.dispose();
-      return new CTex.T(512, 256, var12.getRGB(0, 0, 512, 256, null, 0, 512));
+      fg.dispose();
+      cloth(f, 0.9);
+      trim(f, s);
+      BufferedImage front = down(f);
+      grain(front, 31);
+      BufferedImage li = new BufferedImage(160, 256, 2);
+      lining(li, s);
+      cloth(li, 0.7);
+      trim(li, s);
+      BufferedImage inner = down(li);
+      grain(inner, 57);
+      BufferedImage out = new BufferedImage(512, 256, 2);
+      Graphics2D g = out.createGraphics();
+      g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+      g.setColor(new Color(s.lining));
+      g.fillRect(0, 0, 512, 256);
+      g.drawImage(front, 176, 0, 192, 176, null);
+      g.drawImage(front, 192, 16, 80, 160, null);
+      g.drawImage(front, 288, 16, 80, 160, null);
+      g.drawImage(front, 8, 8, null);
+      g.drawImage(inner, 96, 8, null);
+      edge(g, 0, 8, 8, 128, s, true);
+      edge(g, 88, 8, 8, 128, s, true);
+      edge(g, 8, 0, 80, 8, s, false);
+      edge(g, 88, 0, 80, 8, s, false);
+      g.dispose();
+      return new CTex.T(512, 256, out.getRGB(0, 0, 512, 256, null, 0, 512));
    }
 
-   private static void edge(Graphics2D var0, int var1, int var2, int var3, int var4, Capes.Spec var5, boolean var6) {
-      if (var6) {
-         var0.setPaint(new GradientPaint(var1, 0.0F, new Color(var5.trimHi), var1 + var3, 0.0F, new Color(var5.trimLo)));
+   private static void edge(Graphics2D g, int x, int y, int w, int h, Capes.Spec s, boolean vertical) {
+      if (vertical) {
+         g.setPaint(new GradientPaint(x, 0.0F, new Color(s.trimHi), x + w, 0.0F, new Color(s.trimLo)));
       } else {
-         var0.setPaint(new GradientPaint(0.0F, var2, new Color(var5.trimHi), 0.0F, var2 + var4, new Color(var5.trimLo)));
+         g.setPaint(new GradientPaint(0.0F, y, new Color(s.trimHi), 0.0F, y + h, new Color(s.trimLo)));
       }
 
-      var0.fillRect(var1, var2, var3, var4);
-      var0.setColor(new Color(255, 255, 255, 60));
-      var0.setStroke(new BasicStroke(1.0F, 0, 0, 1.0F, new float[]{3.0F, 2.0F}, 0.0F));
-      if (var6) {
-         var0.drawLine(var1 + var3 / 2, var2 + 2, var1 + var3 / 2, var2 + var4 - 2);
+      g.fillRect(x, y, w, h);
+      g.setColor(new Color(255, 255, 255, 60));
+      g.setStroke(new BasicStroke(1.0F, 0, 0, 1.0F, new float[]{3.0F, 2.0F}, 0.0F));
+      if (vertical) {
+         g.drawLine(x + w / 2, y + 2, x + w / 2, y + h - 2);
       } else {
-         var0.drawLine(var1 + 2, var2 + var4 / 2, var1 + var3 - 2, var2 + var4 / 2);
+         g.drawLine(x + 2, y + h / 2, x + w - 2, y + h / 2);
       }
 
-      var0.setStroke(new BasicStroke(1.0F));
+      g.setStroke(new BasicStroke(1.0F));
    }
 
-   private static void lining(BufferedImage var0, Capes.Spec var1) {
-      int[] var2 = px(var0);
-      int var3 = var1.lining;
-      int var4 = mix(var3, 16777215, 0.28);
-      int var5 = mix(var3, 0, 0.4);
+   private static void lining(BufferedImage img, Capes.Spec s) {
+      int[] p = px(img);
+      int base = s.lining;
+      int hi = mix(base, 16777215, 0.28);
+      int lo = mix(base, 0, 0.4);
 
-      for (int var6 = 0; var6 < 256; var6++) {
-         for (int var7 = 0; var7 < 160; var7++) {
-            double var8 = (var7 + 0.5) / 160.0;
-            double var10 = (var6 + 0.5) / 256.0;
-            int var12 = mix(var4, var5, var10 * 0.9);
-            double var13 = Math.exp(-Math.pow((var8 * 0.8 + var10 * 0.6 - 0.55) / 0.12, 2.0)) * 0.2;
-            var12 = add(var12, 16777215, var13);
-            double var15 = Math.abs(((var8 * 5.0 + var10 * 3.1) % 1.0 + 1.0) % 1.0 - 0.5);
-            double var17 = Math.abs(((var8 * 5.0 - var10 * 3.1) % 1.0 + 1.0) % 1.0 - 0.5);
-            double var19 = Math.min(var15, var17);
-            if (var19 < 0.045) {
-               var12 = shade(var12, 0.78 + var19 * 4.5);
+      for (int y = 0; y < 256; y++) {
+         for (int x = 0; x < 160; x++) {
+            double u = (x + 0.5) / 160.0;
+            double v = (y + 0.5) / 256.0;
+            int c = mix(hi, lo, v * 0.9);
+            double sheen = Math.exp(-Math.pow((u * 0.8 + v * 0.6 - 0.55) / 0.12, 2.0)) * 0.2;
+            c = add(c, 16777215, sheen);
+            double qa = Math.abs(((u * 5.0 + v * 3.1) % 1.0 + 1.0) % 1.0 - 0.5);
+            double qb = Math.abs(((u * 5.0 - v * 3.1) % 1.0 + 1.0) % 1.0 - 0.5);
+            double q = Math.min(qa, qb);
+            if (q < 0.045) {
+               c = shade(c, 0.78 + q * 4.5);
             } else {
-               var12 = shade(var12, 1.04 - var19 * 0.2);
+               c = shade(c, 1.04 - q * 0.2);
             }
 
-            var2[var6 * 160 + var7] = 0xFF000000 | var12;
+            p[y * 160 + x] = 0xFF000000 | c;
          }
       }
    }
 
-   static void cloth(BufferedImage var0, double var1) {
-      int[] var3 = px(var0);
-      int var4 = var0.getWidth();
-      int var5 = var0.getHeight();
+   static void cloth(BufferedImage img, double amount) {
+      int[] p = px(img);
+      int w = img.getWidth();
+      int h = img.getHeight();
 
-      for (int var6 = 0; var6 < var5; var6++) {
-         for (int var7 = 0; var7 < var4; var7++) {
-            double var8 = (var7 + 0.5) / var4;
-            double var10 = (var6 + 0.5) / var5;
-            double var12 = 0.055 * Math.sin(var8 * Math.PI * 2.0 * 2.5 + 0.6 + var10 * 1.2) * (0.35 + 0.65 * var10)
-               + 0.025 * Math.sin(var8 * Math.PI * 2.0 * 5.5 + 1.3);
-            double var14 = Math.min(var8, 1.0 - var8);
-            double var16 = Math.min(var10, 1.0 - var10);
-            double var18 = 1.0 - 0.28 * Math.pow(1.0 - Math.min(1.0, var14 / 0.22), 2.0) - 0.22 * Math.pow(1.0 - Math.min(1.0, (1.0 - var10) / 0.25), 2.0);
-            double var20 = 1.0 - 0.25 * Math.pow(1.0 - Math.min(1.0, var10 / 0.09), 2.0);
-            double var22 = 1.0 + (var12 + (var18 * var20 - 1.0)) * var1;
-            int var24 = var6 * var4 + var7;
-            var3[var24] = var3[var24] & 0xFF000000 | shade(var3[var24], var22) & 16777215;
+      for (int y = 0; y < h; y++) {
+         for (int x = 0; x < w; x++) {
+            double u = (x + 0.5) / w;
+            double v = (y + 0.5) / h;
+            double fold = 0.055 * Math.sin(u * Math.PI * 2.0 * 2.5 + 0.6 + v * 1.2) * (0.35 + 0.65 * v) + 0.025 * Math.sin(u * Math.PI * 2.0 * 5.5 + 1.3);
+            double ex = Math.min(u, 1.0 - u);
+            double ey = Math.min(v, 1.0 - v);
+            double vig = 1.0 - 0.28 * Math.pow(1.0 - Math.min(1.0, ex / 0.22), 2.0) - 0.22 * Math.pow(1.0 - Math.min(1.0, (1.0 - v) / 0.25), 2.0);
+            double top = 1.0 - 0.25 * Math.pow(1.0 - Math.min(1.0, v / 0.09), 2.0);
+            double m = 1.0 + (fold + (vig * top - 1.0)) * amount;
+            int i = y * w + x;
+            p[i] = p[i] & 0xFF000000 | shade(p[i], m) & 16777215;
          }
       }
    }
 
-   static void trim(BufferedImage var0, Capes.Spec var1) {
-      Graphics2D var2 = var0.createGraphics();
-      Gx.hints(var2);
-      int var3 = var0.getWidth();
-      int var4 = var0.getHeight();
-      float var5 = 7.0F;
+   static void trim(BufferedImage img, Capes.Spec s) {
+      Graphics2D g = img.createGraphics();
+      Gx.hints(g);
+      int w = img.getWidth();
+      int h = img.getHeight();
+      float t = 7.0F;
 
-      for (int var6 = 0; var6 < 6; var6++) {
-         var2.setColor(new Color(0, 0, 0, 22 - var6 * 3));
-         var2.setStroke(new BasicStroke(2.0F));
-         var2.drawRect((int)var5 + var6, (int)var5 + var6, var3 - 1 - 2 * ((int)var5 + var6), var4 - 1 - 2 * ((int)var5 + var6));
+      for (int i = 0; i < 6; i++) {
+         g.setColor(new Color(0, 0, 0, 22 - i * 3));
+         g.setStroke(new BasicStroke(2.0F));
+         g.drawRect((int)t + i, (int)t + i, w - 1 - 2 * ((int)t + i), h - 1 - 2 * ((int)t + i));
       }
 
-      Float var8 = new Float(0.0F, 0.0F, var3, var4);
-      Area var7 = new Area(var8);
-      var7.subtract(new Area(new Float(var5, var5, var3 - 2.0F * var5, var4 - 2.0F * var5)));
-      var2.setPaint(
+      Shape outer = new Float(0.0F, 0.0F, w, h);
+      Area band = new Area(outer);
+      band.subtract(new Area(new Float(t, t, w - 2.0F * t, h - 2.0F * t)));
+      g.setPaint(
          new LinearGradientPaint(
             0.0F,
             0.0F,
-            var3 * 0.6F,
-            var4,
+            w * 0.6F,
+            h,
             new float[]{0.0F, 0.3F, 0.55F, 0.8F, 1.0F},
             new Color[]{
-               new Color(var1.trimHi),
-               new Color(mix(var1.trimHi, var1.trimLo, 0.55)),
-               new Color(var1.trimHi),
-               new Color(var1.trimLo),
-               new Color(mix(var1.trimHi, var1.trimLo, 0.4))
+               new Color(s.trimHi), new Color(mix(s.trimHi, s.trimLo, 0.55)), new Color(s.trimHi), new Color(s.trimLo), new Color(mix(s.trimHi, s.trimLo, 0.4))
             }
          )
       );
-      var2.fill(var7);
-      var2.setColor(new Color(255, 255, 255, 110));
-      var2.setStroke(new BasicStroke(1.2F));
-      var2.draw(new Float(1.5F, 1.5F, var3 - 3, var4 - 3));
-      var2.setColor(new Color(0, 0, 0, 120));
-      var2.draw(new Float(var5 - 0.6F, var5 - 0.6F, var3 - 2.0F * var5 + 1.2F, var4 - 2.0F * var5 + 1.2F));
-      var2.setColor(new Color(var1.trimHi & 16777215 | 1593835520, true));
-      var2.setStroke(new BasicStroke(1.3F));
-      var2.draw(new Float(var5 + 4.0F, var5 + 4.0F, var3 - 2.0F * var5 - 8.0F, var4 - 2.0F * var5 - 8.0F));
-      var2.setPaint(new GradientPaint(0.0F, var5, new Color(0, 0, 0, 70), 0.0F, var5 + 16.0F, new Color(0, 0, 0, 0)));
-      var2.fillRect((int)var5, (int)var5, var3 - 2 * (int)var5, 16);
-      var2.dispose();
+      g.fill(band);
+      g.setColor(new Color(255, 255, 255, 110));
+      g.setStroke(new BasicStroke(1.2F));
+      g.draw(new Float(1.5F, 1.5F, w - 3, h - 3));
+      g.setColor(new Color(0, 0, 0, 120));
+      g.draw(new Float(t - 0.6F, t - 0.6F, w - 2.0F * t + 1.2F, h - 2.0F * t + 1.2F));
+      g.setColor(new Color(s.trimHi & 16777215 | 1593835520, true));
+      g.setStroke(new BasicStroke(1.3F));
+      g.draw(new Float(t + 4.0F, t + 4.0F, w - 2.0F * t - 8.0F, h - 2.0F * t - 8.0F));
+      g.setPaint(new GradientPaint(0.0F, t, new Color(0, 0, 0, 70), 0.0F, t + 16.0F, new Color(0, 0, 0, 0)));
+      g.fillRect((int)t, (int)t, w - 2 * (int)t, 16);
+      g.dispose();
    }
 
-   static BufferedImage down(BufferedImage var0) {
-      int var1 = var0.getWidth() / 2;
-      int var2 = var0.getHeight() / 2;
-      int var3 = var0.getWidth();
-      int[] var4 = px(var0);
-      BufferedImage var5 = new BufferedImage(var1, var2, 2);
-      int[] var6 = px(var5);
+   static BufferedImage down(BufferedImage src) {
+      int w = src.getWidth() / 2;
+      int h = src.getHeight() / 2;
+      int sw = src.getWidth();
+      int[] a = px(src);
+      BufferedImage out = new BufferedImage(w, h, 2);
+      int[] o = px(out);
 
-      for (int var7 = 0; var7 < var2; var7++) {
-         for (int var8 = 0; var8 < var1; var8++) {
-            int var9 = var7 * 2 * var3 + var8 * 2;
-            int var10 = var4[var9];
-            int var11 = var4[var9 + 1];
-            int var12 = var4[var9 + var3];
-            int var13 = var4[var9 + var3 + 1];
-            int var14 = 0;
-            int var15 = 0;
-            int var16 = 0;
-            int var17 = 0;
+      for (int y = 0; y < h; y++) {
+         for (int x = 0; x < w; x++) {
+            int i = y * 2 * sw + x * 2;
+            int c0 = a[i];
+            int c1 = a[i + 1];
+            int c2 = a[i + sw];
+            int c3 = a[i + sw + 1];
+            int r = 0;
+            int gg = 0;
+            int b = 0;
+            int al = 0;
 
-            for (int var21 : new int[]{var10, var11, var12, var13}) {
-               var17 += var21 >>> 24;
-               var14 += var21 >> 16 & 0xFF;
-               var15 += var21 >> 8 & 0xFF;
-               var16 += var21 & 0xFF;
+            for (int c : new int[]{c0, c1, c2, c3}) {
+               al += c >>> 24;
+               r += c >> 16 & 0xFF;
+               gg += c >> 8 & 0xFF;
+               b += c & 0xFF;
             }
 
-            var6[var7 * var1 + var8] = var17 / 4 << 24 | var14 / 4 << 16 | var15 / 4 << 8 | var16 / 4;
+            o[y * w + x] = al / 4 << 24 | r / 4 << 16 | gg / 4 << 8 | b / 4;
          }
       }
 
-      return var5;
+      return out;
    }
 
-   static void grain(BufferedImage var0, int var1) {
-      int[] var2 = px(var0);
-      int var3 = var0.getWidth();
-      int var4 = var0.getHeight();
+   static void grain(BufferedImage img, int seed) {
+      int[] p = px(img);
+      int w = img.getWidth();
+      int h = img.getHeight();
 
-      for (int var5 = 0; var5 < var4; var5++) {
-         for (int var6 = 0; var6 < var3; var6++) {
-            double var7 = (hash(var6, var5, var1) - 0.5) * 0.05 + ((var6 + var5) % 3 == 0 ? -0.015 : 0.006);
-            int var9 = var5 * var3 + var6;
-            var2[var9] = var2[var9] & 0xFF000000 | shade(var2[var9], 1.0 + var7) & 16777215;
-         }
-      }
-   }
-
-   static int[] px(BufferedImage var0) {
-      return ((DataBufferInt)var0.getRaster().getDataBuffer()).getData();
-   }
-
-   static void field(BufferedImage var0, Capes.PF var1) {
-      int var2 = var0.getWidth();
-      int var3 = var0.getHeight();
-      int[] var4 = px(var0);
-
-      for (int var5 = 0; var5 < var3; var5++) {
-         for (int var6 = 0; var6 < var2; var6++) {
-            var4[var5 * var2 + var6] = 0xFF000000 | var1.at((var6 + 0.5) / var2, (var5 + 0.5) / var3, var6, var5);
+      for (int y = 0; y < h; y++) {
+         for (int x = 0; x < w; x++) {
+            double n = (hash(x, y, seed) - 0.5) * 0.05 + ((x + y) % 3 == 0 ? -0.015 : 0.006);
+            int i = y * w + x;
+            p[i] = p[i] & 0xFF000000 | shade(p[i], 1.0 + n) & 16777215;
          }
       }
    }
 
-   static double hash(int var0, int var1, int var2) {
-      int var3 = var0 * 374761393 + var1 * 668265263 + var2 * 1442695041;
-      var3 = (var3 ^ var3 >>> 13) * 1274126177;
-      var3 ^= var3 >>> 16;
-      return (var3 & 16777215) / 1.6777216E7;
+   static int[] px(BufferedImage im) {
+      return ((DataBufferInt)im.getRaster().getDataBuffer()).getData();
    }
 
-   static double hash1(int var0, int var1) {
-      return hash(var0, var0 * 31 + 7, var1);
+   static void field(BufferedImage im, Capes.PF f) {
+      int w = im.getWidth();
+      int h = im.getHeight();
+      int[] p = px(im);
+
+      for (int y = 0; y < h; y++) {
+         for (int x = 0; x < w; x++) {
+            p[y * w + x] = 0xFF000000 | f.at((x + 0.5) / w, (y + 0.5) / h, x, y);
+         }
+      }
    }
 
-   static double vn(double var0, double var2, int var4, int var5, int var6) {
-      int var7 = (int)Math.floor(var0);
-      int var8 = (int)Math.floor(var2);
-      double var9 = var0 - var7;
-      double var11 = var2 - var8;
-      var9 = var9 * var9 * var9 * (var9 * (var9 * 6.0 - 15.0) + 10.0);
-      var11 = var11 * var11 * var11 * (var11 * (var11 * 6.0 - 15.0) + 10.0);
-      int var13 = var4 > 0 ? Math.floorMod(var7, var4) : var7;
-      int var14 = var4 > 0 ? Math.floorMod(var7 + 1, var4) : var7 + 1;
-      int var15 = var5 > 0 ? Math.floorMod(var8, var5) : var8;
-      int var16 = var5 > 0 ? Math.floorMod(var8 + 1, var5) : var8 + 1;
-      double var17 = hash(var13, var15, var6);
-      double var19 = hash(var14, var15, var6);
-      double var21 = hash(var13, var16, var6);
-      double var23 = hash(var14, var16, var6);
-      return var17 + (var19 - var17) * var9 + (var21 - var17) * var11 + (var17 - var19 - var21 + var23) * var9 * var11;
+   static double hash(int x, int y, int s) {
+      int h = x * 374761393 + y * 668265263 + s * 1442695041;
+      h = (h ^ h >>> 13) * 1274126177;
+      h ^= h >>> 16;
+      return (h & 16777215) / 1.6777216E7;
    }
 
-   static double fbm(double var0, double var2, int var4, int var5, int var6, int var7) {
-      double var8 = 0.0;
-      double var10 = 0.5;
-      double var12 = 0.0;
-      double var14 = 1.0;
+   static double hash1(int i, int s) {
+      return hash(i, i * 31 + 7, s);
+   }
 
-      for (int var16 = 0; var16 < var6; var16++) {
-         var8 += var10 * vn(var0 * var14, var2 * var14, var4 * (int)var14, var5 * (int)var14, var7 + var16 * 17);
-         var12 += var10;
-         var10 *= 0.5;
-         var14 *= 2.0;
+   static double vn(double x, double y, int px, int py, int s) {
+      int xi = (int)Math.floor(x);
+      int yi = (int)Math.floor(y);
+      double fx = x - xi;
+      double fy = y - yi;
+      fx = fx * fx * fx * (fx * (fx * 6.0 - 15.0) + 10.0);
+      fy = fy * fy * fy * (fy * (fy * 6.0 - 15.0) + 10.0);
+      int x0 = px > 0 ? Math.floorMod(xi, px) : xi;
+      int x1 = px > 0 ? Math.floorMod(xi + 1, px) : xi + 1;
+      int y0 = py > 0 ? Math.floorMod(yi, py) : yi;
+      int y1 = py > 0 ? Math.floorMod(yi + 1, py) : yi + 1;
+      double a = hash(x0, y0, s);
+      double b = hash(x1, y0, s);
+      double c = hash(x0, y1, s);
+      double d = hash(x1, y1, s);
+      return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+   }
+
+   static double fbm(double x, double y, int px, int py, int oct, int s) {
+      double sum = 0.0;
+      double amp = 0.5;
+      double norm = 0.0;
+      double f = 1.0;
+
+      for (int o = 0; o < oct; o++) {
+         sum += amp * vn(x * f, y * f, px * (int)f, py * (int)f, s + o * 17);
+         norm += amp;
+         amp *= 0.5;
+         f *= 2.0;
       }
 
-      return var8 / var12;
+      return sum / norm;
    }
 
-   static double clamp01(double var0) {
-      return var0 < 0.0 ? 0.0 : (var0 > 1.0 ? 1.0 : var0);
+   static double clamp01(double v) {
+      return v < 0.0 ? 0.0 : (v > 1.0 ? 1.0 : v);
    }
 
-   static double smooth(double var0, double var2, double var4) {
-      double var6 = clamp01((var4 - var0) / (var2 - var0));
-      return var6 * var6 * (3.0 - 2.0 * var6);
+   static double smooth(double a, double b, double v) {
+      double t = clamp01((v - a) / (b - a));
+      return t * t * (3.0 - 2.0 * t);
    }
 
-   static int mix(int var0, int var1, double var2) {
-      var2 = clamp01(var2);
-      int var4 = var0 >> 16 & 0xFF;
-      int var5 = var0 >> 8 & 0xFF;
-      int var6 = var0 & 0xFF;
-      int var7 = var1 >> 16 & 0xFF;
-      int var8 = var1 >> 8 & 0xFF;
-      int var9 = var1 & 0xFF;
-      return (int)(var4 + (var7 - var4) * var2) << 16 | (int)(var5 + (var8 - var5) * var2) << 8 | (int)(var6 + (var9 - var6) * var2);
+   static int mix(int a, int b, double t) {
+      t = clamp01(t);
+      int ar = a >> 16 & 0xFF;
+      int ag = a >> 8 & 0xFF;
+      int ab = a & 0xFF;
+      int br = b >> 16 & 0xFF;
+      int bg = b >> 8 & 0xFF;
+      int bb = b & 0xFF;
+      return (int)(ar + (br - ar) * t) << 16 | (int)(ag + (bg - ag) * t) << 8 | (int)(ab + (bb - ab) * t);
    }
 
-   static int ramp(double var0, int... var2) {
-      var0 = clamp01(var0) * (var2.length - 1);
-      int var3 = Math.min(var2.length - 2, (int)var0);
-      return mix(var2[var3], var2[var3 + 1], var0 - var3);
+   static int ramp(double t, int... c) {
+      t = clamp01(t) * (c.length - 1);
+      int i = Math.min(c.length - 2, (int)t);
+      return mix(c[i], c[i + 1], t - i);
    }
 
-   static int shade(int var0, double var1) {
-      int var3 = (int)Math.min(255.0, Math.max(0.0, (var0 >> 16 & 0xFF) * var1));
-      int var4 = (int)Math.min(255.0, Math.max(0.0, (var0 >> 8 & 0xFF) * var1));
-      int var5 = (int)Math.min(255.0, Math.max(0.0, (var0 & 0xFF) * var1));
-      return var0 & 0xFF000000 | var3 << 16 | var4 << 8 | var5;
+   static int shade(int c, double m) {
+      int r = (int)Math.min(255.0, Math.max(0.0, (c >> 16 & 0xFF) * m));
+      int g = (int)Math.min(255.0, Math.max(0.0, (c >> 8 & 0xFF) * m));
+      int b = (int)Math.min(255.0, Math.max(0.0, (c & 0xFF) * m));
+      return c & 0xFF000000 | r << 16 | g << 8 | b;
    }
 
-   static int add(int var0, int var1, double var2) {
-      if (var2 <= 0.0) {
-         return var0;
+   static int add(int c, int rgb, double a) {
+      if (a <= 0.0) {
+         return c;
       } else {
-         int var4 = (int)Math.min(255.0, (var0 >> 16 & 0xFF) + (var1 >> 16 & 0xFF) * var2);
-         int var5 = (int)Math.min(255.0, (var0 >> 8 & 0xFF) + (var1 >> 8 & 0xFF) * var2);
-         int var6 = (int)Math.min(255.0, (var0 & 0xFF) + (var1 & 0xFF) * var2);
-         return var0 & 0xFF000000 | var4 << 16 | var5 << 8 | var6;
+         int r = (int)Math.min(255.0, (c >> 16 & 0xFF) + (rgb >> 16 & 0xFF) * a);
+         int g = (int)Math.min(255.0, (c >> 8 & 0xFF) + (rgb >> 8 & 0xFF) * a);
+         int b = (int)Math.min(255.0, (c & 0xFF) + (rgb & 0xFF) * a);
+         return c & 0xFF000000 | r << 16 | g << 8 | b;
       }
    }
 
-   static int over(int var0, int var1, double var2) {
-      return var0 & 0xFF000000 | mix(var0, var1, var2);
+   static int over(int c, int rgb, double a) {
+      return c & 0xFF000000 | mix(c, rgb, a);
    }
 
-   static int hsv(double var0, double var2, double var4) {
-      return Color.HSBtoRGB((float)(var0 - Math.floor(var0)), (float)clamp01(var2), (float)clamp01(var4)) & 16777215;
+   static int hsv(double h, double s, double v) {
+      return Color.HSBtoRGB((float)(h - Math.floor(h)), (float)clamp01(s), (float)clamp01(v)) & 16777215;
    }
 
-   static Color col(int var0, double var1) {
-      return new Color(var0 >> 16 & 0xFF, var0 >> 8 & 0xFF, var0 & 0xFF, (int)Math.round(clamp01(var1) * 255.0));
+   static Color col(int rgb, double a) {
+      return new Color(rgb >> 16 & 0xFF, rgb >> 8 & 0xFF, rgb & 0xFF, (int)Math.round(clamp01(a) * 255.0));
    }
 
-   static void dot(Graphics2D var0, double var1, double var3, double var5, int var7, double var8) {
-      if (!(var5 <= 0.05) && !(var8 <= 0.004)) {
-         var0.setPaint(
-            new RadialGradientPaint(
-               (float)var1, (float)var3, (float)var5, new float[]{0.0F, 0.25F, 1.0F}, new Color[]{col(var7, var8), col(var7, var8 * 0.45), col(var7, 0.0)}
-            )
+   static void dot(Graphics2D g, double x, double y, double r, int rgb, double a) {
+      if (!(r <= 0.05) && !(a <= 0.004)) {
+         g.setPaint(
+            new RadialGradientPaint((float)x, (float)y, (float)r, new float[]{0.0F, 0.25F, 1.0F}, new Color[]{col(rgb, a), col(rgb, a * 0.45), col(rgb, 0.0)})
          );
-         var0.fill(new Double(var1 - var5, var3 - var5, var5 * 2.0, var5 * 2.0));
+         g.fill(new Double(x - r, y - r, r * 2.0, r * 2.0));
       }
    }
 
-   static void star(Graphics2D var0, double var1, double var3, double var5, int var7, double var8) {
-      if (!(var8 <= 0.01)) {
-         dot(var0, var1, var3, var5 * 2.2, var7, var8 * 0.55);
-         dot(var0, var1, var3, var5 * 0.9, 16777215, var8);
-         if (var5 > 1.6) {
-            var0.setStroke(new BasicStroke((float)Math.max(0.7, var5 * 0.22), 1, 1));
-            var0.setPaint(new GradientPaint((float)(var1 - var5 * 3.2), (float)var3, col(var7, 0.0), (float)var1, (float)var3, col(16777215, var8 * 0.9), true));
-            var0.draw(new java.awt.geom.Line2D.Double(var1 - var5 * 3.2, var3, var1 + var5 * 3.2, var3));
-            var0.setPaint(new GradientPaint((float)var1, (float)(var3 - var5 * 3.2), col(var7, 0.0), (float)var1, (float)var3, col(16777215, var8 * 0.9), true));
-            var0.draw(new java.awt.geom.Line2D.Double(var1, var3 - var5 * 3.2, var1, var3 + var5 * 3.2));
+   static void star(Graphics2D g, double x, double y, double r, int rgb, double a) {
+      if (!(a <= 0.01)) {
+         dot(g, x, y, r * 2.2, rgb, a * 0.55);
+         dot(g, x, y, r * 0.9, 16777215, a);
+         if (r > 1.6) {
+            g.setStroke(new BasicStroke((float)Math.max(0.7, r * 0.22), 1, 1));
+            g.setPaint(new GradientPaint((float)(x - r * 3.2), (float)y, col(rgb, 0.0), (float)x, (float)y, col(16777215, a * 0.9), true));
+            g.draw(new java.awt.geom.Line2D.Double(x - r * 3.2, y, x + r * 3.2, y));
+            g.setPaint(new GradientPaint((float)x, (float)(y - r * 3.2), col(rgb, 0.0), (float)x, (float)y, col(16777215, a * 0.9), true));
+            g.draw(new java.awt.geom.Line2D.Double(x, y - r * 3.2, x, y + r * 3.2));
          }
       }
    }
 
-   static void glowStroke(Graphics2D var0, Shape var1, int var2, float var3, float var4, double var5) {
-      for (int var7 = 5; var7 >= 1; var7--) {
-         var0.setColor(col(var2, var5 * 0.12 * (6 - var7) / 5.0 + 0.02));
-         var0.setStroke(new BasicStroke(var3 + var4 * var7, 1, 1));
-         var0.draw(var1);
+   static void glowStroke(Graphics2D g, Shape s, int rgb, float core, float spread, double a) {
+      for (int i = 5; i >= 1; i--) {
+         g.setColor(col(rgb, a * 0.12 * (6 - i) / 5.0 + 0.02));
+         g.setStroke(new BasicStroke(core + spread * i, 1, 1));
+         g.draw(s);
       }
 
-      var0.setColor(col(var2, var5));
-      var0.setStroke(new BasicStroke(var3, 1, 1));
-      var0.draw(var1);
-      var0.setColor(col(mix(var2, 16777215, 0.7), var5));
-      var0.setStroke(new BasicStroke(Math.max(0.6F, var3 * 0.4F), 1, 1));
-      var0.draw(var1);
+      g.setColor(col(rgb, a));
+      g.setStroke(new BasicStroke(core, 1, 1));
+      g.draw(s);
+      g.setColor(col(mix(rgb, 16777215, 0.7), a));
+      g.setStroke(new BasicStroke(Math.max(0.6F, core * 0.4F), 1, 1));
+      g.draw(s);
    }
 
-   static void sweep(BufferedImage var0, double var1, double var3, double var5) {
-      int[] var7 = px(var0);
-      int var8 = var0.getWidth();
-      int var9 = var0.getHeight();
-      double var10 = -0.5 + var1 * 2.2;
+   static void sweep(BufferedImage img, double t, double width, double strength) {
+      int[] p = px(img);
+      int w = img.getWidth();
+      int h = img.getHeight();
+      double pos = -0.5 + t * 2.2;
 
-      for (int var12 = 0; var12 < var9; var12++) {
-         for (int var13 = 0; var13 < var8; var13++) {
-            double var14 = (var13 + 0.5) / var8;
-            double var16 = (var12 + 0.5) / var9;
-            double var18 = var14 * 0.7 + var16 * 0.45 - var10;
-            double var20 = Math.exp(-(var18 * var18) / (var3 * var3)) * var5;
-            if (var20 > 0.004) {
-               var7[var12 * var8 + var13] = add(var7[var12 * var8 + var13], 16777215, var20);
+      for (int y = 0; y < h; y++) {
+         for (int x = 0; x < w; x++) {
+            double u = (x + 0.5) / w;
+            double v = (y + 0.5) / h;
+            double d = u * 0.7 + v * 0.45 - pos;
+            double a = Math.exp(-(d * d) / (width * width)) * strength;
+            if (a > 0.004) {
+               p[y * w + x] = add(p[y * w + x], 16777215, a);
             }
          }
       }
    }
 
-   static void addDot(BufferedImage var0, double var1, double var3, double var5, int var7, double var8) {
-      if (!(var5 <= 0.1) && !(var8 <= 0.003)) {
-         int[] var10 = px(var0);
-         int var11 = var0.getWidth();
-         int var12 = var0.getHeight();
-         int var13 = Math.max(0, (int)(var1 - var5 * 2.0));
-         int var14 = Math.min(var11 - 1, (int)(var1 + var5 * 2.0));
-         int var15 = Math.max(0, (int)(var3 - var5 * 2.0));
-         int var16 = Math.min(var12 - 1, (int)(var3 + var5 * 2.0));
-         double var17 = 1.0 / (var5 * var5 * 0.5);
+   static void addDot(BufferedImage img, double cx, double cy, double r, int rgb, double a) {
+      if (!(r <= 0.1) && !(a <= 0.003)) {
+         int[] p = px(img);
+         int w = img.getWidth();
+         int h = img.getHeight();
+         int x0 = Math.max(0, (int)(cx - r * 2.0));
+         int x1 = Math.min(w - 1, (int)(cx + r * 2.0));
+         int y0 = Math.max(0, (int)(cy - r * 2.0));
+         int y1 = Math.min(h - 1, (int)(cy + r * 2.0));
+         double k = 1.0 / (r * r * 0.5);
 
-         for (int var19 = var15; var19 <= var16; var19++) {
-            for (int var20 = var13; var20 <= var14; var20++) {
-               double var21 = var20 + 0.5 - var1;
-               double var23 = var19 + 0.5 - var3;
-               double var25 = Math.exp(-(var21 * var21 + var23 * var23) * var17) * var8;
-               if (var25 > 0.003) {
-                  var10[var19 * var11 + var20] = add(var10[var19 * var11 + var20], var7, var25);
+         for (int y = y0; y <= y1; y++) {
+            for (int x = x0; x <= x1; x++) {
+               double dx = x + 0.5 - cx;
+               double dy = y + 0.5 - cy;
+               double f = Math.exp(-(dx * dx + dy * dy) * k) * a;
+               if (f > 0.003) {
+                  p[y * w + x] = add(p[y * w + x], rgb, f);
                }
             }
          }
@@ -504,6 +497,7 @@ public final class Capes {
       CapeArt2.defineAll();
       Cos3Capes.defineAll();
       XmasCapes.defineAll();
+      CapePack.defineAll();
    }
 
    interface PF {
@@ -523,14 +517,14 @@ public final class Capes {
       final int lining;
       final Capes.Painter p;
 
-      Spec(String var1, int var2, float var3, int var4, int var5, int var6, Capes.Painter var7) {
-         this.id = var1;
-         this.frames = var2;
-         this.fps = var3;
-         this.trimHi = var4;
-         this.trimLo = var5;
-         this.lining = var6;
-         this.p = var7;
+      Spec(String id, int frames, float fps, int trimHi, int trimLo, int lining, Capes.Painter p) {
+         this.id = id;
+         this.frames = frames;
+         this.fps = fps;
+         this.trimHi = trimHi;
+         this.trimLo = trimLo;
+         this.lining = lining;
+         this.p = p;
       }
    }
 }

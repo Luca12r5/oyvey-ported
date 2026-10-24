@@ -3,6 +3,8 @@ package dev.lego.cosmetic;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public final class Raster {
    private static final float[] KEY = norm(-0.42F, 0.72F, 0.55F);
@@ -15,226 +17,222 @@ public final class Raster {
    private Raster() {
    }
 
-   public static int[] render(Cos.Item var0, int var1, int var2, float var3, float var4, float var5, boolean var6, int var7) {
-      return render(var0, null, var1, var2, var3, var4, var5, var6, var7);
+   public static int[] render(Cos.Item item, int w, int h, float yaw, float pitch, float time, boolean mannequin, int bgArgb) {
+      return render(item, null, w, h, yaw, pitch, time, mannequin, bgArgb);
    }
 
-   public static int[] renderPose(float[] var0, int var1, int var2, float var3, float var4, int var5) {
-      return render(null, var0, var1, var2, var3, var4, 0.0F, true, var5);
+   public static int[] renderPose(float[] pose, int w, int h, float yaw, float pitch, int bgArgb) {
+      return render(null, pose, w, h, yaw, pitch, 0.0F, true, bgArgb);
    }
 
-   private static float[] norm(float var0, float var1, float var2) {
-      float var3 = (float)Math.sqrt(var0 * var0 + var1 * var1 + var2 * var2);
-      return new float[]{var0 / var3, var1 / var3, var2 / var3};
+   private static float[] norm(float x, float y, float z) {
+      float l = (float)Math.sqrt(x * x + y * y + z * z);
+      return new float[]{x / l, y / l, z / l};
    }
 
-   private static int[] render(Cos.Item var0, float[] var1, int var2, int var3, float var4, float var5, float var6, boolean var7, int var8) {
-      float var9 = (float)Math.cos(Math.toRadians(var4));
-      float var10 = (float)Math.sin(Math.toRadians(var4));
-      float var11 = (float)Math.cos(Math.toRadians(var5));
-      float var12 = (float)Math.sin(Math.toRadians(var5));
-      float[] var13 = focus(var0 == null ? null : var0.slot);
-      ArrayList var14 = new ArrayList();
-      ArrayList var15 = new ArrayList();
-      ArrayList var16 = new ArrayList();
-      ArrayList var17 = new ArrayList();
-      ArrayList var18 = new ArrayList();
-      G.Sink var19 = (var10x, var11x, var12x, var13x, var14x, var15x, var16x, var17x) -> {
-         float[] var18x = new float[12];
+   private static int[] render(Cos.Item item, float[] pose, int w, int h, float yaw, float pitch, float time, boolean mannequin, int bgArgb) {
+      float cy = (float)Math.cos(Math.toRadians(yaw));
+      float sy = (float)Math.sin(Math.toRadians(yaw));
+      float cp = (float)Math.cos(Math.toRadians(pitch));
+      float sp = (float)Math.sin(Math.toRadians(pitch));
+      float[] focus = focus(item == null ? null : item.slot);
+      List<float[]> qp = new ArrayList<>();
+      List<float[]> qn = new ArrayList<>();
+      List<float[]> quv = new ArrayList<>();
+      List<String> qt = new ArrayList<>();
+      List<int[]> qc = new ArrayList<>();
+      G.Sink sink = (tex, p, uv, argb, glow, nx, ny, nz) -> {
+         float[] q = new float[12];
 
-         for (int var19x = 0; var19x < 4; var19x++) {
-            float var20x = var11x[var19x * 3] - var13[0];
-            float var21x = var11x[var19x * 3 + 1] - var13[1];
-            float var22x = var11x[var19x * 3 + 2] - var13[2];
-            float var23x = var20x * var9 - var22x * var10;
-            float var24x = var20x * var10 + var22x * var9;
-            float var25x = var21x * var11 - var24x * var12;
-            float var26x = var21x * var12 + var24x * var11;
-            var18x[var19x * 3] = var23x;
-            var18x[var19x * 3 + 1] = var25x;
-            var18x[var19x * 3 + 2] = var26x;
+         for (int i = 0; i < 4; i++) {
+            float xx = p[i * 3] - focus[0];
+            float yx = p[i * 3 + 1] - focus[1];
+            float z = p[i * 3 + 2] - focus[2];
+            float x1 = xx * cy - z * sy;
+            float z1 = xx * sy + z * cy;
+            float y2 = yx * cp - z1 * sp;
+            float z2 = yx * sp + z1 * cp;
+            q[i * 3] = x1;
+            q[i * 3 + 1] = y2;
+            q[i * 3 + 2] = z2;
          }
 
-         float var27x = var15x * var9 - var17x * var10;
-         float var28x = var15x * var10 + var17x * var9;
-         float var29x = var16x * var11 - var28x * var12;
-         float var30x = var16x * var12 + var28x * var11;
-         var14.add(var18x);
-         var15.add(new float[]{var27x, var29x, var30x});
-         var16.add(var12x);
-         var17.add(var10x);
-         var18.add(new int[]{var13x, var14x ? 1 : 0});
+         float nx1 = nx * cy - nz * sy;
+         float nz1 = nx * sy + nz * cy;
+         float ny2 = ny * cp - nz1 * sp;
+         float nz2 = ny * sp + nz1 * cp;
+         qp.add(q);
+         qn.add(new float[]{nx1, ny2, nz2});
+         quv.add(uv);
+         qt.add(tex);
+         qc.add(new int[]{argb, glow ? 1 : 0});
       };
-      G var20 = new G(var19);
-      Cos.A var21 = new Cos.A();
-      var21.time = var6;
-      var21.preview = true;
-      boolean var22 = var0 != null && var0.slot == Cos.Slot.PET;
-      boolean var23 = var0 != null && var0.slot == Cos.Slot.VEHICLE;
-      Vehicles.Stance var24 = var23 ? Vehicles.stance(var0.id) : null;
-      boolean var25 = var7 && !var22 && (!var23 || var24 != Vehicles.Stance.SIT && var24 != Vehicles.Stance.PEDAL && var24 != Vehicles.Stance.RIDE);
-      if (var25) {
-         mannequin(var20, var1);
+      G g = new G(sink);
+      Cos.A a = new Cos.A();
+      a.time = time;
+      a.preview = true;
+      boolean pet = item != null && item.slot == Cos.Slot.PET;
+      boolean veh = item != null && item.slot == Cos.Slot.VEHICLE;
+      Vehicles.Stance vst = veh ? Vehicles.stance(item.id) : null;
+      boolean man = mannequin && !pet && (!veh || vst != Vehicles.Stance.SIT && vst != Vehicles.Stance.PEDAL && vst != Vehicles.Stance.RIDE);
+      if (man) {
+         mannequin(g, pose);
       }
 
-      if (var0 != null) {
-         var20.push();
-         if (var0.slot == Cos.Slot.CAPE) {
-            Models.capeGeometry(var20, var21, var0.cape);
-         } else if (var23) {
-            var20.translate(0.0F, -24.0F - Math.max(0.0F, Vehicles.lift(var0.id, var6)), 0.0F);
-            var0.model.render(var20, var21);
+      if (item != null) {
+         g.push();
+         if (item.slot == Cos.Slot.CAPE) {
+            Models.capeGeometry(g, a, item.cape);
+         } else if (veh) {
+            g.translate(0.0F, -24.0F - Math.max(0.0F, Vehicles.lift(item.id, time)), 0.0F);
+            item.model.render(g, a);
          } else {
-            var0.model.render(var20, var21);
+            item.model.render(g, a);
          }
 
-         var20.pop();
+         g.pop();
       }
 
-      if (var25 && var0 != null && var0.slot != Cos.Slot.HAT && var0.slot != Cos.Slot.FACE || var1 != null) {
-         groundShadow(var20);
+      if (man && item != null && item.slot != Cos.Slot.HAT && item.slot != Cos.Slot.FACE || pose != null) {
+         groundShadow(g);
       }
 
-      int var26 = var14.size();
-      float[][] var27 = (float[][])var14.toArray(new float[0][]);
-      float[][] var28 = (float[][])var15.toArray(new float[0][]);
-      int[] var29 = new int[var26];
+      int n = qp.size();
+      float[][] P = qp.toArray(new float[0][]);
+      float[][] N = qn.toArray(new float[0][]);
+      int[] grp = new int[n];
 
-      for (int var30 = 0; var30 < var26; var30++) {
-         var29[var30] = Smooth.group((String)var17.get(var30), ((int[])var18.get(var30))[1] != 0);
+      for (int i = 0; i < n; i++) {
+         grp[i] = Smooth.group(qt.get(i), qc.get(i)[1] != 0);
       }
 
-      float[] var61 = Smooth.normals(var27, var28, var29, var26);
-      ArrayList<Raster.Tri> var31 = new ArrayList<>(var26 * 2);
-      int[][] var32 = new int[][]{{0, 1, 2}, {0, 2, 3}};
-      HashMap<String, CTex.T> var33 = new HashMap<>();
+      float[] vn = Smooth.normals(P, N, grp, n);
+      List<Raster.Tri> tris = new ArrayList<>(n * 2);
+      int[][] idx = new int[][]{{0, 1, 2}, {0, 2, 3}};
+      Map<String, CTex.T> texCache = new HashMap<>();
 
-      for (int var34 = 0; var34 < var26; var34++) {
-         float[] var35 = var27[var34];
-         float[] var36 = var28[var34];
-         float[] var37 = (float[])var16.get(var34);
-         int var38 = ((int[])var18.get(var34))[0];
-         boolean var39 = ((int[])var18.get(var34))[1] != 0;
-         CTex.T var40 = var33.computeIfAbsent((String)var17.get(var34), CTex::get);
-         float var41 = (var35[0] + var35[3] + var35[6] + var35[9]) / 4.0F;
-         float var42 = (var35[1] + var35[4] + var35[7] + var35[10]) / 4.0F;
-         float var43 = (var35[2] + var35[5] + var35[8] + var35[11]) / 4.0F;
-         float var44 = distance(var0 == null ? null : var0.slot);
-         float var45 = -var41;
-         float var46 = -var42;
-         float var47 = var44 - var43;
-         float var48 = var36[0] * var45 + var36[1] * var46 + var36[2] * var47 < 0.0F ? -1.0F : 1.0F;
-         float[] var49 = new float[4];
-         float[] var50 = new float[4];
+      for (int qi = 0; qi < n; qi++) {
+         float[] q = P[qi];
+         float[] fnn = N[qi];
+         float[] uv = quv.get(qi);
+         int argb = qc.get(qi)[0];
+         boolean glow = qc.get(qi)[1] != 0;
+         CTex.T t = texCache.computeIfAbsent(qt.get(qi), CTex::get);
+         float cx = (q[0] + q[3] + q[6] + q[9]) / 4.0F;
+         float cyy = (q[1] + q[4] + q[7] + q[10]) / 4.0F;
+         float cz = (q[2] + q[5] + q[8] + q[11]) / 4.0F;
+         float camD = distance(item == null ? null : item.slot);
+         float vx = -cx;
+         float vy = -cyy;
+         float vz = camD - cz;
+         float flip = fnn[0] * vx + fnn[1] * vy + fnn[2] * vz < 0.0F ? -1.0F : 1.0F;
+         float[] shade = new float[4];
+         float[] spc = new float[4];
 
-         for (int var51 = 0; var51 < 4; var51++) {
-            if (var39) {
-               var49[var51] = 1.0F;
+         for (int k = 0; k < 4; k++) {
+            if (glow) {
+               shade[k] = 1.0F;
             } else {
-               float var52 = var61[var34 * 12 + var51 * 3] * var48;
-               float var53 = var61[var34 * 12 + var51 * 3 + 1] * var48;
-               float var54 = var61[var34 * 12 + var51 * 3 + 2] * var48;
-               float var55 = var52 * KEY[0] + var53 * KEY[1] + var54 * KEY[2];
-               float var56 = var52 * FILL[0] + var53 * FILL[1] + var54 * FILL[2];
-               float var57 = Math.max(0.0F, var52 * HALF[0] + var53 * HALF[1] + var54 * HALF[2]);
-               float var58 = 1.0F - Math.max(0.0F, var54);
-               float var59 = 0.36F
-                  + 0.62F * Math.max(0.0F, var55)
-                  + 0.16F * Math.max(0.0F, var56)
-                  + 0.2F * var58 * var58 * var58
-                  + 0.07F * Math.max(0.0F, var53);
-               float var60 = (float)Math.pow(var57, 28.0) * 0.22F;
-               var49[var51] = var59;
-               var50[var51] = var60;
+               float nx = vn[qi * 12 + k * 3] * flip;
+               float ny = vn[qi * 12 + k * 3 + 1] * flip;
+               float nz = vn[qi * 12 + k * 3 + 2] * flip;
+               float d = nx * KEY[0] + ny * KEY[1] + nz * KEY[2];
+               float f = nx * FILL[0] + ny * FILL[1] + nz * FILL[2];
+               float hh = Math.max(0.0F, nx * HALF[0] + ny * HALF[1] + nz * HALF[2]);
+               float rim = 1.0F - Math.max(0.0F, nz);
+               float s = 0.36F + 0.62F * Math.max(0.0F, d) + 0.16F * Math.max(0.0F, f) + 0.2F * rim * rim * rim + 0.07F * Math.max(0.0F, ny);
+               float spec = (float)Math.pow(hh, 28.0) * 0.22F;
+               shade[k] = s;
+               spc[k] = spec;
             }
          }
 
-         for (int[] var90 : var32) {
-            Raster.Tri var93 = new Raster.Tri();
+         for (int[] kk : idx) {
+            Raster.Tri tr = new Raster.Tri();
 
-            for (int var96 = 0; var96 < 3; var96++) {
-               System.arraycopy(var35, var90[var96] * 3, var93.p, var96 * 3, 3);
-               var93.uv[var96 * 2] = var37[var90[var96] * 2];
-               var93.uv[var96 * 2 + 1] = var37[var90[var96] * 2 + 1];
-               var93.vs[var96] = var49[var90[var96]];
-               var93.sp[var96] = var50[var90[var96]];
+            for (int j = 0; j < 3; j++) {
+               System.arraycopy(q, kk[j] * 3, tr.p, j * 3, 3);
+               tr.uv[j * 2] = uv[kk[j] * 2];
+               tr.uv[j * 2 + 1] = uv[kk[j] * 2 + 1];
+               tr.vs[j] = shade[kk[j]];
+               tr.sp[j] = spc[kk[j]];
             }
 
-            var93.tex = var40;
-            var93.color = var38;
-            var93.glow = var39;
-            var93.depth = (var93.p[2] + var93.p[5] + var93.p[8]) / 3.0F;
-            var31.add(var93);
+            tr.tex = t;
+            tr.color = argb;
+            tr.glow = glow;
+            tr.depth = (tr.p[2] + tr.p[5] + tr.p[8]) / 3.0F;
+            tris.add(tr);
          }
       }
 
-      var31.sort((var0x, var1x) -> Float.compare(var0x.depth, var1x.depth));
-      byte var62 = 2;
-      int var63 = var2 * var62;
-      int var64 = var3 * var62;
-      float[] var65 = new float[var63 * var64];
-      Arrays.fill(var65, -1.0E9F);
-      float[] var66 = new float[var63 * var64];
-      float[] var67 = new float[var63 * var64];
-      float[] var68 = new float[var63 * var64];
-      float[] var69 = new float[var63 * var64];
-      float var70 = distance(var0 == null ? null : var0.slot);
-      float var71 = (float)(var64 * 1.9);
+      tris.sort((t1, t2) -> Float.compare(t1.depth, t2.depth));
+      int ss = 2;
+      int W = w * ss;
+      int H = h * ss;
+      float[] zb = new float[W * H];
+      Arrays.fill(zb, -1.0E9F);
+      float[] cr = new float[W * H];
+      float[] cg = new float[W * H];
+      float[] cb = new float[W * H];
+      float[] ca = new float[W * H];
+      float camDist = distance(item == null ? null : item.slot);
+      float fov = (float)(H * 1.9);
 
-      for (Raster.Tri var74 : var31) {
-         raster(var74, var63, var64, var70, var71, var65, var66, var67, var68, var69);
+      for (Raster.Tri t : tris) {
+         raster(t, W, H, camDist, fov, zb, cr, cg, cb, ca);
       }
 
-      int[] var73 = new int[var2 * var3];
-      float var75 = (var8 >> 16 & 0xFF) / 255.0F;
-      float var76 = (var8 >> 8 & 0xFF) / 255.0F;
-      float var77 = (var8 & 0xFF) / 255.0F;
-      float var78 = (var8 >>> 24) / 255.0F;
+      int[] out = new int[w * h];
+      float br = (bgArgb >> 16 & 0xFF) / 255.0F;
+      float bgg = (bgArgb >> 8 & 0xFF) / 255.0F;
+      float bb = (bgArgb & 0xFF) / 255.0F;
+      float ba = (bgArgb >>> 24) / 255.0F;
 
-      for (int var79 = 0; var79 < var3; var79++) {
-         for (int var80 = 0; var80 < var2; var80++) {
-            float var82 = 0.0F;
-            float var85 = 0.0F;
-            float var88 = 0.0F;
-            float var91 = 0.0F;
+      for (int y = 0; y < h; y++) {
+         for (int x = 0; x < w; x++) {
+            float r = 0.0F;
+            float gg = 0.0F;
+            float b = 0.0F;
+            float al = 0.0F;
 
-            for (int var94 = 0; var94 < var62; var94++) {
-               for (int var97 = 0; var97 < var62; var97++) {
-                  int var99 = (var79 * var62 + var94) * var63 + var80 * var62 + var97;
-                  var82 += var66[var99];
-                  var85 += var67[var99];
-                  var88 += var68[var99];
-                  var91 += var69[var99];
+            for (int sy2 = 0; sy2 < ss; sy2++) {
+               for (int sx = 0; sx < ss; sx++) {
+                  int i = (y * ss + sy2) * W + x * ss + sx;
+                  r += cr[i];
+                  gg += cg[i];
+                  b += cb[i];
+                  al += ca[i];
                }
             }
 
-            int var95 = var62 * var62;
-            var82 /= var95;
-            var85 /= var95;
-            var88 /= var95;
-            var91 /= var95;
-            float var98 = var91 + var78 * (1.0F - var91);
-            float var100 = var82 + var75 * var78 * (1.0F - var91);
-            float var101 = var85 + var76 * var78 * (1.0F - var91);
-            float var102 = var88 + var77 * var78 * (1.0F - var91);
-            if (var98 > 1.0E-4F) {
-               var100 /= var98;
-               var101 /= var98;
-               var102 /= var98;
+            int nn = ss * ss;
+            r /= nn;
+            gg /= nn;
+            b /= nn;
+            al /= nn;
+            float oa = al + ba * (1.0F - al);
+            float or = r + br * ba * (1.0F - al);
+            float og = gg + bgg * ba * (1.0F - al);
+            float ob = b + bb * ba * (1.0F - al);
+            if (oa > 1.0E-4F) {
+               or /= oa;
+               og /= oa;
+               ob /= oa;
             }
 
-            var73[var79 * var2 + var80] = clamp(var98) << 24 | clamp(var100) << 16 | clamp(var101) << 8 | clamp(var102);
+            out[y * w + x] = clamp(oa) << 24 | clamp(or) << 16 | clamp(og) << 8 | clamp(ob);
          }
       }
 
-      return var73;
+      return out;
    }
 
-   private static void groundShadow(G var0) {
-      int var1 = var0.color;
-      boolean var2 = var0.glow;
-      var0.color(-1711276032).glow(true);
-      var0.quad(
+   private static void groundShadow(G g) {
+      int c = g.color;
+      boolean gl = g.glow;
+      g.color(-1711276032).glow(true);
+      g.quad(
          "mannequin_shadow",
          new float[]{-9.0F, -24.05F, -7.0F},
          new float[]{9.0F, -24.05F, -7.0F},
@@ -242,18 +240,18 @@ public final class Raster {
          new float[]{-9.0F, -24.05F, 7.0F},
          new float[]{0.0F, 0.0F, 1.0F, 0.0F, 1.0F, 1.0F, 0.0F, 1.0F}
       );
-      var0.color(var1).glow(var2);
+      g.color(c).glow(gl);
    }
 
-   private static int clamp(float var0) {
-      return Math.max(0, Math.min(255, Math.round(var0 * 255.0F)));
+   private static int clamp(float v) {
+      return Math.max(0, Math.min(255, Math.round(v * 255.0F)));
    }
 
-   private static float[] focus(Cos.Slot var0) {
-      if (var0 == null) {
+   private static float[] focus(Cos.Slot s) {
+      if (s == null) {
          return new float[]{0.0F, -5.0F, 0.0F};
       } else {
-         switch (var0) {
+         switch (s) {
             case HAT:
                return new float[]{0.0F, 9.0F, 0.0F};
             case FACE:
@@ -277,11 +275,11 @@ public final class Raster {
       }
    }
 
-   private static float distance(Cos.Slot var0) {
-      if (var0 == null) {
+   private static float distance(Cos.Slot s) {
+      if (s == null) {
          return 82.0F;
       } else {
-         switch (var0) {
+         switch (s) {
             case HAT:
                return 40.0F;
             case FACE:
@@ -302,69 +300,69 @@ public final class Raster {
       }
    }
 
-   private static void raster(Raster.Tri var0, int var1, int var2, float var3, float var4, float[] var5, float[] var6, float[] var7, float[] var8, float[] var9) {
-      float[] var10 = new float[3];
-      float[] var11 = new float[3];
-      float[] var12 = new float[3];
+   private static void raster(Raster.Tri t, int W, int H, float camDist, float fov, float[] zb, float[] cr, float[] cg, float[] cb, float[] ca) {
+      float[] sx = new float[3];
+      float[] sy = new float[3];
+      float[] iz = new float[3];
 
-      for (int var13 = 0; var13 < 3; var13++) {
-         float var14 = var3 - var0.p[var13 * 3 + 2];
-         if (var14 < 1.0F) {
+      for (int i = 0; i < 3; i++) {
+         float z = camDist - t.p[i * 3 + 2];
+         if (z < 1.0F) {
             return;
          }
 
-         var12[var13] = 1.0F / var14;
-         var10[var13] = var1 / 2.0F - var0.p[var13 * 3] * var4 * var12[var13];
-         var11[var13] = var2 / 2.0F - var0.p[var13 * 3 + 1] * var4 * var12[var13];
+         iz[i] = 1.0F / z;
+         sx[i] = W / 2.0F - t.p[i * 3] * fov * iz[i];
+         sy[i] = H / 2.0F - t.p[i * 3 + 1] * fov * iz[i];
       }
 
-      float var40 = (var10[1] - var10[0]) * (var11[2] - var11[0]) - (var10[2] - var10[0]) * (var11[1] - var11[0]);
-      if (!(Math.abs(var40) < 1.0E-6F)) {
-         int var41 = Math.max(0, (int)Math.floor(Math.min(var10[0], Math.min(var10[1], var10[2]))));
-         int var15 = Math.min(var1 - 1, (int)Math.ceil(Math.max(var10[0], Math.max(var10[1], var10[2]))));
-         int var16 = Math.max(0, (int)Math.floor(Math.min(var11[0], Math.min(var11[1], var11[2]))));
-         int var17 = Math.min(var2 - 1, (int)Math.ceil(Math.max(var11[0], Math.max(var11[1], var11[2]))));
-         float var18 = (var0.color >> 16 & 0xFF) / 255.0F;
-         float var19 = (var0.color >> 8 & 0xFF) / 255.0F;
-         float var20 = (var0.color & 0xFF) / 255.0F;
-         float var21 = (var0.color >>> 24) / 255.0F;
+      float area = (sx[1] - sx[0]) * (sy[2] - sy[0]) - (sx[2] - sx[0]) * (sy[1] - sy[0]);
+      if (!(Math.abs(area) < 1.0E-6F)) {
+         int x0 = Math.max(0, (int)Math.floor(Math.min(sx[0], Math.min(sx[1], sx[2]))));
+         int x1 = Math.min(W - 1, (int)Math.ceil(Math.max(sx[0], Math.max(sx[1], sx[2]))));
+         int y0 = Math.max(0, (int)Math.floor(Math.min(sy[0], Math.min(sy[1], sy[2]))));
+         int y1 = Math.min(H - 1, (int)Math.ceil(Math.max(sy[0], Math.max(sy[1], sy[2]))));
+         float tr = (t.color >> 16 & 0xFF) / 255.0F;
+         float tg = (t.color >> 8 & 0xFF) / 255.0F;
+         float tb = (t.color & 0xFF) / 255.0F;
+         float ta = (t.color >>> 24) / 255.0F;
 
-         for (int var22 = var16; var22 <= var17; var22++) {
-            for (int var23 = var41; var23 <= var15; var23++) {
-               float var24 = var23 + 0.5F;
-               float var25 = var22 + 0.5F;
-               float var26 = ((var10[1] - var24) * (var11[2] - var25) - (var10[2] - var24) * (var11[1] - var25)) / var40;
-               float var27 = ((var10[2] - var24) * (var11[0] - var25) - (var10[0] - var24) * (var11[2] - var25)) / var40;
-               float var28 = 1.0F - var26 - var27;
-               if (!(var26 < -1.0E-4F) && !(var27 < -1.0E-4F) && !(var28 < -1.0E-4F)) {
-                  float var29 = var26 * var12[0] + var27 * var12[1] + var28 * var12[2];
-                  int var30 = var22 * var1 + var23;
-                  if (!(var29 < var5[var30] - 1.0E-7F)) {
-                     float var31 = (var26 * var0.uv[0] * var12[0] + var27 * var0.uv[2] * var12[1] + var28 * var0.uv[4] * var12[2]) / var29;
-                     float var32 = (var26 * var0.uv[1] * var12[0] + var27 * var0.uv[3] * var12[1] + var28 * var0.uv[5] * var12[2]) / var29;
-                     int var33 = bilinear(var0.tex, var31, var32);
-                     float var34 = (var33 >>> 24) / 255.0F * var21;
-                     if (!(var34 < 0.02F)) {
-                        float var35 = var26 * var0.vs[0] + var27 * var0.vs[1] + var28 * var0.vs[2];
-                        float var36 = var26 * var0.sp[0] + var27 * var0.sp[1] + var28 * var0.sp[2];
-                        float var37 = (var33 >> 16 & 0xFF) / 255.0F * var18 * var35 + var36;
-                        float var38 = (var33 >> 8 & 0xFF) / 255.0F * var19 * var35 + var36;
-                        float var39 = (var33 & 0xFF) / 255.0F * var20 * var35 + var36;
-                        if (var0.glow) {
-                           var37 *= 1.1F;
-                           var38 *= 1.1F;
-                           var39 *= 1.1F;
+         for (int y = y0; y <= y1; y++) {
+            for (int x = x0; x <= x1; x++) {
+               float px = x + 0.5F;
+               float py = y + 0.5F;
+               float w0 = ((sx[1] - px) * (sy[2] - py) - (sx[2] - px) * (sy[1] - py)) / area;
+               float w1 = ((sx[2] - px) * (sy[0] - py) - (sx[0] - px) * (sy[2] - py)) / area;
+               float w2 = 1.0F - w0 - w1;
+               if (!(w0 < -1.0E-4F) && !(w1 < -1.0E-4F) && !(w2 < -1.0E-4F)) {
+                  float izz = w0 * iz[0] + w1 * iz[1] + w2 * iz[2];
+                  int i = y * W + x;
+                  if (!(izz < zb[i] - 1.0E-7F)) {
+                     float u = (w0 * t.uv[0] * iz[0] + w1 * t.uv[2] * iz[1] + w2 * t.uv[4] * iz[2]) / izz;
+                     float v = (w0 * t.uv[1] * iz[0] + w1 * t.uv[3] * iz[1] + w2 * t.uv[5] * iz[2]) / izz;
+                     int c = bilinear(t.tex, u, v);
+                     float a = (c >>> 24) / 255.0F * ta;
+                     if (!(a < 0.02F)) {
+                        float sh = w0 * t.vs[0] + w1 * t.vs[1] + w2 * t.vs[2];
+                        float spc = w0 * t.sp[0] + w1 * t.sp[1] + w2 * t.sp[2];
+                        float r = (c >> 16 & 0xFF) / 255.0F * tr * sh + spc;
+                        float g = (c >> 8 & 0xFF) / 255.0F * tg * sh + spc;
+                        float b = (c & 0xFF) / 255.0F * tb * sh + spc;
+                        if (t.glow) {
+                           r *= 1.1F;
+                           g *= 1.1F;
+                           b *= 1.1F;
                         }
 
-                        var37 = Math.min(1.0F, var37);
-                        var38 = Math.min(1.0F, var38);
-                        var39 = Math.min(1.0F, var39);
-                        var6[var30] = var37 * var34 + var6[var30] * (1.0F - var34);
-                        var7[var30] = var38 * var34 + var7[var30] * (1.0F - var34);
-                        var8[var30] = var39 * var34 + var8[var30] * (1.0F - var34);
-                        var9[var30] = var34 + var9[var30] * (1.0F - var34);
-                        if (var34 > 0.5F) {
-                           var5[var30] = var29;
+                        r = Math.min(1.0F, r);
+                        g = Math.min(1.0F, g);
+                        b = Math.min(1.0F, b);
+                        cr[i] = r * a + cr[i] * (1.0F - a);
+                        cg[i] = g * a + cg[i] * (1.0F - a);
+                        cb[i] = b * a + cb[i] * (1.0F - a);
+                        ca[i] = a + ca[i] * (1.0F - a);
+                        if (a > 0.5F) {
+                           zb[i] = izz;
                         }
                      }
                   }
@@ -374,95 +372,81 @@ public final class Raster {
       }
    }
 
-   private static int bilinear(CTex.T var0, float var1, float var2) {
-      float var3 = var1 * var0.w - 0.5F;
-      float var4 = var2 * var0.h - 0.5F;
-      int var5 = (int)Math.floor(var3);
-      int var6 = (int)Math.floor(var4);
-      float var7 = var3 - var5;
-      float var8 = var4 - var6;
-      int var9 = px(var0, var5, var6);
-      int var10 = px(var0, var5 + 1, var6);
-      int var11 = px(var0, var5, var6 + 1);
-      int var12 = px(var0, var5 + 1, var6 + 1);
-      int var13 = 0;
+   private static int bilinear(CTex.T t, float u, float v) {
+      float fx = u * t.w - 0.5F;
+      float fy = v * t.h - 0.5F;
+      int x0 = (int)Math.floor(fx);
+      int y0 = (int)Math.floor(fy);
+      float ax = fx - x0;
+      float ay = fy - y0;
+      int c00 = px(t, x0, y0);
+      int c10 = px(t, x0 + 1, y0);
+      int c01 = px(t, x0, y0 + 1);
+      int c11 = px(t, x0 + 1, y0 + 1);
+      int out = 0;
 
-      for (int var14 = 0; var14 < 32; var14 += 8) {
-         float var15 = (var9 >>> var14 & 0xFF) * (1.0F - var7) + (var10 >>> var14 & 0xFF) * var7;
-         float var16 = (var11 >>> var14 & 0xFF) * (1.0F - var7) + (var12 >>> var14 & 0xFF) * var7;
-         var13 |= (Math.round(var15 * (1.0F - var8) + var16 * var8) & 0xFF) << var14;
+      for (int s = 0; s < 32; s += 8) {
+         float a = (c00 >>> s & 0xFF) * (1.0F - ax) + (c10 >>> s & 0xFF) * ax;
+         float b = (c01 >>> s & 0xFF) * (1.0F - ax) + (c11 >>> s & 0xFF) * ax;
+         out |= (Math.round(a * (1.0F - ay) + b * ay) & 0xFF) << s;
       }
 
-      return var13;
+      return out;
    }
 
-   private static int px(CTex.T var0, int var1, int var2) {
-      var1 = Math.max(0, Math.min(var0.w - 1, var1));
-      var2 = Math.max(0, Math.min(var0.h - 1, var2));
-      return var0.argb[var2 * var0.w + var1];
+   private static int px(CTex.T t, int x, int y) {
+      x = Math.max(0, Math.min(t.w - 1, x));
+      y = Math.max(0, Math.min(t.h - 1, y));
+      return t.argb[y * t.w + x];
    }
 
-   static void mannequin(G var0, float[] var1) {
-      int var2 = var0.color;
-      float var3 = var1 != null && !Float.isNaN(var1[3]) ? var1[3] : 0.0F;
-      var0.push();
-      if (var3 != 0.0F) {
-         var0.translate(0.0F, -12.0F, 0.0F);
-         var0.rotX((float)Math.toDegrees(var3));
-         var0.translate(0.0F, 12.0F, 0.0F);
+   static void mannequin(G g, float[] pose) {
+      int oc = g.color;
+      float bend = pose != null && !Float.isNaN(pose[3]) ? pose[3] : 0.0F;
+      g.push();
+      if (bend != 0.0F) {
+         g.translate(0.0F, -12.0F, 0.0F);
+         g.rotX((float)Math.toDegrees(bend));
+         g.translate(0.0F, 12.0F, 0.0F);
       }
 
-      var0.color(-9274999);
-      part(var0, var1, 0, 0.0F, 0.0F, 0.0F, -4.0F, 0.0F, -4.0F, 4.0F, 8.0F, 4.0F, "mannequin_head");
-      float[] var4 = var1 == null ? null : new float[]{Float.NaN, Float.NaN, Float.NaN, Float.NaN, var1[4], var1[5]};
-      var0.color(-11380116);
-      part(var0, var4, 3, 0.0F, 0.0F, 0.0F, -4.0F, -12.0F, -2.0F, 4.0F, 0.0F, 2.0F, "mannequin");
-      var0.color(-9274999);
-      part(var0, var1, 6, 5.0F, -2.0F, 0.0F, -1.0F, -10.0F, -2.0F, 3.0F, 2.0F, 2.0F, "mannequin");
-      part(var0, var1, 9, -5.0F, -2.0F, 0.0F, -3.0F, -10.0F, -2.0F, 1.0F, 2.0F, 2.0F, "mannequin");
-      var0.pop();
-      var0.color(-12367785);
-      part(var0, var1, 12, 1.9F, -12.0F, 0.0F, -2.0F, -12.0F, -2.0F, 2.0F, 0.0F, 2.0F, "mannequin");
-      part(var0, var1, 15, -1.9F, -12.0F, 0.0F, -2.0F, -12.0F, -2.0F, 2.0F, 0.0F, 2.0F, "mannequin");
-      var0.color(var2);
+      g.color(-9274999);
+      part(g, pose, 0, 0.0F, 0.0F, 0.0F, -4.0F, 0.0F, -4.0F, 4.0F, 8.0F, 4.0F, "mannequin_head");
+      float[] bodyPose = pose == null ? null : new float[]{Float.NaN, Float.NaN, Float.NaN, Float.NaN, pose[4], pose[5]};
+      g.color(-11380116);
+      part(g, bodyPose, 3, 0.0F, 0.0F, 0.0F, -4.0F, -12.0F, -2.0F, 4.0F, 0.0F, 2.0F, "mannequin");
+      g.color(-9274999);
+      part(g, pose, 6, 5.0F, -2.0F, 0.0F, -1.0F, -10.0F, -2.0F, 3.0F, 2.0F, 2.0F, "mannequin");
+      part(g, pose, 9, -5.0F, -2.0F, 0.0F, -3.0F, -10.0F, -2.0F, 1.0F, 2.0F, 2.0F, "mannequin");
+      g.pop();
+      g.color(-12367785);
+      part(g, pose, 12, 1.9F, -12.0F, 0.0F, -2.0F, -12.0F, -2.0F, 2.0F, 0.0F, 2.0F, "mannequin");
+      part(g, pose, 15, -1.9F, -12.0F, 0.0F, -2.0F, -12.0F, -2.0F, 2.0F, 0.0F, 2.0F, "mannequin");
+      g.color(oc);
    }
 
-   private static void part(
-      G var0,
-      float[] var1,
-      int var2,
-      float var3,
-      float var4,
-      float var5,
-      float var6,
-      float var7,
-      float var8,
-      float var9,
-      float var10,
-      float var11,
-      String var12
-   ) {
-      var0.push();
-      var0.translate(var3, var4, var5);
-      if (var1 != null) {
-         float var13 = var1[var2];
-         float var14 = var1[var2 + 1];
-         float var15 = var1[var2 + 2];
-         if (!Float.isNaN(var15)) {
-            var0.rotZ((float)Math.toDegrees(var15));
+   private static void part(G g, float[] pose, int idx, float px, float py, float pz, float x0, float y0, float z0, float x1, float y1, float z1, String tex) {
+      g.push();
+      g.translate(px, py, pz);
+      if (pose != null) {
+         float p = pose[idx];
+         float yw = pose[idx + 1];
+         float r = pose[idx + 2];
+         if (!Float.isNaN(r)) {
+            g.rotZ((float)Math.toDegrees(r));
          }
 
-         if (!Float.isNaN(var14)) {
-            var0.rotY((float)Math.toDegrees(var14));
+         if (!Float.isNaN(yw)) {
+            g.rotY((float)Math.toDegrees(yw));
          }
 
-         if (!Float.isNaN(var13)) {
-            var0.rotX((float)Math.toDegrees(var13));
+         if (!Float.isNaN(p)) {
+            g.rotX((float)Math.toDegrees(p));
          }
       }
 
-      Cos3Geo.bbox(var0, var12, var6, var7, var8, var9, var10, var11, 0.45F);
-      var0.pop();
+      Cos3Geo.bbox(g, tex, x0, y0, z0, x1, y1, z1, 0.45F);
+      g.pop();
    }
 
    private static final class Tri {

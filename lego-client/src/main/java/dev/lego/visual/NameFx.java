@@ -9,6 +9,7 @@ import dev.lego.core.Setting;
 import dev.lego.ui.Fonts;
 import dev.lego.ui.Gx;
 import dev.lego.ui.Tx;
+import dev.spotifyhud.Json;
 import dev.spotifyhud.PlayerState;
 import dev.spotifyhud.SpotifyHudMod;
 import java.awt.BasicStroke;
@@ -16,8 +17,11 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Shape;
+import java.awt.geom.RoundRectangle2D;
 import java.awt.geom.RoundRectangle2D.Double;
 import java.awt.image.BufferedImage;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import net.minecraft.client.player.LocalPlayer;
@@ -26,6 +30,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
 public final class NameFx {
@@ -38,31 +44,136 @@ public final class NameFx {
       tag = Modules.register(new NameFx.Tag());
    }
 
-   public static void render(float var0) {
+   // The upstream public ntfy relay (LegoSync) is not used; other players' LEGO name tags come from the backend (net/NameTags).
+   private static boolean remoteSync() {
+      return false;
+   }
+
+   private static Map<String, Object> remote(java.util.UUID id) {
+      return null;
+   }
+
+   public static void render(float td) {
       if (tag != null && tag.enabled) {
-         tag.renderBrick(var0);
-         tag.renderCard(var0);
+         tag.renderBrick(td);
+         tag.renderCard(td);
+      }
+
+      if (tag != null && remoteSync()) {
+         tag.renderOthers(td);
       }
    }
 
-   public static void apply(AvatarRenderState var0) {
+   public static void applyOther(AvatarRenderState state, Object player) {
+      try {
+         if (!(player instanceof Entity e)) {
+            return;
+         }
+
+         Map<String, Object> r = remote(e.getUUID());
+         if (r == null || state.nameTag == null) {
+            return;
+         }
+
+         String text = Json.str(r, "t", "");
+         String s = text.isBlank() ? Mc.name(e) : text;
+         state.nameTag = build(
+            s,
+            (int)Json.num(r, "s", 0L),
+            (int)Json.num(r, "c1", 5L),
+            (int)Json.num(r, "c2", 7L),
+            Json.bool(r, "b", true),
+            Json.bool(r, "m", true),
+            Json.num(r, "sp", 1L)
+         );
+      } catch (Throwable var6) {
+      }
+   }
+
+   public static void apply(AvatarRenderState state) {
       if (tag != null && tag.enabled) {
-         LocalPlayer var1 = Mc.player();
-         if (var1 != null && !Mc.firstPerson() && !var1.isInvisible()) {
-            var0.nameTag = tag.component(var1);
-            if (var0.nameTagAttachment == null) {
-               var0.nameTagAttachment = new Vec3(0.0, Mc.height(var1) + 0.5, 0.0);
+         LocalPlayer me = Mc.player();
+         if (me != null && !Mc.firstPerson() && !me.isInvisible()) {
+            state.nameTag = tag.component(me);
+            if (state.nameTagAttachment == null) {
+               state.nameTagAttachment = new Vec3(0.0, Mc.height(me) + 0.5, 0.0);
             }
          }
       }
    }
 
-   private static int lerp(int var0, int var1, double var2) {
-      var2 = Math.max(0.0, Math.min(1.0, var2));
-      int var4 = (int)((var0 >> 16 & 0xFF) * (1.0 - var2) + (var1 >> 16 & 0xFF) * var2);
-      int var5 = (int)((var0 >> 8 & 0xFF) * (1.0 - var2) + (var1 >> 8 & 0xFF) * var2);
-      int var6 = (int)((var0 & 0xFF) * (1.0 - var2) + (var1 & 0xFF) * var2);
-      return var4 << 16 | var5 << 8 | var6;
+   private static int pal(int idx, double phase) {
+      int[] p = Setting.Color.PALETTE;
+      int i = Math.max(0, Math.min(p.length - 1, idx));
+      if (i == p.length - 1) {
+         double t = System.currentTimeMillis() / 2600.0 + phase;
+         return Color.HSBtoRGB((float)(t - Math.floor(t)), 0.75F, 1.0F) & 16777215;
+      } else {
+         return p[i] & 16777215;
+      }
+   }
+
+   static int colorAt(int style, int c1i, int c2i, int i, double t) {
+      int c1 = pal(c1i, i * 0.07);
+      int c2 = pal(c2i, i * 0.07 + 0.3);
+      switch (style) {
+         case 0:
+            return Color.HSBtoRGB((float)((t * 0.25 + i * 0.06) % 1.0), 0.7F, 1.0F) & 16777215;
+         case 1:
+            return lerp(c1, c2, 0.5 + 0.5 * Math.sin(t * 2.0 + i * 0.4));
+         case 2:
+            return lerp(16726814, 16765499, 0.5 + 0.5 * Math.sin(t * 7.0 + i * 1.7));
+         case 3:
+            return lerp(8189951, 16777215, 0.5 + 0.5 * Math.sin(t * 2.5 + i * 0.5));
+         case 4:
+            return lerp(3158064, c1, 0.55 + 0.45 * Math.sin(t * 3.0));
+         case 5:
+            return (int)(t * 8.0 + i * 7) % 9 == 0 ? 16777215 : c1;
+         case 6:
+            return lerp(c1, c2, 0.5 + 0.5 * Math.sin(t * 1.5 - i * 0.35));
+         default:
+            return lerp(756282, 3932028, 0.5 + 0.5 * Math.sin(t * 9.0 + i * 2.3));
+      }
+   }
+
+   static Component build(String s, int style, int c1, int c2, boolean boldAll, boolean moving, double speed) {
+      if (s.length() > 24) {
+         s = s.substring(0, 24);
+      }
+
+      double t = System.currentTimeMillis() / 1000.0 * speed;
+      int n = s.length();
+      MutableComponent root = Component.literal("");
+      double pos = t * 5.0 % (n + 4) - 2.0;
+      int glitch = (int)((long)(t * 10.0) % Math.max(1, n));
+
+      for (int i = 0; i < n; i++) {
+         int rgb = colorAt(style, c1, c2, i, t);
+         boolean bold = boldAll || moving && Math.abs(i - pos) < 1.0;
+         boolean obf = moving && style == 5 && i == glitch && s.charAt(i) != ' ';
+         root.append(Component.literal(String.valueOf(s.charAt(i))).withStyle(st -> {
+            Style r = st.withColor(rgb);
+            if (bold) {
+               r = r.withBold(Boolean.TRUE);
+            }
+
+            if (obf) {
+               r = r.withObfuscated(Boolean.TRUE);
+            }
+
+            return r;
+         }));
+      }
+
+      return root;
+   }
+
+   private static int lerp(int a, int b, double t) {
+      t = Math.max(0.0, Math.min(1.0, t));
+      int r = (int)((a >> 16 & 0xFF) * (1.0 - t) + (b >> 16 & 0xFF) * t);
+      int g = (int)((a >> 8 & 0xFF) * (1.0 - t) + (b >> 8 & 0xFF) * t);
+      int bl = (int)((a & 0xFF) * (1.0 - t) + (b & 0xFF) * t);
+      return r << 16 | g << 8 | bl;
    }
 
    public static final class Tag extends Module {
@@ -80,12 +191,17 @@ public final class NameFx {
       final Setting.Num cardSide = this.add(new Setting.Num("Karte: seitlich", -1.5, 1.5, 0.05, 0.0, " Blöcke"));
       final Setting.Num cardAlpha = this.add(new Setting.Num("Karte: Deckkraft", 20.0, 100.0, 5.0, 100.0, "%"));
       final Setting.Color cardColor = this.add(new Setting.Color("Karte: Farbe", 0));
+      final Setting.Num scale = this.add(new Setting.Num("Größe", 0.5, 3.0, 0.1, 1.0, "x"));
+      final Setting.Bool outline = this.add(new Setting.Bool("Textumrandung", false));
+      final Setting.Bool shadow = this.add(new Setting.Bool("Textschatten", true));
+      final Setting.Bool background = this.add(new Setting.Bool("Hintergrund", true));
+      final Setting.Num bgOpacity = this.add(new Setting.Num("Hintergrund-Deckkraft", 0.0, 100.0, 5.0, 40.0, "%"));
       private Identifier brickTex;
-      private static final ExecutorService PAINT = Executors.newSingleThreadExecutor(var0 -> {
-         Thread var1 = new Thread(var0, "Lego-NameCard");
-         var1.setDaemon(true);
-         var1.setPriority(4);
-         return var1;
+      private static final ExecutorService PAINT = Executors.newSingleThreadExecutor(r -> {
+         Thread th = new Thread(r, "Lego-NameCard");
+         th.setDaemon(true);
+         th.setPriority(4);
+         return th;
       });
       private static final int CW = 640;
       private static final int CH = 176;
@@ -104,198 +220,229 @@ public final class NameFx {
          this.fresh();
       }
 
-      private int colorAt(int var1, double var2) {
-         int var4 = this.color.argb(var1 * 0.07) & 16777215;
-         int var5 = this.color2.argb(var1 * 0.07 + 0.3) & 16777215;
+      private int colorAt(int i, double t) {
+         int c1 = this.color.argb(i * 0.07) & 16777215;
+         int c2 = this.color2.argb(i * 0.07 + 0.3) & 16777215;
          switch (this.style.index) {
             case 0:
-               return Color.HSBtoRGB((float)((var2 * 0.25 + var1 * 0.06) % 1.0), 0.7F, 1.0F) & 16777215;
+               return Color.HSBtoRGB((float)((t * 0.25 + i * 0.06) % 1.0), 0.7F, 1.0F) & 16777215;
             case 1:
-               return NameFx.lerp(var4, var5, 0.5 + 0.5 * Math.sin(var2 * 2.0 + var1 * 0.4));
+               return NameFx.lerp(c1, c2, 0.5 + 0.5 * Math.sin(t * 2.0 + i * 0.4));
             case 2:
-               return NameFx.lerp(16726814, 16765499, 0.5 + 0.5 * Math.sin(var2 * 7.0 + var1 * 1.7));
+               return NameFx.lerp(16726814, 16765499, 0.5 + 0.5 * Math.sin(t * 7.0 + i * 1.7));
             case 3:
-               return NameFx.lerp(8189951, 16777215, 0.5 + 0.5 * Math.sin(var2 * 2.5 + var1 * 0.5));
+               return NameFx.lerp(8189951, 16777215, 0.5 + 0.5 * Math.sin(t * 2.5 + i * 0.5));
             case 4:
-               return NameFx.lerp(3158064, var4, 0.55 + 0.45 * Math.sin(var2 * 3.0));
+               return NameFx.lerp(3158064, c1, 0.55 + 0.45 * Math.sin(t * 3.0));
             case 5:
-               return (int)(var2 * 8.0 + var1 * 7) % 9 == 0 ? 16777215 : var4;
+               return (int)(t * 8.0 + i * 7) % 9 == 0 ? 16777215 : c1;
             case 6:
-               return NameFx.lerp(var4, var5, 0.5 + 0.5 * Math.sin(var2 * 1.5 - var1 * 0.35));
+               return NameFx.lerp(c1, c2, 0.5 + 0.5 * Math.sin(t * 1.5 - i * 0.35));
             default:
-               return NameFx.lerp(756282, 3932028, 0.5 + 0.5 * Math.sin(var2 * 9.0 + var1 * 2.3));
+               return NameFx.lerp(756282, 3932028, 0.5 + 0.5 * Math.sin(t * 9.0 + i * 2.3));
          }
       }
 
-      Component component(LocalPlayer var1) {
-         String var2 = this.text.get() != null && !this.text.get().isBlank() ? this.text.get() : Mc.name(var1);
-         if (var2.length() > 24) {
-            var2 = var2.substring(0, 24);
-         }
-
-         double var3 = System.currentTimeMillis() / 1000.0 * this.speed.get();
-         int var5 = var2.length();
-         MutableComponent var6 = Component.literal("");
-         double var7 = var3 * 5.0 % (var5 + 4) - 2.0;
-         int var9 = (int)((long)(var3 * 10.0) % Math.max(1, var5));
-
-         for (int var10 = 0; var10 < var5; var10++) {
-            int var11 = this.colorAt(var10, var3);
-            boolean var12 = this.bold.get() || this.moving.get() && Math.abs(var10 - var7) < 1.0;
-            boolean var13 = this.moving.get() && this.style.index == 5 && var10 == var9 && var2.charAt(var10) != ' ';
-            var6.append(Component.literal(String.valueOf(var2.charAt(var10))).withStyle(var3x -> {
-               Style var4 = var3x.withColor(var11);
-               if (var12) {
-                  var4 = var4.withBold(Boolean.TRUE);
-               }
-
-               if (var13) {
-                  var4 = var4.withObfuscated(Boolean.TRUE);
-               }
-
-               return var4;
-            }));
-         }
-
-         return var6;
+      Component component(LocalPlayer me) {
+         String s = this.text.get() != null && !this.text.get().isBlank() ? this.text.get() : Mc.name(me);
+         return NameFx.build(s, this.style.index, this.color.index, this.color2.index, this.bold.get(), this.moving.get(), this.speed.get());
       }
 
-      private static double mcWidth(String var0, boolean var1) {
-         double var2 = 0.0;
+      public float getScale() {
+         return (float)this.scale.get();
+      }
 
-         for (char var7 : var0.toCharArray()) {
-            int var8 = "il!.,:;|'".indexOf(var7) >= 0 ? 2 : ("tI[] ".indexOf(var7) >= 0 ? 4 : ("fk<>(){}*\"".indexOf(var7) >= 0 ? 5 : 6));
-            var2 += var8 + 1 + (var1 ? 1 : 0);
+      public boolean hasOutline() {
+         return this.outline.get();
+      }
+
+      public boolean hasShadow() {
+         return this.shadow.get();
+      }
+
+      public boolean hasBackground() {
+         return this.background.get();
+      }
+
+      public float getBgOpacity() {
+         return (float)(this.bgOpacity.get() / 100.0);
+      }
+
+      public Map<String, Object> syncState() {
+         Map<String, Object> m = new LinkedHashMap<>();
+         m.put("t", this.text.get() == null ? "" : this.text.get());
+         m.put("s", (long)this.style.index);
+         m.put("c1", (long)this.color.index);
+         m.put("c2", (long)this.color2.index);
+         m.put("b", this.bold.get());
+         m.put("m", this.moving.get());
+         m.put("sp", this.speed.get());
+         m.put("lego", this.badge.get());
+         m.put("sc", this.scale.get());
+         return m;
+      }
+
+      private static double mcWidth(String s, boolean bold) {
+         double w = 0.0;
+
+         for (char c : s.toCharArray()) {
+            int cw = "il!.,:;|'".indexOf(c) >= 0 ? 2 : ("tI[] ".indexOf(c) >= 0 ? 4 : ("fk<>(){}*\"".indexOf(c) >= 0 ? 5 : 6));
+            w += cw + 1 + (bold ? 1 : 0);
          }
 
-         return var2 - 1.0;
+         return w - 1.0;
       }
 
       private Identifier brick() {
          if (this.brickTex != null) {
             return this.brickTex;
          } else {
-            short var1 = 160;
-            short var2 = 128;
-            BufferedImage var3 = new BufferedImage(var1, var2, 2);
-            Graphics2D var4 = var3.createGraphics();
+            int w = 160;
+            int h = 128;
+            BufferedImage img = new BufferedImage(w, h, 2);
+            Graphics2D g = img.createGraphics();
 
             try {
-               Gx.hints(var4);
+               Gx.hints(g);
 
-               for (int var5 = 0; var5 < 2; var5++) {
-                  int var6 = 22 + var5 * 62;
-                  var4.setColor(new Color(181, 0, 8));
-                  var4.fill(new Double(var6, 6.0, 54.0, 34.0, 14.0, 14.0));
-                  var4.setColor(new Color(255, 74, 82));
-                  var4.fill(new Double(var6 + 3, 4.0, 48.0, 28.0, 14.0, 14.0));
+               for (int i = 0; i < 2; i++) {
+                  int sx = 22 + i * 62;
+                  g.setColor(new Color(181, 0, 8));
+                  g.fill(new Double(sx, 6.0, 54.0, 34.0, 14.0, 14.0));
+                  g.setColor(new Color(255, 74, 82));
+                  g.fill(new Double(sx + 3, 4.0, 48.0, 28.0, 14.0, 14.0));
                }
 
-               var4.setColor(new Color(181, 0, 8));
-               var4.fill(new Double(6.0, 28.0, var1 - 12, var2 - 32, 22.0, 22.0));
-               var4.setColor(new Color(227, 0, 11));
-               var4.fill(new Double(6.0, 24.0, var1 - 12, var2 - 38, 22.0, 22.0));
-               var4.setColor(new Color(255, 255, 255, 70));
-               var4.fill(new Double(16.0, 32.0, var1 - 32, 10.0, 8.0, 8.0));
-               var4.setColor(new Color(0, 0, 0, 120));
-               var4.setStroke(new BasicStroke(4.0F));
-               var4.draw(new Double(6.0, 24.0, var1 - 12, var2 - 38, 22.0, 22.0));
+               g.setColor(new Color(181, 0, 8));
+               g.fill(new Double(6.0, 28.0, w - 12, h - 32, 22.0, 22.0));
+               g.setColor(new Color(227, 0, 11));
+               g.fill(new Double(6.0, 24.0, w - 12, h - 38, 22.0, 22.0));
+               g.setColor(new Color(255, 255, 255, 70));
+               g.fill(new Double(16.0, 32.0, w - 32, 10.0, 8.0, 8.0));
+               g.setColor(new Color(0, 0, 0, 120));
+               g.setStroke(new BasicStroke(4.0F));
+               g.draw(new Double(6.0, 24.0, w - 12, h - 38, 22.0, 22.0));
             } finally {
-               var4.dispose();
+               g.dispose();
             }
 
-            Identifier var10 = Identifier.fromNamespaceAndPath("legoclient", "namebrick");
-            Tx.register(var10, var3.getRGB(0, 0, var1, var2, null, 0, var1), var1, var2, true);
-            this.brickTex = var10;
-            return var10;
+            Identifier id = Identifier.fromNamespaceAndPath("legoclient", "namebrick");
+            Tx.register(id, img.getRGB(0, 0, w, h, null, 0, w), w, h, true);
+            this.brickTex = id;
+            return id;
          }
       }
 
-      void renderBrick(float var1) {
-         LocalPlayer var2 = Mc.player();
-         if (this.badge.get() && var2 != null && !Mc.firstPerson() && !var2.isInvisible()) {
-            String var3 = this.text.get() != null && !this.text.get().isBlank() ? this.text.get() : Mc.name(var2);
-            if (var3.length() > 24) {
-               var3 = var3.substring(0, 24);
-            }
+      void renderOthers(float td) {
+         LocalPlayer me = Mc.player();
 
-            double var4 = mcWidth(var3, this.bold.get()) * 0.025 / 2.0;
-            double var6 = 0.22;
-            double var8 = var6 * 160.0 / 128.0;
-            double var10 = -(var4 + 0.04 + var8 / 2.0);
-            double[] var12 = Mc.lerpPos(var2, var1);
-            double var13 = Math.toRadians(R3.camYaw());
-            double var15 = var12[1] + Mc.height(var2) + 0.5 + 0.14;
-            R3.billboard(
-               this.brick(),
-               var12[0] + var10 * -Math.cos(var13),
-               var15,
-               var12[2] + var10 * -Math.sin(var13),
-               var8,
-               var6,
-               0.0F,
-               0.0F,
-               1.0F,
-               1.0F,
-               R3.argb(16777215, 1.0)
-            );
+         for (Player pl : Mc.players()) {
+            if (pl != me) {
+               Map<String, Object> r = remote(pl.getUUID());
+               if (r != null && Json.bool(r, "lego", true)) {
+                  double[] p = Mc.lerpPos(pl, td);
+                  double dx = p[0] - R3.camX();
+                  double dz = p[2] - R3.camZ();
+                  if (!(dx * dx + dz * dz > 2304.0)) {
+                     String t2 = Json.str(r, "t", "");
+                     String s = t2.isBlank() ? Mc.name(pl) : t2;
+                     double half = mcWidth(s, Json.bool(r, "b", true)) * 0.025 / 2.0;
+                     double ih = 0.22;
+                     double iw = ih * 160.0 / 128.0;
+                     double off = -(half + 0.04 + iw / 2.0);
+                     double yaw = Math.toRadians(R3.camYaw());
+                     R3.billboard(
+                        this.brick(),
+                        p[0] + off * -Math.cos(yaw),
+                        p[1] + Mc.height(pl) + 0.5 + 0.14,
+                        p[2] + off * -Math.sin(yaw),
+                        iw,
+                        ih,
+                        0.0F,
+                        0.0F,
+                        1.0F,
+                        1.0F,
+                        R3.argb(16777215, 1.0)
+                     );
+                  }
+               }
+            }
          }
       }
 
-      void renderCard(float var1) {
-         LocalPlayer var2 = Mc.player();
-         if (this.song.get() && var2 != null && !Mc.firstPerson() && !var2.isInvisible()) {
-            PlayerState var3 = null;
+      void renderBrick(float td) {
+         LocalPlayer me = Mc.player();
+         if (this.badge.get() && me != null && !Mc.firstPerson() && !me.isInvisible()) {
+            String s = this.text.get() != null && !this.text.get().isBlank() ? this.text.get() : Mc.name(me);
+            if (s.length() > 24) {
+               s = s.substring(0, 24);
+            }
+
+            double half = mcWidth(s, this.bold.get()) * 0.025 / 2.0;
+            double ih = 0.22;
+            double iw = ih * 160.0 / 128.0;
+            double off = -(half + 0.04 + iw / 2.0);
+            double[] p = Mc.lerpPos(me, td);
+            double yaw = Math.toRadians(R3.camYaw());
+            double y = p[1] + Mc.height(me) + 0.5 + 0.14;
+            R3.billboard(this.brick(), p[0] + off * -Math.cos(yaw), y, p[2] + off * -Math.sin(yaw), iw, ih, 0.0F, 0.0F, 1.0F, 1.0F, R3.argb(16777215, 1.0));
+         }
+      }
+
+      void renderCard(float td) {
+         LocalPlayer me = Mc.player();
+         if (this.song.get() && me != null && !Mc.firstPerson() && !me.isInvisible()) {
+            PlayerState st = null;
 
             try {
                if (SpotifyHudMod.media() != null) {
-                  var3 = SpotifyHudMod.media().state();
+                  st = SpotifyHudMod.media().state();
                }
             } catch (Throwable var32) {
             }
 
-            boolean var4 = var3 != null && var3.hasTrack && var3.title != null && !var3.title.isEmpty();
-            long var5 = System.currentTimeMillis();
-            if (var4 && !this.wasShowing) {
-               this.fadeStart = var5;
+            boolean show = st != null && st.hasTrack && st.title != null && !st.title.isEmpty();
+            long now = System.currentTimeMillis();
+            if (show && !this.wasShowing) {
+               this.fadeStart = now;
             }
 
-            this.wasShowing = var4;
-            if (var4) {
-               int[] var7 = this.ready;
-               if (var7 != null) {
+            this.wasShowing = show;
+            if (show) {
+               int[] px = this.ready;
+               if (px != null) {
                   this.ready = null;
-                  Identifier var8 = this.cardTex;
-                  Identifier var9 = Identifier.fromNamespaceAndPath("legoclient", "namecard/" + this.cardN++);
-                  Tx.register(var9, var7, 640, 176, true);
-                  this.cardTex = var9;
+                  Identifier old = this.cardTex;
+                  Identifier id = Identifier.fromNamespaceAndPath("legoclient", "namecard/" + this.cardN++);
+                  Tx.register(id, px, 640, 176, true);
+                  this.cardTex = id;
                   this.paintedKey = this.requestedKey;
-                  if (var8 != null) {
-                     Tx.destroy(var8);
+                  if (old != null) {
+                     Tx.destroy(old);
                   }
                }
 
-               long var33 = var3.currentProgress() / 1000L;
-               Object var10 = null;
-               int var11 = 0;
+               long sec = st.currentProgress() / 1000L;
+               Object art = null;
+               int artV = 0;
 
                try {
-                  var10 = SpotifyHudMod.media().art();
-                  var11 = SpotifyHudMod.media().artVersion();
+                  art = SpotifyHudMod.media().art();
+                  artV = SpotifyHudMod.media().artVersion();
                } catch (Throwable var31) {
                }
 
-               int var12 = this.cardColor.argb() & 16777215;
-               String var13 = var3.title + "|" + var3.artist + "|" + var11 + "|" + (var3.playing ? var33 : "p" + var33) + "|" + var3.playing + "|" + var12;
-               if (!var13.equals(this.requestedKey) && !this.busy) {
+               int accent = this.cardColor.argb() & 16777215;
+               String key = st.title + "|" + st.artist + "|" + artV + "|" + (st.playing ? sec : "p" + sec) + "|" + st.playing + "|" + accent;
+               if (!key.equals(this.requestedKey) && !this.busy) {
                   this.busy = true;
-                  this.requestedKey = var13;
-                  PlayerState var14 = var3;
-                  Object var15 = var10;
-                  long var16 = var3.currentProgress();
+                  this.requestedKey = key;
+                  PlayerState fs = st;
+                  Object fart = art;
+                  long prog = st.currentProgress();
                   PAINT.execute(() -> {
                      try {
-                        this.ready = paint(var14, var15, var16, var12);
+                        this.ready = paint(fs, fart, prog, accent);
                      } catch (Throwable var10x) {
                         LegoClient.LOG("Namenskarte: " + var10x);
                      } finally {
@@ -305,97 +452,97 @@ public final class NameFx {
                }
 
                if (this.cardTex != null) {
-                  double[] var34 = Mc.lerpPos(var2, var1);
-                  double var35 = this.cardSize.get();
-                  double var17 = 1.5 * var35;
-                  double var19 = var17 * 176.0 / 640.0;
-                  double var21 = Math.min(1.0, (var5 - this.fadeStart) / 400.0);
-                  double var23 = Math.sin(var5 / 900.0) * 0.015;
-                  double var25 = var34[1] + Mc.height(var2) + 0.5 + 0.32 + var19 * 0.5 + var23 + this.cardLift.get();
-                  double var27 = Math.toRadians(R3.camYaw());
-                  double var29 = this.cardSide.get();
+                  double[] p = Mc.lerpPos(me, td);
+                  double k = this.cardSize.get();
+                  double w = 1.5 * k;
+                  double h = w * 176.0 / 640.0;
+                  double fade = Math.min(1.0, (now - this.fadeStart) / 400.0);
+                  double bob = Math.sin(now / 900.0) * 0.015;
+                  double y = p[1] + Mc.height(me) + 0.5 + 0.32 + h * 0.5 + bob + this.cardLift.get();
+                  double yaw = Math.toRadians(R3.camYaw());
+                  double side = this.cardSide.get();
                   R3.billboard(
                      this.cardTex,
-                     var34[0] + var29 * -Math.cos(var27),
-                     var25,
-                     var34[2] + var29 * -Math.sin(var27),
-                     var17,
-                     var19,
+                     p[0] + side * -Math.cos(yaw),
+                     y,
+                     p[2] + side * -Math.sin(yaw),
+                     w,
+                     h,
                      0.0F,
                      0.0F,
                      1.0F,
                      1.0F,
-                     R3.argb(16777215, var21 * this.cardAlpha.get() / 100.0)
+                     R3.argb(16777215, fade * this.cardAlpha.get() / 100.0)
                   );
                }
             }
          }
       }
 
-      private static int[] paint(PlayerState var0, Object var1, long var2, int var4) {
-         Color var5 = new Color(var4);
-         BufferedImage var6 = new BufferedImage(640, 176, 2);
-         Graphics2D var7 = var6.createGraphics();
+      private static int[] paint(PlayerState s, Object art, long progress, int accent) {
+         Color acc = new Color(accent);
+         BufferedImage img = new BufferedImage(640, 176, 2);
+         Graphics2D g = img.createGraphics();
 
          try {
-            Gx.hints(var7);
-            var7.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-            var7.setColor(new Color(16, 17, 22, 238));
-            var7.fill(new Double(4.0, 4.0, 632.0, 168.0, 44.0, 44.0));
-            var7.setColor(new Color(255, 255, 255, 34));
-            var7.setStroke(new BasicStroke(3.0F));
-            var7.draw(new Double(5.5, 5.5, 629.0, 165.0, 42.0, 42.0));
-            short var8 = 128;
-            byte var9 = 24;
-            int var10 = (176 - var8) / 2;
-            Double var11 = new Double(var9, var10, var8, var8, 26.0, 26.0);
-            if (var1 instanceof BufferedImage) {
-               Shape var12 = var7.getClip();
-               var7.setClip(var11);
-               var7.drawImage((BufferedImage)var1, var9, var10, var8, var8, null);
-               var7.setClip(var12);
+            Gx.hints(g);
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            g.setColor(new Color(16, 17, 22, 238));
+            g.fill(new Double(4.0, 4.0, 632.0, 168.0, 44.0, 44.0));
+            g.setColor(new Color(255, 255, 255, 34));
+            g.setStroke(new BasicStroke(3.0F));
+            g.draw(new Double(5.5, 5.5, 629.0, 165.0, 42.0, 42.0));
+            int cs = 128;
+            int cx = 24;
+            int cy = (176 - cs) / 2;
+            RoundRectangle2D cover = new Double(cx, cy, cs, cs, 26.0, 26.0);
+            if (art instanceof BufferedImage) {
+               Shape old = g.getClip();
+               g.setClip(cover);
+               g.drawImage((BufferedImage)art, cx, cy, cs, cs, null);
+               g.setClip(old);
             } else {
-               var7.setColor(new Color(30, 215, 96));
-               var7.fill(var11);
-               var7.setColor(new Color(11, 11, 11));
-               var7.setFont(Fonts.get(3, 70.0F));
-               var7.drawString("♪", var9 + 38, var10 + 90);
+               g.setColor(new Color(30, 215, 96));
+               g.fill(cover);
+               g.setColor(new Color(11, 11, 11));
+               g.setFont(Fonts.get(3, 70.0F));
+               g.drawString("♪", cx + 38, cy + 90);
             }
 
-            int var23 = var9 + var8 + 24;
-            int var13 = 640 - var23 - 70;
-            var7.setColor(Color.WHITE);
-            var7.setFont(Fonts.get(3, 40.0F));
-            var7.drawString(Fonts.ellipsize(var0.title, 3, 40.0F, var13), var23, 66);
-            var7.setColor(new Color(255, 255, 255, 170));
-            var7.setFont(Fonts.get(2, 30.0F));
-            var7.drawString(Fonts.ellipsize(var0.artist == null ? "" : var0.artist, 2, 30.0F, var13), var23, 106);
-            short var14 = 130;
-            int var15 = 640 - var23 - 30;
-            var7.setColor(new Color(255, 255, 255, 46));
-            var7.fill(new Double(var23, var14, var15, 10.0, 10.0, 10.0));
-            double var16 = var0.durationMs > 0L ? Math.max(0.0, Math.min(1.0, (double)var2 / var0.durationMs)) : 0.0;
-            if (var16 > 0.0) {
-               var7.setColor(var5);
-               var7.fill(new Double(var23, var14, Math.max(10.0, var15 * var16), 10.0, 10.0, 10.0));
+            int tx = cx + cs + 24;
+            int maxW = 640 - tx - 70;
+            g.setColor(Color.WHITE);
+            g.setFont(Fonts.get(3, 40.0F));
+            g.drawString(Fonts.ellipsize(s.title, 3, 40.0F, maxW), tx, 66);
+            g.setColor(new Color(255, 255, 255, 170));
+            g.setFont(Fonts.get(2, 30.0F));
+            g.drawString(Fonts.ellipsize(s.artist == null ? "" : s.artist, 2, 30.0F, maxW), tx, 106);
+            int by = 130;
+            int bw = 640 - tx - 30;
+            g.setColor(new Color(255, 255, 255, 46));
+            g.fill(new Double(tx, by, bw, 10.0, 10.0, 10.0));
+            double f = s.durationMs > 0L ? Math.max(0.0, Math.min(1.0, (double)progress / s.durationMs)) : 0.0;
+            if (f > 0.0) {
+               g.setColor(acc);
+               g.fill(new Double(tx, by, Math.max(10.0, bw * f), 10.0, 10.0, 10.0));
             }
 
-            short var18 = 584;
-            byte var19 = 36;
-            var7.setColor(var5);
-            var7.fillOval(var18, var19, 34, 34);
-            var7.setColor(new Color(11, 11, 11));
-            if (var0.playing) {
-               var7.fillRect(var18 + 10, var19 + 9, 5, 16);
-               var7.fillRect(var18 + 19, var19 + 9, 5, 16);
+            int px = 584;
+            int py = 36;
+            g.setColor(acc);
+            g.fillOval(px, py, 34, 34);
+            g.setColor(new Color(11, 11, 11));
+            if (s.playing) {
+               g.fillRect(px + 10, py + 9, 5, 16);
+               g.fillRect(px + 19, py + 9, 5, 16);
             } else {
-               var7.fillPolygon(new int[]{var18 + 12, var18 + 12, var18 + 25}, new int[]{var19 + 8, var19 + 26, var19 + 17}, 3);
+               g.fillPolygon(new int[]{px + 12, px + 12, px + 25}, new int[]{py + 8, py + 26, py + 17}, 3);
             }
          } finally {
-            var7.dispose();
+            g.dispose();
          }
 
-         return var6.getRGB(0, 0, 640, 176, null, 0, 640);
+         return img.getRGB(0, 0, 640, 176, null, 0, 640);
       }
    }
 }

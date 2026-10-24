@@ -15,19 +15,19 @@ public final class Sound {
    private Sound() {
    }
 
-   public static void play(String var0, float var1, float var2) {
+   public static void play(String id, float pitch, float volume) {
       try {
-         SoundEvent var3 = EVENTS.computeIfAbsent(var0, var0x -> SoundEvent.createVariableRangeEvent(Identifier.parse(var0x)));
-         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(var3, var1, var2));
+         SoundEvent ev = EVENTS.computeIfAbsent(id, k -> SoundEvent.createVariableRangeEvent(Identifier.parse(k)));
+         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(ev, pitch, volume));
       } catch (Throwable var4) {
       }
    }
 
    public static void click() {
       if (uiSounds) {
-         long var0 = System.currentTimeMillis();
-         if (var0 - lastClick >= 40L) {
-            lastClick = var0;
+         long now = System.currentTimeMillis();
+         if (now - lastClick >= 40L) {
+            lastClick = now;
             play("minecraft:ui.button.click", 1.35F, 0.18F);
          }
       }

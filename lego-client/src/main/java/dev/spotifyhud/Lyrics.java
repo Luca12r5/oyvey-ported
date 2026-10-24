@@ -23,14 +23,14 @@ public final class Lyrics {
    private static final String UA = "SpotifyHUD-Minecraft/1.1 (Fabric mod)";
    private static final Pattern TAG = Pattern.compile("\\[(\\d{1,3}):(\\d{1,2})(?:[.:](\\d{1,3}))?]");
    private static final Pattern OFFSET = Pattern.compile("\\[offset:\\s*([+-]?\\d+)\\s*]", 2);
-   private final ExecutorService exec = Executors.newSingleThreadExecutor(var0 -> {
-      Thread var1 = new Thread(var0, "SpotifyHUD-Lyrics");
-      var1.setDaemon(true);
-      return var1;
+   private final ExecutorService exec = Executors.newSingleThreadExecutor(r -> {
+      Thread t = new Thread(r, "SpotifyHUD-Lyrics");
+      t.setDaemon(true);
+      return t;
    });
    private final Map<String, Lyrics.Result> cache = Collections.synchronizedMap(new LinkedHashMap<String, Lyrics.Result>(32, 0.75F, true) {
       @Override
-      protected boolean removeEldestEntry(Entry<String, Lyrics.Result> var1) {
+      protected boolean removeEldestEntry(Entry<String, Lyrics.Result> e) {
          return this.size() > 40;
       }
    });
@@ -42,10 +42,10 @@ public final class Lyrics {
       return this.current;
    }
 
-   public void update(PlayerState var1) {
-      if (var1 != null && var1.hasTrack && var1.title != null && !var1.title.isBlank()) {
-         String var2 = key(var1.title, var1.artist);
-         if (var2.equals(this.requested)) {
+   public void update(PlayerState st) {
+      if (st != null && st.hasTrack && st.title != null && !st.title.isBlank()) {
+         String key = key(st.title, st.artist);
+         if (key.equals(this.requested)) {
             if (this.current.status != Lyrics.Status.ERROR || System.currentTimeMillis() - this.errorAt <= 20000L) {
                return;
             }
@@ -53,26 +53,26 @@ public final class Lyrics {
             this.requested = "";
          }
 
-         this.requested = var2;
-         Lyrics.Result var3 = this.cache.get(var2);
-         if (var3 != null && var3.status != Lyrics.Status.ERROR) {
-            this.current = var3;
+         this.requested = key;
+         Lyrics.Result cached = this.cache.get(key);
+         if (cached != null && cached.status != Lyrics.Status.ERROR) {
+            this.current = cached;
          } else {
-            this.current = new Lyrics.Result(var2, Lyrics.Status.LOADING, List.of());
-            String var4 = var1.title;
-            String var5 = var1.artist;
-            long var6 = var1.durationMs;
+            this.current = new Lyrics.Result(key, Lyrics.Status.LOADING, List.of());
+            String title = st.title;
+            String artist = st.artist;
+            long dur = st.durationMs;
             this.exec.execute(() -> {
-               if (var2.equals(this.requested)) {
-                  Lyrics.Result var6x = this.fetch(var2, var4, var5, var6);
-                  if (var6x.status != Lyrics.Status.ERROR) {
-                     this.cache.put(var2, var6x);
+               if (key.equals(this.requested)) {
+                  Lyrics.Result r = this.fetch(key, title, artist, dur);
+                  if (r.status != Lyrics.Status.ERROR) {
+                     this.cache.put(key, r);
                   } else {
                      this.errorAt = System.currentTimeMillis();
                   }
 
-                  if (var2.equals(this.requested)) {
-                     this.current = var6x;
+                  if (key.equals(this.requested)) {
+                     this.current = r;
                   }
                }
             });
@@ -86,324 +86,324 @@ public final class Lyrics {
    }
 
    public void retry() {
-      String var1 = this.requested;
+      String k = this.requested;
       this.requested = "";
-      this.cache.remove(var1);
+      this.cache.remove(k);
    }
 
-   static String key(String var0, String var1) {
-      return (var0 + var1).toLowerCase(Locale.ROOT);
+   static String key(String title, String artist) {
+      return (title + artist).toLowerCase(Locale.ROOT);
    }
 
-   private Lyrics.Result fetch(String var1, String var2, String var3, long var4) {
-      String var6 = firstArtist(var3);
-      String var7 = cleanTitle(var2);
+   private Lyrics.Result fetch(String key, String title, String artist, long durMs) {
+      String mainArtist = firstArtist(artist);
+      String cleanTitle = cleanTitle(title);
 
       try {
-         Lyrics.Http var8 = null;
+         Lyrics.Http h = null;
 
-         for (String var12 : var6.equals(var3) ? new String[]{var3} : new String[]{var3, var6}) {
-            StringBuilder var13 = new StringBuilder("https://lrclib.net/api/get?track_name=").append(enc(var7)).append("&artist_name=").append(enc(var12));
-            if (var4 > 0L) {
-               var13.append("&duration=").append(Math.round(var4 / 1000.0));
+         for (String a : mainArtist.equals(artist) ? new String[]{artist} : new String[]{artist, mainArtist}) {
+            StringBuilder u = new StringBuilder("https://lrclib.net/api/get?track_name=").append(enc(cleanTitle)).append("&artist_name=").append(enc(a));
+            if (durMs > 0L) {
+               u.append("&duration=").append(Math.round(durMs / 1000.0));
             }
 
-            var8 = get(var13.toString());
-            if (((Lyrics.Http)var8).code == 200) {
-               Lyrics.Result var14 = fromRecord(var1, Json.parse(((Lyrics.Http)var8).body));
-               if (var14 != null && (var14.status == Lyrics.Status.SYNCED || var14.status == Lyrics.Status.INSTRUMENTAL)) {
-                  return var14;
+            h = get(u.toString());
+            if (h.code == 200) {
+               Lyrics.Result r = fromRecord(key, Json.parse(h.body));
+               if (r != null && (r.status == Lyrics.Status.SYNCED || r.status == Lyrics.Status.INSTRUMENTAL)) {
+                  return r;
                }
             }
          }
 
-         var8 = get("https://lrclib.net/api/search?track_name=" + enc(var7) + "&artist_name=" + enc(var6));
-         Object var18 = var8.code == 200 ? pick(Json.parse(var8.body), var4) : null;
-         if (var18 == null) {
-            var8 = get("https://lrclib.net/api/search?q=" + enc(var7 + " " + var6));
-            var18 = var8.code == 200 ? pick(Json.parse(var8.body), var4) : null;
+         h = get("https://lrclib.net/api/search?track_name=" + enc(cleanTitle) + "&artist_name=" + enc(mainArtist));
+         Object best = h.code == 200 ? pick(Json.parse(h.body), durMs) : null;
+         if (best == null) {
+            h = get("https://lrclib.net/api/search?q=" + enc(cleanTitle + " " + mainArtist));
+            best = h.code == 200 ? pick(Json.parse(h.body), durMs) : null;
          }
 
-         if (var18 != null) {
-            Lyrics.Result var19 = fromRecord(var1, var18);
-            if (var19 != null) {
-               return var19;
+         if (best != null) {
+            Lyrics.Result r = fromRecord(key, best);
+            if (r != null) {
+               return r;
             }
          }
 
-         return var8.code < 500 && var8.code != 429 && var8.code != -1
-            ? new Lyrics.Result(var1, Lyrics.Status.NOT_FOUND, List.of())
-            : new Lyrics.Result(var1, Lyrics.Status.ERROR, List.of());
+         return h.code < 500 && h.code != 429 && h.code != -1
+            ? new Lyrics.Result(key, Lyrics.Status.NOT_FOUND, List.of())
+            : new Lyrics.Result(key, Lyrics.Status.ERROR, List.of());
       } catch (Exception var15) {
          SpotifyHudMod.LOG("Lyrics-Fehler: " + var15);
-         return new Lyrics.Result(var1, Lyrics.Status.ERROR, List.of());
+         return new Lyrics.Result(key, Lyrics.Status.ERROR, List.of());
       }
    }
 
-   private static Object pick(Object var0, long var1) {
-      if (!(var0 instanceof List)) {
+   private static Object pick(Object arr, long durMs) {
+      if (!(arr instanceof List)) {
          return null;
       } else {
-         Object var3 = null;
-         double var4 = Double.MAX_VALUE;
+         Object best = null;
+         double bestScore = Double.MAX_VALUE;
 
-         for (Object var7 : (List)var0) {
-            String var8 = Json.str(var7, "syncedLyrics", null);
-            boolean var9 = Json.bool(var7, "instrumental", false);
-            String var10 = Json.str(var7, "plainLyrics", null);
-            if (var8 != null || var9 || var10 != null) {
-               double var11 = Json.dbl(var7, "duration", 0.0) * 1000.0;
-               double var13 = var1 > 0L && var11 > 0.0 ? Math.abs(var11 - var1) : 5000.0;
-               if (var1 <= 0L || !(var13 > 15000.0)) {
-                  double var15 = var13 + (var8 != null ? 0 : '\uea60') + (var9 ? 30000 : 0);
-                  if (var15 < var4) {
-                     var4 = var15;
-                     var3 = var7;
+         for (Object o : (List)arr) {
+            String synced = Json.str(o, "syncedLyrics", null);
+            boolean instrumental = Json.bool(o, "instrumental", false);
+            String plain = Json.str(o, "plainLyrics", null);
+            if (synced != null || instrumental || plain != null) {
+               double d = Json.dbl(o, "duration", 0.0) * 1000.0;
+               double diff = durMs > 0L && d > 0.0 ? Math.abs(d - durMs) : 5000.0;
+               if (durMs <= 0L || !(diff > 15000.0)) {
+                  double score = diff + (synced != null ? 0 : '\uea60') + (instrumental ? 30000 : 0);
+                  if (score < bestScore) {
+                     bestScore = score;
+                     best = o;
                   }
                }
             }
          }
 
-         return var3;
+         return best;
       }
    }
 
-   private static Lyrics.Result fromRecord(String var0, Object var1) {
-      if (var1 == null) {
+   private static Lyrics.Result fromRecord(String key, Object o) {
+      if (o == null) {
          return null;
-      } else if (Json.bool(var1, "instrumental", false)) {
-         return new Lyrics.Result(var0, Lyrics.Status.INSTRUMENTAL, List.of());
+      } else if (Json.bool(o, "instrumental", false)) {
+         return new Lyrics.Result(key, Lyrics.Status.INSTRUMENTAL, List.of());
       } else {
-         String var2 = Json.str(var1, "syncedLyrics", null);
-         if (var2 != null && !var2.isBlank()) {
-            List var3 = parseLrc(var2);
-            if (!var3.isEmpty()) {
-               return new Lyrics.Result(var0, Lyrics.Status.SYNCED, var3);
+         String synced = Json.str(o, "syncedLyrics", null);
+         if (synced != null && !synced.isBlank()) {
+            List<Lyrics.Line> lines = parseLrc(synced);
+            if (!lines.isEmpty()) {
+               return new Lyrics.Result(key, Lyrics.Status.SYNCED, lines);
             }
          }
 
-         String var9 = Json.str(var1, "plainLyrics", null);
-         if (var9 != null && !var9.isBlank()) {
-            ArrayList var4 = new ArrayList();
+         String plain = Json.str(o, "plainLyrics", null);
+         if (plain != null && !plain.isBlank()) {
+            List<Lyrics.Line> lines = new ArrayList<>();
 
-            for (String var8 : var9.split("\\r?\\n")) {
-               if (!var8.isBlank()) {
-                  var4.add(new Lyrics.Line(-1L, var8.trim()));
+            for (String l : plain.split("\\r?\\n")) {
+               if (!l.isBlank()) {
+                  lines.add(new Lyrics.Line(-1L, l.trim()));
                }
             }
 
-            return new Lyrics.Result(var0, Lyrics.Status.PLAIN, var4);
+            return new Lyrics.Result(key, Lyrics.Status.PLAIN, lines);
          } else {
             return null;
          }
       }
    }
 
-   static List<Lyrics.Line> parseLrc(String var0) {
-      long var1 = 0L;
-      Matcher var3 = OFFSET.matcher(var0);
-      if (var3.find()) {
+   static List<Lyrics.Line> parseLrc(String lrc) {
+      long offset = 0L;
+      Matcher om = OFFSET.matcher(lrc);
+      if (om.find()) {
          try {
-            var1 = Long.parseLong(var3.group(1));
+            offset = Long.parseLong(om.group(1));
          } catch (NumberFormatException var25) {
          }
       }
 
-      ArrayList var4 = new ArrayList();
+      List<Lyrics.Line> out = new ArrayList<>();
 
-      for (String var8 : var0.split("\\r?\\n")) {
-         Matcher var9 = TAG.matcher(var8);
-         ArrayList var10 = new ArrayList();
+      for (String raw : lrc.split("\\r?\\n")) {
+         Matcher m = TAG.matcher(raw);
+         List<Long> times = new ArrayList<>();
 
-         int var11;
-         for (var11 = 0; var9.find() && var9.start() == var11; var11 = var9.end()) {
-            long var12 = Long.parseLong(var9.group(1));
-            long var14 = Long.parseLong(var9.group(2));
-            long var16 = 0L;
-            if (var9.group(3) != null) {
-               String var18 = var9.group(3);
-               var16 = var18.length() == 1 ? Long.parseLong(var18) * 100L : (var18.length() == 2 ? Long.parseLong(var18) * 10L : Long.parseLong(var18));
+         int end;
+         for (end = 0; m.find() && m.start() == end; end = m.end()) {
+            long min = Long.parseLong(m.group(1));
+            long sec = Long.parseLong(m.group(2));
+            long frac = 0L;
+            if (m.group(3) != null) {
+               String f = m.group(3);
+               frac = f.length() == 1 ? Long.parseLong(f) * 100L : (f.length() == 2 ? Long.parseLong(f) * 10L : Long.parseLong(f));
             }
 
-            var10.add(var12 * 60000L + var14 * 1000L + var16);
+            times.add(min * 60000L + sec * 1000L + frac);
          }
 
-         if (!var10.isEmpty()) {
-            String var26 = var8.substring(var11);
-            ArrayList var13 = new ArrayList();
-            ArrayList var27 = new ArrayList();
-            Matcher var15 = WORD_TAG.matcher(var26);
-            int var28 = -1;
+         if (!times.isEmpty()) {
+            String rest = raw.substring(end);
+            List<String> ew = new ArrayList<>();
+            List<Long> et = new ArrayList<>();
+            Matcher wm = WORD_TAG.matcher(rest);
+            int last = -1;
 
-            long var17;
-            for (var17 = 0L; var15.find(); var28 = var15.end()) {
-               if (var28 >= 0) {
-                  addWords(var13, var27, var26.substring(var28, var15.start()), var17);
+            long lastT;
+            for (lastT = 0L; wm.find(); last = wm.end()) {
+               if (last >= 0) {
+                  addWords(ew, et, rest.substring(last, wm.start()), lastT);
                }
 
-               var17 = tagMs(var15.group(1), var15.group(2), var15.group(3)) - var1;
+               lastT = tagMs(wm.group(1), wm.group(2), wm.group(3)) - offset;
             }
 
-            if (var28 >= 0) {
-               addWords(var13, var27, var26.substring(var28), var17);
+            if (last >= 0) {
+               addWords(ew, et, rest.substring(last), lastT);
             }
 
-            String var19 = WORD_TAG.matcher(var26).replaceAll("").replaceAll("\\s+", " ").trim();
+            String text = WORD_TAG.matcher(rest).replaceAll("").replaceAll("\\s+", " ").trim();
 
-            for (long var21 : (Iterable<Long>) (Iterable<?>) (var10)) {
-               Lyrics.Line var23 = new Lyrics.Line(Math.max(0L, var21 - var1), var19);
-               if (!var13.isEmpty() && var10.size() == 1) {
-                  var23.words = (String[])var13.toArray(new String[0]);
-                  var23.wordTimes = new long[var27.size()];
+            for (long t : times) {
+               Lyrics.Line l = new Lyrics.Line(Math.max(0L, t - offset), text);
+               if (!ew.isEmpty() && times.size() == 1) {
+                  l.words = ew.toArray(new String[0]);
+                  l.wordTimes = new long[et.size()];
 
-                  for (int var24 = 0; var24 < var27.size(); var24++) {
-                     var23.wordTimes[var24] = Math.max(0L, (Long)var27.get(var24));
+                  for (int i = 0; i < et.size(); i++) {
+                     l.wordTimes[i] = Math.max(0L, et.get(i));
                   }
 
-                  var23.exactWords = true;
+                  l.exactWords = true;
                }
 
-               var4.add(var23);
+               out.add(l);
             }
          }
       }
 
-      ((java.util.List<Lyrics.Line>)(java.util.List<?>)var4).sort((var0x, var1x) -> Long.compare(var0x.timeMs, var1x.timeMs));
-      estimateWords(var4);
-      return var4;
+      out.sort((a, b) -> Long.compare(a.timeMs, b.timeMs));
+      estimateWords(out);
+      return out;
    }
 
-   private static long tagMs(String var0, String var1, String var2) {
-      long var3 = 0L;
-      if (var2 != null) {
-         var3 = var2.length() == 1 ? Long.parseLong(var2) * 100L : (var2.length() == 2 ? Long.parseLong(var2) * 10L : Long.parseLong(var2));
+   private static long tagMs(String m, String s, String f) {
+      long frac = 0L;
+      if (f != null) {
+         frac = f.length() == 1 ? Long.parseLong(f) * 100L : (f.length() == 2 ? Long.parseLong(f) * 10L : Long.parseLong(f));
       }
 
-      return Long.parseLong(var0) * 60000L + Long.parseLong(var1) * 1000L + var3;
+      return Long.parseLong(m) * 60000L + Long.parseLong(s) * 1000L + frac;
    }
 
-   private static void addWords(List<String> var0, List<Long> var1, String var2, long var3) {
-      boolean var5 = true;
+   private static void addWords(List<String> words, List<Long> times, String chunk, long t) {
+      boolean first = true;
 
-      for (String var9 : var2.trim().split("\\s+")) {
-         if (!var9.isEmpty()) {
-            var0.add(var9);
-            var1.add(var5 ? var3 : var3 + 1L);
-            var5 = false;
+      for (String w : chunk.trim().split("\\s+")) {
+         if (!w.isEmpty()) {
+            words.add(w);
+            times.add(first ? t : t + 1L);
+            first = false;
          }
       }
    }
 
-   static void estimateWords(List<Lyrics.Line> var0) {
-      for (int var1 = 0; var1 < var0.size(); var1++) {
-         Lyrics.Line var2 = (Lyrics.Line)var0.get(var1);
-         if (!var2.exactWords) {
-            String[] var3 = var2.text.isEmpty() ? new String[0] : var2.text.split("\\s+");
-            var2.words = var3;
-            var2.wordTimes = new long[var3.length];
-            if (var3.length != 0) {
-               long var4 = var1 + 1 < var0.size() ? ((Lyrics.Line)var0.get(var1 + 1)).timeMs : var2.timeMs + 4000L;
-               long var6 = Math.max(300L, var4 - var2.timeMs);
-               long var8 = Math.min((long)(var6 * 0.92), 450L * var3.length + 900L);
-               var8 = Math.max(Math.min(var6, 250L * var3.length), var8);
-               double var10 = 0.0;
-               double[] var12 = new double[var3.length];
+   static void estimateWords(List<Lyrics.Line> lines) {
+      for (int i = 0; i < lines.size(); i++) {
+         Lyrics.Line l = lines.get(i);
+         if (!l.exactWords) {
+            String[] words = l.text.isEmpty() ? new String[0] : l.text.split("\\s+");
+            l.words = words;
+            l.wordTimes = new long[words.length];
+            if (words.length != 0) {
+               long next = i + 1 < lines.size() ? lines.get(i + 1).timeMs : l.timeMs + 4000L;
+               long gap = Math.max(300L, next - l.timeMs);
+               long singing = Math.min((long)(gap * 0.92), 450L * words.length + 900L);
+               singing = Math.max(Math.min(gap, 250L * words.length), singing);
+               double total = 0.0;
+               double[] weight = new double[words.length];
 
-               for (int var13 = 0; var13 < var3.length; var13++) {
-                  var12[var13] = 1.5 + var3[var13].length();
-                  var10 += var12[var13];
+               for (int k = 0; k < words.length; k++) {
+                  weight[k] = 1.5 + words[k].length();
+                  total += weight[k];
                }
 
-               double var17 = 0.0;
+               double acc = 0.0;
 
-               for (int var15 = 0; var15 < var3.length; var15++) {
-                  var2.wordTimes[var15] = var2.timeMs + Math.round(var8 * var17 / var10);
-                  var17 += var12[var15];
+               for (int k = 0; k < words.length; k++) {
+                  l.wordTimes[k] = l.timeMs + Math.round(singing * acc / total);
+                  acc += weight[k];
                }
             }
          }
       }
    }
 
-   public static int indexAt(List<Lyrics.Line> var0, long var1) {
-      int var3 = 0;
-      int var4 = var0.size() - 1;
-      int var5 = -1;
+   public static int indexAt(List<Lyrics.Line> lines, long t) {
+      int lo = 0;
+      int hi = lines.size() - 1;
+      int ans = -1;
 
-      while (var3 <= var4) {
-         int var6 = var3 + var4 >>> 1;
-         if (((Lyrics.Line)var0.get(var6)).timeMs <= var1) {
-            var5 = var6;
-            var3 = var6 + 1;
+      while (lo <= hi) {
+         int mid = lo + hi >>> 1;
+         if (lines.get(mid).timeMs <= t) {
+            ans = mid;
+            lo = mid + 1;
          } else {
-            var4 = var6 - 1;
+            hi = mid - 1;
          }
       }
 
-      return var5;
+      return ans;
    }
 
-   static String firstArtist(String var0) {
-      if (var0 == null) {
+   static String firstArtist(String artist) {
+      if (artist == null) {
          return "";
       } else {
-         String var1 = var0;
+         String a = artist;
 
-         for (String var5 : new String[]{", ", " & ", " feat. ", " feat ", " ft. ", " x ", ";", " / "}) {
-            int var6 = var1.toLowerCase(Locale.ROOT).indexOf(var5);
-            if (var6 > 0) {
-               var1 = var1.substring(0, var6);
+         for (String sep : new String[]{", ", " & ", " feat. ", " feat ", " ft. ", " x ", ";", " / "}) {
+            int i = a.toLowerCase(Locale.ROOT).indexOf(sep);
+            if (i > 0) {
+               a = a.substring(0, i);
             }
          }
 
-         return var1.trim();
+         return a.trim();
       }
    }
 
-   static String cleanTitle(String var0) {
-      String var1 = var0.replaceAll("(?i)\\s*[(\\[](feat\\.?|ft\\.?|with) [^)\\]]*[)\\]]", "");
-      var1 = var1.replaceAll("(?i)\\s+-\\s+.*(remaster|version|edit|live|mono|stereo|mix).*$", "");
-      return var1.trim().isEmpty() ? var0 : var1.trim();
+   static String cleanTitle(String title) {
+      String t = title.replaceAll("(?i)\\s*[(\\[](feat\\.?|ft\\.?|with) [^)\\]]*[)\\]]", "");
+      t = t.replaceAll("(?i)\\s+-\\s+.*(remaster|version|edit|live|mono|stereo|mix).*$", "");
+      return t.trim().isEmpty() ? title : t.trim();
    }
 
-   private static Lyrics.Http get(String var0) {
-      Lyrics.Http var1 = new Lyrics.Http();
+   private static Lyrics.Http get(String url) {
+      Lyrics.Http h = new Lyrics.Http();
 
       try {
-         HttpURLConnection var2 = (HttpURLConnection)URI.create(var0).toURL().openConnection();
+         HttpURLConnection c = (HttpURLConnection)URI.create(url).toURL().openConnection();
 
          try {
-            var2.setConnectTimeout(6000);
-            var2.setReadTimeout(10000);
-            var2.setRequestProperty("User-Agent", "SpotifyHUD-Minecraft/1.1 (Fabric mod)");
-            var2.setRequestProperty("Accept", "application/json");
-            var1.code = var2.getResponseCode();
-            InputStream var3 = var1.code >= 400 ? var2.getErrorStream() : var2.getInputStream();
-            if (var3 != null) {
-               try (InputStream var4 = var3) {
-                  ByteArrayOutputStream var5 = new ByteArrayOutputStream();
-                  byte[] var6 = new byte[8192];
+            c.setConnectTimeout(6000);
+            c.setReadTimeout(10000);
+            c.setRequestProperty("User-Agent", "SpotifyHUD-Minecraft/1.1 (Fabric mod)");
+            c.setRequestProperty("Accept", "application/json");
+            h.code = c.getResponseCode();
+            InputStream in = h.code >= 400 ? c.getErrorStream() : c.getInputStream();
+            if (in != null) {
+               try (InputStream i = in) {
+                  ByteArrayOutputStream o = new ByteArrayOutputStream();
+                  byte[] buf = new byte[8192];
 
-                  int var7;
-                  while ((var7 = var4.read(var6)) > 0) {
-                     var5.write(var6, 0, var7);
+                  int n;
+                  while ((n = i.read(buf)) > 0) {
+                     o.write(buf, 0, n);
                   }
 
-                  var1.body = var5.toString(StandardCharsets.UTF_8);
+                  h.body = o.toString(StandardCharsets.UTF_8);
                }
             }
          } finally {
-            var2.disconnect();
+            c.disconnect();
          }
       } catch (Exception var16) {
-         var1.code = -1;
+         h.code = -1;
       }
 
-      return var1;
+      return h;
    }
 
-   private static String enc(String var0) {
-      return URLEncoder.encode(var0, StandardCharsets.UTF_8);
+   private static String enc(String s) {
+      return URLEncoder.encode(s, StandardCharsets.UTF_8);
    }
 
    private static final class Http {
@@ -418,20 +418,20 @@ public final class Lyrics {
       public long[] wordTimes = new long[0];
       public boolean exactWords;
 
-      Line(long var1, String var3) {
-         this.timeMs = var1;
-         this.text = var3;
+      Line(long t, String s) {
+         this.timeMs = t;
+         this.text = s;
       }
 
-      public int wordAt(long var1) {
-         int var3 = -1;
-         int var4 = 0;
+      public int wordAt(long t) {
+         int ans = -1;
+         int i = 0;
 
-         while (var4 < this.wordTimes.length && this.wordTimes[var4] <= var1) {
-            var3 = var4++;
+         while (i < this.wordTimes.length && this.wordTimes[i] <= t) {
+            ans = i++;
          }
 
-         return var3;
+         return ans;
       }
    }
 
@@ -440,10 +440,10 @@ public final class Lyrics {
       public final Lyrics.Status status;
       public final List<Lyrics.Line> lines;
 
-      Result(String var1, Lyrics.Status var2, List<Lyrics.Line> var3) {
-         this.key = var1;
-         this.status = var2;
-         this.lines = var3;
+      Result(String key, Lyrics.Status status, List<Lyrics.Line> lines) {
+         this.key = key;
+         this.status = status;
+         this.lines = lines;
       }
    }
 

@@ -99,17 +99,17 @@ public final class SmtcBridge {
       if (!isWindows()) {
          this.fatal = "Nur unter Windows verfügbar";
       } else {
-         Thread var1 = new Thread(this::supervise, "SpotifyHUD-Media");
-         var1.setDaemon(true);
-         var1.start();
+         Thread t = new Thread(this::supervise, "SpotifyHUD-Media");
+         t.setDaemon(true);
+         t.start();
       }
    }
 
    private void supervise() {
-      int var1 = 0;
+      int failures = 0;
 
       while (true) {
-         long var2 = System.currentTimeMillis();
+         long started = System.currentTimeMillis();
 
          try {
             this.runOnce();
@@ -120,16 +120,16 @@ public final class SmtcBridge {
          this.running = false;
          this.hasSession = false;
          this.state = PlayerState.EMPTY;
-         if (System.currentTimeMillis() - var2 < 15000L) {
-            var1++;
+         if (System.currentTimeMillis() - started < 15000L) {
+            failures++;
          } else {
-            var1 = 0;
+            failures = 0;
          }
 
-         long var4 = Math.min(60000L, 2000L * Math.max(1, var1));
+         long wait = Math.min(60000L, 2000L * Math.max(1, failures));
 
          try {
-            Thread.sleep(var4);
+            Thread.sleep(wait);
          } catch (InterruptedException var7) {
             return;
          }
@@ -137,74 +137,74 @@ public final class SmtcBridge {
    }
 
    private Path extractScript() throws IOException {
-      Path var1 = FabricLoader.getInstance().getConfigDir().resolve("spotifyhud");
-      Files.createDirectories(var1);
-      Path var2 = var1.resolve("smtc.ps1");
+      Path dir = FabricLoader.getInstance().getConfigDir().resolve("spotifyhud");
+      Files.createDirectories(dir);
+      Path p = dir.resolve("smtc.ps1");
 
-      byte[] var3;
-      try (InputStream var4 = SmtcBridge.class.getResourceAsStream("/assets/spotifyhud/smtc.ps1")) {
-         if (var4 == null) {
+      byte[] data;
+      try (InputStream in = SmtcBridge.class.getResourceAsStream("/assets/spotifyhud/smtc.ps1")) {
+         if (in == null) {
             throw new IOException("smtc.ps1 fehlt im Jar");
          }
 
-         var3 = var4.readAllBytes();
+         data = in.readAllBytes();
       }
 
-      byte[] var9 = new byte[var3.length + 3];
-      var9[0] = -17;
-      var9[1] = -69;
-      var9[2] = -65;
-      System.arraycopy(var3, 0, var9, 3, var3.length);
-      if (!Files.exists(var2) || !Arrays.equals(Files.readAllBytes(var2), var9)) {
-         Files.write(var2, var9);
+      byte[] withBom = new byte[data.length + 3];
+      withBom[0] = -17;
+      withBom[1] = -69;
+      withBom[2] = -65;
+      System.arraycopy(data, 0, withBom, 3, data.length);
+      if (!Files.exists(p) || !Arrays.equals(Files.readAllBytes(p), withBom)) {
+         Files.write(p, withBom);
       }
 
-      return var2;
+      return p;
    }
 
    private void runOnce() throws Exception {
-      Path var1 = this.extractScript();
-      String var2 = System.getenv("SystemRoot");
-      String var3 = var2 != null ? var2 + "\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" : "powershell.exe";
-      if (!Files.exists(Path.of(var3))) {
-         var3 = "powershell.exe";
+      Path script = this.extractScript();
+      String sysRoot = System.getenv("SystemRoot");
+      String ps = sysRoot != null ? sysRoot + "\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" : "powershell.exe";
+      if (!Files.exists(Path.of(ps))) {
+         ps = "powershell.exe";
       }
 
-      ProcessBuilder var4 = new ProcessBuilder(
-         var3, "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", var1.toString()
+      ProcessBuilder pb = new ProcessBuilder(
+         ps, "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", script.toString()
       );
-      var4.redirectErrorStream(false);
-      Process var5 = var4.start();
-      this.process = var5;
-      this.stdin = var5.getOutputStream();
+      pb.redirectErrorStream(false);
+      Process p = pb.start();
+      this.process = p;
+      this.stdin = p.getOutputStream();
       this.running = true;
       this.fatal = null;
-      Thread var6 = new Thread(() -> {
-         String var2x;
-         try (BufferedReader var1x = new BufferedReader(new InputStreamReader(var5.getErrorStream(), StandardCharsets.UTF_8))) {
-            while ((var2x = var1x.readLine()) != null) {
-               if (!var2x.isBlank()) {
-                  SpotifyHudMod.LOG("Media-Bridge: " + var2x.trim());
+      Thread err = new Thread(() -> {
+         String l;
+         try (BufferedReader rx = new BufferedReader(new InputStreamReader(p.getErrorStream(), StandardCharsets.UTF_8))) {
+            while ((l = rx.readLine()) != null) {
+               if (!l.isBlank()) {
+                  SpotifyHudMod.LOG("Media-Bridge: " + l.trim());
                }
             }
          } catch (IOException var6x) {
          }
       }, "SpotifyHUD-Media-err");
-      var6.setDaemon(true);
-      var6.start();
+      err.setDaemon(true);
+      err.start();
 
       try {
-         String var8;
-         try (BufferedReader var7 = new BufferedReader(new InputStreamReader(var5.getInputStream(), StandardCharsets.UTF_8))) {
-            while ((var8 = var7.readLine()) != null) {
-               var8 = var8.trim();
-               if (!var8.isEmpty()) {
-                  if (var8.charAt(0) == '\ufeff') {
-                     var8 = var8.substring(1);
+         String line;
+         try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
+            while ((line = r.readLine()) != null) {
+               line = line.trim();
+               if (!line.isEmpty()) {
+                  if (line.charAt(0) == '\ufeff') {
+                     line = line.substring(1);
                   }
 
                   try {
-                     this.handle(Json.parse(var8));
+                     this.handle(Json.parse(line));
                   } catch (Throwable var20) {
                      SpotifyHudMod.LOG("Media-Bridge: ungültige Zeile: " + var20);
                   }
@@ -215,7 +215,7 @@ public final class SmtcBridge {
          this.running = false;
 
          try {
-            var5.destroy();
+            p.destroy();
          } catch (Throwable var18) {
          }
 
@@ -224,135 +224,135 @@ public final class SmtcBridge {
       }
    }
 
-   private void handle(Object var1) {
-      String var2 = Json.str(var1, "t", "");
-      long var3 = System.currentTimeMillis();
-      this.lastMessage = var3;
-      long var5 = Json.num(var1, "now", 0L);
-      if (var5 > 0L) {
-         long var7 = Math.max(0L, Math.min(2000L, var3 - var5));
-         this.latencyMs = this.latencyMs == 0L ? var7 : (this.latencyMs * 7L + var7) / 8L;
+   private void handle(Object m) {
+      String t = Json.str(m, "t", "");
+      long now = System.currentTimeMillis();
+      this.lastMessage = now;
+      long sent = Json.num(m, "now", 0L);
+      if (sent > 0L) {
+         long d = Math.max(0L, Math.min(2000L, now - sent));
+         this.latencyMs = this.latencyMs == 0L ? d : (this.latencyMs * 7L + d) / 8L;
       }
 
-      switch (var2) {
+      switch (t) {
          case "hello":
-            this.volumeSupported = Json.bool(var1, "vol", false);
+            this.volumeSupported = Json.bool(m, "vol", false);
             break;
          case "fatal":
-            this.fatal = Json.str(var1, "msg", "Fehler");
+            this.fatal = Json.str(m, "msg", "Fehler");
             SpotifyHudMod.LOG("Media-Bridge: " + this.fatal);
             break;
          case "log":
-            SpotifyHudMod.LOG("Media-Bridge: " + Json.str(var1, "msg", ""));
+            SpotifyHudMod.LOG("Media-Bridge: " + Json.str(m, "msg", ""));
             break;
          case "ack":
-            if (!Json.bool(var1, "ok", false)) {
-               String var9 = Json.str(var1, "cmd", "");
-               String var10 = Json.str(var1, "err", "");
-               SpotifyHudMod.onBridgeCommandFailed(var9, var10);
-               if (var9.startsWith("toggle") || var9.equals("play") || var9.equals("pause")) {
+            if (!Json.bool(m, "ok", false)) {
+               String cmd = Json.str(m, "cmd", "");
+               String err = Json.str(m, "err", "");
+               SpotifyHudMod.onBridgeCommandFailed(cmd, err);
+               if (cmd.startsWith("toggle") || cmd.equals("play") || cmd.equals("pause")) {
                   this.lockPlaying = 0L;
                }
 
-               if (var9.startsWith("seek")) {
+               if (cmd.startsWith("seek")) {
                   this.lockProgress = 0L;
                }
 
-               if (var9.startsWith("shuffle")) {
+               if (cmd.startsWith("shuffle")) {
                   this.lockShuffle = 0L;
                }
 
-               if (var9.startsWith("repeat")) {
+               if (cmd.startsWith("repeat")) {
                   this.lockRepeat = 0L;
                }
 
-               if (var9.startsWith("vol") || var9.equals("mute")) {
+               if (cmd.startsWith("vol") || cmd.equals("mute")) {
                   this.lockVolume = 0L;
                }
             }
             break;
          case "thumb":
-            this.handleThumb(var1);
+            this.handleThumb(m);
             break;
          case "state":
-            this.handleState(var1, var3);
+            this.handleState(m, now);
       }
    }
 
-   private void handleThumb(Object var1) {
-      String var2 = Json.str(var1, "key", "");
-      String var3 = Json.str(var1, "data", "");
-      Object var4 = null;
-      if (!var3.isEmpty()) {
+   private void handleThumb(Object m) {
+      String key = Json.str(m, "key", "");
+      String data = Json.str(m, "data", "");
+      Object img = null;
+      if (!data.isEmpty()) {
          try {
-            var4 = ArtLoader.decode(Base64.getDecoder().decode(var3));
+            img = ArtLoader.decode(Base64.getDecoder().decode(data));
          } catch (Throwable var6) {
-            var4 = null;
+            img = null;
          }
       }
 
-      this.art = var4;
-      this.artKey = var2;
+      this.art = img;
+      this.artKey = key;
       this.artVersion++;
    }
 
-   private synchronized void handleState(Object var1, long var2) {
-      if (!Json.bool(var1, "has", false)) {
+   private synchronized void handleState(Object m, long now) {
+      if (!Json.bool(m, "has", false)) {
          this.hasSession = false;
          this.state = PlayerState.EMPTY;
       } else {
          this.hasSession = true;
-         this.app = Json.str(var1, "app", "");
+         this.app = Json.str(m, "app", "");
          this.isSpotify = this.app.toLowerCase().contains("spotify");
-         String var4 = Json.str(var1, "title", "");
-         String var5 = Json.str(var1, "artist", "");
-         int var6 = (int)Json.num(var1, "status", 0L);
-         boolean var7 = var6 == 4;
-         long var8 = Json.num(var1, "pos", 0L);
-         long var10 = Math.max(0L, Json.num(var1, "dur", 0L));
-         long var12 = Json.num(var1, "upd", 0L);
-         long var14 = var12 > 946684800000L && var12 <= var2 + 1000L ? var12 : var2 - this.latencyMs;
-         Object var16 = var1 instanceof Map ? ((Map)var1).get("shuffle") : null;
-         Object var17 = var1 instanceof Map ? ((Map)var1).get("repeat") : null;
-         boolean var18 = var16 instanceof Boolean && (Boolean)var16;
-         String var19 = var17 instanceof Number ? (((Number)var17).intValue() == 1 ? "track" : (((Number)var17).intValue() == 2 ? "context" : "off")) : "off";
-         int var20 = (int)Json.num(var1, "vol", -1L);
-         this.muted = var20 >= 1000;
-         int var21 = var20 < 0 ? -1 : (this.muted ? 0 : Math.min(100, var20));
-         this.canShuffle = Json.bool(var1, "cShuf", false);
-         this.canRepeat = Json.bool(var1, "cRep", false);
-         this.canSeek = Json.bool(var1, "cSeek", false);
-         PlayerState var22 = this.state;
-         boolean var23 = var4.equals(var22.title) && var5.equals(var22.artist);
-         if (var2 < this.lockPlaying) {
-            var7 = var22.playing;
+         String title = Json.str(m, "title", "");
+         String artist = Json.str(m, "artist", "");
+         int status = (int)Json.num(m, "status", 0L);
+         boolean playing = status == 4;
+         long pos = Json.num(m, "pos", 0L);
+         long dur = Math.max(0L, Json.num(m, "dur", 0L));
+         long upd = Json.num(m, "upd", 0L);
+         long sampled = upd > 946684800000L && upd <= now + 1000L ? upd : now - this.latencyMs;
+         Object sh = m instanceof Map ? ((Map)m).get("shuffle") : null;
+         Object rp = m instanceof Map ? ((Map)m).get("repeat") : null;
+         boolean shuffle = sh instanceof Boolean && (Boolean)sh;
+         String repeat = rp instanceof Number ? (((Number)rp).intValue() == 1 ? "track" : (((Number)rp).intValue() == 2 ? "context" : "off")) : "off";
+         int volRaw = (int)Json.num(m, "vol", -1L);
+         this.muted = volRaw >= 1000;
+         int volume = volRaw < 0 ? -1 : (this.muted ? 0 : Math.min(100, volRaw));
+         this.canShuffle = Json.bool(m, "cShuf", false);
+         this.canRepeat = Json.bool(m, "cRep", false);
+         this.canSeek = Json.bool(m, "cSeek", false);
+         PlayerState old = this.state;
+         boolean sameTrack = title.equals(old.title) && artist.equals(old.artist);
+         if (now < this.lockPlaying) {
+            playing = old.playing;
          }
 
-         if (var2 < this.lockShuffle) {
-            var18 = var22.shuffle;
+         if (now < this.lockShuffle) {
+            shuffle = old.shuffle;
          }
 
-         if (var2 < this.lockRepeat) {
-            var19 = var22.repeat;
+         if (now < this.lockRepeat) {
+            repeat = old.repeat;
          }
 
-         if (var2 < this.lockVolume && var22.volume >= 0) {
-            var21 = var22.volume;
+         if (now < this.lockVolume && old.volume >= 0) {
+            volume = old.volume;
          }
 
-         if (var2 < this.lockProgress && var23) {
-            var8 = var22.currentProgress();
-            var14 = var2;
+         if (now < this.lockProgress && sameTrack) {
+            pos = old.currentProgress();
+            sampled = now;
          }
 
-         if (!var23) {
+         if (!sameTrack) {
             this.lockProgress = 0L;
          }
 
-         boolean var24 = !var4.isEmpty() || !var5.isEmpty();
-         String var25 = "smtc:" + var4 + "|" + var5;
-         this.state = new PlayerState(var24, null, var25, var4, var5, null, var10, var8, var14, var7, var18, var19, var21, var22.liked && var23);
-         if (!var23 && this.artKey != null && !this.artKey.equals(var4 + "|" + var5)) {
+         boolean has = !title.isEmpty() || !artist.isEmpty();
+         String uri = "smtc:" + title + "|" + artist;
+         this.state = new PlayerState(has, null, uri, title, artist, null, dur, pos, sampled, playing, shuffle, repeat, volume, old.liked && sameTrack);
+         if (!sameTrack && this.artKey != null && !this.artKey.equals(title + "|" + artist)) {
             this.art = null;
             this.artKey = null;
             this.artVersion++;
@@ -360,13 +360,13 @@ public final class SmtcBridge {
       }
    }
 
-   private void send(String var1) {
-      OutputStream var2 = this.stdin;
-      if (var2 != null) {
+   private void send(String cmd) {
+      OutputStream o = this.stdin;
+      if (o != null) {
          try {
             synchronized (this) {
-               var2.write((var1 + "\n").getBytes(StandardCharsets.UTF_8));
-               var2.flush();
+               o.write((cmd + "\n").getBytes(StandardCharsets.UTF_8));
+               o.flush();
             }
          } catch (IOException var6) {
             SpotifyHudMod.LOG("Media-Bridge: senden fehlgeschlagen: " + var6);
@@ -388,34 +388,34 @@ public final class SmtcBridge {
       this.send("prev");
    }
 
-   public synchronized void seek(long var1) {
-      long var3 = this.state.durationMs;
-      var1 = Math.max(0L, var3 > 0L ? Math.min(var1, var3 - 300L) : var1);
-      this.state = this.state.withProgress(var1);
+   public synchronized void seek(long ms) {
+      long d = this.state.durationMs;
+      ms = Math.max(0L, d > 0L ? Math.min(ms, d - 300L) : ms);
+      this.state = this.state.withProgress(ms);
       this.lockProgress = System.currentTimeMillis() + 1500L;
-      this.send("seek " + var1);
+      this.send("seek " + ms);
    }
 
    public synchronized void toggleShuffle() {
-      boolean var1 = !this.state.shuffle;
-      this.state = this.state.withShuffle(var1);
+      boolean v = !this.state.shuffle;
+      this.state = this.state.withShuffle(v);
       this.lockShuffle = System.currentTimeMillis() + 900L;
-      this.send("shuffle " + var1);
+      this.send("shuffle " + v);
    }
 
    public synchronized void cycleRepeat() {
-      String var1 = this.state.repeat;
-      String var2 = "off".equals(var1) ? "context" : ("context".equals(var1) ? "track" : "off");
-      this.state = this.state.withRepeat(var2);
+      String cur = this.state.repeat;
+      String v = "off".equals(cur) ? "context" : ("context".equals(cur) ? "track" : "off");
+      this.state = this.state.withRepeat(v);
       this.lockRepeat = System.currentTimeMillis() + 900L;
-      this.send("repeat " + ("track".equals(var2) ? 1 : ("context".equals(var2) ? 2 : 0)));
+      this.send("repeat " + ("track".equals(v) ? 1 : ("context".equals(v) ? 2 : 0)));
    }
 
-   public synchronized void setVolume(int var1) {
-      var1 = Math.max(0, Math.min(100, var1));
-      this.state = this.state.withVolume(var1);
+   public synchronized void setVolume(int v) {
+      v = Math.max(0, Math.min(100, v));
+      this.state = this.state.withVolume(v);
       this.lockVolume = System.currentTimeMillis() + 1200L;
-      this.send("vol " + var1);
+      this.send("vol " + v);
    }
 
    public synchronized void toggleMute() {
@@ -425,9 +425,9 @@ public final class SmtcBridge {
    }
 
    public void shutdown() {
-      Process var1 = this.process;
-      if (var1 != null) {
-         var1.destroy();
+      Process p = this.process;
+      if (p != null) {
+         p.destroy();
       }
    }
 }

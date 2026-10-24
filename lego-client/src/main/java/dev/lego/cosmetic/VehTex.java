@@ -15,384 +15,405 @@ final class VehTex {
    private VehTex() {
    }
 
-   static CTex.T tex(String var0) {
-      short var1 = 64;
-      if (var0.equals("veh_plate") || var0.equals("veh_gauges") || var0.equals("veh_deckart") || var0.equals("veh_display") || var0.startsWith("veh_num")) {
-         var1 = 128;
+   static CTex.T tex(String name) {
+      int s = 64;
+      if (name.equals("veh_plate") || name.equals("veh_gauges") || name.equals("veh_deckart") || name.startsWith("veh_display") || name.startsWith("veh_num")) {
+         s = 128;
       }
 
-      BufferedImage var2 = new BufferedImage(var1, var1, 2);
-      Graphics2D var3 = var2.createGraphics();
-      Gx.hints(var3);
+      BufferedImage img = new BufferedImage(s, s, 2);
+      Graphics2D g = img.createGraphics();
+      Gx.hints(g);
 
       try {
-         if (!paint(var3, var0, var1)) {
+         if (!paint(g, name, s)) {
             return null;
          }
       } finally {
-         var3.dispose();
+         g.dispose();
       }
 
-      return CTex.of(var2);
+      return CTex.of(img);
    }
 
-   private static int hex(String var0, int var1) {
+   private static int hex(String name, int from) {
       try {
-         return Integer.parseInt(var0.substring(var1, Math.min(var0.length(), var1 + 6)), 16);
+         return Integer.parseInt(name.substring(from, Math.min(name.length(), from + 6)), 16);
       } catch (RuntimeException var3) {
          return 16711935;
       }
    }
 
-   private static boolean paint(Graphics2D var0, String var1, int var2) {
-      if (var1.startsWith("veh_c:")) {
-         Color var14 = new Color(hex(var1, 6));
-         var0.setPaint(new GradientPaint(0.0F, 0.0F, bright(var14, 1.2F), 0.0F, var2, bright(var14, 0.78F)));
-         var0.fillRect(0, 0, var2, var2);
+   private static boolean paint(Graphics2D g, String name, int s) {
+      if (name.startsWith("veh_display")) {
+         int v = 0;
+         int at = name.indexOf(64);
+         if (at > 0) {
+            try {
+               v = Integer.parseInt(name.substring(at + 1));
+            } catch (NumberFormatException var12) {
+            }
+         }
+
+         g.setPaint(new GradientPaint(0.0F, 0.0F, new Color(10, 30, 44), 0.0F, s, new Color(4, 12, 20)));
+         g.fillRect(0, 0, s, s);
+         g.setColor(new Color(90, 230, 255));
+         g.setFont(new Font("SansSerif", 1, s / 3));
+         String num = String.valueOf(v);
+         g.drawString(num, s * 3 / 5 - g.getFontMetrics().stringWidth(num), s * 2 / 3);
+         g.setFont(new Font("SansSerif", 0, s / 8));
+         g.drawString("km/h", s * 5 / 8, s * 2 / 3);
+         int bars = Math.min(5, (v + 9) / 10);
+
+         for (int i = 0; i < 5; i++) {
+            g.setColor(i < bars ? (i >= 4 ? new Color(255, 90, 70) : new Color(80, 255, 120)) : new Color(40, 70, 50));
+            g.fillRect(s / 5 + i * s / 9, s * 4 / 5, s / 12, s / 14);
+         }
+
          return true;
-      } else if (var1.startsWith("veh_flat:")) {
-         var0.setColor(new Color(hex(var1, 9)));
-         var0.fillRect(0, 0, var2, var2);
-         noise(var0, var2, 12, 300);
+      } else if (name.startsWith("veh_c:")) {
+         Color c = new Color(hex(name, 6));
+         g.setPaint(new GradientPaint(0.0F, 0.0F, bright(c, 1.2F), 0.0F, s, bright(c, 0.78F)));
+         g.fillRect(0, 0, s, s);
          return true;
-      } else if (var1.startsWith("veh_glow:")) {
-         Color var13 = new Color(hex(var1, 9));
-         var0.setColor(var13);
-         var0.fillRect(0, 0, var2, var2);
-         var0.setPaint(
+      } else if (name.startsWith("veh_flat:")) {
+         g.setColor(new Color(hex(name, 9)));
+         g.fillRect(0, 0, s, s);
+         noise(g, s, 12, 300);
+         return true;
+      } else if (name.startsWith("veh_glow:")) {
+         Color c = new Color(hex(name, 9));
+         g.setColor(c);
+         g.fillRect(0, 0, s, s);
+         g.setPaint(
             new RadialGradientPaint(
-               var2 / 2.0F, var2 / 2.0F, var2 * 0.6F, new float[]{0.0F, 1.0F}, new Color[]{new Color(255, 255, 255, 150), new Color(255, 255, 255, 0)}
+               s / 2.0F, s / 2.0F, s * 0.6F, new float[]{0.0F, 1.0F}, new Color[]{new Color(255, 255, 255, 150), new Color(255, 255, 255, 0)}
             )
          );
-         var0.fillRect(0, 0, var2, var2);
+         g.fillRect(0, 0, s, s);
          return true;
-      } else if (var1.startsWith("veh_paint:")) {
-         Color var12 = new Color(hex(var1, 10));
-         var0.setPaint(
+      } else if (name.startsWith("veh_paint:")) {
+         Color c = new Color(hex(name, 10));
+         g.setPaint(
             new LinearGradientPaint(
                0.0F,
                0.0F,
                0.0F,
-               var2,
+               s,
                new float[]{0.0F, 0.3F, 0.44F, 0.46F, 0.7F, 1.0F},
-               new Color[]{bright(var12, 1.45F), bright(var12, 1.18F), bright(var12, 1.05F), bright(var12, 0.62F), bright(var12, 0.82F), bright(var12, 0.5F)}
+               new Color[]{bright(c, 1.45F), bright(c, 1.18F), bright(c, 1.05F), bright(c, 0.62F), bright(c, 0.82F), bright(c, 0.5F)}
             )
          );
-         var0.fillRect(0, 0, var2, var2);
+         g.fillRect(0, 0, s, s);
          return true;
-      } else if (var1.startsWith("veh_leather:")) {
-         Color var3 = new Color(hex(var1, 12));
-         var0.setColor(var3);
-         var0.fillRect(0, 0, var2, var2);
-         var0.setPaint(new GradientPaint(0.0F, 0.0F, bright(var3, 1.18F), 0.0F, var2, bright(var3, 0.85F)));
-         var0.fillRect(0, 0, var2, var2);
-         noise(var0, var2, 16, 700);
-         var0.setColor(bright(var3, 1.5F));
-         var0.setStroke(new BasicStroke(1.0F, 0, 0, 1.0F, new float[]{2.0F, 2.0F}, 0.0F));
-         var0.drawLine(0, 4, var2, 4);
-         var0.drawLine(0, var2 - 5, var2, var2 - 5);
+      } else if (name.startsWith("veh_leather:")) {
+         Color c = new Color(hex(name, 12));
+         g.setColor(c);
+         g.fillRect(0, 0, s, s);
+         g.setPaint(new GradientPaint(0.0F, 0.0F, bright(c, 1.18F), 0.0F, s, bright(c, 0.85F)));
+         g.fillRect(0, 0, s, s);
+         noise(g, s, 16, 700);
+         g.setColor(bright(c, 1.5F));
+         g.setStroke(new BasicStroke(1.0F, 0, 0, 1.0F, new float[]{2.0F, 2.0F}, 0.0F));
+         g.drawLine(0, 4, s, 4);
+         g.drawLine(0, s - 5, s, s - 5);
          return true;
       } else {
-         switch (var1) {
+         switch (name) {
             case "veh_tread":
-               var0.setColor(new Color(30, 30, 34));
-               var0.fillRect(0, 0, var2, var2);
-               var0.setColor(new Color(14, 14, 16));
+               g.setColor(new Color(30, 30, 34));
+               g.fillRect(0, 0, s, s);
+               g.setColor(new Color(14, 14, 16));
 
-               for (int var29 = 0; var29 < var2; var29 += 8) {
-                  var0.fillRect(var29, 0, 2, var2);
-                  var0.fillRect(var29 + 4, var2 / 3, 2, var2 / 3);
+               for (int i = 0; i < s; i += 8) {
+                  g.fillRect(i, 0, 2, s);
+                  g.fillRect(i + 4, s / 3, 2, s / 3);
                }
 
-               var0.fillRect(0, var2 / 2 - 2, var2, 3);
+               g.fillRect(0, s / 2 - 2, s, 3);
                return true;
             case "veh_side":
-               var0.setColor(new Color(36, 36, 40));
-               var0.fillRect(0, 0, var2, var2);
-               var0.setColor(new Color(58, 58, 64));
-               var0.fillRect(0, var2 / 2 - 3, var2, 2);
+               g.setColor(new Color(36, 36, 40));
+               g.fillRect(0, 0, s, s);
+               g.setColor(new Color(58, 58, 64));
+               g.fillRect(0, s / 2 - 3, s, 2);
                return true;
             case "veh_metal":
             case "veh_rim":
-               var0.setPaint(new GradientPaint(0.0F, 0.0F, new Color(236, 240, 246), var2, var2, new Color(126, 134, 146)));
-               var0.fillRect(0, 0, var2, var2);
-               var0.setColor(new Color(255, 255, 255, 40));
+               g.setPaint(new GradientPaint(0.0F, 0.0F, new Color(236, 240, 246), s, s, new Color(126, 134, 146)));
+               g.fillRect(0, 0, s, s);
+               g.setColor(new Color(255, 255, 255, 40));
 
-               for (int var28 = 0; var28 < var2; var28 += 3) {
-                  var0.drawLine(0, var28, var2, var28);
+               for (int i = 0; i < s; i += 3) {
+                  g.drawLine(0, i, s, i);
                }
 
                return true;
             case "veh_chrome":
-               var0.setPaint(
+               g.setPaint(
                   new LinearGradientPaint(
                      0.0F,
                      0.0F,
                      0.0F,
-                     var2,
+                     s,
                      new float[]{0.0F, 0.4F, 0.5F, 0.62F, 1.0F},
                      new Color[]{new Color(255, 255, 255), new Color(190, 204, 222), new Color(70, 76, 88), new Color(220, 226, 234), new Color(150, 156, 166)}
                   )
                );
-               var0.fillRect(0, 0, var2, var2);
+               g.fillRect(0, 0, s, s);
                return true;
             case "veh_alu":
-               var0.setColor(new Color(186, 192, 202));
-               var0.fillRect(0, 0, var2, var2);
-               Random var27 = new Random(5L);
+               g.setColor(new Color(186, 192, 202));
+               g.fillRect(0, 0, s, s);
+               Random r = new Random(5L);
 
-               for (int var34 = 0; var34 < 220; var34++) {
-                  var0.setColor(var27.nextBoolean() ? new Color(255, 255, 255, 50) : new Color(90, 96, 110, 40));
-                  int var36 = var27.nextInt(var2);
-                  var0.drawLine(0, var36, var2, var36);
+               for (int i = 0; i < 220; i++) {
+                  g.setColor(r.nextBoolean() ? new Color(255, 255, 255, 50) : new Color(90, 96, 110, 40));
+                  int y = r.nextInt(s);
+                  g.drawLine(0, y, s, y);
                }
 
                return true;
             case "veh_gun":
-               var0.setPaint(new GradientPaint(0.0F, 0.0F, new Color(96, 100, 112), var2, var2, new Color(38, 40, 48)));
-               var0.fillRect(0, 0, var2, var2);
+               g.setPaint(new GradientPaint(0.0F, 0.0F, new Color(96, 100, 112), s, s, new Color(38, 40, 48)));
+               g.fillRect(0, 0, s, s);
                return true;
             case "veh_disc":
-               var0.setColor(new Color(150, 154, 160));
-               var0.fillRect(0, 0, var2, var2);
-               var0.setColor(new Color(90, 92, 98));
+               g.setColor(new Color(150, 154, 160));
+               g.fillRect(0, 0, s, s);
+               g.setColor(new Color(90, 92, 98));
 
-               for (int var26 = 0; var26 < var2; var26 += 6) {
-                  var0.fillOval(var26 + 1, var26 * 7 % (var2 - 6) + 2, 3, 3);
+               for (int i = 0; i < s; i += 6) {
+                  g.fillOval(i + 1, i * 7 % (s - 6) + 2, 3, 3);
                }
 
                return true;
             case "veh_carbon":
-               for (int var25 = 0; var25 < var2; var25 += 4) {
-                  for (int var33 = 0; var33 < var2; var33 += 4) {
-                     boolean var35 = ((var33 + var25) / 4 & 1) == 0;
-                     var0.setPaint(
+               for (int y = 0; y < s; y += 4) {
+                  for (int x = 0; x < s; x += 4) {
+                     boolean k = ((x + y) / 4 & 1) == 0;
+                     g.setPaint(
                         new GradientPaint(
-                           var33,
-                           var25,
-                           var35 ? new Color(58, 60, 68) : new Color(24, 25, 30),
-                           var33 + 4,
-                           var25 + 4,
-                           var35 ? new Color(30, 31, 36) : new Color(46, 48, 54)
+                           x, y, k ? new Color(58, 60, 68) : new Color(24, 25, 30), x + 4, y + 4, k ? new Color(30, 31, 36) : new Color(46, 48, 54)
                         )
                      );
-                     var0.fillRect(var33, var25, 4, 4);
+                     g.fillRect(x, y, 4, 4);
                   }
                }
 
                return true;
             case "veh_under":
-               var0.setColor(new Color(22, 23, 27));
-               var0.fillRect(0, 0, var2, var2);
-               noise(var0, var2, 10, 200);
+               g.setColor(new Color(22, 23, 27));
+               g.fillRect(0, 0, s, s);
+               noise(g, s, 10, 200);
                return true;
             case "veh_interior":
-               var0.setColor(new Color(34, 32, 34));
-               var0.fillRect(0, 0, var2, var2);
-               noise(var0, var2, 16, 900);
+               g.setColor(new Color(34, 32, 34));
+               g.fillRect(0, 0, s, s);
+               noise(g, s, 16, 900);
                return true;
             case "veh_grille":
-               var0.setColor(new Color(16, 16, 20));
-               var0.fillRect(0, 0, var2, var2);
-               var0.setColor(new Color(62, 64, 72));
-               var0.setStroke(new BasicStroke(1.4F));
+               g.setColor(new Color(16, 16, 20));
+               g.fillRect(0, 0, s, s);
+               g.setColor(new Color(62, 64, 72));
+               g.setStroke(new BasicStroke(1.4F));
 
-               for (int var24 = 0; var24 < var2; var24 += 6) {
-                  for (int var32 = var24 / 6 % 2 * 4; var32 < var2; var32 += 8) {
-                     var0.drawOval(var32, var24, 6, 5);
+               for (int y = 0; y < s; y += 6) {
+                  for (int x = y / 6 % 2 * 4; x < s; x += 8) {
+                     g.drawOval(x, y, 6, 5);
                   }
                }
 
                return true;
             case "veh_gauges":
-               var0.setColor(new Color(18, 18, 22));
-               var0.fillRect(0, 0, var2, var2);
+               g.setColor(new Color(18, 18, 22));
+               g.fillRect(0, 0, s, s);
 
-               for (int var23 = 0; var23 < 2; var23++) {
-                  int var31 = var2 / 4 + var23 * var2 / 2;
-                  int var7 = var2 / 2;
-                  int var8 = var2 / 5;
-                  var0.setColor(new Color(40, 42, 50));
-                  var0.fillOval(var31 - var8 - 3, var7 - var8 - 3, 2 * var8 + 6, 2 * var8 + 6);
-                  var0.setColor(new Color(12, 12, 16));
-                  var0.fillOval(var31 - var8, var7 - var8, 2 * var8, 2 * var8);
-                  var0.setColor(new Color(255, 255, 255, 200));
+               for (int i = 0; i < 2; i++) {
+                  int cx = s / 4 + i * s / 2;
+                  int cy = s / 2;
+                  int r = s / 5;
+                  g.setColor(new Color(40, 42, 50));
+                  g.fillOval(cx - r - 3, cy - r - 3, 2 * r + 6, 2 * r + 6);
+                  g.setColor(new Color(12, 12, 16));
+                  g.fillOval(cx - r, cy - r, 2 * r, 2 * r);
+                  g.setColor(new Color(255, 255, 255, 200));
 
-                  for (int var9 = 0; var9 <= 8; var9++) {
-                     double var10 = Math.toRadians(225.0 - var9 * 33.75);
-                     var0.drawLine(
-                        var31 + (int)(Math.cos(var10) * var8 * 0.7),
-                        var7 - (int)(Math.sin(var10) * var8 * 0.7),
-                        var31 + (int)(Math.cos(var10) * var8 * 0.92),
-                        var7 - (int)(Math.sin(var10) * var8 * 0.92)
+                  for (int k = 0; k <= 8; k++) {
+                     double a = Math.toRadians(225.0 - k * 33.75);
+                     g.drawLine(
+                        cx + (int)(Math.cos(a) * r * 0.7),
+                        cy - (int)(Math.sin(a) * r * 0.7),
+                        cx + (int)(Math.cos(a) * r * 0.92),
+                        cy - (int)(Math.sin(a) * r * 0.92)
                      );
                   }
 
-                  var0.setColor(new Color(255, 70, 40));
-                  var0.setStroke(new BasicStroke(2.0F));
-                  double var37 = Math.toRadians(var23 == 0 ? 120.0 : 60.0);
-                  var0.drawLine(var31, var7, var31 + (int)(Math.cos(var37) * var8 * 0.85), var7 - (int)(Math.sin(var37) * var8 * 0.85));
+                  g.setColor(new Color(255, 70, 40));
+                  g.setStroke(new BasicStroke(2.0F));
+                  double a = Math.toRadians(i == 0 ? 120.0 : 60.0);
+                  g.drawLine(cx, cy, cx + (int)(Math.cos(a) * r * 0.85), cy - (int)(Math.sin(a) * r * 0.85));
                }
 
                return true;
-            case "veh_display":
-               var0.setPaint(new GradientPaint(0.0F, 0.0F, new Color(10, 30, 44), 0.0F, var2, new Color(4, 12, 20)));
-               var0.fillRect(0, 0, var2, var2);
-               var0.setColor(new Color(90, 230, 255));
-               var0.setFont(new Font("SansSerif", 1, var2 / 3));
-               var0.drawString("25", var2 / 5, var2 * 2 / 3);
-               var0.setFont(new Font("SansSerif", 0, var2 / 8));
-               var0.drawString("km/h", var2 * 3 / 5, var2 * 2 / 3);
+            case "veh_display_dyn":
+               g.setPaint(new GradientPaint(0.0F, 0.0F, new Color(10, 30, 44), 0.0F, s, new Color(4, 12, 20)));
+               g.fillRect(0, 0, s, s);
+               g.setColor(new Color(90, 230, 255));
+               g.setFont(new Font("SansSerif", 1, s / 3));
+               g.drawString("25", s / 5, s * 2 / 3);
+               g.setFont(new Font("SansSerif", 0, s / 8));
+               g.drawString("km/h", s * 3 / 5, s * 2 / 3);
 
-               for (int var22 = 0; var22 < 5; var22++) {
-                  var0.setColor(var22 < 4 ? new Color(80, 255, 120) : new Color(40, 70, 50));
-                  var0.fillRect(var2 / 5 + var22 * var2 / 9, var2 * 4 / 5, var2 / 12, var2 / 14);
+               for (int i = 0; i < 5; i++) {
+                  g.setColor(i < 4 ? new Color(80, 255, 120) : new Color(40, 70, 50));
+                  g.fillRect(s / 5 + i * s / 9, s * 4 / 5, s / 12, s / 14);
                }
 
                return true;
             case "veh_plate":
-               var0.setColor(Color.WHITE);
-               var0.fillRect(0, 0, var2, var2);
-               var0.setColor(new Color(20, 60, 170));
-               var0.fillRect(0, 0, var2 / 8, var2);
-               var0.setColor(new Color(20, 20, 24));
-               var0.setStroke(new BasicStroke(3.0F));
-               var0.drawRect(2, var2 / 4 + 2, var2 - 4, var2 / 2 - 4);
-               var0.setFont(new Font("SansSerif", 1, var2 / 4));
-               var0.drawString("LEGO 1", var2 / 6, var2 * 5 / 8);
+               g.setColor(Color.WHITE);
+               g.fillRect(0, 0, s, s);
+               g.setColor(new Color(20, 60, 170));
+               g.fillRect(0, 0, s / 8, s);
+               g.setColor(new Color(20, 20, 24));
+               g.setStroke(new BasicStroke(3.0F));
+               g.drawRect(2, s / 4 + 2, s - 4, s / 2 - 4);
+               g.setFont(new Font("SansSerif", 1, s / 4));
+               g.drawString("LEGO 1", s / 6, s * 5 / 8);
                return true;
             case "veh_rubber":
-               var0.setColor(new Color(30, 31, 36));
-               var0.fillRect(0, 0, var2, var2);
-               var0.setColor(new Color(52, 54, 60));
+               g.setColor(new Color(30, 31, 36));
+               g.fillRect(0, 0, s, s);
+               g.setColor(new Color(52, 54, 60));
 
-               for (int var21 = 0; var21 < var2; var21 += 5) {
-                  var0.fillRect(0, var21, var2, 2);
+               for (int i = 0; i < s; i += 5) {
+                  g.fillRect(0, i, s, 2);
                }
 
                return true;
             case "veh_gripr":
-               var0.setColor(new Color(26, 26, 30));
-               var0.fillRect(0, 0, var2, var2);
-               var0.setColor(new Color(60, 62, 70));
+               g.setColor(new Color(26, 26, 30));
+               g.fillRect(0, 0, s, s);
+               g.setColor(new Color(60, 62, 70));
 
-               for (int var20 = 0; var20 < var2; var20 += 6) {
-                  var0.fillRect(0, var20, var2, 2);
+               for (int i = 0; i < s; i += 6) {
+                  g.fillRect(0, i, s, 2);
                }
 
                return true;
             case "veh_foam":
-               var0.setColor(new Color(34, 34, 38));
-               var0.fillRect(0, 0, var2, var2);
-               noise(var0, var2, 26, 1600);
+               g.setColor(new Color(34, 34, 38));
+               g.fillRect(0, 0, s, s);
+               noise(g, s, 26, 1600);
                return true;
             case "veh_grip":
             case "veh_griptape":
-               var0.setColor(new Color(34, 35, 40));
-               var0.fillRect(0, 0, var2, var2);
-               noise(var0, var2, 14, 1400);
+               g.setColor(new Color(34, 35, 40));
+               g.fillRect(0, 0, s, s);
+               noise(g, s, 14, 1400);
                return true;
             case "veh_deck":
             case "veh_ply":
-               Color[] var19 = new Color[]{
+               Color[] cs = new Color[]{
                   new Color(222, 176, 118), new Color(200, 60, 50), new Color(230, 190, 130), new Color(60, 120, 200), new Color(214, 168, 110)
                };
 
-               for (int var30 = 0; var30 < var2; var30++) {
-                  var0.setColor(var19[var30 * var19.length / var2]);
-                  var0.drawLine(0, var30, var2, var30);
+               for (int i = 0; i < s; i++) {
+                  g.setColor(cs[i * cs.length / s]);
+                  g.drawLine(0, i, s, i);
                }
 
                return true;
             case "veh_deckart":
-               var0.setPaint(new GradientPaint(0.0F, 0.0F, new Color(255, 205, 3), var2, 0.0F, new Color(255, 120, 20)));
-               var0.fillRect(0, 0, var2, var2);
-               var0.setColor(new Color(227, 0, 11));
+               g.setPaint(new GradientPaint(0.0F, 0.0F, new Color(255, 205, 3), s, 0.0F, new Color(255, 120, 20)));
+               g.fillRect(0, 0, s, s);
+               g.setColor(new Color(227, 0, 11));
 
-               for (int var18 = -var2; var18 < var2 * 2; var18 += 22) {
-                  var0.fillPolygon(new int[]{var18, var18 + 10, var18 + 10 + var2, var18 + var2}, new int[]{0, 0, var2, var2}, 4);
+               for (int i = -s; i < s * 2; i += 22) {
+                  g.fillPolygon(new int[]{i, i + 10, i + 10 + s, i + s}, new int[]{0, 0, s, s}, 4);
                }
 
-               var0.setColor(Color.WHITE);
-               var0.fillRoundRect(var2 / 2 - 22, var2 / 2 - 16, 44, 32, 10, 10);
-               var0.setColor(new Color(227, 0, 11));
-               var0.setFont(new Font("SansSerif", 1, 20));
-               var0.drawString("LEGO", var2 / 2 - 22, var2 / 2 + 7);
+               g.setColor(Color.WHITE);
+               g.fillRoundRect(s / 2 - 22, s / 2 - 16, 44, 32, 10, 10);
+               g.setColor(new Color(227, 0, 11));
+               g.setFont(new Font("SansSerif", 1, 20));
+               g.drawString("LEGO", s / 2 - 22, s / 2 + 7);
                return true;
             case "veh_urethane":
-               var0.setPaint(new GradientPaint(0.0F, 0.0F, new Color(255, 248, 226), 0.0F, var2, new Color(226, 212, 178)));
-               var0.fillRect(0, 0, var2, var2);
+               g.setPaint(new GradientPaint(0.0F, 0.0F, new Color(255, 248, 226), 0.0F, s, new Color(226, 212, 178)));
+               g.fillRect(0, 0, s, s);
                return true;
             case "veh_pu":
-               var0.setPaint(new GradientPaint(0.0F, 0.0F, new Color(120, 255, 214), 0.0F, var2, new Color(20, 170, 140)));
-               var0.fillRect(0, 0, var2, var2);
+               g.setPaint(new GradientPaint(0.0F, 0.0F, new Color(120, 255, 214), 0.0F, s, new Color(20, 170, 140)));
+               g.fillRect(0, 0, s, s);
                return true;
             case "veh_glass":
-               var0.setPaint(new GradientPaint(0.0F, 0.0F, new Color(210, 238, 255, 110), var2, var2, new Color(90, 150, 210, 80)));
-               var0.fillRect(0, 0, var2, var2);
-               var0.setColor(new Color(255, 255, 255, 120));
-               var0.fillRect(var2 / 6, 0, var2 / 10, var2);
-               var0.fillRect(var2 / 6 + var2 / 7, 0, var2 / 30, var2);
+               g.setPaint(new GradientPaint(0.0F, 0.0F, new Color(210, 238, 255, 110), s, s, new Color(90, 150, 210, 80)));
+               g.fillRect(0, 0, s, s);
+               g.setColor(new Color(255, 255, 255, 120));
+               g.fillRect(s / 6, 0, s / 10, s);
+               g.fillRect(s / 6 + s / 7, 0, s / 30, s);
                return true;
             case "veh_tint":
-               var0.setPaint(new GradientPaint(0.0F, 0.0F, new Color(60, 70, 90, 180), 0.0F, var2, new Color(20, 24, 34, 200)));
-               var0.fillRect(0, 0, var2, var2);
-               var0.setColor(new Color(255, 255, 255, 70));
-               var0.fillRect(var2 / 5, 0, var2 / 12, var2);
+               g.setPaint(new GradientPaint(0.0F, 0.0F, new Color(60, 70, 90, 180), 0.0F, s, new Color(20, 24, 34, 200)));
+               g.fillRect(0, 0, s, s);
+               g.setColor(new Color(255, 255, 255, 70));
+               g.fillRect(s / 5, 0, s / 12, s);
                return true;
             case "veh_mirror":
-               var0.setPaint(new GradientPaint(0.0F, 0.0F, new Color(200, 225, 255), var2, var2, new Color(80, 100, 130)));
-               var0.fillRect(0, 0, var2, var2);
+               g.setPaint(new GradientPaint(0.0F, 0.0F, new Color(200, 225, 255), s, s, new Color(80, 100, 130)));
+               g.fillRect(0, 0, s, s);
                return true;
             case "veh_cloud":
-               var0.setPaint(new GradientPaint(0.0F, 0.0F, new Color(255, 255, 255), 0.0F, var2, new Color(206, 220, 240)));
-               var0.fillRect(0, 0, var2, var2);
+               g.setPaint(new GradientPaint(0.0F, 0.0F, new Color(255, 255, 255), 0.0F, s, new Color(206, 220, 240)));
+               g.fillRect(0, 0, s, s);
                return true;
             case "veh_checker":
-               for (int var17 = 0; var17 < 8; var17++) {
-                  for (int var6 = 0; var6 < 8; var6++) {
-                     var0.setColor((var6 + var17) % 2 == 0 ? Color.WHITE : new Color(20, 20, 24));
-                     var0.fillRect(var6 * 8, var17 * 8, 8, 8);
+               for (int y = 0; y < 8; y++) {
+                  for (int x = 0; x < 8; x++) {
+                     g.setColor((x + y) % 2 == 0 ? Color.WHITE : new Color(20, 20, 24));
+                     g.fillRect(x * 8, y * 8, 8, 8);
                   }
                }
 
                return true;
             case "veh_ufo":
-               var0.setPaint(new GradientPaint(0.0F, 0.0F, new Color(214, 222, 234), 0.0F, var2, new Color(120, 130, 146)));
-               var0.fillRect(0, 0, var2, var2);
-               var0.setColor(new Color(80, 88, 104, 150));
+               g.setPaint(new GradientPaint(0.0F, 0.0F, new Color(214, 222, 234), 0.0F, s, new Color(120, 130, 146)));
+               g.fillRect(0, 0, s, s);
+               g.setColor(new Color(80, 88, 104, 150));
 
-               for (int var16 = 0; var16 < var2; var16 += 8) {
-                  var0.drawLine(var16, 0, var16, var2);
+               for (int i = 0; i < s; i += 8) {
+                  g.drawLine(i, 0, i, s);
                }
 
-               var0.drawLine(0, var2 / 2, var2, var2 / 2);
+               g.drawLine(0, s / 2, s, s / 2);
                return true;
             case "veh_chain":
-               var0.setColor(new Color(60, 62, 68));
-               var0.fillRect(0, 0, var2, var2);
-               var0.setColor(new Color(150, 154, 162));
+               g.setColor(new Color(60, 62, 68));
+               g.fillRect(0, 0, s, s);
+               g.setColor(new Color(150, 154, 162));
 
-               for (int var15 = 0; var15 < var2; var15 += 8) {
-                  var0.fillRoundRect(var15, var2 / 4, 6, var2 / 2, 3, 3);
+               for (int i = 0; i < s; i += 8) {
+                  g.fillRoundRect(i, s / 4, 6, s / 2, 3, 3);
                }
 
                return true;
             case "veh_num":
-               var0.setColor(Color.WHITE);
-               var0.fillRect(0, 0, var2, var2);
-               var0.setColor(new Color(20, 20, 24));
-               var0.setFont(new Font("SansSerif", 1, var2 * 3 / 4));
-               var0.drawString("7", var2 / 3, var2 * 4 / 5);
+               g.setColor(Color.WHITE);
+               g.fillRect(0, 0, s, s);
+               g.setColor(new Color(20, 20, 24));
+               g.setFont(new Font("SansSerif", 1, s * 3 / 4));
+               g.drawString("7", s / 3, s * 4 / 5);
                return true;
             case "veh_basket":
-               var0.setColor(new Color(150, 104, 58));
-               var0.fillRect(0, 0, var2, var2);
-               var0.setColor(new Color(110, 72, 36));
+               g.setColor(new Color(150, 104, 58));
+               g.fillRect(0, 0, s, s);
+               g.setColor(new Color(110, 72, 36));
 
-               for (int var5 = 0; var5 < var2; var5 += 6) {
-                  var0.drawLine(var5, 0, var5, var2);
-                  var0.drawLine(0, var5 + 3, var2, var5 + 3);
+               for (int i = 0; i < s; i += 6) {
+                  g.drawLine(i, 0, i, s);
+                  g.drawLine(0, i + 3, s, i + 3);
                }
 
                return true;
@@ -402,16 +423,16 @@ final class VehTex {
       }
    }
 
-   static Color bright(Color var0, float var1) {
-      return new Color(Math.min(255, (int)(var0.getRed() * var1)), Math.min(255, (int)(var0.getGreen() * var1)), Math.min(255, (int)(var0.getBlue() * var1)));
+   static Color bright(Color c, float k) {
+      return new Color(Math.min(255, (int)(c.getRed() * k)), Math.min(255, (int)(c.getGreen() * k)), Math.min(255, (int)(c.getBlue() * k)));
    }
 
-   private static void noise(Graphics2D var0, int var1, int var2, int var3) {
-      Random var4 = new Random(3L);
+   private static void noise(Graphics2D g, int s, int alpha, int n) {
+      Random r = new Random(3L);
 
-      for (int var5 = 0; var5 < var3; var5++) {
-         var0.setColor(var4.nextBoolean() ? new Color(255, 255, 255, var2) : new Color(0, 0, 0, var2));
-         var0.fillRect(var4.nextInt(var1), var4.nextInt(var1), 1, 1);
+      for (int i = 0; i < n; i++) {
+         g.setColor(r.nextBoolean() ? new Color(255, 255, 255, alpha) : new Color(0, 0, 0, alpha));
+         g.fillRect(r.nextInt(s), r.nextInt(s), 1, 1);
       }
    }
 }

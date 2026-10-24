@@ -30,25 +30,25 @@ final class PetTex {
    private PetTex() {
    }
 
-   static CTex.T paint(String var0) {
+   static CTex.T paint(String name) {
       try {
-         String[] var1 = var0.split(":");
-         String var2 = var1[0];
+         String[] p = name.split(":");
+         String var2 = p[0];
          switch (var2) {
             case "pet_eyes":
-               return CTex.of(eyes(style(var1[1]), var1[2], "1".equals(var1[3])));
+               return CTex.of(eyes(style(p[1]), p[2], "1".equals(p[3])));
             case "pet_face":
-               return CTex.of(face(style(var1[1]), var1[2]));
+               return CTex.of(face(style(p[1]), p[2]));
             case "pet_fur":
-               return CTex.of(fur(var1[1], false));
+               return CTex.of(fur(p[1], false));
             case "pet_head":
-               return CTex.of(fur(var1[1], true));
+               return CTex.of(fur(p[1], true));
             case "pet_c":
-               return CTex.of(solid(hex(var1[1])));
+               return CTex.of(solid(hex(p[1])));
             case "pet_gl":
-               return CTex.of(gloss(hex(var1[1])));
+               return CTex.of(gloss(hex(p[1])));
             case "pet_metal":
-               return CTex.of(metal(hex(var1[1])));
+               return CTex.of(metal(hex(p[1])));
             case "pet_star":
                return CTex.of(star());
             case "pet_heart":
@@ -64,11 +64,11 @@ final class PetTex {
             case "pet_dragon_wing":
                return CTex.of(dragonWing());
             case "pet_feather":
-               return CTex.of(featherWing(hex(var1[1]), hex(var1[2])));
+               return CTex.of(featherWing(hex(p[1]), hex(p[2])));
             case "pet_dwing":
-               return CTex.of(drakeWing(hex(var1[1]), hex(var1[2])));
+               return CTex.of(drakeWing(hex(p[1]), hex(p[2])));
             case "pet_tailfan":
-               return CTex.of(tailFan(hex(var1[1]), hex(var1[2])));
+               return CTex.of(tailFan(hex(p[1]), hex(p[2])));
             case "pet_bubble":
                return CTex.of(bubble());
             case "pet_mane":
@@ -76,7 +76,7 @@ final class PetTex {
             case "pet_horn":
                return CTex.of(horn());
             case "pet_fin":
-               return CTex.of(fin(var1.length > 1 ? hex(var1[1]) : 16747069));
+               return CTex.of(fin(p.length > 1 ? hex(p[1]) : 16747069));
             case "pet_cap":
                return CTex.of(mushCap());
             case "pet_jelly":
@@ -84,7 +84,7 @@ final class PetTex {
             case "pet_berry":
                return CTex.of(berry());
             case "pet_brick":
-               return CTex.of(brick(var1.length > 1 ? hex(var1[1]) : 14876683));
+               return CTex.of(brick(p.length > 1 ? hex(p[1]) : 14876683));
             default:
                return null;
          }
@@ -93,1631 +93,1619 @@ final class PetTex {
       }
    }
 
-   private static int hex(String var0) {
-      return Integer.parseInt(var0, 16) & 16777215;
+   private static int hex(String s) {
+      return Integer.parseInt(s, 16) & 16777215;
    }
 
-   private static BufferedImage img(int var0, int var1) {
-      return new BufferedImage(var0, var1, 2);
+   private static BufferedImage img(int w, int h) {
+      return new BufferedImage(w, h, 2);
    }
 
-   private static Graphics2D gfx(BufferedImage var0) {
-      Graphics2D var1 = var0.createGraphics();
-      var1.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-      var1.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
-      var1.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-      var1.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
-      return var1;
+   private static Graphics2D gfx(BufferedImage im) {
+      Graphics2D g = im.createGraphics();
+      g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+      g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+      g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+      g.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+      return g;
    }
 
-   static Color c(int var0) {
-      return new Color(var0 & 16777215);
+   static Color c(int rgb) {
+      return new Color(rgb & 16777215);
    }
 
-   static Color ca(int var0, int var1) {
-      return new Color(var0 >> 16 & 0xFF, var0 >> 8 & 0xFF, var0 & 0xFF, Math.max(0, Math.min(255, var1)));
+   static Color ca(int rgb, int a) {
+      return new Color(rgb >> 16 & 0xFF, rgb >> 8 & 0xFF, rgb & 0xFF, Math.max(0, Math.min(255, a)));
    }
 
-   static int mix(int var0, int var1, float var2) {
-      int var3 = Math.round((var0 >> 16 & 0xFF) * (1.0F - var2) + (var1 >> 16 & 0xFF) * var2);
-      int var4 = Math.round((var0 >> 8 & 0xFF) * (1.0F - var2) + (var1 >> 8 & 0xFF) * var2);
-      int var5 = Math.round((var0 & 0xFF) * (1.0F - var2) + (var1 & 0xFF) * var2);
-      return var3 << 16 | var4 << 8 | var5;
+   static int mix(int a, int b, float t) {
+      int r = Math.round((a >> 16 & 0xFF) * (1.0F - t) + (b >> 16 & 0xFF) * t);
+      int g = Math.round((a >> 8 & 0xFF) * (1.0F - t) + (b >> 8 & 0xFF) * t);
+      int bl = Math.round((a & 0xFF) * (1.0F - t) + (b & 0xFF) * t);
+      return r << 16 | g << 8 | bl;
    }
 
-   static int light(int var0, float var1) {
-      return mix(var0, 16777215, var1);
+   static int light(int c, float t) {
+      return mix(c, 16777215, t);
    }
 
-   static int dark(int var0, float var1) {
-      return mix(var0, 0, var1);
+   static int dark(int c, float t) {
+      return mix(c, 0, t);
    }
 
-   static int shade(int var0, float var1) {
-      return mix(var0, mix(dark(var0, 0.55F), 3809098, 0.25F), var1);
+   static int shade(int c, float t) {
+      return mix(c, mix(dark(c, 0.55F), 3809098, 0.25F), t);
    }
 
-   private static Ellipse2D el(double var0, double var2, double var4, double var6) {
-      return new Double(var0 - var4 / 2.0, var2 - var6 / 2.0, var4, var6);
+   private static Ellipse2D el(double cx, double cy, double w, double h) {
+      return new Double(cx - w / 2.0, cy - h / 2.0, w, h);
    }
 
-   private static void soft(Graphics2D var0, double var1, double var3, double var5, double var7, int var9, int var10) {
-      float var11 = (float)Math.max(var5, var7) / 2.0F;
-      if (!(var11 < 0.5F)) {
-         AffineTransform var12 = var0.getTransform();
-         var0.translate(var1, var3);
-         var0.scale(var5 / (2.0F * var11), var7 / (2.0F * var11));
-         var0.setPaint(
-            new RadialGradientPaint(0.0F, 0.0F, var11, new float[]{0.0F, 0.55F, 1.0F}, new Color[]{ca(var9, var10), ca(var9, var10 * 3 / 4), ca(var9, 0)})
-         );
-         var0.fill(new Float(-var11, -var11, 2.0F * var11, 2.0F * var11));
-         var0.setTransform(var12);
+   private static void soft(Graphics2D g, double cx, double cy, double w, double h, int rgb, int alpha) {
+      float r = (float)Math.max(w, h) / 2.0F;
+      if (!(r < 0.5F)) {
+         AffineTransform old = g.getTransform();
+         g.translate(cx, cy);
+         g.scale(w / (2.0F * r), h / (2.0F * r));
+         g.setPaint(new RadialGradientPaint(0.0F, 0.0F, r, new float[]{0.0F, 0.55F, 1.0F}, new Color[]{ca(rgb, alpha), ca(rgb, alpha * 3 / 4), ca(rgb, 0)}));
+         g.fill(new Float(-r, -r, 2.0F * r, 2.0F * r));
+         g.setTransform(old);
       }
    }
 
-   private static void baseGrad(Graphics2D var0, int var1, int var2, int var3) {
-      var0.setPaint(
-         new LinearGradientPaint(0.0F, 0.0F, 0.0F, var2, new float[]{0.0F, 0.45F, 1.0F}, new Color[]{c(light(var3, 0.16F)), c(var3), c(shade(var3, 0.28F))})
+   private static void baseGrad(Graphics2D g, int w, int h, int base) {
+      g.setPaint(
+         new LinearGradientPaint(0.0F, 0.0F, 0.0F, h, new float[]{0.0F, 0.45F, 1.0F}, new Color[]{c(light(base, 0.16F)), c(base), c(shade(base, 0.28F))})
       );
-      var0.fillRect(0, 0, var1, var2);
+      g.fillRect(0, 0, w, h);
    }
 
-   private static void furStrokes(Graphics2D var0, int var1, int var2, int var3, long var4, int var6, int var7) {
-      Random var8 = new Random(var4);
-      var0.setStroke(new BasicStroke(1.3F, 1, 1));
+   private static void furStrokes(Graphics2D g, int w, int h, int base, long seed, int n, int alpha) {
+      Random r = new Random(seed);
+      g.setStroke(new BasicStroke(1.3F, 1, 1));
 
-      for (int var9 = 0; var9 < var6; var9++) {
-         float var10 = var8.nextFloat() * var1;
-         float var11 = var8.nextFloat() * var2;
-         float var12 = 2.0F + var8.nextFloat() * 4.0F;
-         double var13 = (Math.PI / 2) + (var8.nextFloat() - 0.5) * 0.9;
-         var0.setColor(var8.nextBoolean() ? ca(light(var3, 0.35F), var7) : ca(shade(var3, 0.4F), var7));
-         var0.draw(new java.awt.geom.Line2D.Float(var10, var11, var10 + (float)Math.cos(var13) * var12, var11 + (float)Math.sin(var13) * var12));
+      for (int i = 0; i < n; i++) {
+         float x = r.nextFloat() * w;
+         float y = r.nextFloat() * h;
+         float len = 2.0F + r.nextFloat() * 4.0F;
+         double ang = (Math.PI / 2) + (r.nextFloat() - 0.5) * 0.9;
+         g.setColor(r.nextBoolean() ? ca(light(base, 0.35F), alpha) : ca(shade(base, 0.4F), alpha));
+         g.draw(new java.awt.geom.Line2D.Float(x, y, x + (float)Math.cos(ang) * len, y + (float)Math.sin(ang) * len));
       }
    }
 
-   private static double sx(int var0, double var1) {
-      return var0 * (0.25 - var1 / (Math.PI * 2));
+   private static double sx(int w, double az) {
+      return w * (0.25 - az / (Math.PI * 2));
    }
 
-   private static double sy(int var0, double var1) {
-      return var0 * (0.5 - var1 / Math.PI);
+   private static double sy(int h, double elv) {
+      return h * (0.5 - elv / Math.PI);
    }
 
-   private static void patch(Graphics2D var0, int var1, int var2, double var3, double var5, double var7, double var9, int var11, int var12) {
-      double var13 = sx(var1, var3);
-      double var15 = sy(var2, var5);
-      double var17 = var7 / Math.PI * var1;
-      double var19 = var9 / Math.PI * var2 * 2.0;
-      soft(var0, var13, var15, var17 * 2.2, var19 * 1.15, var11, var12);
-      var0.setColor(ca(var11, var12));
-      var0.fill(el(var13, var15, var17 * 1.7, var19 * 0.9));
+   private static void patch(Graphics2D g, int w, int h, double az, double elv, double haz, double hel, int rgb, int alpha) {
+      double px = sx(w, az);
+      double py = sy(h, elv);
+      double pw = haz / Math.PI * w;
+      double ph = hel / Math.PI * h * 2.0;
+      soft(g, px, py, pw * 2.2, ph * 1.15, rgb, alpha);
+      g.setColor(ca(rgb, alpha));
+      g.fill(el(px, py, pw * 1.7, ph * 0.9));
    }
 
-   static BufferedImage solid(int var0) {
-      BufferedImage var1 = img(32, 32);
-      Graphics2D var2 = gfx(var1);
-      baseGrad(var2, 32, 32, var0);
-      furStrokes(var2, 32, 32, var0, var0, 40, 22);
-      var2.dispose();
-      return var1;
+   static BufferedImage solid(int base) {
+      BufferedImage im = img(32, 32);
+      Graphics2D g = gfx(im);
+      baseGrad(g, 32, 32, base);
+      furStrokes(g, 32, 32, base, base, 40, 22);
+      g.dispose();
+      return im;
    }
 
-   static BufferedImage gloss(int var0) {
-      short var1 = 128;
-      byte var2 = 64;
-      BufferedImage var3 = img(var1, var2);
-      Graphics2D var4 = gfx(var3);
-      baseGrad(var4, var1, var2, var0);
-      soft(var4, sx(var1, 0.35), sy(var2, 0.55), 30.0, 22.0, 16777215, 190);
-      var4.setColor(ca(16777215, 235));
-      var4.fill(el(sx(var1, 0.35), sy(var2, 0.58), 10.0, 6.0));
-      soft(var4, sx(var1, -0.9), sy(var2, -0.6), 40.0, 14.0, light(var0, 0.5F), 90);
-      var4.dispose();
-      return var3;
+   static BufferedImage gloss(int base) {
+      int w = 128;
+      int h = 64;
+      BufferedImage im = img(w, h);
+      Graphics2D g = gfx(im);
+      baseGrad(g, w, h, base);
+      soft(g, sx(w, 0.35), sy(h, 0.55), 30.0, 22.0, 16777215, 190);
+      g.setColor(ca(16777215, 235));
+      g.fill(el(sx(w, 0.35), sy(h, 0.58), 10.0, 6.0));
+      soft(g, sx(w, -0.9), sy(h, -0.6), 40.0, 14.0, light(base, 0.5F), 90);
+      g.dispose();
+      return im;
    }
 
-   static BufferedImage metal(int var0) {
-      byte var1 = 64;
-      byte var2 = 64;
-      BufferedImage var3 = img(var1, var2);
-      Graphics2D var4 = gfx(var3);
-      baseGrad(var4, var1, var2, var0);
-      Random var5 = new Random(7L);
+   static BufferedImage metal(int base) {
+      int w = 64;
+      int h = 64;
+      BufferedImage im = img(w, h);
+      Graphics2D g = gfx(im);
+      baseGrad(g, w, h, base);
+      Random r = new Random(7L);
 
-      for (int var6 = 0; var6 < var2; var6++) {
-         var4.setColor(ca(var5.nextBoolean() ? 16777215 : 0, 10 + var5.nextInt(14)));
-         var4.fillRect(0, var6, var1, 1);
+      for (int y = 0; y < h; y++) {
+         g.setColor(ca(r.nextBoolean() ? 16777215 : 0, 10 + r.nextInt(14)));
+         g.fillRect(0, y, w, 1);
       }
 
-      var4.setColor(ca(16777215, 60));
-      var4.fillRect(0, 2, var1, 3);
-      var4.dispose();
-      return var3;
+      g.setColor(ca(16777215, 60));
+      g.fillRect(0, 2, w, 3);
+      g.dispose();
+      return im;
    }
 
-   private static Shape starShape(double var0, double var2, double var4, double var6, int var8, double var9) {
-      java.awt.geom.Path2D.Double var11 = new java.awt.geom.Path2D.Double();
+   private static Shape starShape(double cx, double cy, double ro, double ri, int n, double rot) {
+      java.awt.geom.Path2D.Double p = new java.awt.geom.Path2D.Double();
 
-      for (int var12 = 0; var12 < var8 * 2; var12++) {
-         double var13 = var9 - (Math.PI / 2) + Math.PI * var12 / var8;
-         double var15 = var12 % 2 == 0 ? var4 : var6;
-         double var17 = var0 + Math.cos(var13) * var15;
-         double var19 = var2 + Math.sin(var13) * var15;
-         if (var12 == 0) {
-            var11.moveTo(var17, var19);
+      for (int i = 0; i < n * 2; i++) {
+         double a = rot - (Math.PI / 2) + Math.PI * i / n;
+         double rr = i % 2 == 0 ? ro : ri;
+         double x = cx + Math.cos(a) * rr;
+         double y = cy + Math.sin(a) * rr;
+         if (i == 0) {
+            p.moveTo(x, y);
          } else {
-            var11.lineTo(var17, var19);
+            p.lineTo(x, y);
          }
       }
 
-      var11.closePath();
-      return var11;
+      p.closePath();
+      return p;
    }
 
-   private static void roundStar(Graphics2D var0, double var1, double var3, double var5, Color var7, Color var8, float var9) {
-      Shape var10 = starShape(var1, var3, var5, var5 * 0.5, 5, 0.0);
-      var0.setPaint(var7);
-      var0.fill(var10);
-      var0.setStroke(new BasicStroke(var9, 1, 1));
-      var0.setColor(var8);
-      var0.draw(var10);
+   private static void roundStar(Graphics2D g, double cx, double cy, double r, Color fill, Color line, float lw) {
+      Shape s = starShape(cx, cy, r, r * 0.5, 5, 0.0);
+      g.setPaint(fill);
+      g.fill(s);
+      g.setStroke(new BasicStroke(lw, 1, 1));
+      g.setColor(line);
+      g.draw(s);
    }
 
-   private static Shape heart(double var0, double var2, double var4) {
-      java.awt.geom.Path2D.Double var6 = new java.awt.geom.Path2D.Double();
-      var6.moveTo(var0, var2 + var4 * 0.42);
-      var6.curveTo(var0 - var4 * 0.62, var2 - var4 * 0.02, var0 - var4 * 0.48, var2 - var4 * 0.58, var0 - var4 * 0.02, var2 - var4 * 0.3);
-      var6.lineTo(var0, var2 - var4 * 0.26);
-      var6.lineTo(var0 + var4 * 0.02, var2 - var4 * 0.3);
-      var6.curveTo(var0 + var4 * 0.48, var2 - var4 * 0.58, var0 + var4 * 0.62, var2 - var4 * 0.02, var0, var2 + var4 * 0.42);
-      var6.closePath();
-      return var6;
+   private static Shape heart(double cx, double cy, double s) {
+      java.awt.geom.Path2D.Double p = new java.awt.geom.Path2D.Double();
+      p.moveTo(cx, cy + s * 0.42);
+      p.curveTo(cx - s * 0.62, cy - s * 0.02, cx - s * 0.48, cy - s * 0.58, cx - s * 0.02, cy - s * 0.3);
+      p.lineTo(cx, cy - s * 0.26);
+      p.lineTo(cx + s * 0.02, cy - s * 0.3);
+      p.curveTo(cx + s * 0.48, cy - s * 0.58, cx + s * 0.62, cy - s * 0.02, cx, cy + s * 0.42);
+      p.closePath();
+      return p;
    }
 
    static BufferedImage star() {
-      BufferedImage var0 = img(64, 64);
-      Graphics2D var1 = gfx(var0);
-      soft(var1, 32.0, 32.0, 64.0, 64.0, 16769658, 120);
-      roundStar(var1, 32.0, 33.0, 22.0, c(16767050), c(16774336), 3.0F);
-      var1.setPaint(new GradientPaint(0.0F, 12.0F, c(16775368), 0.0F, 54.0F, c(16756782)));
-      var1.fill(starShape(32.0, 33.0, 19.0, 9.5, 5, 0.0));
-      var1.setColor(ca(16777215, 220));
-      var1.fill(el(27.0, 26.0, 7.0, 5.0));
-      var1.dispose();
-      return var0;
+      BufferedImage im = img(64, 64);
+      Graphics2D g = gfx(im);
+      soft(g, 32.0, 32.0, 64.0, 64.0, 16769658, 120);
+      roundStar(g, 32.0, 33.0, 22.0, c(16767050), c(16774336), 3.0F);
+      g.setPaint(new GradientPaint(0.0F, 12.0F, c(16775368), 0.0F, 54.0F, c(16756782)));
+      g.fill(starShape(32.0, 33.0, 19.0, 9.5, 5, 0.0));
+      g.setColor(ca(16777215, 220));
+      g.fill(el(27.0, 26.0, 7.0, 5.0));
+      g.dispose();
+      return im;
    }
 
    static BufferedImage heartTex() {
-      BufferedImage var0 = img(64, 64);
-      Graphics2D var1 = gfx(var0);
-      soft(var1, 32.0, 32.0, 64.0, 64.0, 16740264, 110);
-      var1.setPaint(new GradientPaint(0.0F, 10.0F, c(16747960), 0.0F, 54.0F, c(15741034)));
-      var1.fill(heart(32.0, 34.0, 52.0));
-      var1.setColor(ca(16777215, 210));
-      var1.fill(el(22.0, 24.0, 9.0, 6.0));
-      var1.dispose();
-      return var0;
+      BufferedImage im = img(64, 64);
+      Graphics2D g = gfx(im);
+      soft(g, 32.0, 32.0, 64.0, 64.0, 16740264, 110);
+      g.setPaint(new GradientPaint(0.0F, 10.0F, c(16747960), 0.0F, 54.0F, c(15741034)));
+      g.fill(heart(32.0, 34.0, 52.0));
+      g.setColor(ca(16777215, 210));
+      g.fill(el(22.0, 24.0, 9.0, 6.0));
+      g.dispose();
+      return im;
    }
 
    static BufferedImage shell() {
-      short var0 = 256;
-      short var1 = 128;
-      BufferedImage var2 = img(var0, var1);
-      Graphics2D var3 = gfx(var2);
-      baseGrad(var3, var0, var1, 6138446);
-      Random var4 = new Random(3L);
+      int w = 256;
+      int h = 128;
+      BufferedImage im = img(w, h);
+      Graphics2D g = gfx(im);
+      baseGrad(g, w, h, 6138446);
+      Random r = new Random(3L);
 
-      for (int var5 = 0; var5 < 5; var5++) {
-         for (int var6 = 0; var6 < 9; var6++) {
-            double var7 = var6 * 29 + var5 % 2 * 14.5 + 6.0;
-            double var9 = var5 * 22 + 10;
-            java.awt.geom.Path2D.Double var11 = new java.awt.geom.Path2D.Double();
+      for (int row = 0; row < 5; row++) {
+         for (int col = 0; col < 9; col++) {
+            double cx = col * 29 + row % 2 * 14.5 + 6.0;
+            double cy = row * 22 + 10;
+            java.awt.geom.Path2D.Double p = new java.awt.geom.Path2D.Double();
 
-            for (int var12 = 0; var12 < 6; var12++) {
-               double var13 = (Math.PI / 3) * var12 + (Math.PI / 6);
-               double var15 = var7 + Math.cos(var13) * 12.0;
-               double var17 = var9 + Math.sin(var13) * 10.0;
-               if (var12 == 0) {
-                  var11.moveTo(var15, var17);
+            for (int k = 0; k < 6; k++) {
+               double a = (Math.PI / 3) * k + (Math.PI / 6);
+               double x = cx + Math.cos(a) * 12.0;
+               double y = cy + Math.sin(a) * 10.0;
+               if (k == 0) {
+                  p.moveTo(x, y);
                } else {
-                  var11.lineTo(var15, var17);
+                  p.lineTo(x, y);
                }
             }
 
-            var11.closePath();
-            var3.setPaint(new GradientPaint(0.0F, (float)var9 - 10.0F, c(10148714), 0.0F, (float)var9 + 10.0F, c(6271053)));
-            var3.fill(var11);
-            var3.setColor(ca(16777215, 40 + var4.nextInt(30)));
-            var3.fill(el(var7 - 3.0, var9 - 3.0, 8.0, 5.0));
-            var3.setStroke(new BasicStroke(2.4F, 1, 1));
-            var3.setColor(c(4028980));
-            var3.draw(var11);
+            p.closePath();
+            g.setPaint(new GradientPaint(0.0F, (float)cy - 10.0F, c(10148714), 0.0F, (float)cy + 10.0F, c(6271053)));
+            g.fill(p);
+            g.setColor(ca(16777215, 40 + r.nextInt(30)));
+            g.fill(el(cx - 3.0, cy - 3.0, 8.0, 5.0));
+            g.setStroke(new BasicStroke(2.4F, 1, 1));
+            g.setColor(c(4028980));
+            g.draw(p);
          }
       }
 
-      var3.setPaint(new GradientPaint(0.0F, 108.0F, c(15323770), 0.0F, 128.0F, c(12096574)));
-      var3.fillRect(0, 106, var0, 22);
-      var3.dispose();
-      return var2;
+      g.setPaint(new GradientPaint(0.0F, 108.0F, c(15323770), 0.0F, 128.0F, c(12096574)));
+      g.fillRect(0, 106, w, 22);
+      g.dispose();
+      return im;
    }
 
    static BufferedImage screen() {
-      BufferedImage var0 = img(64, 64);
-      Graphics2D var1 = gfx(var0);
-      var1.setPaint(new GradientPaint(0.0F, 0.0F, c(2372168), 0.0F, 64.0F, c(922658)));
-      var1.fillRect(0, 0, 64, 64);
-      var1.setColor(ca(7336959, 16));
+      BufferedImage im = img(64, 64);
+      Graphics2D g = gfx(im);
+      g.setPaint(new GradientPaint(0.0F, 0.0F, c(2372168), 0.0F, 64.0F, c(922658)));
+      g.fillRect(0, 0, 64, 64);
+      g.setColor(ca(7336959, 16));
 
-      for (int var2 = 0; var2 < 64; var2 += 3) {
-         var1.fillRect(0, var2, 64, 1);
+      for (int y = 0; y < 64; y += 3) {
+         g.fillRect(0, y, 64, 1);
       }
 
-      var1.setColor(ca(16777215, 36));
-      var1.fill(new java.awt.geom.RoundRectangle2D.Double(6.0, 4.0, 30.0, 10.0, 8.0, 8.0));
-      var1.dispose();
-      return var0;
+      g.setColor(ca(16777215, 36));
+      g.fill(new java.awt.geom.RoundRectangle2D.Double(6.0, 4.0, 30.0, 10.0, 8.0, 8.0));
+      g.dispose();
+      return im;
    }
 
    static BufferedImage beeWing() {
-      BufferedImage var0 = img(64, 64);
-      Graphics2D var1 = gfx(var0);
-      Ellipse2D var2 = el(32.0, 32.0, 60.0, 60.0);
-      var1.setPaint(new RadialGradientPaint(24.0F, 22.0F, 40.0F, new float[]{0.0F, 1.0F}, new Color[]{ca(16777215, 200), ca(12577023, 120)}));
-      var1.fill(var2);
-      var1.setStroke(new BasicStroke(2.0F));
-      var1.setColor(ca(10475263, 200));
-      var1.draw(var2);
-      var1.setColor(ca(16777215, 140));
-      var1.drawLine(32, 4, 32, 60);
-      var1.drawLine(10, 20, 54, 44);
-      var1.dispose();
-      return var0;
+      BufferedImage im = img(64, 64);
+      Graphics2D g = gfx(im);
+      Shape s = el(32.0, 32.0, 60.0, 60.0);
+      g.setPaint(new RadialGradientPaint(24.0F, 22.0F, 40.0F, new float[]{0.0F, 1.0F}, new Color[]{ca(16777215, 200), ca(12577023, 120)}));
+      g.fill(s);
+      g.setStroke(new BasicStroke(2.0F));
+      g.setColor(ca(10475263, 200));
+      g.draw(s);
+      g.setColor(ca(16777215, 140));
+      g.drawLine(32, 4, 32, 60);
+      g.drawLine(10, 20, 54, 44);
+      g.dispose();
+      return im;
    }
 
    static BufferedImage batWing() {
-      BufferedImage var0 = img(128, 64);
-      Graphics2D var1 = gfx(var0);
-      java.awt.geom.Path2D.Double var2 = new java.awt.geom.Path2D.Double();
-      var2.moveTo(0.0, 6.0);
-      var2.curveTo(40.0, 0.0, 90.0, 0.0, 126.0, 8.0);
-      var2.quadTo(112.0, 26.0, 116.0, 50.0);
-      var2.quadTo(96.0, 38.0, 82.0, 54.0);
-      var2.quadTo(66.0, 38.0, 48.0, 58.0);
-      var2.quadTo(30.0, 40.0, 0.0, 44.0);
-      var2.closePath();
-      var1.setPaint(new GradientPaint(0.0F, 0.0F, c(9072568), 0.0F, 64.0F, c(4863344)));
-      var1.fill(var2);
-      var1.setStroke(new BasicStroke(2.5F, 1, 1));
-      var1.setColor(c(3811928));
-      var1.drawLine(0, 8, 116, 48);
-      var1.drawLine(0, 8, 82, 52);
-      var1.drawLine(0, 8, 48, 56);
-      var1.setColor(ca(14731519, 90));
-      var1.drawLine(2, 6, 124, 9);
-      var1.dispose();
-      return var0;
+      BufferedImage im = img(128, 64);
+      Graphics2D g = gfx(im);
+      java.awt.geom.Path2D.Double p = new java.awt.geom.Path2D.Double();
+      p.moveTo(0.0, 6.0);
+      p.curveTo(40.0, 0.0, 90.0, 0.0, 126.0, 8.0);
+      p.quadTo(112.0, 26.0, 116.0, 50.0);
+      p.quadTo(96.0, 38.0, 82.0, 54.0);
+      p.quadTo(66.0, 38.0, 48.0, 58.0);
+      p.quadTo(30.0, 40.0, 0.0, 44.0);
+      p.closePath();
+      g.setPaint(new GradientPaint(0.0F, 0.0F, c(9072568), 0.0F, 64.0F, c(4863344)));
+      g.fill(p);
+      g.setStroke(new BasicStroke(2.5F, 1, 1));
+      g.setColor(c(3811928));
+      g.drawLine(0, 8, 116, 48);
+      g.drawLine(0, 8, 82, 52);
+      g.drawLine(0, 8, 48, 56);
+      g.setColor(ca(14731519, 90));
+      g.drawLine(2, 6, 124, 9);
+      g.dispose();
+      return im;
    }
 
    static BufferedImage dragonWing() {
-      BufferedImage var0 = img(128, 96);
-      Graphics2D var1 = gfx(var0);
-      java.awt.geom.Path2D.Double var2 = new java.awt.geom.Path2D.Double();
-      var2.moveTo(0.0, 4.0);
-      var2.curveTo(50.0, -4.0, 100.0, 6.0, 126.0, 20.0);
-      var2.quadTo(108.0, 44.0, 118.0, 80.0);
-      var2.quadTo(92.0, 64.0, 76.0, 86.0);
-      var2.quadTo(58.0, 62.0, 34.0, 90.0);
-      var2.quadTo(18.0, 58.0, 0.0, 56.0);
-      var2.closePath();
-      var1.setPaint(new GradientPaint(0.0F, 0.0F, c(16763368), 0.0F, 96.0F, c(12159733)));
-      var1.fill(var2);
-      var1.setStroke(new BasicStroke(3.5F, 1, 1));
-      var1.setColor(c(8281040));
-      var1.drawLine(0, 5, 118, 78);
-      var1.drawLine(0, 5, 76, 84);
-      var1.drawLine(0, 5, 34, 88);
-      var1.setColor(c(9268192));
-      var1.draw(new java.awt.geom.QuadCurve2D.Double(0.0, 4.0, 60.0, -2.0, 126.0, 20.0));
-      var1.dispose();
-      return var0;
+      BufferedImage im = img(128, 96);
+      Graphics2D g = gfx(im);
+      java.awt.geom.Path2D.Double p = new java.awt.geom.Path2D.Double();
+      p.moveTo(0.0, 4.0);
+      p.curveTo(50.0, -4.0, 100.0, 6.0, 126.0, 20.0);
+      p.quadTo(108.0, 44.0, 118.0, 80.0);
+      p.quadTo(92.0, 64.0, 76.0, 86.0);
+      p.quadTo(58.0, 62.0, 34.0, 90.0);
+      p.quadTo(18.0, 58.0, 0.0, 56.0);
+      p.closePath();
+      g.setPaint(new GradientPaint(0.0F, 0.0F, c(16763368), 0.0F, 96.0F, c(12159733)));
+      g.fill(p);
+      g.setStroke(new BasicStroke(3.5F, 1, 1));
+      g.setColor(c(8281040));
+      g.drawLine(0, 5, 118, 78);
+      g.drawLine(0, 5, 76, 84);
+      g.drawLine(0, 5, 34, 88);
+      g.setColor(c(9268192));
+      g.draw(new java.awt.geom.QuadCurve2D.Double(0.0, 4.0, 60.0, -2.0, 126.0, 20.0));
+      g.dispose();
+      return im;
    }
 
    static BufferedImage bubble() {
-      short var0 = 128;
-      byte var1 = 64;
-      BufferedImage var2 = img(var0, var1);
-      Graphics2D var3 = gfx(var2);
-      var3.setPaint(
+      int w = 128;
+      int h = 64;
+      BufferedImage im = img(w, h);
+      Graphics2D g = gfx(im);
+      g.setPaint(
          new LinearGradientPaint(
-            0.0F, 0.0F, 0.0F, var1, new float[]{0.0F, 0.3F, 0.7F, 1.0F}, new Color[]{ca(15268607, 90), ca(13628159, 26), ca(12577023, 26), ca(10476799, 80)}
+            0.0F, 0.0F, 0.0F, h, new float[]{0.0F, 0.3F, 0.7F, 1.0F}, new Color[]{ca(15268607, 90), ca(13628159, 26), ca(12577023, 26), ca(10476799, 80)}
          )
       );
-      var3.fillRect(0, 0, var0, var1);
-      var3.setStroke(new BasicStroke(2.2F, 1, 1));
-      var3.setColor(ca(16777215, 210));
-      var3.draw(new java.awt.geom.QuadCurve2D.Double(sx(var0, 1.25), sy(var1, 0.35), sx(var0, 1.05), sy(var1, 0.85), sx(var0, 0.6), sy(var1, 0.95)));
-      var3.fill(el(sx(var0, 1.3), sy(var1, 0.22), 3.0, 3.0));
-      soft(var3, sx(var0, -0.6), sy(var1, -0.5), 30.0, 12.0, 16767477, 110);
-      var3.dispose();
-      return var2;
+      g.fillRect(0, 0, w, h);
+      g.setStroke(new BasicStroke(2.2F, 1, 1));
+      g.setColor(ca(16777215, 210));
+      g.draw(new java.awt.geom.QuadCurve2D.Double(sx(w, 1.25), sy(h, 0.35), sx(w, 1.05), sy(h, 0.85), sx(w, 0.6), sy(h, 0.95)));
+      g.fill(el(sx(w, 1.3), sy(h, 0.22), 3.0, 3.0));
+      soft(g, sx(w, -0.6), sy(h, -0.5), 30.0, 12.0, 16767477, 110);
+      g.dispose();
+      return im;
    }
 
    static BufferedImage mane() {
-      BufferedImage var0 = img(64, 64);
-      Graphics2D var1 = gfx(var0);
-      int[] var2 = new int[]{16751560, 16763274, 16773280, 11071680, 10277631, 13150463};
+      BufferedImage im = img(64, 64);
+      Graphics2D g = gfx(im);
+      int[] cols = new int[]{16751560, 16763274, 16773280, 11071680, 10277631, 13150463};
 
-      for (int var3 = 0; var3 < 6; var3++) {
-         var1.setColor(c(var2[var3]));
-         var1.fillRect(0, var3 * 64 / 6, 64, 11);
+      for (int i = 0; i < 6; i++) {
+         g.setColor(c(cols[i]));
+         g.fillRect(0, i * 64 / 6, 64, 11);
       }
 
-      var1.setColor(ca(16777215, 60));
+      g.setColor(ca(16777215, 60));
 
-      for (int var4 = 0; var4 < 64; var4 += 5) {
-         var1.drawLine(var4, 0, var4 + 8, 64);
+      for (int i = 0; i < 64; i += 5) {
+         g.drawLine(i, 0, i + 8, 64);
       }
 
-      var1.dispose();
-      return var0;
+      g.dispose();
+      return im;
    }
 
    static BufferedImage horn() {
-      BufferedImage var0 = img(32, 64);
-      Graphics2D var1 = gfx(var0);
-      var1.setPaint(new GradientPaint(0.0F, 0.0F, c(16775112), 0.0F, 64.0F, c(15907146)));
-      var1.fillRect(0, 0, 32, 64);
-      var1.setStroke(new BasicStroke(4.0F));
-      var1.setColor(ca(13208090, 150));
+      BufferedImage im = img(32, 64);
+      Graphics2D g = gfx(im);
+      g.setPaint(new GradientPaint(0.0F, 0.0F, c(16775112), 0.0F, 64.0F, c(15907146)));
+      g.fillRect(0, 0, 32, 64);
+      g.setStroke(new BasicStroke(4.0F));
+      g.setColor(ca(13208090, 150));
 
-      for (int var2 = -64; var2 < 64; var2 += 12) {
-         var1.drawLine(0, var2 + 32, 32, var2 + 20);
+      for (int i = -64; i < 64; i += 12) {
+         g.drawLine(0, i + 32, 32, i + 20);
       }
 
-      var1.dispose();
-      return var0;
+      g.dispose();
+      return im;
    }
 
-   static BufferedImage fin(int var0) {
-      BufferedImage var1 = img(64, 64);
-      Graphics2D var2 = gfx(var1);
-      java.awt.geom.Path2D.Double var3 = new java.awt.geom.Path2D.Double();
-      var3.moveTo(2.0, 26.0);
-      var3.curveTo(20.0, 10.0, 40.0, 0.0, 62.0, 4.0);
-      var3.quadTo(50.0, 20.0, 54.0, 32.0);
-      var3.quadTo(50.0, 44.0, 62.0, 60.0);
-      var3.curveTo(40.0, 64.0, 20.0, 54.0, 2.0, 38.0);
-      var3.closePath();
-      var2.setPaint(new GradientPaint(0.0F, 0.0F, ca(light(var0, 0.15F), 245), 64.0F, 0.0F, ca(light(var0, 0.55F), 200)));
-      var2.fill(var3);
-      var2.setClip(var3);
-      var2.setStroke(new BasicStroke(2.0F));
-      var2.setColor(ca(dark(var0, 0.12F), 150));
+   static BufferedImage fin(int base) {
+      BufferedImage im = img(64, 64);
+      Graphics2D g = gfx(im);
+      java.awt.geom.Path2D.Double p = new java.awt.geom.Path2D.Double();
+      p.moveTo(2.0, 26.0);
+      p.curveTo(20.0, 10.0, 40.0, 0.0, 62.0, 4.0);
+      p.quadTo(50.0, 20.0, 54.0, 32.0);
+      p.quadTo(50.0, 44.0, 62.0, 60.0);
+      p.curveTo(40.0, 64.0, 20.0, 54.0, 2.0, 38.0);
+      p.closePath();
+      g.setPaint(new GradientPaint(0.0F, 0.0F, ca(light(base, 0.15F), 245), 64.0F, 0.0F, ca(light(base, 0.55F), 200)));
+      g.fill(p);
+      g.setClip(p);
+      g.setStroke(new BasicStroke(2.0F));
+      g.setColor(ca(dark(base, 0.12F), 150));
 
-      for (int var4 = 4; var4 < 64; var4 += 9) {
-         var2.drawLine(0, 32, 64, var4);
+      for (int i = 4; i < 64; i += 9) {
+         g.drawLine(0, 32, 64, i);
       }
 
-      var2.setClip(null);
-      var2.dispose();
-      return var1;
+      g.setClip(null);
+      g.dispose();
+      return im;
    }
 
    static BufferedImage berry() {
-      byte var0 = 64;
-      byte var1 = 32;
-      BufferedImage var2 = img(var0, var1);
-      Graphics2D var3 = gfx(var2);
-      var3.setPaint(new GradientPaint(0.0F, 0.0F, c(16738938), 0.0F, var1, c(14163514)));
-      var3.fillRect(0, 0, var0, var1);
-      var3.setColor(c(16769674));
+      int w = 64;
+      int h = 32;
+      BufferedImage im = img(w, h);
+      Graphics2D g = gfx(im);
+      g.setPaint(new GradientPaint(0.0F, 0.0F, c(16738938), 0.0F, h, c(14163514)));
+      g.fillRect(0, 0, w, h);
+      g.setColor(c(16769674));
 
-      for (int var4 = 4; var4 < var1; var4 += 6) {
-         for (int var5 = var4 / 6 % 2 * 4; var5 < var0; var5 += 8) {
-            var3.fill(el(var5, var4, 2.2, 3.0));
+      for (int y = 4; y < h; y += 6) {
+         for (int x = y / 6 % 2 * 4; x < w; x += 8) {
+            g.fill(el(x, y, 2.2, 3.0));
          }
       }
 
-      var3.dispose();
-      return var2;
+      g.dispose();
+      return im;
    }
 
    static BufferedImage mushCap() {
-      short var0 = 256;
-      short var1 = 128;
-      BufferedImage var2 = img(var0, var1);
-      Graphics2D var3 = gfx(var2);
-      var3.setPaint(
-         new LinearGradientPaint(0.0F, 0.0F, 0.0F, var1, new float[]{0.0F, 0.5F, 0.52F, 1.0F}, new Color[]{c(16739166), c(14692410), c(16773596), c(15257512)})
+      int w = 256;
+      int h = 128;
+      BufferedImage im = img(w, h);
+      Graphics2D g = gfx(im);
+      g.setPaint(
+         new LinearGradientPaint(0.0F, 0.0F, 0.0F, h, new float[]{0.0F, 0.5F, 0.52F, 1.0F}, new Color[]{c(16739166), c(14692410), c(16773596), c(15257512)})
       );
-      var3.fillRect(0, 0, var0, var1);
-      Random var4 = new Random(11L);
+      g.fillRect(0, 0, w, h);
+      Random r = new Random(11L);
 
-      for (int var5 = 0; var5 < 18; var5++) {
-         double var6 = var4.nextDouble() * var0;
-         double var8 = 6.0 + var4.nextDouble() * 46.0;
-         double var10 = 10.0 + var4.nextDouble() * 12.0;
+      for (int i = 0; i < 18; i++) {
+         double x = r.nextDouble() * w;
+         double y = 6.0 + r.nextDouble() * 46.0;
+         double s = 10.0 + r.nextDouble() * 12.0;
 
-         for (int var12 = -1; var12 <= 1; var12++) {
-            var3.setColor(c(16775408));
-            var3.fill(el(var6 + var12 * var0, var8, var10 * 1.3, var10 * (0.6 + var8 / 90.0)));
-            var3.setColor(ca(15259856, 200));
-            var3.fill(el(var6 + var12 * var0 + 2.0, var8 + 2.0, var10 * 0.6, var10 * 0.3));
+         for (int k = -1; k <= 1; k++) {
+            g.setColor(c(16775408));
+            g.fill(el(x + k * w, y, s * 1.3, s * (0.6 + y / 90.0)));
+            g.setColor(ca(15259856, 200));
+            g.fill(el(x + k * w + 2.0, y + 2.0, s * 0.6, s * 0.3));
          }
       }
 
-      var3.setColor(ca(13215354, 120));
+      g.setColor(ca(13215354, 120));
 
-      for (int var13 = 0; var13 < var0; var13 += 6) {
-         var3.drawLine(var13, 70, var13, 128);
+      for (int x = 0; x < w; x += 6) {
+         g.drawLine(x, 70, x, 128);
       }
 
-      var3.dispose();
-      return var2;
+      g.dispose();
+      return im;
    }
 
    static BufferedImage jelly() {
-      short var0 = 128;
-      byte var1 = 64;
-      BufferedImage var2 = img(var0, var1);
-      Graphics2D var3 = gfx(var2);
-      var3.setPaint(new LinearGradientPaint(0.0F, 0.0F, 0.0F, var1, new float[]{0.0F, 0.5F, 1.0F}, new Color[]{c(16766708), c(16096480), c(12094719)}));
-      var3.fillRect(0, 0, var0, var1);
-      var3.setColor(ca(16777215, 90));
+      int w = 128;
+      int h = 64;
+      BufferedImage im = img(w, h);
+      Graphics2D g = gfx(im);
+      g.setPaint(new LinearGradientPaint(0.0F, 0.0F, 0.0F, h, new float[]{0.0F, 0.5F, 1.0F}, new Color[]{c(16766708), c(16096480), c(12094719)}));
+      g.fillRect(0, 0, w, h);
+      g.setColor(ca(16777215, 90));
 
-      for (int var4 = 0; var4 < var0; var4 += 16) {
-         var3.fill(el(var4 + 8, 26.0, 6.0, 22.0));
+      for (int i = 0; i < w; i += 16) {
+         g.fill(el(i + 8, 26.0, 6.0, 22.0));
       }
 
-      soft(var3, sx(var0, 0.4), sy(var1, 0.8), 30.0, 10.0, 16777215, 200);
-      var3.dispose();
-      return var2;
+      soft(g, sx(w, 0.4), sy(h, 0.8), 30.0, 10.0, 16777215, 200);
+      g.dispose();
+      return im;
    }
 
-   static BufferedImage brick(int var0) {
-      BufferedImage var1 = img(64, 64);
-      Graphics2D var2 = gfx(var1);
-      var2.setPaint(new GradientPaint(0.0F, 0.0F, c(light(var0, 0.18F)), 0.0F, 64.0F, c(dark(var0, 0.12F))));
-      var2.fillRect(0, 0, 64, 64);
-      var2.setColor(ca(16777215, 70));
-      var2.fillRect(0, 0, 64, 4);
-      var2.setColor(ca(0, 40));
-      var2.fillRect(0, 60, 64, 4);
-      var2.dispose();
-      return var1;
+   static BufferedImage brick(int base) {
+      BufferedImage im = img(64, 64);
+      Graphics2D g = gfx(im);
+      g.setPaint(new GradientPaint(0.0F, 0.0F, c(light(base, 0.18F)), 0.0F, 64.0F, c(dark(base, 0.12F))));
+      g.fillRect(0, 0, 64, 64);
+      g.setColor(ca(16777215, 70));
+      g.fillRect(0, 0, 64, 4);
+      g.setColor(ca(0, 40));
+      g.fillRect(0, 60, 64, 4);
+      g.dispose();
+      return im;
    }
 
-   static BufferedImage fur(String var0, boolean var1) {
-      int[] var2 = FUR.getOrDefault(var0, new int[]{13421772, 16777215, 8947848});
-      int var3 = var2[0];
-      int var4 = var2[1];
-      int var5 = var2[2];
-      short var6 = 256;
-      short var7 = 128;
-      BufferedImage var8 = img(var6, var7);
-      Graphics2D var9 = gfx(var8);
-      baseGrad(var9, var6, var7, var3);
-      long var10 = var0.hashCode() * 31L + (var1 ? 7 : 0);
-      boolean var12 = var0.equals("drake")
-         || var0.equals("slime")
-         || var0.equals("cloud")
-         || var0.equals("ghost")
-         || var0.equals("frog")
-         || var0.equals("axolotl")
-         || var0.equals("mush")
-         || var0.equals("fish")
-         || var0.equals("turtle");
-      if (!var12) {
-         furStrokes(var9, var6, var7, var3, var10, 1600, 26);
+   static BufferedImage fur(String key, boolean head) {
+      int[] f = FUR.getOrDefault(key, new int[]{13421772, 16777215, 8947848});
+      int base = f[0];
+      int belly = f[1];
+      int acc = f[2];
+      int w = 256;
+      int h = 128;
+      BufferedImage im = img(w, h);
+      Graphics2D g = gfx(im);
+      baseGrad(g, w, h, base);
+      long seed = key.hashCode() * 31L + (head ? 7 : 0);
+      boolean smooth = key.equals("drake")
+         || key.equals("slime")
+         || key.equals("cloud")
+         || key.equals("ghost")
+         || key.equals("frog")
+         || key.equals("axolotl")
+         || key.equals("mush")
+         || key.equals("fish")
+         || key.equals("turtle");
+      if (!smooth) {
+         furStrokes(g, w, h, base, seed, 1600, 26);
       }
 
-      switch (var0) {
+      switch (key) {
          case "cat":
-            if (var1) {
-               patch(var9, var6, var7, 0.0, -0.36, 0.44, 0.24, var4, 255);
-               var9.setStroke(new BasicStroke(5.0F, 1, 1));
-               var9.setColor(ca(var5, 230));
+            if (head) {
+               patch(g, w, h, 0.0, -0.36, 0.44, 0.24, belly, 255);
+               g.setStroke(new BasicStroke(5.0F, 1, 1));
+               g.setColor(ca(acc, 230));
 
-               for (int var35 = -1; var35 <= 1; var35++) {
-                  double var42 = sx(var6, var35 * 0.16);
-                  double var18 = sy(var7, 0.95);
-                  double var20 = sy(var7, 0.62 - Math.abs(var35) * 0.06);
-                  var9.draw(new java.awt.geom.Line2D.Double(var42, var18, var42, var20));
+               for (int i = -1; i <= 1; i++) {
+                  double x = sx(w, i * 0.16);
+                  double y0 = sy(h, 0.95);
+                  double y1 = sy(h, 0.62 - Math.abs(i) * 0.06);
+                  g.draw(new java.awt.geom.Line2D.Double(x, y0, x, y1));
                }
 
-               for (int var36 = -1; var36 <= 1; var36 += 2) {
-                  for (int var43 = 0; var43 < 2; var43++) {
-                     double var46 = var36 * (1.3 + var43 * 0.25);
-                     var9.draw(
-                        new java.awt.geom.Line2D.Double(
-                           sx(var6, var46), sy(var7, 0.1 + var43 * 0.25), sx(var6, var46 + var36 * 0.35), sy(var7, 0.15 + var43 * 0.25)
-                        )
-                     );
+               for (int s = -1; s <= 1; s += 2) {
+                  for (int i = 0; i < 2; i++) {
+                     double az = s * (1.3 + i * 0.25);
+                     g.draw(new java.awt.geom.Line2D.Double(sx(w, az), sy(h, 0.1 + i * 0.25), sx(w, az + s * 0.35), sy(h, 0.15 + i * 0.25)));
                   }
                }
             } else {
-               patch(var9, var6, var7, 0.0, -0.35, 0.55, 0.55, var4, 255);
-               tabby(var9, var6, var7, var5);
+               patch(g, w, h, 0.0, -0.35, 0.55, 0.55, belly, 255);
+               tabby(g, w, h, acc);
             }
             break;
          case "shiba":
-            if (var1) {
-               patch(var9, var6, var7, 0.62, -0.3, 0.42, 0.34, var4, 255);
-               patch(var9, var6, var7, -0.62, -0.3, 0.42, 0.34, var4, 255);
-               patch(var9, var6, var7, 0.0, -0.5, 0.45, 0.3, var4, 255);
-               patch(var9, var6, var7, 0.34, 0.55, 0.1, 0.07, var4, 240);
-               patch(var9, var6, var7, -0.34, 0.55, 0.1, 0.07, var4, 240);
+            if (head) {
+               patch(g, w, h, 0.62, -0.3, 0.42, 0.34, belly, 255);
+               patch(g, w, h, -0.62, -0.3, 0.42, 0.34, belly, 255);
+               patch(g, w, h, 0.0, -0.5, 0.45, 0.3, belly, 255);
+               patch(g, w, h, 0.34, 0.55, 0.1, 0.07, belly, 240);
+               patch(g, w, h, -0.34, 0.55, 0.1, 0.07, belly, 240);
             } else {
-               patch(var9, var6, var7, 0.0, -0.3, 0.6, 0.6, var4, 255);
+               patch(g, w, h, 0.0, -0.3, 0.6, 0.6, belly, 255);
             }
             break;
          case "fox":
-            if (var1) {
-               patch(var9, var6, var7, 0.5, -0.4, 0.55, 0.32, var4, 255);
-               patch(var9, var6, var7, -0.5, -0.4, 0.55, 0.32, var4, 255);
-               patch(var9, var6, var7, 0.0, -0.55, 0.35, 0.3, var4, 255);
+            if (head) {
+               patch(g, w, h, 0.5, -0.4, 0.55, 0.32, belly, 255);
+               patch(g, w, h, -0.5, -0.4, 0.55, 0.32, belly, 255);
+               patch(g, w, h, 0.0, -0.55, 0.35, 0.3, belly, 255);
             } else {
-               patch(var9, var6, var7, 0.0, -0.1, 0.5, 0.65, var4, 255);
+               patch(g, w, h, 0.0, -0.1, 0.5, 0.65, belly, 255);
             }
             break;
          case "redpanda":
-            if (var1) {
-               patch(var9, var6, var7, 0.0, -0.45, 0.6, 0.3, var4, 255);
-               patch(var9, var6, var7, 0.45, 0.5, 0.16, 0.1, var4, 250);
-               patch(var9, var6, var7, -0.45, 0.5, 0.16, 0.1, var4, 250);
-               var9.setStroke(new BasicStroke(5.0F, 1, 1));
-               var9.setColor(ca(10107416, 110));
+            if (head) {
+               patch(g, w, h, 0.0, -0.45, 0.6, 0.3, belly, 255);
+               patch(g, w, h, 0.45, 0.5, 0.16, 0.1, belly, 250);
+               patch(g, w, h, -0.45, 0.5, 0.16, 0.1, belly, 250);
+               g.setStroke(new BasicStroke(5.0F, 1, 1));
+               g.setColor(ca(10107416, 110));
 
-               for (int var34 = -1; var34 <= 1; var34 += 2) {
-                  var9.draw(
-                     new java.awt.geom.QuadCurve2D.Double(
-                        sx(var6, var34 * 0.45), sy(var7, -0.05), sx(var6, var34 * 0.56), sy(var7, -0.35), sx(var6, var34 * 0.75), sy(var7, -0.55)
-                     )
-                  );
+               for (int s = -1; s <= 1; s += 2) {
+                  g.draw(new java.awt.geom.QuadCurve2D.Double(sx(w, s * 0.45), sy(h, -0.05), sx(w, s * 0.56), sy(h, -0.35), sx(w, s * 0.75), sy(h, -0.55)));
                }
             } else {
-               patch(var9, var6, var7, 0.0, -0.5, 0.7, 0.55, var5, 240);
+               patch(g, w, h, 0.0, -0.5, 0.7, 0.55, acc, 240);
             }
             break;
          case "panda":
-            if (var1) {
-               for (int var33 = -1; var33 <= 1; var33 += 2) {
-                  AffineTransform var41 = var9.getTransform();
-                  double var45 = sx(var6, var33 * 0.38);
-                  double var48 = sy(var7, 0.03);
-                  var9.translate(var45, var48);
-                  var9.rotate(var33 * 0.45);
-                  soft(var9, 0.0, 0.0, 44.0, 44.0, var5, 255);
-                  var9.setColor(c(var5));
-                  var9.fill(el(0.0, 0.0, 32.0, 34.0));
-                  var9.setTransform(var41);
+            if (head) {
+               for (int s = -1; s <= 1; s += 2) {
+                  AffineTransform o = g.getTransform();
+                  double px = sx(w, s * 0.38);
+                  double py = sy(h, 0.03);
+                  g.translate(px, py);
+                  g.rotate(s * 0.45);
+                  soft(g, 0.0, 0.0, 44.0, 44.0, acc, 255);
+                  g.setColor(c(acc));
+                  g.fill(el(0.0, 0.0, 32.0, 34.0));
+                  g.setTransform(o);
                }
 
-               patch(var9, var6, var7, 0.0, -0.45, 0.4, 0.2, 16777215, 200);
+               patch(g, w, h, 0.0, -0.45, 0.4, 0.2, 16777215, 200);
             } else {
-               var9.setPaint(new GradientPaint(0.0F, 0.0F, c(var5), 0.0F, var7, c(light(var5, 0.05F))));
-               var9.fill(new java.awt.geom.Rectangle2D.Double(0.0, sy(var7, 0.75), var6, sy(var7, 0.1) - sy(var7, 0.75)));
-               furStrokes(var9, var6, var7, var5, var10 + 1L, 300, 30);
+               g.setPaint(new GradientPaint(0.0F, 0.0F, c(acc), 0.0F, h, c(light(acc, 0.05F))));
+               g.fill(new java.awt.geom.Rectangle2D.Double(0.0, sy(h, 0.75), w, sy(h, 0.1) - sy(h, 0.75)));
+               furStrokes(g, w, h, acc, seed + 1L, 300, 30);
             }
             break;
          case "penguin":
-            if (var1) {
-               var9.setColor(c(var4));
-               Area var32 = new Area(el(sx(var6, 0.3), sy(var7, 0.0), 60.0, 58.0));
-               var32.add(new Area(el(sx(var6, -0.3), sy(var7, 0.0), 60.0, 58.0)));
-               var32.add(new Area(el(sx(var6, 0.0), sy(var7, -0.35), 70.0, 50.0)));
-               var9.fill(var32);
+            if (head) {
+               g.setColor(c(belly));
+               Area a = new Area(el(sx(w, 0.3), sy(h, 0.0), 60.0, 58.0));
+               a.add(new Area(el(sx(w, -0.3), sy(h, 0.0), 60.0, 58.0)));
+               a.add(new Area(el(sx(w, 0.0), sy(h, -0.35), 70.0, 50.0)));
+               g.fill(a);
             } else {
-               patch(var9, var6, var7, 0.0, -0.1, 0.75, 0.85, var4, 255);
+               patch(g, w, h, 0.0, -0.1, 0.75, 0.85, belly, 255);
             }
             break;
          case "axolotl":
-            patch(var9, var6, var7, 0.0, var1 ? -0.5 : -0.4, 0.6, 0.4, var4, 220);
-            spots(var9, var6, var7, var5, var10, 26, 3, 6, 160);
+            patch(g, w, h, 0.0, head ? -0.5 : -0.4, 0.6, 0.4, belly, 220);
+            spots(g, w, h, acc, seed, 26, 3, 6, 160);
             break;
          case "frog":
-            patch(var9, var6, var7, 0.0, var1 ? -0.6 : -0.4, 0.75, 0.45, var4, 250);
-            spots(var9, var6, var7, var5, var10, var1 ? 8 : 16, 4, 10, 170);
+            patch(g, w, h, 0.0, head ? -0.6 : -0.4, 0.75, 0.45, belly, 250);
+            spots(g, w, h, acc, seed, head ? 8 : 16, 4, 10, 170);
             break;
          case "chick":
-            patch(var9, var6, var7, 0.0, -0.4, 0.6, 0.55, var4, 200);
+            patch(g, w, h, 0.0, -0.4, 0.6, 0.55, belly, 200);
             break;
          case "hamster":
-            if (var1) {
-               patch(var9, var6, var7, 0.62, -0.35, 0.45, 0.35, var4, 255);
-               patch(var9, var6, var7, -0.62, -0.35, 0.45, 0.35, var4, 255);
-               patch(var9, var6, var7, 0.0, -0.55, 0.4, 0.3, var4, 255);
-               patch(var9, var6, var7, 0.0, 0.55, 0.12, 0.35, var5, 120);
+            if (head) {
+               patch(g, w, h, 0.62, -0.35, 0.45, 0.35, belly, 255);
+               patch(g, w, h, -0.62, -0.35, 0.45, 0.35, belly, 255);
+               patch(g, w, h, 0.0, -0.55, 0.4, 0.3, belly, 255);
+               patch(g, w, h, 0.0, 0.55, 0.12, 0.35, acc, 120);
             } else {
-               patch(var9, var6, var7, 0.0, -0.3, 0.7, 0.65, var4, 255);
+               patch(g, w, h, 0.0, -0.3, 0.7, 0.65, belly, 255);
             }
             break;
          case "owl":
-            if (var1) {
-               for (int var30 = -1; var30 <= 1; var30 += 2) {
-                  patch(var9, var6, var7, var30 * 0.36, 0.02, 0.36, 0.34, var4, 255);
+            if (head) {
+               for (int s = -1; s <= 1; s += 2) {
+                  patch(g, w, h, s * 0.36, 0.02, 0.36, 0.34, belly, 255);
                }
 
-               var9.setStroke(new BasicStroke(2.0F));
-               var9.setColor(ca(var5, 120));
+               g.setStroke(new BasicStroke(2.0F));
+               g.setColor(ca(acc, 120));
 
-               for (int var31 = -1; var31 <= 1; var31 += 2) {
-                  var9.draw(el(sx(var6, var31 * 0.36), sy(var7, 0.02), 50.0, 50.0));
+               for (int s = -1; s <= 1; s += 2) {
+                  g.draw(el(sx(w, s * 0.36), sy(h, 0.02), 50.0, 50.0));
                }
             } else {
-               patch(var9, var6, var7, 0.0, -0.3, 0.6, 0.65, var4, 255);
-               chevrons(var9, sx(var6, 0.0), sy(var7, -0.3), var5);
+               patch(g, w, h, 0.0, -0.3, 0.6, 0.65, belly, 255);
+               chevrons(g, sx(w, 0.0), sy(h, -0.3), acc);
             }
             break;
          case "bee":
-            if (!var1) {
-               var9.setColor(c(var5));
+            if (!head) {
+               g.setColor(c(acc));
 
-               for (int var29 = 0; var29 < 3; var29++) {
-                  double var40 = var7 * (0.3 + var29 * 0.22);
-                  var9.fill(new java.awt.geom.Rectangle2D.Double(0.0, var40, var6, var7 * 0.1));
+               for (int i = 0; i < 3; i++) {
+                  double y = h * (0.3 + i * 0.22);
+                  g.fill(new java.awt.geom.Rectangle2D.Double(0.0, y, w, h * 0.1));
                }
 
-               furStrokes(var9, var6, var7, var5, var10 + 2L, 400, 30);
+               furStrokes(g, w, h, acc, seed + 2L, 400, 30);
             } else {
-               patch(var9, var6, var7, 0.0, -0.45, 0.5, 0.3, var4, 180);
+               patch(g, w, h, 0.0, -0.45, 0.5, 0.3, belly, 180);
             }
             break;
          case "dragon":
-            if (var1) {
-               patch(var9, var6, var7, 0.0, -0.5, 0.45, 0.3, var4, 230);
+            if (head) {
+               patch(g, w, h, 0.0, -0.5, 0.45, 0.3, belly, 230);
             } else {
-               patch(var9, var6, var7, 0.0, -0.3, 0.55, 0.65, var4, 255);
-               var9.setStroke(new BasicStroke(2.0F));
-               var9.setColor(ca(14727280, 170));
+               patch(g, w, h, 0.0, -0.3, 0.55, 0.65, belly, 255);
+               g.setStroke(new BasicStroke(2.0F));
+               g.setColor(ca(14727280, 170));
 
-               for (int var28 = 0; var28 < 6; var28++) {
-                  double var39 = sy(var7, -0.8 + var28 * 0.22);
-                  var9.draw(new java.awt.geom.QuadCurve2D.Double(sx(var6, 0.45), var39, sx(var6, 0.0), var39 + 5.0, sx(var6, -0.45), var39));
+               for (int i = 0; i < 6; i++) {
+                  double y = sy(h, -0.8 + i * 0.22);
+                  g.draw(new java.awt.geom.QuadCurve2D.Double(sx(w, 0.45), y, sx(w, 0.0), y + 5.0, sx(w, -0.45), y));
                }
 
-               spots(var9, var6, var7, var5, var10, 20, 4, 8, 120);
+               spots(g, w, h, acc, seed, 20, 4, 8, 120);
             }
             break;
          case "unicorn":
-            spots(var9, var6, var7, 16766706, var10, 20, 3, 5, 160);
-            if (var1) {
-               patch(var9, var6, var7, 0.0, -0.55, 0.4, 0.28, 16769262, 200);
+            spots(g, w, h, 16766706, seed, 20, 3, 5, 160);
+            if (head) {
+               patch(g, w, h, 0.0, -0.55, 0.4, 0.28, 16769262, 200);
             }
             break;
          case "bear":
-            if (var1) {
-               patch(var9, var6, var7, 0.0, -0.45, 0.45, 0.3, var4, 255);
+            if (head) {
+               patch(g, w, h, 0.0, -0.45, 0.45, 0.3, belly, 255);
             } else {
-               patch(var9, var6, var7, 0.0, -0.25, 0.5, 0.55, var4, 255);
-               var9.setColor(ca(16743068, 190));
-               var9.fill(heart(sx(var6, 0.0), sy(var7, -0.15), 22.0));
+               patch(g, w, h, 0.0, -0.25, 0.5, 0.55, belly, 255);
+               g.setColor(ca(16743068, 190));
+               g.fill(heart(sx(w, 0.0), sy(h, -0.15), 22.0));
             }
             break;
          case "turtle":
-            patch(var9, var6, var7, 0.0, -0.5, 0.6, 0.35, var4, 230);
-            spots(var9, var6, var7, var5, var10, 14, 4, 8, 140);
+            patch(g, w, h, 0.0, -0.5, 0.6, 0.35, belly, 230);
+            spots(g, w, h, acc, seed, 14, 4, 8, 140);
             break;
          case "bat":
-            if (var1) {
-               patch(var9, var6, var7, 0.0, -0.1, 0.85, 0.55, var4, 255);
+            if (head) {
+               patch(g, w, h, 0.0, -0.1, 0.85, 0.55, belly, 255);
             }
             break;
          case "fish":
-            patch(var9, var6, var7, 0.0, -0.6, 1.2, 0.5, var4, 230);
-            scales(var9, var6, var7, 16756848);
+            patch(g, w, h, 0.0, -0.6, 1.2, 0.5, belly, 230);
+            scales(g, w, h, 16756848);
             break;
          case "cloud":
          case "ghost":
-            var9.setPaint(new LinearGradientPaint(0.0F, 0.0F, 0.0F, var7, new float[]{0.0F, 0.55F, 1.0F}, new Color[]{c(16777215), c(var3), c(var5)}));
-            var9.fillRect(0, 0, var6, var7);
+            g.setPaint(new LinearGradientPaint(0.0F, 0.0F, 0.0F, h, new float[]{0.0F, 0.55F, 1.0F}, new Color[]{c(16777215), c(base), c(acc)}));
+            g.fillRect(0, 0, w, h);
             break;
          case "slime":
-            spots(var9, var6, var7, light(var3, 0.4F), var10, 10, 3, 6, 120);
+            spots(g, w, h, light(base, 0.4F), seed, 10, 3, 6, 120);
             break;
          case "mush":
-            patch(var9, var6, var7, 0.0, -0.3, 0.6, 0.5, var4, 150);
+            patch(g, w, h, 0.0, -0.3, 0.6, 0.5, belly, 150);
             break;
          case "bunny":
-            if (var1) {
-               patch(var9, var6, var7, 0.0, -0.45, 0.5, 0.32, var4, 255);
-               patch(var9, var6, var7, 0.0, 0.7, 0.14, 0.35, 16777215, 150);
+            if (head) {
+               patch(g, w, h, 0.0, -0.45, 0.5, 0.32, belly, 255);
+               patch(g, w, h, 0.0, 0.7, 0.14, 0.35, 16777215, 150);
             } else {
-               patch(var9, var6, var7, 0.0, -0.35, 0.6, 0.55, var4, 255);
+               patch(g, w, h, 0.0, -0.35, 0.6, 0.55, belly, 255);
             }
             break;
          case "wolf":
-            if (var1) {
-               patch(var9, var6, var7, 0.5, -0.35, 0.5, 0.35, var4, 255);
-               patch(var9, var6, var7, -0.5, -0.35, 0.5, 0.35, var4, 255);
-               patch(var9, var6, var7, 0.0, 0.6, 0.35, 0.3, var5, 150);
+            if (head) {
+               patch(g, w, h, 0.5, -0.35, 0.5, 0.35, belly, 255);
+               patch(g, w, h, -0.5, -0.35, 0.5, 0.35, belly, 255);
+               patch(g, w, h, 0.0, 0.6, 0.35, 0.3, acc, 150);
 
-               for (int var27 = -1; var27 <= 1; var27 += 2) {
-                  patch(var9, var6, var7, var27 * 0.36, 0.34, 0.1, 0.06, var4, 230);
+               for (int sd = -1; sd <= 1; sd += 2) {
+                  patch(g, w, h, sd * 0.36, 0.34, 0.1, 0.06, belly, 230);
                }
             } else {
-               patch(var9, var6, var7, 0.0, -0.45, 0.8, 0.55, var4, 255);
-               patch(var9, var6, var7, Math.PI, 0.75, 1.6, 0.55, var5, 170);
+               patch(g, w, h, 0.0, -0.45, 0.8, 0.55, belly, 255);
+               patch(g, w, h, Math.PI, 0.75, 1.6, 0.55, acc, 170);
             }
             break;
          case "horse":
-            if (var1) {
-               patch(var9, var6, var7, 0.0, 0.1, 0.1, 0.6, var5, 235);
+            if (head) {
+               patch(g, w, h, 0.0, 0.1, 0.1, 0.6, acc, 235);
             } else {
-               patch(var9, var6, var7, 0.0, -0.6, 0.6, 0.35, var4, 140);
+               patch(g, w, h, 0.0, -0.6, 0.6, 0.35, belly, 140);
             }
             break;
          case "fawn":
-            patch(var9, var6, var7, 0.0, -0.45, 0.6, 0.5, var4, 255);
-            if (!var1) {
-               Random var26 = new Random(var10);
+            patch(g, w, h, 0.0, -0.45, 0.6, 0.5, belly, 255);
+            if (!head) {
+               Random r = new Random(seed);
 
-               for (int var38 = 0; var38 < 46; var38++) {
-                  double var44 = var26.nextDouble() * Math.PI * 2.0;
-                  double var47 = 0.1 + var26.nextDouble() * 0.75;
-                  var9.setColor(ca(var5, 235));
-                  double var21 = 5.0 + var26.nextDouble() * 4.0;
-                  var9.fill(el(var44 / (Math.PI * 2) * var6, sy(var7, var47), var21 * 1.3, var21));
+               for (int i = 0; i < 46; i++) {
+                  double az = r.nextDouble() * Math.PI * 2.0;
+                  double el = 0.1 + r.nextDouble() * 0.75;
+                  g.setColor(ca(acc, 235));
+                  double ss = 5.0 + r.nextDouble() * 4.0;
+                  g.fill(el(az / (Math.PI * 2) * w, sy(h, el), ss * 1.3, ss));
                }
             }
             break;
          case "deer":
-            patch(var9, var6, var7, 0.0, -0.45, 0.6, 0.5, var4, 255);
-            if (!var1) {
-               patch(var9, var6, var7, Math.PI, -0.1, 0.45, 0.35, 16777215, 220);
+            patch(g, w, h, 0.0, -0.45, 0.6, 0.5, belly, 255);
+            if (!head) {
+               patch(g, w, h, Math.PI, -0.1, 0.45, 0.35, 16777215, 220);
             }
             break;
          case "lion":
-            patch(var9, var6, var7, 0.0, -0.45, 0.6, 0.5, var4, 255);
+            patch(g, w, h, 0.0, -0.45, 0.6, 0.5, belly, 255);
             break;
          case "tiger":
-            if (!var1) {
-               patch(var9, var6, var7, 0.0, -0.6, 0.7, 0.4, var4, 255);
+            if (!head) {
+               patch(g, w, h, 0.0, -0.6, 0.7, 0.4, belly, 255);
             } else {
-               for (int var24 = -1; var24 <= 1; var24 += 2) {
-                  patch(var9, var6, var7, var24 * 0.5, -0.35, 0.45, 0.35, var4, 255);
+               for (int sd = -1; sd <= 1; sd += 2) {
+                  patch(g, w, h, sd * 0.5, -0.35, 0.45, 0.35, belly, 255);
                }
 
-               for (int var25 = -1; var25 <= 1; var25 += 2) {
-                  patch(var9, var6, var7, var25 * 0.33, 0.36, 0.1, 0.06, var4, 240);
+               for (int sd = -1; sd <= 1; sd += 2) {
+                  patch(g, w, h, sd * 0.33, 0.36, 0.1, 0.06, belly, 240);
                }
             }
 
-            stripes(var9, var6, var7, var5, var10, var1 ? 14 : 22, var1);
+            stripes(g, w, h, acc, seed, head ? 14 : 22, head);
             break;
          case "retr":
-            patch(var9, var6, var7, 0.0, -0.4, 0.6, 0.5, var4, 220);
-            furStrokes(var9, var6, var7, light(var3, 0.25F), var10 + 5L, 500, 60);
+            patch(g, w, h, 0.0, -0.4, 0.6, 0.5, belly, 220);
+            furStrokes(g, w, h, light(base, 0.25F), seed + 5L, 500, 60);
             break;
          case "afox":
-            patch(var9, var6, var7, 0.0, -0.4, 0.6, 0.5, 16777215, 255);
-            furStrokes(var9, var6, var7, var5, var10 + 5L, 400, 45);
+            patch(g, w, h, 0.0, -0.4, 0.6, 0.5, 16777215, 255);
+            furStrokes(g, w, h, acc, seed + 5L, 400, 45);
             break;
          case "eagle":
-            var9.setStroke(new BasicStroke(2.0F, 1, 1));
+            g.setStroke(new BasicStroke(2.0F, 1, 1));
 
-            for (int var23 = 0; var23 < 7; var23++) {
-               for (int var37 = 0; var37 < var6 + 16; var37 += 16) {
-                  double var17 = var37 + var23 % 2 * 8;
-                  double var19 = 10 + var23 * 16;
-                  var9.setColor(ca(light(var3, 0.3F), 140));
-                  var9.draw(new java.awt.geom.Arc2D.Double(var17 - 8.0, var19 - 8.0, 16.0, 16.0, 180.0, 180.0, 0));
+            for (int row = 0; row < 7; row++) {
+               for (int x = 0; x < w + 16; x += 16) {
+                  double xx = x + row % 2 * 8;
+                  double y = 10 + row * 16;
+                  g.setColor(ca(light(base, 0.3F), 140));
+                  g.draw(new java.awt.geom.Arc2D.Double(xx - 8.0, y - 8.0, 16.0, 16.0, 180.0, 180.0, 0));
                }
             }
             break;
          case "eagleh":
-            patch(var9, var6, var7, 0.0, -0.5, 0.5, 0.3, 16777215, 200);
+            patch(g, w, h, 0.0, -0.5, 0.5, 0.3, 16777215, 200);
             break;
          case "drake":
-            if (!var1) {
-               patch(var9, var6, var7, 0.0, -0.55, 0.7, 0.45, var4, 255);
-               var9.setStroke(new BasicStroke(2.0F));
-               var9.setColor(ca(dark(var4, 0.25F), 170));
+            if (!head) {
+               patch(g, w, h, 0.0, -0.55, 0.7, 0.45, belly, 255);
+               g.setStroke(new BasicStroke(2.0F));
+               g.setColor(ca(dark(belly, 0.25F), 170));
 
-               for (int var15 = 0; var15 < 6; var15++) {
-                  double var16 = sy(var7, -0.95 + var15 * 0.13);
-                  var9.draw(new java.awt.geom.Line2D.Double(sx(var6, 0.6), var16, sx(var6, -0.6), var16));
+               for (int i = 0; i < 6; i++) {
+                  double y = sy(h, -0.95 + i * 0.13);
+                  g.draw(new java.awt.geom.Line2D.Double(sx(w, 0.6), y, sx(w, -0.6), y));
                }
             } else {
-               patch(var9, var6, var7, 0.0, -0.55, 0.45, 0.3, var4, 230);
+               patch(g, w, h, 0.0, -0.55, 0.45, 0.3, belly, 230);
             }
 
-            scales(var9, var6, var7, light(var3, 0.25F));
+            scales(g, w, h, light(base, 0.25F));
             break;
          default:
-            if (!var1) {
-               patch(var9, var6, var7, 0.0, -0.35, 0.55, 0.55, var4, 255);
+            if (!head) {
+               patch(g, w, h, 0.0, -0.35, 0.55, 0.55, belly, 255);
             }
       }
 
-      var9.dispose();
-      return var8;
+      g.dispose();
+      return im;
    }
 
-   private static void stripes(Graphics2D var0, int var1, int var2, int var3, long var4, int var6, boolean var7) {
-      Random var8 = new Random(var4);
-      var0.setColor(ca(var3, 235));
+   private static void stripes(Graphics2D g, int w, int h, int col, long seed, int n, boolean head) {
+      Random r = new Random(seed);
+      g.setColor(ca(col, 235));
 
-      for (int var9 = 0; var9 < var6; var9++) {
-         double var10 = -Math.PI + (var9 + var8.nextDouble() * 0.5) * Math.PI * 2.0 / var6;
-         if (!var7 || !(Math.abs(var10) < 0.55)) {
-            double var12 = sx(var1, var10);
-            double var14 = var7 ? sy(var2, 1.3) : sy(var2, 1.5);
-            double var16 = var7 ? sy(var2, 0.35) : sy(var2, -0.35 + var8.nextDouble() * 0.25);
-            double var18 = 3.0 + var8.nextDouble() * 4.0;
-            java.awt.geom.Path2D.Double var20 = new java.awt.geom.Path2D.Double();
-            var20.moveTo(var12 - var18, var14);
-            var20.quadTo(var12 + 6.0, (var14 + var16) / 2.0, var12, var16);
-            var20.quadTo(var12 + 6.0 + var18, (var14 + var16) / 2.0, var12 + var18, var14);
-            var20.closePath();
+      for (int i = 0; i < n; i++) {
+         double az = -Math.PI + (i + r.nextDouble() * 0.5) * Math.PI * 2.0 / n;
+         if (!head || !(Math.abs(az) < 0.55)) {
+            double x = sx(w, az);
+            double top = head ? sy(h, 1.3) : sy(h, 1.5);
+            double bot = head ? sy(h, 0.35) : sy(h, -0.35 + r.nextDouble() * 0.25);
+            double wd = 3.0 + r.nextDouble() * 4.0;
+            java.awt.geom.Path2D.Double p = new java.awt.geom.Path2D.Double();
+            p.moveTo(x - wd, top);
+            p.quadTo(x + 6.0, (top + bot) / 2.0, x, bot);
+            p.quadTo(x + 6.0 + wd, (top + bot) / 2.0, x + wd, top);
+            p.closePath();
 
-            for (int var21 = -1; var21 <= 1; var21++) {
-               AffineTransform var22 = var0.getTransform();
-               var0.translate(var21 * var1, 0);
-               var0.fill(var20);
-               var0.setTransform(var22);
+            for (int k = -1; k <= 1; k++) {
+               AffineTransform o = g.getTransform();
+               g.translate(k * w, 0);
+               g.fill(p);
+               g.setTransform(o);
             }
          }
       }
    }
 
-   static BufferedImage featherWing(int var0, int var1) {
-      BufferedImage var2 = img(128, 64);
-      Graphics2D var3 = gfx(var2);
-      java.awt.geom.Path2D.Double var4 = new java.awt.geom.Path2D.Double();
-      var4.moveTo(0.0, 2.0);
-      var4.curveTo(40.0, -2.0, 90.0, 0.0, 126.0, 10.0);
-      var4.lineTo(120.0, 26.0);
+   static BufferedImage featherWing(int base, int tip) {
+      BufferedImage im = img(128, 64);
+      Graphics2D g = gfx(im);
+      java.awt.geom.Path2D.Double p = new java.awt.geom.Path2D.Double();
+      p.moveTo(0.0, 2.0);
+      p.curveTo(40.0, -2.0, 90.0, 0.0, 126.0, 10.0);
+      p.lineTo(120.0, 26.0);
 
-      for (int var5 = 0; var5 < 6; var5++) {
-         double var6 = 118 - var5 * 14;
-         double var8 = 34 + var5 * 4;
-         var4.lineTo(var6, var8 + 12.0);
-         var4.lineTo(var6 - 7.0, var8 + 4.0);
+      for (int i = 0; i < 6; i++) {
+         double x = 118 - i * 14;
+         double y = 34 + i * 4;
+         p.lineTo(x, y + 12.0);
+         p.lineTo(x - 7.0, y + 4.0);
       }
 
-      var4.quadTo(30.0, 50.0, 0.0, 44.0);
-      var4.closePath();
-      var3.setPaint(new GradientPaint(0.0F, 0.0F, c(light(var0, 0.15F)), 128.0F, 0.0F, c(var1)));
-      var3.fill(var4);
-      var3.setClip(var4);
-      var3.setStroke(new BasicStroke(1.6F));
+      p.quadTo(30.0, 50.0, 0.0, 44.0);
+      p.closePath();
+      g.setPaint(new GradientPaint(0.0F, 0.0F, c(light(base, 0.15F)), 128.0F, 0.0F, c(tip)));
+      g.fill(p);
+      g.setClip(p);
+      g.setStroke(new BasicStroke(1.6F));
 
-      for (int var10 = 0; var10 < 16; var10++) {
-         double var11 = 10 + var10 * 8;
-         var3.setColor(ca(dark(var0, 0.35F), 150));
-         var3.draw(new java.awt.geom.Line2D.Double(var11, 14.0, var11 - 6.0, 62.0));
+      for (int i = 0; i < 16; i++) {
+         double x = 10 + i * 8;
+         g.setColor(ca(dark(base, 0.35F), 150));
+         g.draw(new java.awt.geom.Line2D.Double(x, 14.0, x - 6.0, 62.0));
       }
 
-      var3.setColor(ca(light(var0, 0.2F), 200));
-      var3.fill(new Double(-10.0, -6.0, 90.0, 26.0));
-      var3.setClip(null);
-      var3.setStroke(new BasicStroke(2.0F));
-      var3.setColor(c(dark(var0, 0.4F)));
-      var3.draw(new java.awt.geom.QuadCurve2D.Double(0.0, 2.0, 60.0, -2.0, 126.0, 10.0));
-      var3.dispose();
-      return var2;
+      g.setColor(ca(light(base, 0.2F), 200));
+      g.fill(new Double(-10.0, -6.0, 90.0, 26.0));
+      g.setClip(null);
+      g.setStroke(new BasicStroke(2.0F));
+      g.setColor(c(dark(base, 0.4F)));
+      g.draw(new java.awt.geom.QuadCurve2D.Double(0.0, 2.0, 60.0, -2.0, 126.0, 10.0));
+      g.dispose();
+      return im;
    }
 
-   static BufferedImage drakeWing(int var0, int var1) {
-      BufferedImage var2 = img(128, 96);
-      Graphics2D var3 = gfx(var2);
-      java.awt.geom.Path2D.Double var4 = new java.awt.geom.Path2D.Double();
-      var4.moveTo(0.0, 4.0);
-      var4.curveTo(50.0, -4.0, 100.0, 6.0, 126.0, 20.0);
-      var4.quadTo(108.0, 44.0, 118.0, 80.0);
-      var4.quadTo(92.0, 64.0, 76.0, 86.0);
-      var4.quadTo(58.0, 62.0, 34.0, 90.0);
-      var4.quadTo(18.0, 58.0, 0.0, 56.0);
-      var4.closePath();
-      var3.setPaint(new GradientPaint(0.0F, 0.0F, ca(light(var1, 0.25F), 240), 0.0F, 96.0F, ca(var1, 230)));
-      var3.fill(var4);
-      var3.setStroke(new BasicStroke(4.0F, 1, 1));
-      var3.setColor(c(var0));
-      var3.drawLine(0, 5, 118, 78);
-      var3.drawLine(0, 5, 76, 84);
-      var3.drawLine(0, 5, 34, 88);
-      var3.draw(new java.awt.geom.QuadCurve2D.Double(0.0, 4.0, 60.0, -2.0, 126.0, 20.0));
-      var3.fill(new Double(121.0, 14.0, 8.0, 8.0));
-      var3.dispose();
-      return var2;
+   static BufferedImage drakeWing(int bone, int membrane) {
+      BufferedImage im = img(128, 96);
+      Graphics2D g = gfx(im);
+      java.awt.geom.Path2D.Double p = new java.awt.geom.Path2D.Double();
+      p.moveTo(0.0, 4.0);
+      p.curveTo(50.0, -4.0, 100.0, 6.0, 126.0, 20.0);
+      p.quadTo(108.0, 44.0, 118.0, 80.0);
+      p.quadTo(92.0, 64.0, 76.0, 86.0);
+      p.quadTo(58.0, 62.0, 34.0, 90.0);
+      p.quadTo(18.0, 58.0, 0.0, 56.0);
+      p.closePath();
+      g.setPaint(new GradientPaint(0.0F, 0.0F, ca(light(membrane, 0.25F), 240), 0.0F, 96.0F, ca(membrane, 230)));
+      g.fill(p);
+      g.setStroke(new BasicStroke(4.0F, 1, 1));
+      g.setColor(c(bone));
+      g.drawLine(0, 5, 118, 78);
+      g.drawLine(0, 5, 76, 84);
+      g.drawLine(0, 5, 34, 88);
+      g.draw(new java.awt.geom.QuadCurve2D.Double(0.0, 4.0, 60.0, -2.0, 126.0, 20.0));
+      g.fill(new Double(121.0, 14.0, 8.0, 8.0));
+      g.dispose();
+      return im;
    }
 
-   static BufferedImage tailFan(int var0, int var1) {
-      BufferedImage var2 = img(64, 64);
-      Graphics2D var3 = gfx(var2);
+   static BufferedImage tailFan(int base, int tip) {
+      BufferedImage im = img(64, 64);
+      Graphics2D g = gfx(im);
 
-      for (int var4 = -3; var4 <= 3; var4++) {
-         AffineTransform var5 = var3.getTransform();
-         var3.translate(32, 2);
-         var3.rotate(var4 * 0.16);
-         var3.setPaint(new GradientPaint(0.0F, 0.0F, c(var0), 0.0F, 60.0F, c(var1)));
-         var3.fill(new java.awt.geom.RoundRectangle2D.Double(-6.0, 0.0, 12.0, 60.0, 10.0, 10.0));
-         var3.setColor(ca(dark(var0, 0.3F), 160));
-         var3.drawLine(0, 4, 0, 56);
-         var3.setTransform(var5);
+      for (int i = -3; i <= 3; i++) {
+         AffineTransform o = g.getTransform();
+         g.translate(32, 2);
+         g.rotate(i * 0.16);
+         g.setPaint(new GradientPaint(0.0F, 0.0F, c(base), 0.0F, 60.0F, c(tip)));
+         g.fill(new java.awt.geom.RoundRectangle2D.Double(-6.0, 0.0, 12.0, 60.0, 10.0, 10.0));
+         g.setColor(ca(dark(base, 0.3F), 160));
+         g.drawLine(0, 4, 0, 56);
+         g.setTransform(o);
       }
 
-      var3.dispose();
-      return var2;
+      g.dispose();
+      return im;
    }
 
-   private static void tabby(Graphics2D var0, int var1, int var2, int var3) {
-      var0.setStroke(new BasicStroke(9.0F, 1, 1));
-      var0.setColor(ca(var3, 200));
+   private static void tabby(Graphics2D g, int w, int h, int acc) {
+      g.setStroke(new BasicStroke(9.0F, 1, 1));
+      g.setColor(ca(acc, 200));
 
-      for (int var4 = 0; var4 < 5; var4++) {
-         double var5 = Math.PI + (var4 - 2) * 0.42;
-         double var7 = sx(var1, var5);
-         var0.draw(new java.awt.geom.QuadCurve2D.Double(var7, sy(var2, 1.4), var7 + 8.0, sy(var2, 0.8), var7 - 2.0, sy(var2, 0.15)));
-         var0.draw(new java.awt.geom.QuadCurve2D.Double(var7 + var1, sy(var2, 1.4), var7 + var1 + 8.0, sy(var2, 0.8), var7 + var1 - 2.0, sy(var2, 0.15)));
-         var0.draw(new java.awt.geom.QuadCurve2D.Double(var7 - var1, sy(var2, 1.4), var7 - var1 + 8.0, sy(var2, 0.8), var7 - var1 - 2.0, sy(var2, 0.15)));
+      for (int i = 0; i < 5; i++) {
+         double az = Math.PI + (i - 2) * 0.42;
+         double x = sx(w, az);
+         g.draw(new java.awt.geom.QuadCurve2D.Double(x, sy(h, 1.4), x + 8.0, sy(h, 0.8), x - 2.0, sy(h, 0.15)));
+         g.draw(new java.awt.geom.QuadCurve2D.Double(x + w, sy(h, 1.4), x + w + 8.0, sy(h, 0.8), x + w - 2.0, sy(h, 0.15)));
+         g.draw(new java.awt.geom.QuadCurve2D.Double(x - w, sy(h, 1.4), x - w + 8.0, sy(h, 0.8), x - w - 2.0, sy(h, 0.15)));
       }
    }
 
-   private static void spots(Graphics2D var0, int var1, int var2, int var3, long var4, int var6, int var7, int var8, int var9) {
-      Random var10 = new Random(var4);
+   private static void spots(Graphics2D g, int w, int h, int col, long seed, int n, int min, int max, int alpha) {
+      Random r = new Random(seed);
 
-      for (int var11 = 0; var11 < var6; var11++) {
-         double var12 = var10.nextDouble() * var1;
-         double var14 = 12.0 + var10.nextDouble() * (var2 * 0.6);
-         double var16 = var7 + var10.nextDouble() * (var8 - var7);
-         if (!(Math.abs(var12 - var1 * 0.25) < var1 * 0.12) || !(var14 > var2 * 0.3)) {
-            var0.setColor(ca(var3, var9));
-            var0.fill(el(var12, var14, var16 * 1.4, var16));
+      for (int i = 0; i < n; i++) {
+         double x = r.nextDouble() * w;
+         double y = 12.0 + r.nextDouble() * (h * 0.6);
+         double s = min + r.nextDouble() * (max - min);
+         if (!(Math.abs(x - w * 0.25) < w * 0.12) || !(y > h * 0.3)) {
+            g.setColor(ca(col, alpha));
+            g.fill(el(x, y, s * 1.4, s));
          }
       }
    }
 
-   private static void chevrons(Graphics2D var0, double var1, double var3, int var5) {
-      var0.setStroke(new BasicStroke(2.6F, 1, 1));
-      var0.setColor(ca(var5, 150));
+   private static void chevrons(Graphics2D g, double cx, double cy, int acc) {
+      g.setStroke(new BasicStroke(2.6F, 1, 1));
+      g.setColor(ca(acc, 150));
 
-      for (int var6 = 0; var6 < 4; var6++) {
-         for (int var7 = -2; var7 <= 2; var7++) {
-            double var8 = var1 + var7 * 12 + var6 % 2 * 6;
-            double var10 = var3 - 18.0 + var6 * 11;
-            var0.draw(new java.awt.geom.QuadCurve2D.Double(var8 - 4.0, var10, var8, var10 + 4.0, var8 + 4.0, var10));
+      for (int row = 0; row < 4; row++) {
+         for (int col = -2; col <= 2; col++) {
+            double x = cx + col * 12 + row % 2 * 6;
+            double y = cy - 18.0 + row * 11;
+            g.draw(new java.awt.geom.QuadCurve2D.Double(x - 4.0, y, x, y + 4.0, x + 4.0, y));
          }
       }
    }
 
-   private static void scales(Graphics2D var0, int var1, int var2, int var3) {
-      var0.setStroke(new BasicStroke(2.0F, 1, 1));
-      var0.setColor(ca(var3, 150));
+   private static void scales(Graphics2D g, int w, int h, int col) {
+      g.setStroke(new BasicStroke(2.0F, 1, 1));
+      g.setColor(ca(col, 150));
 
-      for (int var4 = 0; var4 < 6; var4++) {
-         for (int var5 = 0; var5 < var1 + 12; var5 += 12) {
-            double var6 = var5 + var4 % 2 * 6;
-            double var8 = 20 + var4 * 12;
-            var0.draw(new java.awt.geom.Arc2D.Double(var6 - 6.0, var8 - 6.0, 12.0, 12.0, 180.0, 180.0, 0));
+      for (int row = 0; row < 6; row++) {
+         for (int x = 0; x < w + 12; x += 12) {
+            double xx = x + row % 2 * 6;
+            double y = 20 + row * 12;
+            g.draw(new java.awt.geom.Arc2D.Double(xx - 6.0, y - 6.0, 12.0, 12.0, 180.0, 180.0, 0));
          }
       }
    }
 
-   static PetTex.St style(String var0) {
-      int var1 = 0;
-      int var2 = var0.lastIndexOf(46);
-      if (var2 > 0) {
+   static PetTex.St style(String s) {
+      int stage = 0;
+      int dot = s.lastIndexOf(46);
+      if (dot > 0) {
          try {
-            var1 = Integer.parseInt(var0.substring(var2 + 1));
+            stage = Integer.parseInt(s.substring(dot + 1));
          } catch (NumberFormatException var4) {
          }
 
-         var0 = var0.substring(0, var2);
+         s = s.substring(0, dot);
       }
 
-      PetTex.St var3 = style0(var0);
-      if (var1 == 1) {
-         var3.eye *= 0.86F;
-         var3.gap *= 1.03F;
-      } else if (var1 >= 2) {
-         var3.eye *= 0.72F;
-         var3.gap *= 1.08F;
+      PetTex.St t = style0(s);
+      if (stage == 1) {
+         t.eye *= 0.86F;
+         t.gap *= 1.03F;
+      } else if (stage >= 2) {
+         t.eye *= 0.72F;
+         t.gap *= 1.08F;
       }
 
-      return var3;
+      return t;
    }
 
-   private static PetTex.St style0(String var0) {
-      PetTex.St var1 = new PetTex.St();
-      switch (var0) {
+   private static PetTex.St style0(String s) {
+      PetTex.St t = new PetTex.St();
+      switch (s) {
          case "cat":
-            var1.iris = 4173418;
-            var1.mouth = 1;
-            var1.whiskers = true;
+            t.iris = 4173418;
+            t.mouth = 1;
+            t.whiskers = true;
             break;
          case "dog":
-            var1.iris = 6961694;
-            var1.mouth = 1;
+            t.iris = 6961694;
+            t.mouth = 1;
             break;
          case "beak":
-            var1.iris = 3811904;
-            var1.mouth = 2;
+            t.iris = 3811904;
+            t.mouth = 2;
             break;
          case "owl":
-            var1.iris = 14719514;
-            var1.mouth = 2;
-            var1.eye = 1.15F;
-            var1.gap = 1.05F;
+            t.iris = 14719514;
+            t.mouth = 2;
+            t.eye = 1.15F;
+            t.gap = 1.05F;
             break;
          case "gem":
-            var1.iris = 10509552;
-            var1.lashes = true;
+            t.iris = 10509552;
+            t.lashes = true;
             break;
          case "amber":
-            var1.iris = 14716958;
+            t.iris = 14716958;
             break;
          case "blue":
-            var1.iris = 4097766;
+            t.iris = 4097766;
             break;
          case "rim":
-            var1.iris = 4864624;
-            var1.rim = true;
+            t.iris = 4864624;
+            t.rim = true;
             break;
          case "led":
-            var1.iris = 7336959;
-            var1.led = true;
-            var1.line = 7336959;
-            var1.blush = 16740296;
+            t.iris = 7336959;
+            t.led = true;
+            t.line = 7336959;
+            t.blush = 16740296;
             break;
          case "blob":
-            var1.iris = 3814224;
-            var1.eye = 0.92F;
-            var1.gap = 0.92F;
+            t.iris = 3814224;
+            t.eye = 0.92F;
+            t.gap = 0.92F;
             break;
          case "pink":
-            var1.iris = 14700682;
-            var1.lashes = true;
+            t.iris = 14700682;
+            t.lashes = true;
             break;
          case "wolf":
-            var1.iris = 14262814;
-            var1.mouth = 1;
-            var1.eye = 0.92F;
-            var1.gap = 1.05F;
+            t.iris = 14262814;
+            t.mouth = 1;
+            t.eye = 0.92F;
+            t.gap = 1.05F;
             break;
          case "horse":
-            var1.iris = 4860956;
-            var1.lashes = true;
-            var1.eye = 0.9F;
-            var1.gap = 1.3F;
+            t.iris = 4860956;
+            t.lashes = true;
+            t.eye = 0.9F;
+            t.gap = 1.3F;
             break;
          case "deer":
-            var1.iris = 3021844;
-            var1.lashes = true;
-            var1.eye = 1.0F;
-            var1.gap = 1.22F;
+            t.iris = 3021844;
+            t.lashes = true;
+            t.eye = 1.0F;
+            t.gap = 1.22F;
             break;
          case "lion":
-            var1.iris = 13666842;
-            var1.mouth = 1;
-            var1.eye = 0.9F;
+            t.iris = 13666842;
+            t.mouth = 1;
+            t.eye = 0.9F;
             break;
          case "tiger":
-            var1.iris = 15249950;
-            var1.mouth = 1;
-            var1.eye = 0.9F;
+            t.iris = 15249950;
+            t.mouth = 1;
+            t.eye = 0.9F;
             break;
          case "retr":
-            var1.iris = 5911578;
-            var1.mouth = 1;
-            var1.eye = 0.95F;
+            t.iris = 5911578;
+            t.mouth = 1;
+            t.eye = 0.95F;
             break;
          case "afox":
-            var1.iris = 13144106;
-            var1.mouth = 1;
-            var1.eye = 0.95F;
+            t.iris = 13144106;
+            t.mouth = 1;
+            t.eye = 0.95F;
             break;
          case "eagle":
-            var1.iris = 15777824;
-            var1.mouth = 2;
-            var1.eye = 0.85F;
-            var1.gap = 1.1F;
+            t.iris = 15777824;
+            t.mouth = 2;
+            t.eye = 0.85F;
+            t.gap = 1.1F;
             break;
          case "drake":
-            var1.iris = 15769632;
-            var1.eye = 0.9F;
+            t.iris = 15769632;
+            t.eye = 0.9F;
       }
 
-      return var1;
+      return t;
    }
 
-   static BufferedImage eyes(PetTex.St var0, String var1, boolean var2) {
-      BufferedImage var3 = img(256, 192);
-      Graphics2D var4 = gfx(var3);
-      double var5 = 48.0 * var0.eye;
-      double var7 = 60.0 * var0.eye;
-      double var9 = 50.0 * var0.gap;
+   static BufferedImage eyes(PetTex.St s, String emo, boolean closed) {
+      BufferedImage im = img(256, 192);
+      Graphics2D g = gfx(im);
+      double ew = 48.0 * s.eye;
+      double eh = 60.0 * s.eye;
+      double ex = 50.0 * s.gap;
 
-      for (int var11 = -1; var11 <= 1; var11 += 2) {
-         double var12 = 128.0 + var11 * var9;
-         double var14 = 84.0;
-         boolean var16 = true;
-         if (var2) {
-            closedEye(var4, var0, var1, var12, var14, var5, var7, var11);
+      for (int side = -1; side <= 1; side += 2) {
+         double cx = 128.0 + side * ex;
+         double cy = 84.0;
+         boolean inner = true;
+         if (closed) {
+            closedEye(g, s, emo, cx, cy, ew, eh, side);
          } else {
-            switch (var1) {
+            switch (emo) {
                case "love":
-                  heartEye(var4, var0, var12, var14 + 2.0, var5 * 1.2);
+                  heartEye(g, s, cx, cy + 2.0, ew * 1.2);
                   break;
                case "excited":
-                  starEye(var4, var0, var12, var14 + 2.0, var5 * 0.78);
+                  starEye(g, s, cx, cy + 2.0, ew * 0.78);
                   break;
                case "dizzy":
-                  spiralEye(var4, var0, var12, var14 + 2.0, var5 * 0.55);
+                  spiralEye(g, s, cx, cy + 2.0, ew * 0.55);
                   break;
                case "sleepy":
-                  java.awt.geom.Rectangle2D.Double var25 = new java.awt.geom.Rectangle2D.Double(var12 - var5, var14 - var7 * 0.02, var5 * 2.0, var7);
-                  var4.setClip(var25);
-                  openEye(var4, var0, var12, var14 + 4.0, var5, var7 * 0.95, false, 0);
-                  var4.setClip(null);
-                  lid(var4, var0, var12 - var5 * 0.56, var14 - var7 * 0.02, var12 + var5 * 0.56, var14 - var7 * 0.02);
+                  Shape clip = new java.awt.geom.Rectangle2D.Double(cx - ew, cy - eh * 0.02, ew * 2.0, eh);
+                  g.setClip(clip);
+                  openEye(g, s, cx, cy + 4.0, ew, eh * 0.95, false, 0);
+                  g.setClip(null);
+                  lid(g, s, cx - ew * 0.56, cy - eh * 0.02, cx + ew * 0.56, cy - eh * 0.02);
                   break;
                case "angry":
-                  double var24 = var12 - var11 * var5 * 0.6;
-                  double var21 = var12 + var11 * var5 * 0.6;
-                  java.awt.geom.Path2D.Double var23 = new java.awt.geom.Path2D.Double();
-                  var23.moveTo(var24, var14 + var7 * 0.02);
-                  var23.lineTo(var21, var14 - var7 * 0.34);
-                  var23.lineTo(var21, var14 + var7);
-                  var23.lineTo(var24, var14 + var7);
-                  var23.closePath();
-                  var4.setClip(var23);
-                  openEye(var4, var0, var12, var14 + 4.0, var5 * 0.95, var7 * 0.9, false, 0);
-                  var4.setClip(null);
-                  lid(var4, var0, var24, var14 + var7 * 0.02, var21, var14 - var7 * 0.34);
+                  double ix = cx - side * ew * 0.6;
+                  double ox = cx + side * ew * 0.6;
+                  java.awt.geom.Path2D.Double cut = new java.awt.geom.Path2D.Double();
+                  cut.moveTo(ix, cy + eh * 0.02);
+                  cut.lineTo(ox, cy - eh * 0.34);
+                  cut.lineTo(ox, cy + eh);
+                  cut.lineTo(ix, cy + eh);
+                  cut.closePath();
+                  g.setClip(cut);
+                  openEye(g, s, cx, cy + 4.0, ew * 0.95, eh * 0.9, false, 0);
+                  g.setClip(null);
+                  lid(g, s, ix, cy + eh * 0.02, ox, cy - eh * 0.34);
                   break;
                case "sad":
-                  openEye(var4, var0, var12, var14 + 3.0, var5 * 1.04, var7 * 1.02, true, 1);
+                  openEye(g, s, cx, cy + 3.0, ew * 1.04, eh * 1.02, true, 1);
                   break;
                case "curious":
-                  float var19 = var11 < 0 ? 1.1F : 0.9F;
-                  openEye(var4, var0, var12, var14 + (var11 < 0 ? -2 : 3), var5 * var19, var7 * var19, false, 0);
+                  float k = side < 0 ? 1.1F : 0.9F;
+                  openEye(g, s, cx, cy + (side < 0 ? -2 : 3), ew * k, eh * k, false, 0);
                   break;
                default:
-                  openEye(var4, var0, var12, var14, var5, var7, true, 2);
+                  openEye(g, s, cx, cy, ew, eh, true, 2);
             }
          }
       }
 
-      var4.dispose();
-      return var3;
+      g.dispose();
+      return im;
    }
 
-   private static void lid(Graphics2D var0, PetTex.St var1, double var2, double var4, double var6, double var8) {
-      var0.setStroke(new BasicStroke(6.5F, 1, 1));
-      var0.setColor(var1.led ? c(var1.iris) : c(2364440));
-      var0.draw(new java.awt.geom.Line2D.Double(var2, var4, var6, var8));
+   private static void lid(Graphics2D g, PetTex.St s, double x0, double y0, double x1, double y1) {
+      g.setStroke(new BasicStroke(6.5F, 1, 1));
+      g.setColor(s.led ? c(s.iris) : c(2364440));
+      g.draw(new java.awt.geom.Line2D.Double(x0, y0, x1, y1));
    }
 
-   private static void openEye(Graphics2D var0, PetTex.St var1, double var2, double var4, double var6, double var8, boolean var10, int var11) {
-      if (var1.led) {
-         soft(var0, var2, var4, var6 * 1.6, var8 * 1.5, var1.iris, 110);
-         var0.setColor(c(light(var1.iris, 0.3F)));
-         var0.fill(new java.awt.geom.RoundRectangle2D.Double(var2 - var6 * 0.4, var4 - var8 * 0.45, var6 * 0.8, var8 * 0.9, var6 * 0.7, var6 * 0.7));
-         var0.setColor(ca(16777215, 200));
-         var0.fill(el(var2 - var6 * 0.12, var4 - var8 * 0.2, var6 * 0.2, var8 * 0.2));
+   private static void openEye(Graphics2D g, PetTex.St s, double cx, double cy, double w, double h, boolean big, int mode) {
+      if (s.led) {
+         soft(g, cx, cy, w * 1.6, h * 1.5, s.iris, 110);
+         g.setColor(c(light(s.iris, 0.3F)));
+         g.fill(new java.awt.geom.RoundRectangle2D.Double(cx - w * 0.4, cy - h * 0.45, w * 0.8, h * 0.9, w * 0.7, w * 0.7));
+         g.setColor(ca(16777215, 200));
+         g.fill(el(cx - w * 0.12, cy - h * 0.2, w * 0.2, h * 0.2));
       } else {
-         if (var1.rim) {
-            var0.setColor(c(16777215));
-            var0.fill(el(var2, var4, var6 + 9.0, var8 + 9.0));
+         if (s.rim) {
+            g.setColor(c(16777215));
+            g.fill(el(cx, cy, w + 9.0, h + 9.0));
          }
 
-         Ellipse2D var12 = el(var2, var4, var6, var8);
-         var0.setPaint(
+         Ellipse2D e = el(cx, cy, w, h);
+         g.setPaint(
             new LinearGradientPaint(
-               (float)var2,
-               (float)(var4 - var8 / 2.0),
-               (float)var2,
-               (float)(var4 + var8 / 2.0),
+               (float)cx,
+               (float)(cy - h / 2.0),
+               (float)cx,
+               (float)(cy + h / 2.0),
                new float[]{0.0F, 0.45F, 1.0F},
-               new Color[]{c(1773600), c(mix(1773600, var1.iris, 0.35F)), c(light(var1.iris, 0.25F))}
+               new Color[]{c(1773600), c(mix(1773600, s.iris, 0.35F)), c(light(s.iris, 0.25F))}
             )
          );
-         var0.fill(var12);
-         var0.setColor(ca(787984, 170));
-         var0.fill(el(var2, var4 - var8 * 0.05, var6 * 0.5, var8 * 0.55));
-         var0.setClip(var12);
-         soft(var0, var2, var4 + var8 * 0.42, var6 * 0.9, var8 * 0.45, light(var1.iris, 0.55F), 160);
-         var0.setClip(null);
-         var0.setStroke(new BasicStroke(3.0F));
-         var0.setColor(c(1773600));
-         var0.draw(var12);
-         var0.setColor(c(16777215));
-         var0.fill(el(var2 - var6 * 0.17, var4 - var8 * 0.2, var6 * 0.46, var8 * 0.38));
-         var0.fill(el(var2 + var6 * 0.2, var4 + var8 * 0.2, var6 * 0.18, var6 * 0.18));
-         if (var11 == 1) {
-            var0.setClip(var12);
-            var0.setColor(ca(10477823, 150));
-            var0.fill(el(var2, var4 + var8 * 0.5, var6 * 1.1, var8 * 0.45));
-            var0.setClip(null);
-            var0.setColor(ca(16777215, 230));
-            var0.fill(el(var2 + var6 * 0.02, var4 + var8 * 0.02, var6 * 0.14, var6 * 0.14));
-            var0.setStroke(new BasicStroke(2.5F, 1, 1));
-            var0.setColor(ca(16777215, 200));
-            var0.draw(new java.awt.geom.Arc2D.Double(var2 - var6 * 0.36, var4 - var8 * 0.2, var6 * 0.72, var8 * 0.7, 200.0, 60.0, 0));
-         } else if (var11 == 2) {
-            var0.setColor(c(16777215));
-            var0.fill(starShape(var2 + var6 * 0.18, var4 - var8 * 0.28, var6 * 0.13, var6 * 0.04, 4, 0.0));
+         g.fill(e);
+         g.setColor(ca(787984, 170));
+         g.fill(el(cx, cy - h * 0.05, w * 0.5, h * 0.55));
+         g.setClip(e);
+         soft(g, cx, cy + h * 0.42, w * 0.9, h * 0.45, light(s.iris, 0.55F), 160);
+         g.setClip(null);
+         g.setStroke(new BasicStroke(3.0F));
+         g.setColor(c(1773600));
+         g.draw(e);
+         g.setColor(c(16777215));
+         g.fill(el(cx - w * 0.17, cy - h * 0.2, w * 0.46, h * 0.38));
+         g.fill(el(cx + w * 0.2, cy + h * 0.2, w * 0.18, w * 0.18));
+         if (mode == 1) {
+            g.setClip(e);
+            g.setColor(ca(10477823, 150));
+            g.fill(el(cx, cy + h * 0.5, w * 1.1, h * 0.45));
+            g.setClip(null);
+            g.setColor(ca(16777215, 230));
+            g.fill(el(cx + w * 0.02, cy + h * 0.02, w * 0.14, w * 0.14));
+            g.setStroke(new BasicStroke(2.5F, 1, 1));
+            g.setColor(ca(16777215, 200));
+            g.draw(new java.awt.geom.Arc2D.Double(cx - w * 0.36, cy - h * 0.2, w * 0.72, h * 0.7, 200.0, 60.0, 0));
+         } else if (mode == 2) {
+            g.setColor(c(16777215));
+            g.fill(starShape(cx + w * 0.18, cy - h * 0.28, w * 0.13, w * 0.04, 4, 0.0));
          }
 
-         if (var1.lashes) {
-            var0.setStroke(new BasicStroke(3.5F, 1, 1));
-            var0.setColor(c(1773600));
-            double var13 = var2 < 128.0 ? -1.0 : 1.0;
+         if (s.lashes) {
+            g.setStroke(new BasicStroke(3.5F, 1, 1));
+            g.setColor(c(1773600));
+            double sd = cx < 128.0 ? -1.0 : 1.0;
 
-            for (int var15 = 0; var15 < 2; var15++) {
-               double var16 = Math.toRadians(var13 < 0.0 ? 150 + var15 * 18 : 30 - var15 * 18);
-               double var18 = var2 + Math.cos(var16) * var6 * 0.5;
-               double var20 = var4 - Math.sin(var16) * var8 * 0.5;
-               var0.draw(new java.awt.geom.Line2D.Double(var18, var20, var18 + Math.cos(var16) * 9.0, var20 - Math.sin(var16) * 9.0));
+            for (int i = 0; i < 2; i++) {
+               double a = Math.toRadians(sd < 0.0 ? 150 + i * 18 : 30 - i * 18);
+               double x0 = cx + Math.cos(a) * w * 0.5;
+               double y0 = cy - Math.sin(a) * h * 0.5;
+               g.draw(new java.awt.geom.Line2D.Double(x0, y0, x0 + Math.cos(a) * 9.0, y0 - Math.sin(a) * 9.0));
             }
          }
       }
    }
 
-   private static void closedEye(Graphics2D var0, PetTex.St var1, String var2, double var3, double var5, double var7, double var9, int var11) {
-      Color var12 = var1.led ? c(light(var1.iris, 0.3F)) : c(2364440);
-      if (var1.led) {
-         soft(var0, var3, var5 + 6.0, var7 * 1.4, var9 * 0.8, var1.iris, 90);
+   private static void closedEye(Graphics2D g, PetTex.St s, String emo, double cx, double cy, double w, double h, int side) {
+      Color col = s.led ? c(light(s.iris, 0.3F)) : c(2364440);
+      if (s.led) {
+         soft(g, cx, cy + 6.0, w * 1.4, h * 0.8, s.iris, 90);
       }
 
-      if (var1.rim) {
-         var0.setColor(ca(16777215, 230));
-         var0.fill(el(var3, var5 + 8.0, var7 * 0.9, var9 * 0.45));
+      if (s.rim) {
+         g.setColor(ca(16777215, 230));
+         g.fill(el(cx, cy + 8.0, w * 0.9, h * 0.45));
       }
 
-      var0.setStroke(new BasicStroke(7.0F, 1, 1));
-      var0.setColor(var12);
-      switch (var2) {
+      g.setStroke(new BasicStroke(7.0F, 1, 1));
+      g.setColor(col);
+      switch (emo) {
          case "happy":
          case "love":
-            var0.draw(new java.awt.geom.Arc2D.Double(var3 - var7 * 0.42, var5 - var9 * 0.05, var7 * 0.84, var9 * 0.6, 20.0, 140.0, 0));
+            g.draw(new java.awt.geom.Arc2D.Double(cx - w * 0.42, cy - h * 0.05, w * 0.84, h * 0.6, 20.0, 140.0, 0));
             break;
          case "excited":
-            java.awt.geom.Path2D.Double var19 = new java.awt.geom.Path2D.Double();
-            double var16 = -var11;
-            var19.moveTo(var3 - var16 * var7 * 0.3, var5 - var9 * 0.18);
-            var19.lineTo(var3 + var16 * var7 * 0.3, var5 + var9 * 0.04);
-            var19.lineTo(var3 - var16 * var7 * 0.3, var5 + var9 * 0.26);
-            var0.draw(var19);
+            java.awt.geom.Path2D.Double p = new java.awt.geom.Path2D.Double();
+            double d = -side;
+            p.moveTo(cx - d * w * 0.3, cy - h * 0.18);
+            p.lineTo(cx + d * w * 0.3, cy + h * 0.04);
+            p.lineTo(cx - d * w * 0.3, cy + h * 0.26);
+            g.draw(p);
             break;
          case "dizzy":
-            var0.setStroke(new BasicStroke(6.0F, 1, 1));
-            double var18 = var7 * 0.28;
-            var0.draw(new java.awt.geom.Line2D.Double(var3 - var18, var5 - var18 + 6.0, var3 + var18, var5 + var18 + 6.0));
-            var0.draw(new java.awt.geom.Line2D.Double(var3 - var18, var5 + var18 + 6.0, var3 + var18, var5 - var18 + 6.0));
+            g.setStroke(new BasicStroke(6.0F, 1, 1));
+            double r = w * 0.28;
+            g.draw(new java.awt.geom.Line2D.Double(cx - r, cy - r + 6.0, cx + r, cy + r + 6.0));
+            g.draw(new java.awt.geom.Line2D.Double(cx - r, cy + r + 6.0, cx + r, cy - r + 6.0));
             break;
          case "angry":
-            var0.draw(new java.awt.geom.Line2D.Double(var3 - var11 * var7 * 0.4, var5 + var9 * 0.06, var3 + var11 * var7 * 0.4, var5 - var9 * 0.08));
+            g.draw(new java.awt.geom.Line2D.Double(cx - side * w * 0.4, cy + h * 0.06, cx + side * w * 0.4, cy - h * 0.08));
             break;
          default:
-            var0.draw(new java.awt.geom.Arc2D.Double(var3 - var7 * 0.42, var5 - var9 * 0.2, var7 * 0.84, var9 * 0.5, 200.0, 140.0, 0));
-            var0.setStroke(new BasicStroke(3.5F, 1, 1));
-            double var15 = var3 + var11 * var7 * 0.4;
-            var0.draw(new java.awt.geom.Line2D.Double(var15, var5 + var9 * 0.02, var15 + var11 * 7, var5 + var9 * 0.08));
+            g.draw(new java.awt.geom.Arc2D.Double(cx - w * 0.42, cy - h * 0.2, w * 0.84, h * 0.5, 200.0, 140.0, 0));
+            g.setStroke(new BasicStroke(3.5F, 1, 1));
+            double ox = cx + side * w * 0.4;
+            g.draw(new java.awt.geom.Line2D.Double(ox, cy + h * 0.02, ox + side * 7, cy + h * 0.08));
       }
    }
 
-   private static void heartEye(Graphics2D var0, PetTex.St var1, double var2, double var4, double var6) {
-      if (var1.led) {
-         soft(var0, var2, var4, var6 * 1.3, var6 * 1.2, 16740296, 110);
+   private static void heartEye(Graphics2D g, PetTex.St s, double cx, double cy, double sz) {
+      if (s.led) {
+         soft(g, cx, cy, sz * 1.3, sz * 1.2, 16740296, 110);
       }
 
-      if (var1.rim) {
-         var0.setColor(c(16777215));
-         var0.fill(el(var2, var4, var6 * 0.95, var6 * 0.9));
+      if (s.rim) {
+         g.setColor(c(16777215));
+         g.fill(el(cx, cy, sz * 0.95, sz * 0.9));
       }
 
-      Shape var8 = heart(var2, var4, var6);
-      var0.setPaint(new GradientPaint(0.0F, (float)(var4 - var6 * 0.4), c(16744366), 0.0F, (float)(var4 + var6 * 0.4), c(15212636)));
-      var0.fill(var8);
-      var0.setStroke(new BasicStroke(3.0F, 1, 1));
-      var0.setColor(c(11014206));
-      if (!var1.led) {
-         var0.draw(var8);
+      Shape h = heart(cx, cy, sz);
+      g.setPaint(new GradientPaint(0.0F, (float)(cy - sz * 0.4), c(16744366), 0.0F, (float)(cy + sz * 0.4), c(15212636)));
+      g.fill(h);
+      g.setStroke(new BasicStroke(3.0F, 1, 1));
+      g.setColor(c(11014206));
+      if (!s.led) {
+         g.draw(h);
       }
 
-      var0.setColor(c(16777215));
-      var0.fill(el(var2 - var6 * 0.2, var4 - var6 * 0.17, var6 * 0.2, var6 * 0.14));
-      var0.fill(el(var2 + var6 * 0.12, var4 + var6 * 0.08, var6 * 0.08, var6 * 0.08));
+      g.setColor(c(16777215));
+      g.fill(el(cx - sz * 0.2, cy - sz * 0.17, sz * 0.2, sz * 0.14));
+      g.fill(el(cx + sz * 0.12, cy + sz * 0.08, sz * 0.08, sz * 0.08));
    }
 
-   private static void starEye(Graphics2D var0, PetTex.St var1, double var2, double var4, double var6) {
-      if (var1.led) {
-         soft(var0, var2, var4, var6 * 2.6, var6 * 2.6, 16769658, 110);
+   private static void starEye(Graphics2D g, PetTex.St s, double cx, double cy, double r) {
+      if (s.led) {
+         soft(g, cx, cy, r * 2.6, r * 2.6, 16769658, 110);
       }
 
-      if (var1.rim) {
-         var0.setColor(c(16777215));
-         var0.fill(el(var2, var4, var6 * 2.1, var6 * 2.1));
+      if (s.rim) {
+         g.setColor(c(16777215));
+         g.fill(el(cx, cy, r * 2.1, r * 2.1));
       }
 
-      Shape var8 = starShape(var2, var4 + 2.0, var6, var6 * 0.5, 5, 0.0);
-      var0.setPaint(new GradientPaint(0.0F, (float)(var4 - var6), c(16774048), 0.0F, (float)(var4 + var6), c(16755228)));
-      var0.fill(var8);
-      var0.setStroke(new BasicStroke(4.0F, 1, 1));
-      var0.setColor(c(14250778));
-      var0.draw(var8);
-      var0.setColor(c(16777215));
-      var0.fill(el(var2 - var6 * 0.25, var4 - var6 * 0.2, var6 * 0.32, var6 * 0.24));
+      Shape st = starShape(cx, cy + 2.0, r, r * 0.5, 5, 0.0);
+      g.setPaint(new GradientPaint(0.0F, (float)(cy - r), c(16774048), 0.0F, (float)(cy + r), c(16755228)));
+      g.fill(st);
+      g.setStroke(new BasicStroke(4.0F, 1, 1));
+      g.setColor(c(14250778));
+      g.draw(st);
+      g.setColor(c(16777215));
+      g.fill(el(cx - r * 0.25, cy - r * 0.2, r * 0.32, r * 0.24));
    }
 
-   private static void spiralEye(Graphics2D var0, PetTex.St var1, double var2, double var4, double var6) {
-      if (!var1.led) {
-         var0.setColor(ca(16777215, 240));
-         var0.fill(el(var2, var4, var6 * 2.2, var6 * 2.2));
-         var0.setStroke(new BasicStroke(2.5F));
-         var0.setColor(c(2364440));
-         var0.draw(el(var2, var4, var6 * 2.2, var6 * 2.2));
+   private static void spiralEye(Graphics2D g, PetTex.St s, double cx, double cy, double r) {
+      if (!s.led) {
+         g.setColor(ca(16777215, 240));
+         g.fill(el(cx, cy, r * 2.2, r * 2.2));
+         g.setStroke(new BasicStroke(2.5F));
+         g.setColor(c(2364440));
+         g.draw(el(cx, cy, r * 2.2, r * 2.2));
       } else {
-         soft(var0, var2, var4, var6 * 2.8, var6 * 2.8, var1.iris, 100);
+         soft(g, cx, cy, r * 2.8, r * 2.8, s.iris, 100);
       }
 
-      java.awt.geom.Path2D.Double var8 = new java.awt.geom.Path2D.Double();
+      java.awt.geom.Path2D.Double p = new java.awt.geom.Path2D.Double();
 
-      for (int var9 = 0; var9 <= 80; var9++) {
-         double var10 = var9 / 80.0;
-         double var12 = var10 * Math.PI * 5.2;
-         double var14 = var6 * 0.95 * var10;
-         double var16 = var2 + Math.cos(var12) * var14;
-         double var18 = var4 + Math.sin(var12) * var14;
-         if (var9 == 0) {
-            var8.moveTo(var16, var18);
+      for (int i = 0; i <= 80; i++) {
+         double t = i / 80.0;
+         double a = t * Math.PI * 5.2;
+         double rr = r * 0.95 * t;
+         double x = cx + Math.cos(a) * rr;
+         double y = cy + Math.sin(a) * rr;
+         if (i == 0) {
+            p.moveTo(x, y);
          } else {
-            var8.lineTo(var16, var18);
+            p.lineTo(x, y);
          }
       }
 
-      var0.setStroke(new BasicStroke(4.5F, 1, 1));
-      var0.setColor(var1.led ? c(light(var1.iris, 0.3F)) : c(3810384));
-      var0.draw(var8);
+      g.setStroke(new BasicStroke(4.5F, 1, 1));
+      g.setColor(s.led ? c(light(s.iris, 0.3F)) : c(3810384));
+      g.draw(p);
    }
 
-   static BufferedImage face(PetTex.St var0, String var1) {
-      BufferedImage var2 = img(256, 192);
-      Graphics2D var3 = gfx(var2);
-      double var4 = 50.0 * var0.gap;
-      double var6 = 48.0 * var0.eye;
-      double var8 = 60.0 * var0.eye;
-      Color var10 = c(var0.line);
-      int var11 = var0.blush;
-      int var12 = "love".equals(var1) ? 210 : ("angry".equals(var1) ? 150 : ("sad".equals(var1) ? 90 : ("excited".equals(var1) ? 180 : 140)));
-      if ("angry".equals(var1)) {
-         var11 = 16734826;
+   static BufferedImage face(PetTex.St s, String emo) {
+      BufferedImage im = img(256, 192);
+      Graphics2D g = gfx(im);
+      double ex = 50.0 * s.gap;
+      double ew = 48.0 * s.eye;
+      double eh = 60.0 * s.eye;
+      Color line = c(s.line);
+      int bl = s.blush;
+      int ba = "love".equals(emo) ? 210 : ("angry".equals(emo) ? 150 : ("sad".equals(emo) ? 90 : ("excited".equals(emo) ? 180 : 140)));
+      if ("angry".equals(emo)) {
+         bl = 16734826;
       }
 
-      for (int var13 = -1; var13 <= 1; var13 += 2) {
-         double var14 = 128.0 + var13 * (var4 + var6 * 0.62);
-         double var16 = 84.0 + var8 * 0.62;
-         soft(var3, var14, var16, 50.0, 30.0, var11, var12);
-         if ("love".equals(var1) || "excited".equals(var1) || "happy".equals(var1)) {
-            var3.setStroke(new BasicStroke(2.6F, 1, 1));
-            var3.setColor(ca(16777215, 150));
+      for (int side = -1; side <= 1; side += 2) {
+         double bx = 128.0 + side * (ex + ew * 0.62);
+         double by = 84.0 + eh * 0.62;
+         soft(g, bx, by, 50.0, 30.0, bl, ba);
+         if ("love".equals(emo) || "excited".equals(emo) || "happy".equals(emo)) {
+            g.setStroke(new BasicStroke(2.6F, 1, 1));
+            g.setColor(ca(16777215, 150));
 
-            for (int var18 = -1; var18 <= 1; var18++) {
-               var3.draw(new java.awt.geom.Line2D.Double(var14 + var18 * 8 - 3.0, var16 + 5.0, var14 + var18 * 8 + 3.0, var16 - 5.0));
+            for (int i = -1; i <= 1; i++) {
+               g.draw(new java.awt.geom.Line2D.Double(bx + i * 8 - 3.0, by + 5.0, bx + i * 8 + 3.0, by - 5.0));
             }
          }
       }
 
-      if (var0.whiskers) {
-         var3.setStroke(new BasicStroke(2.2F, 1, 1));
-         var3.setColor(ca(5913130, 150));
+      if (s.whiskers) {
+         g.setStroke(new BasicStroke(2.2F, 1, 1));
+         g.setColor(ca(5913130, 150));
 
-         for (int var27 = -1; var27 <= 1; var27 += 2) {
-            for (int var29 = 0; var29 < 2; var29++) {
-               double var15 = 128.0 + var27 * (var4 + var6 * 0.95);
-               double var17 = 84.0 + var8 * 0.66 + var29 * 9;
-               var3.draw(
-                  new java.awt.geom.QuadCurve2D.Double(var15, var17, var15 + var27 * 12, var17 - 2.0 + var29 * 3, var15 + var27 * 24, var17 + var29 * 6 - 2.0)
-               );
+         for (int sidex = -1; sidex <= 1; sidex += 2) {
+            for (int i = 0; i < 2; i++) {
+               double x0 = 128.0 + sidex * (ex + ew * 0.95);
+               double y0 = 84.0 + eh * 0.66 + i * 9;
+               g.draw(new java.awt.geom.QuadCurve2D.Double(x0, y0, x0 + sidex * 12, y0 - 2.0 + i * 3, x0 + sidex * 24, y0 + i * 6 - 2.0));
             }
          }
       }
 
-      var3.setStroke(new BasicStroke(6.0F, 1, 1));
-      var3.setColor(var0.led ? c(var0.iris) : ca(var0.line, 235));
-      double var28 = 84.0 - var8 * 0.62;
-      switch (var1) {
+      g.setStroke(new BasicStroke(6.0F, 1, 1));
+      g.setColor(s.led ? c(s.iris) : ca(s.line, 235));
+      double byy = 84.0 - eh * 0.62;
+      switch (emo) {
          case "angry":
-            for (int var34 = -1; var34 <= 1; var34 += 2) {
-               double var37 = 128.0 + var34 * var4;
-               var3.draw(new java.awt.geom.Line2D.Double(var37 - var34 * var6 * 0.55, var28 + 12.0, var37 + var34 * var6 * 0.4, var28 - 6.0));
+            for (int sidex = -1; sidex <= 1; sidex += 2) {
+               double cxx = 128.0 + sidex * ex;
+               g.draw(new java.awt.geom.Line2D.Double(cxx - sidex * ew * 0.55, byy + 12.0, cxx + sidex * ew * 0.4, byy - 6.0));
             }
             break;
          case "sad":
-            for (int var33 = -1; var33 <= 1; var33 += 2) {
-               double var36 = 128.0 + var33 * var4;
-               var3.draw(
-                  new java.awt.geom.QuadCurve2D.Double(var36 - var33 * var6 * 0.45, var28 - 6.0, var36, var28 - 2.0, var36 + var33 * var6 * 0.4, var28 + 8.0)
-               );
+            for (int sidex = -1; sidex <= 1; sidex += 2) {
+               double cxx = 128.0 + sidex * ex;
+               g.draw(new java.awt.geom.QuadCurve2D.Double(cxx - sidex * ew * 0.45, byy - 6.0, cxx, byy - 2.0, cxx + sidex * ew * 0.4, byy + 8.0));
             }
             break;
          case "curious":
-            double var32 = 128.0 - var4;
-            var3.draw(new java.awt.geom.QuadCurve2D.Double(var32 - var6 * 0.45, var28 - 4.0, var32, var28 - 20.0, var32 + var6 * 0.4, var28 - 6.0));
-            double var19 = 128.0 + var4;
-            var3.draw(new java.awt.geom.Line2D.Double(var19 - var6 * 0.35, var28 + 6.0, var19 + var6 * 0.35, var28 + 4.0));
+            double cx = 128.0 - ex;
+            g.draw(new java.awt.geom.QuadCurve2D.Double(cx - ew * 0.45, byy - 4.0, cx, byy - 20.0, cx + ew * 0.4, byy - 6.0));
+            double cx2 = 128.0 + ex;
+            g.draw(new java.awt.geom.Line2D.Double(cx2 - ew * 0.35, byy + 6.0, cx2 + ew * 0.35, byy + 4.0));
          case "sleepy":
       }
 
-      double var30 = 84.0 + var8 * 0.66;
-      double var35 = 128.0;
-      var3.setStroke(new BasicStroke(4.5F, 1, 1));
-      var3.setColor(var10);
-      if (var0.mouth != 2) {
-         switch (var1) {
+      double my = 84.0 + eh * 0.66;
+      double mx = 128.0;
+      g.setStroke(new BasicStroke(4.5F, 1, 1));
+      g.setColor(line);
+      if (s.mouth != 2) {
+         switch (emo) {
             case "happy":
-               if (var0.mouth == 1) {
-                  omega(var3, var35, var30, 12.0, var10);
-                  openMouth(var3, var0, var35, var30 + 7.0, 14.0, 11.0);
+               if (s.mouth == 1) {
+                  omega(g, mx, my, 12.0, line);
+                  openMouth(g, s, mx, my + 7.0, 14.0, 11.0);
                } else {
-                  openMouth(var3, var0, var35, var30, 24.0, 16.0);
+                  openMouth(g, s, mx, my, 24.0, 16.0);
                }
                break;
             case "love":
-               if (var0.mouth == 1) {
-                  omega(var3, var35, var30, 12.0, var10);
+               if (s.mouth == 1) {
+                  omega(g, mx, my, 12.0, line);
                } else {
-                  var3.draw(new java.awt.geom.Arc2D.Double(var35 - 11.0, var30 - 10.0, 22.0, 16.0, 200.0, 140.0, 0));
+                  g.draw(new java.awt.geom.Arc2D.Double(mx - 11.0, my - 10.0, 22.0, 16.0, 200.0, 140.0, 0));
                }
 
-               var3.setColor(ca(16732043, 230));
-               var3.fill(heart(var35 + 30.0, var30 - 2.0, 16.0));
+               g.setColor(ca(16732043, 230));
+               g.fill(heart(mx + 30.0, my - 2.0, 16.0));
                break;
             case "sleepy":
-               var3.setColor(var10);
-               var3.setStroke(new BasicStroke(3.5F));
-               var3.draw(el(var35, var30 + 2.0, 9.0, 8.0));
+               g.setColor(line);
+               g.setStroke(new BasicStroke(3.5F));
+               g.draw(el(mx, my + 2.0, 9.0, 8.0));
                break;
             case "sad":
-               var3.draw(new java.awt.geom.QuadCurve2D.Double(var35 - 13.0, var30 + 7.0, var35, var30 - 6.0, var35 + 13.0, var30 + 7.0));
+               g.draw(new java.awt.geom.QuadCurve2D.Double(mx - 13.0, my + 7.0, mx, my - 6.0, mx + 13.0, my + 7.0));
                break;
             case "excited":
-               if (var0.mouth == 1) {
-                  omega(var3, var35, var30 - 2.0, 12.0, var10);
+               if (s.mouth == 1) {
+                  omega(g, mx, my - 2.0, 12.0, line);
                }
 
-               openMouth(var3, var0, var35, var30 + (var0.mouth == 1 ? 5 : 0), var0.mouth == 1 ? 20.0 : 30.0, var0.mouth == 1 ? 16.0 : 22.0);
+               openMouth(g, s, mx, my + (s.mouth == 1 ? 5 : 0), s.mouth == 1 ? 20.0 : 30.0, s.mouth == 1 ? 16.0 : 22.0);
                break;
             case "angry":
-               java.awt.geom.Path2D.Double var39 = new java.awt.geom.Path2D.Double();
-               var39.moveTo(var35 - 12.0, var30 + 6.0);
-               var39.quadTo(var35 - 6.0, var30 - 1.0, var35, var30 + 2.0);
-               var39.quadTo(var35 + 6.0, var30 - 1.0, var35 + 12.0, var30 + 6.0);
-               var3.draw(var39);
-               var3.setColor(c(16777215));
-               java.awt.geom.Path2D.Double var45 = new java.awt.geom.Path2D.Double();
-               var45.moveTo(var35 + 4.0, var30 + 1.5);
-               var45.lineTo(var35 + 9.0, var30 + 3.0);
-               var45.lineTo(var35 + 7.0, var30 + 9.0);
-               var45.closePath();
-               if (!var0.led) {
-                  var3.fill(var45);
+               java.awt.geom.Path2D.Double p = new java.awt.geom.Path2D.Double();
+               p.moveTo(mx - 12.0, my + 6.0);
+               p.quadTo(mx - 6.0, my - 1.0, mx, my + 2.0);
+               p.quadTo(mx + 6.0, my - 1.0, mx + 12.0, my + 6.0);
+               g.draw(p);
+               g.setColor(c(16777215));
+               java.awt.geom.Path2D.Double f = new java.awt.geom.Path2D.Double();
+               f.moveTo(mx + 4.0, my + 1.5);
+               f.lineTo(mx + 9.0, my + 3.0);
+               f.lineTo(mx + 7.0, my + 9.0);
+               f.closePath();
+               if (!s.led) {
+                  g.fill(f);
                }
                break;
             case "curious":
-               var3.setColor(var0.led ? var10 : c(6955056));
-               var3.fill(el(var35 + 8.0, var30 + 3.0, 11.0, 12.0));
-               var3.setColor(var10);
-               var3.setStroke(new BasicStroke(3.5F));
-               var3.draw(el(var35 + 8.0, var30 + 3.0, 11.0, 12.0));
+               g.setColor(s.led ? line : c(6955056));
+               g.fill(el(mx + 8.0, my + 3.0, 11.0, 12.0));
+               g.setColor(line);
+               g.setStroke(new BasicStroke(3.5F));
+               g.draw(el(mx + 8.0, my + 3.0, 11.0, 12.0));
                break;
             case "dizzy":
-               java.awt.geom.Path2D.Double var21 = new java.awt.geom.Path2D.Double();
+               java.awt.geom.Path2D.Double px = new java.awt.geom.Path2D.Double();
 
-               for (int var22 = 0; var22 <= 30; var22++) {
-                  double var23 = var35 - 20.0 + 40 * var22 / 30.0;
-                  double var25 = var30 + 3.0 + Math.sin(var22 / 30.0 * Math.PI * 3.0) * 4.5;
-                  if (var22 == 0) {
-                     var21.moveTo(var23, var25);
+               for (int i = 0; i <= 30; i++) {
+                  double x = mx - 20.0 + 40 * i / 30.0;
+                  double y = my + 3.0 + Math.sin(i / 30.0 * Math.PI * 3.0) * 4.5;
+                  if (i == 0) {
+                     px.moveTo(x, y);
                   } else {
-                     var21.lineTo(var23, var25);
+                     px.lineTo(x, y);
                   }
                }
 
-               var3.draw(var21);
+               g.draw(px);
                break;
             default:
-               var3.draw(new java.awt.geom.Arc2D.Double(var35 - 11.0, var30 - 10.0, 22.0, 16.0, 200.0, 140.0, 0));
+               g.draw(new java.awt.geom.Arc2D.Double(mx - 11.0, my - 10.0, 22.0, 16.0, 200.0, 140.0, 0));
          }
-      } else if ("love".equals(var1)) {
-         var3.setColor(ca(16732043, 230));
-         var3.fill(heart(var35 + 40.0, var30 - 6.0, 16.0));
+      } else if ("love".equals(emo)) {
+         g.setColor(ca(16732043, 230));
+         g.fill(heart(mx + 40.0, my - 6.0, 16.0));
       }
 
-      switch (var1) {
-         case "sad":
-            for (int var43 = -1; var43 <= 1; var43 += 2) {
-               double var46 = 128.0 + var43 * var4 + var43 * var6 * 0.18;
-               double var24 = 84.0 + var8 * 0.38;
-               var3.setPaint(new GradientPaint(0.0F, (float)var24, ca(10478591, 220), 0.0F, (float)(var24 + 70.0), ca(7325951, 60)));
-               var3.fill(new java.awt.geom.RoundRectangle2D.Double(var46 - 5.0, var24, 10.0, 70.0, 10.0, 10.0));
+      switch (emo) {
+         case "sad": {
+            for (int sidex = -1; sidex <= 1; sidex += 2) {
+               double tx = 128.0 + sidex * ex + sidex * ew * 0.18;
+               double ty = 84.0 + eh * 0.38;
+               g.setPaint(new GradientPaint(0.0F, (float)ty, ca(10478591, 220), 0.0F, (float)(ty + 70.0), ca(7325951, 60)));
+               g.fill(new java.awt.geom.RoundRectangle2D.Double(tx - 5.0, ty, 10.0, 70.0, 10.0, 10.0));
             }
 
-            double var44 = 128.0 + var4 + var6 * 0.55;
-            double var50 = 84.0 + var8 * 0.8;
-            java.awt.geom.Path2D.Double var54 = new java.awt.geom.Path2D.Double();
-            var54.moveTo(var44, var50 - 12.0);
-            var54.curveTo(var44 + 9.0, var50, var44 + 7.0, var50 + 9.0, var44, var50 + 9.0);
-            var54.curveTo(var44 - 7.0, var50 + 9.0, var44 - 9.0, var50, var44, var50 - 12.0);
-            var3.setColor(ca(9427967, 235));
-            var3.fill(var54);
-            var3.setColor(ca(16777215, 230));
-            var3.fill(el(var44 - 2.5, var50 + 1.0, 3.5, 5.0));
+            double dx = 128.0 + ex + ew * 0.55;
+            double dy = 84.0 + eh * 0.8;
+            java.awt.geom.Path2D.Double d = new java.awt.geom.Path2D.Double();
+            d.moveTo(dx, dy - 12.0);
+            d.curveTo(dx + 9.0, dy, dx + 7.0, dy + 9.0, dx, dy + 9.0);
+            d.curveTo(dx - 7.0, dy + 9.0, dx - 9.0, dy, dx, dy - 12.0);
+            g.setColor(ca(9427967, 235));
+            g.fill(d);
+            g.setColor(ca(16777215, 230));
+            g.fill(el(dx - 2.5, dy + 1.0, 3.5, 5.0));
             break;
+         }
          case "sleepy":
-            double var42 = 128.0 + var4 * 0.62;
-            double var49 = 84.0 + var8 * 0.72;
-            double var53 = 15.0;
-            var3.setColor(ca(12578815, 150));
-            var3.fill(el(var42, var49, var53 * 2.0, var53 * 2.0));
-            var3.setStroke(new BasicStroke(2.2F));
-            var3.setColor(ca(8376309, 220));
-            var3.draw(el(var42, var49, var53 * 2.0, var53 * 2.0));
-            var3.setColor(ca(16777215, 240));
-            var3.fill(el(var42 - 5.0, var49 - 6.0, 8.0, 6.0));
+            double bx = 128.0 + ex * 0.62;
+            double by = 84.0 + eh * 0.72;
+            double r = 15.0;
+            g.setColor(ca(12578815, 150));
+            g.fill(el(bx, by, r * 2.0, r * 2.0));
+            g.setStroke(new BasicStroke(2.2F));
+            g.setColor(ca(8376309, 220));
+            g.draw(el(bx, by, r * 2.0, r * 2.0));
+            g.setColor(ca(16777215, 240));
+            g.fill(el(bx - 5.0, by - 6.0, 8.0, 6.0));
             break;
          case "angry":
-            double var41 = 128.0 + var4 + var6 * 0.62;
-            double var48 = 26.0;
-            var3.setStroke(new BasicStroke(5.0F, 1, 1));
-            var3.setColor(c(16726858));
+            double vx = 128.0 + ex + ew * 0.62;
+            double vy = 26.0;
+            g.setStroke(new BasicStroke(5.0F, 1, 1));
+            g.setColor(c(16726858));
 
-            for (int var52 = 0; var52 < 4; var52++) {
-               AffineTransform var26 = var3.getTransform();
-               var3.translate(var41, var48);
-               var3.rotate((Math.PI / 2) * var52);
-               var3.draw(new java.awt.geom.QuadCurve2D.Double(4.0, -12.0, 4.0, -4.0, 12.0, -4.0));
-               var3.setTransform(var26);
+            for (int k = 0; k < 4; k++) {
+               AffineTransform o = g.getTransform();
+               g.translate(vx, vy);
+               g.rotate((Math.PI / 2) * k);
+               g.draw(new java.awt.geom.QuadCurve2D.Double(4.0, -12.0, 4.0, -4.0, 12.0, -4.0));
+               g.setTransform(o);
             }
             break;
-         case "dizzy":
-            var3.setStroke(new BasicStroke(2.4F));
-            var3.setColor(ca(10476031, 200));
-            double var40 = 128.0 - var4 - var6 * 0.7;
-            double var47 = 84.0 - var8 * 0.55;
-            java.awt.geom.Path2D.Double var51 = new java.awt.geom.Path2D.Double();
-            var51.moveTo(var40, var47 - 8.0);
-            var51.curveTo(var40 + 6.0, var47, var40 + 5.0, var47 + 6.0, var40, var47 + 6.0);
-            var51.curveTo(var40 - 5.0, var47 + 6.0, var40 - 6.0, var47, var40, var47 - 8.0);
-            var3.setColor(ca(10477567, 220));
-            var3.fill(var51);
+         case "dizzy": {
+            g.setStroke(new BasicStroke(2.4F));
+            g.setColor(ca(10476031, 200));
+            double dx = 128.0 - ex - ew * 0.7;
+            double dy = 84.0 - eh * 0.55;
+            java.awt.geom.Path2D.Double d = new java.awt.geom.Path2D.Double();
+            d.moveTo(dx, dy - 8.0);
+            d.curveTo(dx + 6.0, dy, dx + 5.0, dy + 6.0, dx, dy + 6.0);
+            d.curveTo(dx - 5.0, dy + 6.0, dx - 6.0, dy, dx, dy - 8.0);
+            g.setColor(ca(10477567, 220));
+            g.fill(d);
+         }
       }
 
-      var3.dispose();
-      return var2;
+      g.dispose();
+      return im;
    }
 
-   private static void omega(Graphics2D var0, double var1, double var3, double var5, Color var7) {
-      var0.setColor(var7);
-      var0.setStroke(new BasicStroke(4.0F, 1, 1));
-      var0.draw(new java.awt.geom.Arc2D.Double(var1 - var5, var3 - var5 * 0.9, var5, var5, 200.0, 160.0, 0));
-      var0.draw(new java.awt.geom.Arc2D.Double(var1, var3 - var5 * 0.9, var5, var5, 180.0, 160.0, 0));
+   private static void omega(Graphics2D g, double mx, double my, double r, Color line) {
+      g.setColor(line);
+      g.setStroke(new BasicStroke(4.0F, 1, 1));
+      g.draw(new java.awt.geom.Arc2D.Double(mx - r, my - r * 0.9, r, r, 200.0, 160.0, 0));
+      g.draw(new java.awt.geom.Arc2D.Double(mx, my - r * 0.9, r, r, 180.0, 160.0, 0));
    }
 
-   private static void openMouth(Graphics2D var0, PetTex.St var1, double var2, double var4, double var6, double var8) {
-      java.awt.geom.Path2D.Double var10 = new java.awt.geom.Path2D.Double();
-      var10.moveTo(var2 - var6 / 2.0, var4 - var8 * 0.3);
-      var10.quadTo(var2, var4 - var8 * 0.1, var2 + var6 / 2.0, var4 - var8 * 0.3);
-      var10.curveTo(var2 + var6 * 0.45, var4 + var8 * 0.75, var2 - var6 * 0.45, var4 + var8 * 0.75, var2 - var6 / 2.0, var4 - var8 * 0.3);
-      var10.closePath();
-      if (var1.led) {
-         var0.setColor(c(light(var1.iris, 0.3F)));
-         var0.fill(var10);
+   private static void openMouth(Graphics2D g, PetTex.St s, double mx, double my, double w, double h) {
+      java.awt.geom.Path2D.Double p = new java.awt.geom.Path2D.Double();
+      p.moveTo(mx - w / 2.0, my - h * 0.3);
+      p.quadTo(mx, my - h * 0.1, mx + w / 2.0, my - h * 0.3);
+      p.curveTo(mx + w * 0.45, my + h * 0.75, mx - w * 0.45, my + h * 0.75, mx - w / 2.0, my - h * 0.3);
+      p.closePath();
+      if (s.led) {
+         g.setColor(c(light(s.iris, 0.3F)));
+         g.fill(p);
       } else {
-         var0.setColor(c(8003636));
-         var0.fill(var10);
-         Shape var11 = var0.getClip();
-         var0.setClip(var10);
-         var0.setColor(c(16744342));
-         var0.fill(el(var2, var4 + var8 * 0.55, var6 * 0.62, var8 * 0.7));
-         var0.setClip(var11);
-         var0.setStroke(new BasicStroke(3.2F, 1, 1));
-         var0.setColor(c(var1.line));
-         var0.draw(var10);
+         g.setColor(c(8003636));
+         g.fill(p);
+         Shape old = g.getClip();
+         g.setClip(p);
+         g.setColor(c(16744342));
+         g.fill(el(mx, my + h * 0.55, w * 0.62, h * 0.7));
+         g.setClip(old);
+         g.setStroke(new BasicStroke(3.2F, 1, 1));
+         g.setColor(c(s.line));
+         g.draw(p);
       }
    }
 

@@ -19,6 +19,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.imageio.ImageIO;
@@ -67,22 +68,22 @@ public final class SkyExtras {
             this.loadedKey = null;
          }));
          this.add(new Setting.Action("Bilder-Ordner", "Pfad kopieren", () -> {
-            Path var0 = folder();
-            Mc.clipboard(var0.toString());
-            Toasts.show("copy", "Ordner kopiert", "PNG/JPG hier ablegen: " + var0);
+            Path p = folder();
+            Mc.clipboard(p.toString());
+            Toasts.show("copy", "Ordner kopiert", "PNG/JPG hier ablegen: " + p);
          }));
          this.add(new Setting.Action("Neu freistellen", "Neu berechnen", () -> this.loadedKey = null));
       }
 
       static Path folder() {
-         Path var0 = FabricLoader.getInstance().getConfigDir().resolve("legoclient").resolve("sky_people");
+         Path p = FabricLoader.getInstance().getConfigDir().resolve("legoclient").resolve("sky_people");
 
          try {
-            Files.createDirectories(var0);
+            Files.createDirectories(p);
          } catch (Throwable var2) {
          }
 
-         return var0;
+         return p;
       }
 
       @Override
@@ -100,10 +101,10 @@ public final class SkyExtras {
       }
 
       private void ensure() {
-         long var1 = this.background.index * 1000L + this.tolerance.getI() + (this.fadeBottom.get() ? 100000 : 0);
-         String var3 = this.index + "|" + var1;
-         int[][] var4 = this.pending.getAndSet(null);
-         if (var4 != null) {
+         long h = this.background.index * 1000L + this.tolerance.getI() + (this.fadeBottom.get() ? 100000 : 0);
+         String key = this.index + "|" + h;
+         int[][] done = this.pending.getAndSet(null);
+         if (done != null) {
             if (this.tex != null) {
                Tx.destroy(this.tex);
             }
@@ -113,28 +114,28 @@ public final class SkyExtras {
             }
 
             this.tex = this.glowTex = null;
-            if (var4[0].length > 1) {
-               this.tw = var4[2][0];
-               this.th = var4[2][1];
+            if (done[0].length > 1) {
+               this.tw = done[2][0];
+               this.th = done[2][1];
                this.tex = Identifier.fromNamespaceAndPath("legoclient", "sky/person_" + (System.nanoTime() & 16777215L));
                this.glowTex = Identifier.fromNamespaceAndPath("legoclient", "sky/person_glow_" + (System.nanoTime() & 16777215L));
-               Tx.register(this.tex, var4[0], this.tw, this.th, true);
-               Tx.register(this.glowTex, var4[1], this.tw, this.th, true);
+               Tx.register(this.tex, done[0], this.tw, this.th, true);
+               Tx.register(this.glowTex, done[1], this.tw, this.th, true);
             }
 
             this.loadedKey = this.wantKey;
          }
 
-         if (!var3.equals(this.loadedKey) && !this.working) {
-            this.wantKey = var3;
+         if (!key.equals(this.loadedKey) && !this.working) {
+            this.wantKey = key;
             this.working = true;
-            int var5 = this.background.index;
-            int var6 = this.tolerance.getI();
-            int var7 = this.index;
-            boolean var8 = this.fadeBottom.get();
-            Thread var9 = new Thread(() -> {
+            int bg = this.background.index;
+            int tol = this.tolerance.getI();
+            int idx = this.index;
+            boolean fade = this.fadeBottom.get();
+            Thread t = new Thread(() -> {
                try {
-                  this.pending.set(process(var7, var5, var6, var8));
+                  this.pending.set(process(idx, bg, tol, fade));
                } catch (Throwable var9x) {
                   LegoClient.LOG("Sky-Figur: " + var9x);
                   this.pending.set(new int[][]{{0}});
@@ -142,374 +143,362 @@ public final class SkyExtras {
                   this.working = false;
                }
             }, "LegoClient-SkyPerson");
-            var9.setDaemon(true);
-            var9.start();
+            t.setDaemon(true);
+            t.start();
          }
       }
 
-      private static int[][] process(int var0, int var1, int var2, boolean var3) throws Exception {
-         ArrayList var4 = new ArrayList();
-         File[] var5 = folder().toFile().listFiles();
-         if (var5 != null) {
-            for (File var9 : var5) {
-               String var10 = var9.getName().toLowerCase(Locale.ROOT);
-               if (var10.endsWith(".png") || var10.endsWith(".jpg") || var10.endsWith(".jpeg")) {
-                  var4.add(var9);
+      private static int[][] process(int idx, int bgMode, int tol, boolean fade) throws Exception {
+         List<File> files = new ArrayList<>();
+         File[] list = folder().toFile().listFiles();
+         if (list != null) {
+            for (File f : list) {
+               String n = f.getName().toLowerCase(Locale.ROOT);
+               if (n.endsWith(".png") || n.endsWith(".jpg") || n.endsWith(".jpeg")) {
+                  files.add(f);
                }
             }
          }
 
-         var4.sort(Comparator.comparing(File::getName));
-         if (var4.isEmpty()) {
+         files.sort(Comparator.comparing(File::getName));
+         if (files.isEmpty()) {
             Toasts.show("image", "Sky-Figur: kein Bild", "Leg ein PNG in " + folder(), 0, 6000L);
             return new int[][]{{0}};
          } else {
-            File var25 = (File)var4.get(Math.floorMod(var0, var4.size()));
-            BufferedImage var26 = ImageIO.read(var25);
-            if (var26 == null) {
-               throw new IllegalStateException("Bild nicht lesbar: " + var25.getName());
+            File fx = files.get(Math.floorMod(idx, files.size()));
+            BufferedImage src = ImageIO.read(fx);
+            if (src == null) {
+               throw new IllegalStateException("Bild nicht lesbar: " + fx.getName());
             } else {
-               int var27 = var26.getWidth();
-               int var28 = var26.getHeight();
-               double var29 = Math.min(1.0, 1024.0 / Math.max(var27, var28));
-               int var12 = Math.max(8, (int)Math.round(var27 * var29));
-               int var13 = Math.max(8, (int)Math.round(var28 * var29));
-               BufferedImage var14 = new BufferedImage(var12, var13, 2);
-               Graphics2D var15 = var14.createGraphics();
-               var15.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-               var15.drawImage(var26, 0, 0, var12, var13, null);
-               var15.dispose();
-               int[] var16 = var14.getRGB(0, 0, var12, var13, null, 0, var12);
-               int var17 = 0;
+               int w = src.getWidth();
+               int h = src.getHeight();
+               double k = Math.min(1.0, 1024.0 / Math.max(w, h));
+               int W = Math.max(8, (int)Math.round(w * k));
+               int H = Math.max(8, (int)Math.round(h * k));
+               BufferedImage img = new BufferedImage(W, H, 2);
+               Graphics2D g = img.createGraphics();
+               g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+               g.drawImage(src, 0, 0, W, H, null);
+               g.dispose();
+               int[] px = img.getRGB(0, 0, W, H, null, 0, W);
+               int transparent = 0;
 
-               for (int var21 : var16) {
-                  if (var21 >>> 24 < 250) {
-                     var17++;
+               for (int c : px) {
+                  if (c >>> 24 < 250) {
+                     transparent++;
                   }
                }
 
-               boolean var30 = var17 > var16.length * 0.02;
-               if (var1 == 0 && !var30) {
-                  removeBackground(var16, var12, var13, var2);
-               } else if (var1 == 2) {
-                  for (int var31 = 0; var31 < var16.length; var31++) {
-                     var16[var31] |= -16777216;
+               boolean hasAlpha = transparent > px.length * 0.02;
+               if (bgMode == 0 && !hasAlpha) {
+                  removeBackground(px, W, H, tol);
+               } else if (bgMode == 2) {
+                  for (int i = 0; i < px.length; i++) {
+                     px[i] |= -16777216;
                   }
                }
 
-               if (var3) {
-                  int var32 = (int)(var13 * 0.78);
+               if (fade) {
+                  int from = (int)(H * 0.78);
 
-                  for (int var34 = var32; var34 < var13; var34++) {
-                     double var37 = 1.0 - (double)(var34 - var32) / (var13 - var32);
-                     var37 = var37 * var37 * (3.0 - 2.0 * var37);
+                  for (int y = from; y < H; y++) {
+                     double a = 1.0 - (double)(y - from) / (H - from);
+                     a = a * a * (3.0 - 2.0 * a);
 
-                     for (int var23 = 0; var23 < var12; var23++) {
-                        int var24 = var16[var34 * var12 + var23];
-                        var16[var34 * var12 + var23] = (int)((var24 >>> 24) * var37) << 24 | var24 & 16777215;
+                     for (int x = 0; x < W; x++) {
+                        int cx = px[y * W + x];
+                        px[y * W + x] = (int)((cx >>> 24) * a) << 24 | cx & 16777215;
                      }
                   }
                }
 
-               float[] var33 = new float[var12 * var13];
+               float[] al = new float[W * H];
 
-               for (int var35 = 0; var35 < var16.length; var35++) {
-                  var33[var35] = (var16[var35] >>> 24) / 255.0F;
+               for (int i = 0; i < px.length; i++) {
+                  al[i] = (px[i] >>> 24) / 255.0F;
                }
 
-               int var36 = Math.max(4, var12 / 40);
+               int r = Math.max(4, W / 40);
 
-               for (int var39 = 0; var39 < 3; var39++) {
-                  var33 = blur(var33, var12, var13, var36);
+               for (int pass = 0; pass < 3; pass++) {
+                  al = blur(al, W, H, r);
                }
 
-               int[] var40 = new int[var12 * var13];
+               int[] glow = new int[W * H];
 
-               for (int var22 = 0; var22 < var40.length; var22++) {
-                  var40[var22] = (int)Math.min(255.0, var33[var22] * 255.0F * 1.4) << 24 | 16777215;
+               for (int i = 0; i < glow.length; i++) {
+                  glow[i] = (int)Math.min(255.0, al[i] * 255.0F * 1.4) << 24 | 16777215;
                }
 
-               Toasts.show("image", "Sky-Figur bereit", var25.getName() + (var1 == 0 && !var30 ? " · Hintergrund entfernt" : ""), 0, 3000L);
-               return new int[][]{var16, var40, {var12, var13}};
+               Toasts.show("image", "Sky-Figur bereit", fx.getName() + (bgMode == 0 && !hasAlpha ? " · Hintergrund entfernt" : ""), 0, 3000L);
+               return new int[][]{px, glow, {W, H}};
             }
          }
       }
 
-      static void removeBackground(int[] var0, int var1, int var2, int var3) {
-         ArrayList var4 = new ArrayList();
+      static void removeBackground(int[] px, int W, int H, int tol) {
+         List<Integer> border = new ArrayList<>();
 
-         for (int var5 = 0; var5 < var1; var5++) {
-            var4.add(var0[var5]);
-            var4.add(var0[(var2 - 1) * var1 + var5]);
+         for (int x = 0; x < W; x++) {
+            border.add(px[x]);
+            border.add(px[(H - 1) * W + x]);
          }
 
-         for (int var31 = 0; var31 < var2; var31++) {
-            var4.add(var0[var31 * var1]);
-            var4.add(var0[var31 * var1 + var1 - 1]);
+         for (int y = 0; y < H; y++) {
+            border.add(px[y * W]);
+            border.add(px[y * W + W - 1]);
          }
 
-         int[] var32 = new int[var4.size()];
-         int[] var6 = new int[var4.size()];
-         int[] var7 = new int[var4.size()];
+         int[] rs = new int[border.size()];
+         int[] gs = new int[border.size()];
+         int[] bs = new int[border.size()];
 
-         for (int var8 = 0; var8 < var4.size(); var8++) {
-            int var9 = (Integer)var4.get(var8);
-            var32[var8] = var9 >> 16 & 0xFF;
-            var6[var8] = var9 >> 8 & 0xFF;
-            var7[var8] = var9 & 0xFF;
+         for (int i = 0; i < border.size(); i++) {
+            int c = border.get(i);
+            rs[i] = c >> 16 & 0xFF;
+            gs[i] = c >> 8 & 0xFF;
+            bs[i] = c & 0xFF;
          }
 
-         Arrays.sort(var32);
-         Arrays.sort(var6);
-         Arrays.sort(var7);
-         int var33 = var32[var32.length / 2];
-         int var34 = var6[var6.length / 2];
-         int var10 = var7[var7.length / 2];
-         boolean[] var11 = new boolean[var1 * var2];
-         ArrayDeque var12 = new ArrayDeque();
-         double var13 = var3;
-         double var15 = var3 * 1.4;
+         Arrays.sort(rs);
+         Arrays.sort(gs);
+         Arrays.sort(bs);
+         int br = rs[rs.length / 2];
+         int bgc = gs[gs.length / 2];
+         int bb = bs[bs.length / 2];
+         boolean[] bg = new boolean[W * H];
+         ArrayDeque<Integer> q = new ArrayDeque<>();
+         double t1 = tol;
+         double t2 = tol * 1.4;
 
-         for (int var17 = 0; var17 < var1; var17++) {
-            seed(var0, var11, var12, var17, 0, var1, var33, var34, var10, var15);
-            seed(var0, var11, var12, var17, var2 - 1, var1, var33, var34, var10, var15);
+         for (int x = 0; x < W; x++) {
+            seed(px, bg, q, x, 0, W, br, bgc, bb, t2);
+            seed(px, bg, q, x, H - 1, W, br, bgc, bb, t2);
          }
 
-         for (int var35 = 0; var35 < var2; var35++) {
-            seed(var0, var11, var12, 0, var35, var1, var33, var34, var10, var15);
-            seed(var0, var11, var12, var1 - 1, var35, var1, var33, var34, var10, var15);
+         for (int y = 0; y < H; y++) {
+            seed(px, bg, q, 0, y, W, br, bgc, bb, t2);
+            seed(px, bg, q, W - 1, y, W, br, bgc, bb, t2);
          }
 
-         int[] var36 = new int[]{1, -1, 0, 0};
-         int[] var18 = new int[]{0, 0, 1, -1};
+         int[] dx = new int[]{1, -1, 0, 0};
+         int[] dy = new int[]{0, 0, 1, -1};
 
-         while (!var12.isEmpty()) {
-            int var19 = (Integer)var12.poll();
-            int var20 = var19 % var1;
-            int var21 = var19 / var1;
+         while (!q.isEmpty()) {
+            int i = q.poll();
+            int x = i % W;
+            int y = i / W;
 
-            for (int var22 = 0; var22 < 4; var22++) {
-               int var23 = var20 + var36[var22];
-               int var24 = var21 + var18[var22];
-               if (var23 >= 0 && var24 >= 0 && var23 < var1 && var24 < var2) {
-                  int var25 = var24 * var1 + var23;
-                  if (!var11[var25]) {
-                     double var26 = dist(var0[var25], var33, var34, var10);
-                     if (var26 < var13 || dist(var0[var25], var0[var19]) < var13 * 0.3 && var26 < var15 && dist(var0[var19], var33, var34, var10) < var13 * 0.6
-                        )
-                      {
-                        var11[var25] = true;
-                        var12.add(var25);
+            for (int d = 0; d < 4; d++) {
+               int nx = x + dx[d];
+               int ny = y + dy[d];
+               if (nx >= 0 && ny >= 0 && nx < W && ny < H) {
+                  int j = ny * W + nx;
+                  if (!bg[j]) {
+                     double dj = dist(px[j], br, bgc, bb);
+                     if (dj < t1 || dist(px[j], px[i]) < t1 * 0.3 && dj < t2 && dist(px[i], br, bgc, bb) < t1 * 0.6) {
+                        bg[j] = true;
+                        q.add(j);
                      }
                   }
                }
             }
          }
 
-         int[] var37 = new int[var1 * var2];
-         Arrays.fill(var37, -1);
-         ArrayList var38 = new ArrayList();
+         int[] comp = new int[W * H];
+         Arrays.fill(comp, -1);
+         List<Integer> sizes = new ArrayList<>();
 
-         for (int var39 = 0; var39 < var1 * var2; var39++) {
-            if (!var11[var39] && var37[var39] < 0) {
-               int var41 = var38.size();
-               int var45 = 0;
-               var37[var39] = var41;
-               var12.add(var39);
+         for (int i = 0; i < W * H; i++) {
+            if (!bg[i] && comp[i] < 0) {
+               int id = sizes.size();
+               int n = 0;
+               comp[i] = id;
+               q.add(i);
 
-               while (!var12.isEmpty()) {
-                  int var49 = (Integer)var12.poll();
-                  var45++;
-                  int var52 = var49 % var1;
-                  int var54 = var49 / var1;
+               while (!q.isEmpty()) {
+                  int c = q.poll();
+                  n++;
+                  int x = c % W;
+                  int y = c / W;
 
-                  for (int var27 = 0; var27 < 4; var27++) {
-                     int var28 = var52 + var36[var27];
-                     int var29 = var54 + var18[var27];
-                     if (var28 >= 0 && var29 >= 0 && var28 < var1 && var29 < var2) {
-                        int var30 = var29 * var1 + var28;
-                        if (!var11[var30] && var37[var30] < 0) {
-                           var37[var30] = var41;
-                           var12.add(var30);
+                  for (int dxx = 0; dxx < 4; dxx++) {
+                     int nx = x + dx[dxx];
+                     int ny = y + dy[dxx];
+                     if (nx >= 0 && ny >= 0 && nx < W && ny < H) {
+                        int j = ny * W + nx;
+                        if (!bg[j] && comp[j] < 0) {
+                           comp[j] = id;
+                           q.add(j);
                         }
                      }
                   }
                }
 
-               var38.add(var45);
+               sizes.add(n);
             }
          }
 
-         int var40 = 0;
+         int biggest = 0;
 
-         for (int var46 : (Iterable<Integer>) (Iterable<?>) (var38)) {
-            var40 = Math.max(var40, var46);
+         for (int s : sizes) {
+            biggest = Math.max(biggest, s);
          }
 
-         float[] var43 = new float[var1 * var2];
+         float[] a = new float[W * H];
 
-         for (int var47 = 0; var47 < var1 * var2; var47++) {
-            var43[var47] = !var11[var47] && ((Integer)var38.get(var37[var47])).intValue() >= Math.max(40.0, var40 * 0.04) ? 1.0F : 0.0F;
+         for (int ix = 0; ix < W * H; ix++) {
+            a[ix] = !bg[ix] && sizes.get(comp[ix]).intValue() >= Math.max(40.0, biggest * 0.04) ? 1.0F : 0.0F;
          }
 
-         var43 = blur(var43, var1, var2, 1);
+         a = blur(a, W, H, 1);
 
-         for (int var48 = 0; var48 < var1 * var2; var48++) {
-            float var50 = var43[var48];
-            var50 = Math.max(0.0F, Math.min(1.0F, (var50 - 0.2F) / 0.75F));
-            int var53 = var0[var48];
-            int var55 = var53 >> 16 & 0xFF;
-            int var56 = var53 >> 8 & 0xFF;
-            int var57 = var53 & 0xFF;
-            if (var50 > 0.02F && var50 < 0.98F) {
-               var55 = clamp((var55 - var33 * (1.0F - var50)) / var50);
-               var56 = clamp((var56 - var34 * (1.0F - var50)) / var50);
-               var57 = clamp((var57 - var10 * (1.0F - var50)) / var50);
+         for (int ix = 0; ix < W * H; ix++) {
+            float al = a[ix];
+            al = Math.max(0.0F, Math.min(1.0F, (al - 0.2F) / 0.75F));
+            int c = px[ix];
+            int r = c >> 16 & 0xFF;
+            int gg = c >> 8 & 0xFF;
+            int b = c & 0xFF;
+            if (al > 0.02F && al < 0.98F) {
+               r = clamp((r - br * (1.0F - al)) / al);
+               gg = clamp((gg - bgc * (1.0F - al)) / al);
+               b = clamp((b - bb * (1.0F - al)) / al);
             }
 
-            var0[var48] = (int)(var50 * 255.0F) << 24 | var55 << 16 | var56 << 8 | var57;
+            px[ix] = (int)(al * 255.0F) << 24 | r << 16 | gg << 8 | b;
          }
       }
 
-      private static void seed(int[] var0, boolean[] var1, ArrayDeque<Integer> var2, int var3, int var4, int var5, int var6, int var7, int var8, double var9) {
-         int var11 = var4 * var5 + var3;
-         if (!var1[var11] && dist(var0[var11], var6, var7, var8) < var9) {
-            var1[var11] = true;
-            var2.add(var11);
+      private static void seed(int[] px, boolean[] bg, ArrayDeque<Integer> q, int x, int y, int W, int br, int bgc, int bb, double t) {
+         int i = y * W + x;
+         if (!bg[i] && dist(px[i], br, bgc, bb) < t) {
+            bg[i] = true;
+            q.add(i);
          }
       }
 
-      private static double dist(int var0, int var1, int var2, int var3) {
-         int var4 = (var0 >> 16 & 0xFF) - var1;
-         int var5 = (var0 >> 8 & 0xFF) - var2;
-         int var6 = (var0 & 0xFF) - var3;
-         return Math.sqrt(var4 * var4 + var5 * var5 + var6 * var6);
+      private static double dist(int c, int r, int g, int b) {
+         int dr = (c >> 16 & 0xFF) - r;
+         int dg = (c >> 8 & 0xFF) - g;
+         int db = (c & 0xFF) - b;
+         return Math.sqrt(dr * dr + dg * dg + db * db);
       }
 
-      private static double dist(int var0, int var1) {
-         return dist(var0, var1 >> 16 & 0xFF, var1 >> 8 & 0xFF, var1 & 0xFF);
+      private static double dist(int c1, int c2) {
+         return dist(c1, c2 >> 16 & 0xFF, c2 >> 8 & 0xFF, c2 & 0xFF);
       }
 
-      private static int clamp(float var0) {
-         return Math.max(0, Math.min(255, Math.round(var0)));
+      private static int clamp(float v) {
+         return Math.max(0, Math.min(255, Math.round(v)));
       }
 
-      private static float[] blur(float[] var0, int var1, int var2, int var3) {
-         float[] var4 = new float[var1 * var2];
-         float[] var5 = new float[var1 * var2];
+      private static float[] blur(float[] src, int W, int H, int r) {
+         float[] tmp = new float[W * H];
+         float[] out = new float[W * H];
 
-         for (int var6 = 0; var6 < var2; var6++) {
-            float var7 = 0.0F;
+         for (int y = 0; y < H; y++) {
+            float s = 0.0F;
 
-            for (int var8 = -var3; var8 <= var3; var8++) {
-               var7 += var0[var6 * var1 + Math.max(0, Math.min(var1 - 1, var8))];
+            for (int x = -r; x <= r; x++) {
+               s += src[y * W + Math.max(0, Math.min(W - 1, x))];
             }
 
-            for (int var11 = 0; var11 < var1; var11++) {
-               var4[var6 * var1 + var11] = var7 / (2 * var3 + 1);
-               var7 += var0[var6 * var1 + Math.min(var1 - 1, var11 + var3 + 1)] - var0[var6 * var1 + Math.max(0, var11 - var3)];
+            for (int x = 0; x < W; x++) {
+               tmp[y * W + x] = s / (2 * r + 1);
+               s += src[y * W + Math.min(W - 1, x + r + 1)] - src[y * W + Math.max(0, x - r)];
             }
          }
 
-         for (int var9 = 0; var9 < var1; var9++) {
-            float var10 = 0.0F;
+         for (int x = 0; x < W; x++) {
+            float s = 0.0F;
 
-            for (int var12 = -var3; var12 <= var3; var12++) {
-               var10 += var4[Math.max(0, Math.min(var2 - 1, var12)) * var1 + var9];
+            for (int y = -r; y <= r; y++) {
+               s += tmp[Math.max(0, Math.min(H - 1, y)) * W + x];
             }
 
-            for (int var13 = 0; var13 < var2; var13++) {
-               var5[var13 * var1 + var9] = var10 / (2 * var3 + 1);
-               var10 += var4[Math.min(var2 - 1, var13 + var3 + 1) * var1 + var9] - var4[Math.max(0, var13 - var3) * var1 + var9];
+            for (int y = 0; y < H; y++) {
+               out[y * W + x] = s / (2 * r + 1);
+               s += tmp[Math.min(H - 1, y + r + 1) * W + x] - tmp[Math.max(0, y - r) * W + x];
             }
          }
 
-         return var5;
+         return out;
       }
 
       public void render() {
          this.ensure();
          if (this.tex != null) {
-            double[] var1 = CustomSky.dayWeights(Mc.timeOfDay());
+            double[] w = CustomSky.dayWeights(Mc.timeOfDay());
 
-            double var2 = switch (this.when.index) {
-               case 1 -> var1[0];
-               case 2 -> var1[1];
-               case 3 -> var1[2];
+            double vis = switch (this.when.index) {
+               case 1 -> w[0];
+               case 2 -> w[1];
+               case 3 -> w[2];
                default -> 1.0;
             };
-            if (!(var2 < 0.01)) {
-               double var4 = 256.0;
+            if (!(vis < 0.01)) {
+               double far = 256.0;
 
                try {
-                  var4 = dev.lego.compat.McCompat.depthFar(Mc.mc().gameRenderer);
+                  far = dev.lego.compat.McCompat.depthFar(Mc.mc().gameRenderer);
                } catch (Throwable var31) {
                }
 
-               double var6 = R3.skyRadius > 0.0 ? R3.skyRadius * 0.85 : Math.max(60.0, var4 * 0.42);
-               double var8 = System.currentTimeMillis() / 1000.0;
-               double var10 = Math.toRadians(this.elevation.get() + (this.bob.get() ? Math.sin(var8 * 0.35) * 1.2 : 0.0));
-               double var12 = Math.toRadians(this.azimuth.get());
-               double[] var14 = new double[]{Math.sin(var12) * Math.cos(var10), Math.sin(var10), -Math.cos(var12) * Math.cos(var10)};
-               double[] var15 = new double[]{Math.cos(var12), 0.0, Math.sin(var12)};
-               double[] var16 = new double[]{
-                  var14[1] * var15[2] - var14[2] * var15[1], var14[2] * var15[0] - var14[0] * var15[2], var14[0] * var15[1] - var14[1] * var15[0]
-               };
-               if (var16[1] < 0.0) {
-                  var16[0] = -var16[0];
-                  var16[1] = -var16[1];
-                  var16[2] = -var16[2];
+               double D = R3.skyRadius > 0.0 ? R3.skyRadius * 0.85 : Math.max(60.0, far * 0.42);
+               double t = System.currentTimeMillis() / 1000.0;
+               double el = Math.toRadians(this.elevation.get() + (this.bob.get() ? Math.sin(t * 0.35) * 1.2 : 0.0));
+               double az = Math.toRadians(this.azimuth.get());
+               double[] dir = new double[]{Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el)};
+               double[] right = new double[]{Math.cos(az), 0.0, Math.sin(az)};
+               double[] up = new double[]{dir[1] * right[2] - dir[2] * right[1], dir[2] * right[0] - dir[0] * right[2], dir[0] * right[1] - dir[1] * right[0]};
+               if (up[1] < 0.0) {
+                  up[0] = -up[0];
+                  up[1] = -up[1];
+                  up[2] = -up[2];
                }
 
-               double var17 = var6 * Math.tan(Math.toRadians(this.size.get()) / 2.0);
-               double var19 = var17 * this.tw / this.th;
-               double var21 = R3.camX() + var14[0] * var6;
-               double var23 = R3.camY() + var14[1] * var6;
-               double var25 = R3.camZ() + var14[2] * var6;
-               double var27 = this.opacity.get() / 100.0 * var2;
-               int var29;
-               int var30;
+               double hh = D * Math.tan(Math.toRadians(this.size.get()) / 2.0);
+               double hw = hh * this.tw / this.th;
+               double cx = R3.camX() + dir[0] * D;
+               double cy = R3.camY() + dir[1] * D;
+               double cz = R3.camZ() + dir[2] * D;
+               double alpha = this.opacity.get() / 100.0 * vis;
+               int tint;
+               int glowTint;
                switch (this.look.index) {
                   case 1:
-                     var29 = R3.argb(16777215, var27);
-                     var30 = R3.argb(16773590, var27 * 0.45);
+                     tint = R3.argb(16777215, alpha);
+                     glowTint = R3.argb(16773590, alpha * 0.45);
                      break;
                   case 2:
-                     var29 = R3.argb(12572927, var27 * 0.55);
-                     var30 = R3.argb(10274559, var27 * 0.55);
+                     tint = R3.argb(12572927, alpha * 0.55);
+                     glowTint = R3.argb(10274559, alpha * 0.55);
                      break;
                   case 3:
-                     var29 = R3.argb(16762784, var27 * 0.9);
-                     var30 = R3.argb(16747082, var27 * 0.5);
+                     tint = R3.argb(16762784, alpha * 0.9);
+                     glowTint = R3.argb(16747082, alpha * 0.5);
                      break;
                   default:
-                     var29 = R3.argb(16777215, var27);
-                     var30 = 0;
+                     tint = R3.argb(16777215, alpha);
+                     glowTint = 0;
                }
 
-               if (var30 != 0) {
-                  quad(R3.skyLayer(this.glowTex), var21, var23, var25, var15, var16, var19 * 1.12, var17 * 1.12, var30);
+               if (glowTint != 0) {
+                  quad(R3.skyLayer(this.glowTex), cx, cy, cz, right, up, hw * 1.12, hh * 1.12, glowTint);
                }
 
-               quad(R3.skyLayer(this.tex), var21, var23, var25, var15, var16, var19, var17, var29);
+               quad(R3.skyLayer(this.tex), cx, cy, cz, right, up, hw, hh, tint);
             }
          }
       }
 
-      private static void quad(RenderType var0, double var1, double var3, double var5, double[] var7, double[] var8, double var9, double var11, int var13) {
-         double[] var14 = new double[]{
-            var1 - var7[0] * var9 + var8[0] * var11, var3 - var7[1] * var9 + var8[1] * var11, var5 - var7[2] * var9 + var8[2] * var11
-         };
-         double[] var15 = new double[]{
-            var1 + var7[0] * var9 + var8[0] * var11, var3 + var7[1] * var9 + var8[1] * var11, var5 + var7[2] * var9 + var8[2] * var11
-         };
-         double[] var16 = new double[]{
-            var1 + var7[0] * var9 - var8[0] * var11, var3 + var7[1] * var9 - var8[1] * var11, var5 + var7[2] * var9 - var8[2] * var11
-         };
-         double[] var17 = new double[]{
-            var1 - var7[0] * var9 - var8[0] * var11, var3 - var7[1] * var9 - var8[1] * var11, var5 - var7[2] * var9 - var8[2] * var11
-         };
-         R3.skyQuad(var0, var14, var15, var16, var17, new float[]{0.0F, 0.0F, 1.0F, 0.0F, 1.0F, 1.0F, 0.0F, 1.0F}, var13);
+      private static void quad(RenderType layer, double cx, double cy, double cz, double[] r, double[] u, double hw, double hh, int c) {
+         double[] p0 = new double[]{cx - r[0] * hw + u[0] * hh, cy - r[1] * hw + u[1] * hh, cz - r[2] * hw + u[2] * hh};
+         double[] p1 = new double[]{cx + r[0] * hw + u[0] * hh, cy + r[1] * hw + u[1] * hh, cz + r[2] * hw + u[2] * hh};
+         double[] p2 = new double[]{cx + r[0] * hw - u[0] * hh, cy + r[1] * hw - u[1] * hh, cz + r[2] * hw - u[2] * hh};
+         double[] p3 = new double[]{cx - r[0] * hw - u[0] * hh, cy - r[1] * hw - u[1] * hh, cz - r[2] * hw - u[2] * hh};
+         R3.skyQuad(layer, p0, p1, p2, p3, new float[]{0.0F, 0.0F, 1.0F, 0.0F, 1.0F, 1.0F, 0.0F, 1.0F}, c);
       }
    }
 }

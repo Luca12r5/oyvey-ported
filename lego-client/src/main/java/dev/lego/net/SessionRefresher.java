@@ -289,7 +289,7 @@ public final class SessionRefresher {
       private long pickedAt = 0L;
 
       SessionModule() {
-         super("session", "Konto & Sitzung", "Erneuert die Minecraft-Sitzung im Spiel (kein Neustart nach Stunden) und wechselt das Konto über den LEGO Launcher", Category.UTILITY);
+         super("sessionrefresh", "Konto & Sitzung", "Erneuert die Minecraft-Sitzung im Spiel (kein Neustart nach Stunden) und wechselt das Konto über den LEGO Launcher", Category.UTILITY);
          this.icon("user");
          this.enabled = true;
          this.add(new Setting.Action("Sitzung", "Jetzt erneuern", () -> {

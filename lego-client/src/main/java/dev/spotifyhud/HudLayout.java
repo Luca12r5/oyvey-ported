@@ -32,64 +32,64 @@ public final class HudLayout {
    private HudLayout() {
    }
 
-   public static HudLayout.Region hit(double var0, double var2) {
-      if (var0 < 0.0 || var2 < 0.0 || var0 > 207.0 || var2 > 70.0) {
+   public static HudLayout.Region hit(double x, double y) {
+      if (x < 0.0 || y < 0.0 || x > 207.0 || y > 70.0) {
          return null;
-      } else if (near(var0, var2, 199.2, 8.2, 5.5)) {
+      } else if (near(x, y, 199.2, 8.2, 5.5)) {
          return HudLayout.Region.SETTINGS;
       } else {
-         if (var2 >= 50.0 && var2 <= 64.5) {
-            if (near(var0, var2, 14.0, 57.0, 5.5)) {
+         if (y >= 50.0 && y <= 64.5) {
+            if (near(x, y, 14.0, 57.0, 5.5)) {
                return HudLayout.Region.SPEAKER;
             }
 
-            if (var0 >= 19.5 && var0 <= 60.5) {
+            if (x >= 19.5 && x <= 60.5) {
                return HudLayout.Region.VOLUME;
             }
 
-            if (near(var0, var2, 88.8, 57.0, 6.5)) {
+            if (near(x, y, 88.8, 57.0, 6.5)) {
                return HudLayout.Region.PREV;
             }
 
-            if (near(var0, var2, 103.3, 57.0, 6.5)) {
+            if (near(x, y, 103.3, 57.0, 6.5)) {
                return HudLayout.Region.PLAY;
             }
 
-            if (near(var0, var2, 118.0, 57.0, 6.5)) {
+            if (near(x, y, 118.0, 57.0, 6.5)) {
                return HudLayout.Region.NEXT;
             }
 
-            if (near(var0, var2, 167.2, 57.0, 6.5)) {
+            if (near(x, y, 167.2, 57.0, 6.5)) {
                return HudLayout.Region.REPEAT;
             }
 
-            if (near(var0, var2, 181.3, 57.0, 6.5)) {
+            if (near(x, y, 181.3, 57.0, 6.5)) {
                return HudLayout.Region.SHUFFLE;
             }
 
-            if (near(var0, var2, 195.8, 57.0, 6.5)) {
+            if (near(x, y, 195.8, 57.0, 6.5)) {
                return HudLayout.Region.LIKE;
             }
          }
 
-         if (var0 >= 51.0 && var0 <= 200.5 && var2 >= 32.6 && var2 <= 44.0) {
+         if (x >= 51.0 && x <= 200.5 && y >= 32.6 && y <= 44.0) {
             return HudLayout.Region.PROGRESS;
          } else {
-            return var0 >= 9.0 && var0 <= 46.0 && var2 >= 9.0 && var2 <= 46.0 ? HudLayout.Region.ART : HudLayout.Region.PANEL;
+            return x >= 9.0 && x <= 46.0 && y >= 9.0 && y <= 46.0 ? HudLayout.Region.ART : HudLayout.Region.PANEL;
          }
       }
    }
 
-   private static boolean near(double var0, double var2, double var4, double var6, double var8) {
-      return Math.abs(var0 - var4) <= var8 && Math.abs(var2 - var6) <= var8;
+   private static boolean near(double x, double y, double cx, double cy, double r) {
+      return Math.abs(x - cx) <= r && Math.abs(y - cy) <= r;
    }
 
-   public static double progressFraction(double var0) {
-      return Math.max(0.0, Math.min(1.0, (var0 - 52.5) / 146.5));
+   public static double progressFraction(double x) {
+      return Math.max(0.0, Math.min(1.0, (x - 52.5) / 146.5));
    }
 
-   public static double volumeFraction(double var0) {
-      return Math.max(0.0, Math.min(1.0, (var0 - 21.0) / 37.5));
+   public static double volumeFraction(double x) {
+      return Math.max(0.0, Math.min(1.0, (x - 21.0) / 37.5));
    }
 
    public static enum Region {

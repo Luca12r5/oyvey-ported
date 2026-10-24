@@ -1,34 +1,36 @@
 package dev.lego.ui;
 
+import dev.lego.core.Lang;
+
 public final class Keys {
    private Keys() {
    }
 
-   public static String name(int var0) {
-      if (var0 < 0) {
-         return "Keine";
-      } else if (var0 >= 65 && var0 <= 90) {
-         return String.valueOf((char)var0);
-      } else if (var0 >= 48 && var0 <= 57) {
-         return String.valueOf((char)var0);
-      } else if (var0 >= 290 && var0 <= 314) {
-         return "F" + (var0 - 289);
-      } else if (var0 >= 320 && var0 <= 329) {
-         return "Num " + (var0 - 320);
+   public static String name(int k) {
+      if (k < 0) {
+         return Lang.get("key.none", "Keine");
+      } else if (k >= 65 && k <= 90) {
+         return String.valueOf((char)k);
+      } else if (k >= 48 && k <= 57) {
+         return String.valueOf((char)k);
+      } else if (k >= 290 && k <= 314) {
+         return "F" + (k - 289);
+      } else if (k >= 320 && k <= 329) {
+         return "Num " + (k - 320);
       } else {
-         switch (var0) {
+         switch (k) {
             case 0:
-               return "Maus L";
+               return Lang.get("key.mouse_l", "Maus L");
             case 1:
-               return "Maus R";
+               return Lang.get("key.mouse_r", "Maus R");
             case 2:
-               return "Maus M";
+               return Lang.get("key.mouse_m", "Maus M");
             case 3:
-               return "Maus 4";
+               return Lang.get("key.mouse_4", "Maus 4");
             case 4:
-               return "Maus 5";
+               return Lang.get("key.mouse_5", "Maus 5");
             case 32:
-               return "Leertaste";
+               return Lang.get("key.space", "Leertaste");
             case 39:
                return "Ä";
             case 44:
@@ -46,45 +48,45 @@ public final class Keys {
             case 96:
                return "^";
             case 257:
-               return "Enter";
+               return Lang.get("key.enter", "Enter");
             case 258:
-               return "Tab";
+               return Lang.get("key.tab", "Tab");
             case 260:
-               return "Einfg";
+               return Lang.get("key.insert", "Einfg");
             case 261:
-               return "Entf";
+               return Lang.get("key.delete", "Entf");
             case 262:
-               return "Rechts";
+               return Lang.get("key.right", "Rechts");
             case 263:
-               return "Links";
+               return Lang.get("key.left", "Links");
             case 264:
-               return "Runter";
+               return Lang.get("key.down", "Runter");
             case 265:
-               return "Hoch";
+               return Lang.get("key.up", "Hoch");
             case 266:
-               return "Bild hoch";
+               return Lang.get("key.pgup", "Bild hoch");
             case 267:
-               return "Bild runter";
+               return Lang.get("key.pgdn", "Bild runter");
             case 268:
-               return "Pos1";
+               return Lang.get("key.home", "Pos1");
             case 269:
-               return "Ende";
+               return Lang.get("key.end", "Ende");
             case 280:
-               return "Feststell";
+               return Lang.get("key.caps", "Feststell");
             case 340:
-               return "L-Shift";
+               return Lang.get("key.lshift", "L-Shift");
             case 341:
-               return "L-Strg";
+               return Lang.get("key.lctrl", "L-Strg");
             case 342:
-               return "L-Alt";
+               return Lang.get("key.lalt", "L-Alt");
             case 344:
-               return "R-Shift";
+               return Lang.get("key.rshift", "R-Shift");
             case 345:
-               return "R-Strg";
+               return Lang.get("key.rctrl", "R-Strg");
             case 346:
-               return "Alt Gr";
+               return Lang.get("key.ralt", "Alt Gr");
             default:
-               return "Taste " + var0;
+               return Lang.get("key.unknown", "Taste") + " " + k;
          }
       }
    }

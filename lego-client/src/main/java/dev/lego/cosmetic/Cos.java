@@ -18,12 +18,12 @@ public final class Cos {
    private Cos() {
    }
 
-   static void add(String var0, String var1, Cos.Slot var2, Cos.Rarity var3, Cos.Model var4) {
-      ALL.add(new Cos.Item(var0, var1, var2, var3, var4, null));
+   public static void add(String id, String name, Cos.Slot s, Cos.Rarity r, Cos.Model m) {
+      ALL.add(new Cos.Item(id, name, s, r, m, null));
    }
 
-   static void cape(String var0, String var1, Cos.Rarity var2) {
-      ALL.add(new Cos.Item("cape_" + var0, var1, Cos.Slot.CAPE, var2, Models::capePreview, "cape_" + var0));
+   static void cape(String id, String name, Cos.Rarity r) {
+      ALL.add(new Cos.Item("cape_" + id, name, Cos.Slot.CAPE, r, Models::capePreview, "cape_" + id));
    }
 
    public static synchronized void init() {
@@ -36,46 +36,46 @@ public final class Cos {
       }
    }
 
-   public static Cos.Item get(String var0) {
-      for (Cos.Item var2 : ALL) {
-         if (var2.id.equals(var0)) {
-            return var2;
+   public static Cos.Item get(String id) {
+      for (Cos.Item i : ALL) {
+         if (i.id.equals(id)) {
+            return i;
          }
       }
 
       return null;
    }
 
-   public static List<Cos.Item> of(Cos.Slot var0) {
-      ArrayList var1 = new ArrayList();
+   public static List<Cos.Item> of(Cos.Slot s) {
+      List<Cos.Item> out = new ArrayList<>();
 
-      for (Cos.Item var3 : ALL) {
-         if (var3.slot == var0) {
-            var1.add(var3);
+      for (Cos.Item i : ALL) {
+         if (i.slot == s) {
+            out.add(i);
          }
       }
 
-      return var1;
+      return out;
    }
 
-   public static Cos.Item equipped(Cos.Slot var0) {
-      String var1 = EQUIPPED.get(var0);
-      return var1 == null ? null : get(var1);
+   public static Cos.Item equipped(Cos.Slot s) {
+      String id = EQUIPPED.get(s);
+      return id == null ? null : get(id);
    }
 
-   public static boolean isEquipped(Cos.Item var0) {
-      return var0.id.equals(EQUIPPED.get(var0.slot));
+   public static boolean isEquipped(Cos.Item i) {
+      return i.id.equals(EQUIPPED.get(i.slot));
    }
 
    public static boolean anyEquipped() {
       return !EQUIPPED.isEmpty();
    }
 
-   public static void toggle(Cos.Item var0) {
-      if (isEquipped(var0)) {
-         EQUIPPED.remove(var0.slot);
+   public static void toggle(Cos.Item i) {
+      if (isEquipped(i)) {
+         EQUIPPED.remove(i.slot);
       } else {
-         EQUIPPED.put(var0.slot, var0.id);
+         EQUIPPED.put(i.slot, i.id);
       }
 
       version++;
@@ -97,25 +97,25 @@ public final class Cos {
       Modules.persist("cosmetics", new Modules.Persist() {
          @Override
          public Object save() {
-            LinkedHashMap var1 = new LinkedHashMap();
+            Map<String, Object> m = new LinkedHashMap<>();
 
-            for (Entry var3 : Cos.EQUIPPED.entrySet()) {
-               var1.put(((Cos.Slot)var3.getKey()).name(), var3.getValue());
+            for (Entry<Cos.Slot, String> e : Cos.EQUIPPED.entrySet()) {
+               m.put(e.getKey().name(), e.getValue());
             }
 
-            return var1;
+            return m;
          }
 
          @Override
-         public void load(Object var1) {
-            if (var1 instanceof Map) {
+         public void load(Object o) {
+            if (o instanceof Map) {
                Cos.EQUIPPED.clear();
 
-               for (Entry var3 : (Iterable<Entry>) (Iterable<?>) (((Map)var1).entrySet())) {
+               for (Entry<String, Object> e : ((Map)o).entrySet()) {
                   try {
-                     Cos.Slot var4 = Cos.Slot.valueOf((String)var3.getKey());
-                     if (var3.getValue() instanceof String && Cos.get((String)var3.getValue()) != null) {
-                        Cos.EQUIPPED.put(var4, (String)var3.getValue());
+                     Cos.Slot s = Cos.Slot.valueOf(e.getKey());
+                     if (e.getValue() instanceof String && Cos.get((String)e.getValue()) != null) {
+                        Cos.EQUIPPED.put(s, (String)e.getValue());
                      }
                   } catch (IllegalArgumentException var5) {
                   }
@@ -127,39 +127,34 @@ public final class Cos {
       });
    }
 
-   public static void renderEquipped(G var0, Cos.A var1, boolean var2) {
-      for (Cos.Slot var6 : Cos.Slot.values()) {
-         if (var6.head == var2 && var6 != Cos.Slot.CAPE && var6 != Cos.Slot.PET && var6 != Cos.Slot.VEHICLE && var6 != Cos.Slot.KNIFE) {
-            Cos.Item var7 = equipped(var6);
-            if (var7 != null) {
-               var0.push();
-               var0.color(-1).glow(false);
-               if (slotTransform != null) {
-                  slotTransform.accept(var0, var6);
-               }
+   public static void renderList(G g, Cos.A a, boolean head, List<String> ids) {
+      for (String id : ids) {
+         Cos.Item it = get(id);
+         if (it != null && it.slot.head == head && it.slot != Cos.Slot.CAPE && it.slot != Cos.Slot.PET && it.slot != Cos.Slot.VEHICLE) {
+            g.push();
+            g.color(-1).glow(false);
 
-               try {
-                  var7.model.render(var0, var1);
-               } finally {
-                  var0.pop();
-               }
+            try {
+               it.model.render(g, a);
+            } finally {
+               g.pop();
             }
          }
       }
    }
 
    /** Like renderEquipped, but for an explicit slot->item map (other LEGO players). */
-   public static void renderItems(G var0, Cos.A var1, boolean var2, Map<Cos.Slot, String> items) {
-      for (Cos.Slot var6 : Cos.Slot.values()) {
-         if (var6.head == var2 && var6 != Cos.Slot.CAPE && var6 != Cos.Slot.PET && var6 != Cos.Slot.VEHICLE && var6 != Cos.Slot.KNIFE) {
-            Cos.Item var7 = items.get(var6) == null ? null : get(items.get(var6));
-            if (var7 != null) {
-               var0.push();
-               var0.color(-1).glow(false);
+   public static void renderItems(G g, Cos.A a, boolean head, Map<Cos.Slot, String> items) {
+      for (Cos.Slot s : Cos.Slot.values()) {
+         if (s.head == head && s != Cos.Slot.CAPE && s != Cos.Slot.PET && s != Cos.Slot.VEHICLE && s != Cos.Slot.KNIFE) {
+            Cos.Item it = items.get(s) == null ? null : get(items.get(s));
+            if (it != null) {
+               g.push();
+               g.color(-1).glow(false);
                try {
-                  var7.model.render(var0, var1);
+                  it.model.render(g, a);
                } finally {
-                  var0.pop();
+                  g.pop();
                }
             }
          }
@@ -176,6 +171,27 @@ public final class Cos {
          it.model.render(g, a);
       } finally {
          g.pop();
+      }
+   }
+
+   public static void renderEquipped(G g, Cos.A a, boolean head) {
+      for (Cos.Slot s : Cos.Slot.values()) {
+         if (s.head == head && s != Cos.Slot.CAPE && s != Cos.Slot.PET && s != Cos.Slot.VEHICLE && s != Cos.Slot.KNIFE) {
+            Cos.Item it = equipped(s);
+            if (it != null) {
+               g.push();
+               g.color(-1).glow(false);
+               if (slotTransform != null) {
+                  slotTransform.accept(g, s);
+               }
+
+               try {
+                  it.model.render(g, a);
+               } finally {
+                  g.pop();
+               }
+            }
+         }
       }
    }
 
@@ -208,13 +224,13 @@ public final class Cos {
       public final Cos.Model model;
       public final String cape;
 
-      Item(String var1, String var2, Cos.Slot var3, Cos.Rarity var4, Cos.Model var5, String var6) {
-         this.id = var1;
-         this.name = var2;
-         this.slot = var3;
-         this.rarity = var4;
-         this.model = var5;
-         this.cape = var6;
+      Item(String id, String name, Cos.Slot slot, Cos.Rarity rarity, Cos.Model model, String cape) {
+         this.id = id;
+         this.name = name;
+         this.slot = slot;
+         this.rarity = rarity;
+         this.model = model;
+         this.cape = cape;
       }
    }
 
@@ -231,9 +247,9 @@ public final class Cos {
       public final String title;
       public final int color;
 
-      private Rarity(String nullxx, int nullxxx) {
-         this.title = nullxx;
-         this.color = nullxxx;
+      private Rarity(String t, int c) {
+         this.title = t;
+         this.color = c;
       }
    }
 
@@ -252,10 +268,10 @@ public final class Cos {
       public final String icon;
       public final boolean head;
 
-      private Slot(String nullxx, String nullxxx, boolean nullxxxx) {
-         this.title = nullxx;
-         this.icon = nullxxx;
-         this.head = nullxxxx;
+      private Slot(String title, String icon, boolean head) {
+         this.title = title;
+         this.icon = icon;
+         this.head = head;
       }
    }
 }

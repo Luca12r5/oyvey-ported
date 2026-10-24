@@ -18,66 +18,66 @@ public final class Kit {
       clip = null;
    }
 
-   public static void clip(int var0, int var1, int var2, int var3) {
-      clip = new int[]{var0, var1, var2, var3};
+   public static void clip(int x, int y, int w, int h) {
+      clip = new int[]{x, y, w, h};
    }
 
    public static void unclip() {
       clip = null;
    }
 
-   public static Kit.Region hit(int var0, int var1, int var2, int var3) {
-      int var4 = var0;
-      int var5 = var1;
-      int var6 = var2;
-      int var7 = var3;
+   public static Kit.Region hit(int x, int y, int w, int h) {
+      int X = x;
+      int Y = y;
+      int W = w;
+      int H = h;
       if (clip != null) {
-         int var8 = Math.min(var0 + var2, clip[0] + clip[2]);
-         int var9 = Math.min(var1 + var3, clip[1] + clip[3]);
-         var4 = Math.max(var0, clip[0]);
-         var5 = Math.max(var1, clip[1]);
-         var6 = Math.max(0, var8 - var4);
-         var7 = Math.max(0, var9 - var5);
+         int x2 = Math.min(x + w, clip[0] + clip[2]);
+         int y2 = Math.min(y + h, clip[1] + clip[3]);
+         X = Math.max(x, clip[0]);
+         Y = Math.max(y, clip[1]);
+         W = Math.max(0, x2 - X);
+         H = Math.max(0, y2 - Y);
       }
 
-      Kit.Region var10 = new Kit.Region(var4, var5, var6, var7);
-      REGIONS.add(var10);
-      return var10;
+      Kit.Region r = new Kit.Region(X, Y, W, H);
+      REGIONS.add(r);
+      return r;
    }
 
-   public static Kit.Region at(float var0, float var1) {
-      for (int var2 = REGIONS.size() - 1; var2 >= 0; var2--) {
-         if (REGIONS.get(var2).in(var0, var1)) {
-            return REGIONS.get(var2);
+   public static Kit.Region at(float px, float py) {
+      for (int i = REGIONS.size() - 1; i >= 0; i--) {
+         if (REGIONS.get(i).in(px, py)) {
+            return REGIONS.get(i);
          }
       }
 
       return null;
    }
 
-   public static boolean down(float var0, float var1, int var2) {
-      for (int var3 = REGIONS.size() - 1; var3 >= 0; var3--) {
-         Kit.Region var4 = REGIONS.get(var3);
-         if (var4.in(var0, var1)) {
-            if (var2 == 1 && var4.right != null) {
-               var4.right.run();
+   public static boolean down(float px, float py, int button) {
+      for (int i = REGIONS.size() - 1; i >= 0; i--) {
+         Kit.Region r = REGIONS.get(i);
+         if (r.in(px, py)) {
+            if (button == 1 && r.right != null) {
+               r.right.run();
                Sound.click();
                return true;
             }
 
-            if (var2 == 0 && var4.drag != null) {
-               active = var4;
-               var4.drag.accept(var0, var1);
+            if (button == 0 && r.drag != null) {
+               active = r;
+               r.drag.accept(px, py);
                return true;
             }
 
-            if (var2 == 0 && var4.click != null) {
-               var4.click.run();
+            if (button == 0 && r.click != null) {
+               r.click.run();
                Sound.click();
                return true;
             }
 
-            if (var4.click != null || var4.right != null || var4.drag != null) {
+            if (r.click != null || r.right != null || r.drag != null) {
                return true;
             }
          }
@@ -90,26 +90,26 @@ public final class Kit {
       return active != null;
    }
 
-   public static boolean drag(float var0, float var1) {
+   public static boolean drag(float px, float py) {
       if (active == null) {
          return false;
       } else {
-         active.drag.accept(var0, var1);
+         active.drag.accept(px, py);
          return true;
       }
    }
 
    public static boolean up() {
-      boolean var0 = active != null;
+      boolean had = active != null;
       active = null;
-      return var0;
+      return had;
    }
 
-   public static boolean scroll(float var0, float var1, double var2) {
-      for (int var4 = REGIONS.size() - 1; var4 >= 0; var4--) {
-         Kit.Region var5 = REGIONS.get(var4);
-         if (var5.scroll != null && var5.in(var0, var1)) {
-            var5.scroll.accept(var2);
+   public static boolean scroll(float px, float py, double amount) {
+      for (int i = REGIONS.size() - 1; i >= 0; i--) {
+         Kit.Region r = REGIONS.get(i);
+         if (r.scroll != null && r.in(px, py)) {
+            r.scroll.accept(amount);
             return true;
          }
       }
@@ -117,67 +117,71 @@ public final class Kit {
       return false;
    }
 
-   public static void toggle(String var0, int var1, int var2, int var3, int var4, boolean var5, float var6) {
-      float var7 = Ease.to("tg:" + var0, var5 ? 1.0F : 0.0F, 16.0F);
-      int var8 = Gx.mix(Style.light ? -2762529 : -12960441, Style.accent, var7);
-      Gx.rect(var1, var2, var3, var4, var4 / 2, var8);
-      if (Xmas.on() && var7 > 0.01F) {
-         Gx.pushAlpha(var7);
-         Xmas.candy(var1, var2, var3, var4, 0.0F);
+   public static void toggle(String key, int x, int y, int w, int h, boolean on, float P) {
+      float t = Ease.to("tg:" + key, on ? 1.0F : 0.0F, 16.0F);
+      int track = Gx.mix(Style.light ? -2762529 : -12960441, Style.accent, t);
+      Gx.rect(x, y, w, h, h / 2, track);
+      if (Halloween.on() && t > 0.01F) {
+         Gx.pushAlpha(t);
+         Halloween.spookyStripes(x, y, w, h, 0.0F);
+         Gx.popAlpha();
+      } else if (Xmas.on() && t > 0.01F) {
+         Gx.pushAlpha(t);
+         Xmas.candy(x, y, w, h, 0.0F);
          Gx.popAlpha();
       }
 
-      int var9 = Math.max(2, Math.round(var4 * 0.14F));
-      int var10 = var4 - var9 * 2;
-      int var11 = Math.round(var1 + var9 + (var3 - var9 * 2 - var10) * Ease.outCubic(var7));
-      Gx.shadow(var11, var2 + var9, var10, var10, var10 / 2, Math.max(1, Math.round(var6 * 1.2F)), 0.25F);
-      Gx.circle(var11 + var10 / 2, var2 + var4 / 2, var10 / 2, -1);
+      int pad = Math.max(2, Math.round(h * 0.14F));
+      int d = h - pad * 2;
+      int kx = Math.round(x + pad + (w - pad * 2 - d) * Ease.outCubic(t));
+      Gx.shadow(kx, y + pad, d, d, d / 2, Math.max(1, Math.round(P * 1.2F)), 0.25F);
+      Gx.circle(kx + d / 2, y + h / 2, d / 2, -1);
    }
 
-   public static void slider(String var0, int var1, int var2, int var3, int var4, float var5, float var6) {
-      float var7 = Ease.to("sl:" + var0, var5, 22.0F);
-      int var8 = Math.max(2, Math.round(var6 * 3.2F));
-      int var9 = var2 + var4 / 2 - var8 / 2;
-      Gx.rect(var1, var9, var3, var8, var8 / 2, Style.light ? -2499357 : -13420993);
-      int var10 = Math.round(var3 * var7);
-      Gx.rect(var1, var9, Math.max(var8, var10), var8, var8 / 2, Style.accent);
-      int var11 = Math.round(var6 * 11.0F);
-      int var12 = var1 + var10 - var11 / 2;
-      Gx.shadow(var12, var2 + var4 / 2 - var11 / 2, var11, var11, var11 / 2, Math.max(1, Math.round(var6 * 1.5F)), 0.3F);
-      Gx.circle(var12 + var11 / 2, var2 + var4 / 2, var11 / 2, -1);
-      Gx.circle(var12 + var11 / 2, var2 + var4 / 2, Math.max(1, var11 / 5), Style.accent);
+   public static void slider(String key, int x, int y, int w, int h, float frac, float P) {
+      float f = Ease.to("sl:" + key, frac, 22.0F);
+      int th = Math.max(2, Math.round(P * 3.2F));
+      int ty = y + h / 2 - th / 2;
+      Gx.rect(x, ty, w, th, th / 2, Style.light ? -2499357 : -13420993);
+      int fw = Math.round(w * f);
+      Gx.rect(x, ty, Math.max(th, fw), th, th / 2, Style.accent);
+      int kd = Math.round(P * 11.0F);
+      int kx = x + fw - kd / 2;
+      Gx.shadow(kx, y + h / 2 - kd / 2, kd, kd, kd / 2, Math.max(1, Math.round(P * 1.5F)), 0.3F);
+      Gx.circle(kx + kd / 2, y + h / 2, kd / 2, -1);
+      Gx.circle(kx + kd / 2, y + h / 2, Math.max(1, kd / 5), Style.accent);
    }
 
-   public static void button(String var0, String var1, String var2, int var3, int var4, int var5, int var6, float var7, boolean var8, boolean var9) {
-      float var10 = Ease.to("bt:" + var0, var9 ? 1.0F : 0.0F, 14.0F);
-      int var11 = var8 ? Style.accent : Style.surface2;
-      int var12 = var8 ? Gx.mix(var11, -1, 0.12F * var10) : Gx.mix(var11, Style.surfaceHover, var10);
-      Gx.rect(var3, var4, var5, var6, Math.round(var7 * 7.0F), var12);
-      if (!var8) {
-         Gx.outline(var3, var4, var5, var6, Math.round(var7 * 7.0F), Math.max(1, Math.round(var7 * 0.6F)), Gx.mix(Style.stroke, Style.strokeHi, var10));
+   public static void button(String key, String label, String icon, int x, int y, int w, int h, float P, boolean primary, boolean hovered) {
+      float hv = Ease.to("bt:" + key, hovered ? 1.0F : 0.0F, 14.0F);
+      int base = primary ? Style.accent : Style.surface2;
+      int top = primary ? Gx.mix(base, -1, 0.12F * hv) : Gx.mix(base, Style.surfaceHover, hv);
+      Gx.rect(x, y, w, h, Math.round(P * 7.0F), top);
+      if (!primary) {
+         Gx.outline(x, y, w, h, Math.round(P * 7.0F), Math.max(1, Math.round(P * 0.6F)), Gx.mix(Style.stroke, Style.strokeHi, hv));
       }
 
-      int var13 = var8 ? Style.accentText : Style.text;
-      float var14 = var7 * 8.6F;
-      float var15 = Gx.width(var1, var14, 2);
-      float var16 = var2 == null ? 0.0F : var7 * 11.0F + var7 * 5.0F;
-      float var17 = var3 + (var5 - var15 - var16) / 2.0F;
-      if (var2 != null) {
-         Gx.icon(var2, var17 + var7 * 5.5F, var4 + var6 / 2.0F, var7 * 11.0F, var13);
+      int fg = primary ? Style.accentText : Style.text;
+      float fs = P * 8.6F;
+      float tw = Gx.width(label, fs, 2);
+      float iw = icon == null ? 0.0F : P * 11.0F + P * 5.0F;
+      float sx = x + (w - tw - iw) / 2.0F;
+      if (icon != null) {
+         Gx.icon(icon, sx + P * 5.5F, y + h / 2.0F, P * 11.0F, fg);
       }
 
-      Gx.textMid(var1, var17 + var16, var4 + var6 / 2.0F, var14, 2, var13);
+      Gx.textMid(label, sx + iw, y + h / 2.0F, fs, 2, fg);
    }
 
-   public static void tooltip(String var0, float var1, float var2, float var3) {
-      float var4 = var3 * 8.0F;
-      int var5 = Math.round(Gx.width(var0, var4, 2) + var3 * 14.0F);
-      int var6 = Math.round(var3 * 18.0F);
-      int var7 = Math.round(var1 - var5 / 2.0F);
-      int var8 = Math.round(var2 - var6);
-      Gx.shadow(var7, var8, var5, var6, Math.round(var3 * 6.0F), Math.round(var3 * 4.0F), 0.35F);
-      Gx.rect(var7, var8, var5, var6, Math.round(var3 * 6.0F), Style.light ? -15000542 : -789258);
-      Gx.textCenter(var0, var7 + var5 / 2.0F, var8 + var6 / 2.0F, var4, 2, Style.light ? -1 : -15658474);
+   public static void tooltip(String text, float cx, float bottomY, float P) {
+      float fs = P * 8.0F;
+      int tw = Math.round(Gx.width(text, fs, 2) + P * 14.0F);
+      int th = Math.round(P * 18.0F);
+      int x = Math.round(cx - tw / 2.0F);
+      int y = Math.round(bottomY - th);
+      Gx.shadow(x, y, tw, th, Math.round(P * 6.0F), Math.round(P * 4.0F), 0.35F);
+      Gx.rect(x, y, tw, th, Math.round(P * 6.0F), Style.light ? -15000542 : -789258);
+      Gx.textCenter(text, x + tw / 2.0F, y + th / 2.0F, fs, 2, Style.light ? -1 : -15658474);
    }
 
    public static final class Region {
@@ -191,35 +195,35 @@ public final class Kit {
       Consumer<Double> scroll;
       String id;
 
-      Region(int var1, int var2, int var3, int var4) {
-         this.x = var1;
-         this.y = var2;
-         this.w = var3;
-         this.h = var4;
+      Region(int x, int y, int w, int h) {
+         this.x = x;
+         this.y = y;
+         this.w = w;
+         this.h = h;
       }
 
-      public Kit.Region click(Runnable var1) {
-         this.click = var1;
+      public Kit.Region click(Runnable r) {
+         this.click = r;
          return this;
       }
 
-      public Kit.Region right(Runnable var1) {
-         this.right = var1;
+      public Kit.Region right(Runnable r) {
+         this.right = r;
          return this;
       }
 
-      public Kit.Region drag(BiConsumer<Float, Float> var1) {
-         this.drag = var1;
+      public Kit.Region drag(BiConsumer<Float, Float> d) {
+         this.drag = d;
          return this;
       }
 
-      public Kit.Region scroll(Consumer<Double> var1) {
-         this.scroll = var1;
+      public Kit.Region scroll(Consumer<Double> s) {
+         this.scroll = s;
          return this;
       }
 
-      public Kit.Region id(String var1) {
-         this.id = var1;
+      public Kit.Region id(String s) {
+         this.id = s;
          return this;
       }
 
@@ -227,8 +231,8 @@ public final class Kit {
          return this.id;
       }
 
-      boolean in(float var1, float var2) {
-         return var1 >= this.x && var2 >= this.y && var1 < this.x + this.w && var2 < this.y + this.h;
+      boolean in(float px, float py) {
+         return px >= this.x && py >= this.y && px < this.x + this.w && py < this.y + this.h;
       }
    }
 }

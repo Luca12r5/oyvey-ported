@@ -8,10 +8,14 @@ import dev.lego.core.Modules;
 import dev.lego.core.Setting;
 import dev.lego.ui.Gx;
 import dev.lego.ui.Toasts;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.Map.Entry;
 import net.minecraft.client.CloudStatus;
 import net.minecraft.client.OptionInstance;
@@ -24,6 +28,7 @@ import net.minecraft.world.entity.player.Player;
 
 public final class Performance {
    public static Performance.FpsBoost boost;
+   public static Performance.Moltron moltron;
    public static Performance.EntityCulling culling;
    public static Performance.ParticleLimit particles;
    public static Performance.BackgroundFps background;
@@ -35,11 +40,16 @@ public final class Performance {
    }
 
    public static boolean lowMode() {
-      return guard != null && guard.enabled && guard.low;
+      return guard != null && guard.enabled && guard.low || potato();
+   }
+
+   public static boolean potato() {
+      return moltron != null && moltron.enabled;
    }
 
    public static void registerAll() {
       boost = Modules.register(new Performance.FpsBoost());
+      moltron = Modules.register(new Performance.Moltron());
       culling = Modules.register(new Performance.EntityCulling());
       particles = Modules.register(new Performance.ParticleLimit());
       background = Modules.register(new Performance.BackgroundFps());
@@ -58,8 +68,8 @@ public final class Performance {
          this.fresh();
       }
 
-      public int limit(int var1) {
-         return this.enabled && !Mc.windowFocused() ? Math.min(var1, this.fps.getI()) : var1;
+      public int limit(int vanilla) {
+         return this.enabled && !Mc.windowFocused() ? Math.min(vanilla, this.fps.getI()) : vanilla;
       }
    }
 
@@ -74,6 +84,7 @@ public final class Performance {
       EntityCulling() {
          super("entityculling", "Entity-Culling", "Rendert Mobs/Items nicht, wenn sie weit weg oder hinter Blöcken sind", Category.PERFORMANCE);
          this.icon("entity");
+         this.enabled = true;
          this.fresh();
       }
 
@@ -81,47 +92,47 @@ public final class Performance {
       public void tick() {
          this.frame++;
          if (this.frame % 200L == 0L) {
-            this.cache.entrySet().removeIf(var1 -> this.frame - var1.getValue()[0] > 100L);
+            this.cache.entrySet().removeIf(e -> this.frame - e.getValue()[0] > 100L);
          }
       }
 
-      public boolean shouldRender(Entity var1, double var2, double var4, double var6) {
-         if (var1 == Mc.player()) {
+      public boolean shouldRender(Entity e, double cx, double cy, double cz) {
+         if (e == Mc.player()) {
             return true;
-         } else if (var1 instanceof Player && this.keepPlayers.get()) {
+         } else if (e instanceof Player && this.keepPlayers.get()) {
             return true;
-         } else if (var1.isCurrentlyGlowing()) {
+         } else if (e.isCurrentlyGlowing()) {
             return true;
          } else {
-            double var8 = Mc.x(var1) - var2;
-            double var10 = Mc.y(var1) + Mc.height(var1) / 2.0F - var4;
-            double var12 = Mc.z(var1) - var6;
-            double var14 = var8 * var8 + var10 * var10 + var12 * var12;
-            String var16 = Mc.typeId(var1);
-            boolean var17 = var16.equals("item") || var16.equals("experience_orb") || var16.equals("arrow");
-            boolean var18 = Performance.boost != null && Performance.boost.extreme();
-            double var19 = var17
-               ? (var18 ? Math.min(16.0, this.itemDist.get()) : this.itemDist.get())
-               : (var18 ? Math.min(48.0, this.mobDist.get()) : this.mobDist.get());
-            if (!(var1 instanceof Player) && var14 > var19 * var19) {
+            double dx = Mc.x(e) - cx;
+            double dy = Mc.y(e) + Mc.height(e) / 2.0F - cy;
+            double dz = Mc.z(e) - cz;
+            double d2 = dx * dx + dy * dy + dz * dz;
+            String t = Mc.typeId(e);
+            boolean small = t.equals("item") || t.equals("experience_orb") || t.equals("arrow");
+            boolean ext = Performance.boost != null && Performance.boost.extreme();
+            double max = small
+               ? (ext ? Math.min(16.0, this.itemDist.get()) : this.itemDist.get())
+               : (ext ? Math.min(48.0, this.mobDist.get()) : this.mobDist.get());
+            if (!(e instanceof Player) && d2 > max * max) {
                return false;
-            } else if (this.occlusion.get() && !(var14 < 16.0)) {
-               float var21 = Mc.width(var1);
-               float var22 = Mc.height(var1);
-               if (!(var21 > 3.0F) && !(var22 > 4.0F)) {
-                  int var23 = Mc.id(var1);
-                  long[] var24 = this.cache.get(var23);
-                  if (var24 != null && this.frame - var24[0] < 4L) {
-                     return var24[1] == 1L;
+            } else if (this.occlusion.get() && !(d2 < 16.0)) {
+               float w = Mc.width(e);
+               float h = Mc.height(e);
+               if (!(w > 3.0F) && !(h > 4.0F)) {
+                  int id = Mc.id(e);
+                  long[] c = this.cache.get(id);
+                  if (c != null && this.frame - c[0] < 4L) {
+                     return c[1] == 1L;
                   } else {
-                     ClientLevel var25 = Mc.world();
-                     boolean var26 = var25 == null
-                        || visible(var25, var2, var4, var6, Mc.x(var1), Mc.y(var1) + var22 * 0.9, Mc.z(var1))
-                        || visible(var25, var2, var4, var6, Mc.x(var1), Mc.y(var1) + var22 * 0.2, Mc.z(var1))
-                        || visible(var25, var2, var4, var6, Mc.x(var1) + var21 / 2.0F, Mc.y(var1) + var22 / 2.0F, Mc.z(var1) + var21 / 2.0F)
-                        || visible(var25, var2, var4, var6, Mc.x(var1) - var21 / 2.0F, Mc.y(var1) + var22 / 2.0F, Mc.z(var1) - var21 / 2.0F);
-                     this.cache.put(var23, new long[]{this.frame, var26 ? 1L : 0L});
-                     return var26;
+                     ClientLevel world = Mc.world();
+                     boolean vis = world == null
+                        || visible(world, cx, cy, cz, Mc.x(e), Mc.y(e) + h * 0.9, Mc.z(e))
+                        || visible(world, cx, cy, cz, Mc.x(e), Mc.y(e) + h * 0.2, Mc.z(e))
+                        || visible(world, cx, cy, cz, Mc.x(e) + w / 2.0F, Mc.y(e) + h / 2.0F, Mc.z(e) + w / 2.0F)
+                        || visible(world, cx, cy, cz, Mc.x(e) - w / 2.0F, Mc.y(e) + h / 2.0F, Mc.z(e) - w / 2.0F);
+                     this.cache.put(id, new long[]{this.frame, vis ? 1L : 0L});
+                     return vis;
                   }
                } else {
                   return true;
@@ -132,49 +143,49 @@ public final class Performance {
          }
       }
 
-      private static boolean visible(ClientLevel var0, double var1, double var3, double var5, double var7, double var9, double var11) {
-         double var13 = var7 - var1;
-         double var15 = var9 - var3;
-         double var17 = var11 - var5;
-         int var19 = (int)Math.floor(var1);
-         int var20 = (int)Math.floor(var3);
-         int var21 = (int)Math.floor(var5);
-         int var22 = (int)Math.floor(var7);
-         int var23 = (int)Math.floor(var9);
-         int var24 = (int)Math.floor(var11);
-         int var25 = var13 > 0.0 ? 1 : -1;
-         int var26 = var15 > 0.0 ? 1 : -1;
-         int var27 = var17 > 0.0 ? 1 : -1;
-         double var28 = var13 == 0.0 ? Double.MAX_VALUE : Math.abs(1.0 / var13);
-         double var30 = var15 == 0.0 ? Double.MAX_VALUE : Math.abs(1.0 / var15);
-         double var32 = var17 == 0.0 ? Double.MAX_VALUE : Math.abs(1.0 / var17);
-         double var34 = var13 == 0.0 ? Double.MAX_VALUE : (var25 > 0 ? var19 + 1 - var1 : var1 - var19) * var28;
-         double var36 = var15 == 0.0 ? Double.MAX_VALUE : (var26 > 0 ? var20 + 1 - var3 : var3 - var20) * var30;
-         double var38 = var17 == 0.0 ? Double.MAX_VALUE : (var27 > 0 ? var21 + 1 - var5 : var5 - var21) * var32;
-         MutableBlockPos var40 = new MutableBlockPos();
+      private static boolean visible(ClientLevel w, double x0, double y0, double z0, double x1, double y1, double z1) {
+         double dx = x1 - x0;
+         double dy = y1 - y0;
+         double dz = z1 - z0;
+         int x = (int)Math.floor(x0);
+         int y = (int)Math.floor(y0);
+         int z = (int)Math.floor(z0);
+         int ex = (int)Math.floor(x1);
+         int ey = (int)Math.floor(y1);
+         int ez = (int)Math.floor(z1);
+         int sx = dx > 0.0 ? 1 : -1;
+         int sy = dy > 0.0 ? 1 : -1;
+         int sz = dz > 0.0 ? 1 : -1;
+         double tdx = dx == 0.0 ? Double.MAX_VALUE : Math.abs(1.0 / dx);
+         double tdy = dy == 0.0 ? Double.MAX_VALUE : Math.abs(1.0 / dy);
+         double tdz = dz == 0.0 ? Double.MAX_VALUE : Math.abs(1.0 / dz);
+         double tmx = dx == 0.0 ? Double.MAX_VALUE : (sx > 0 ? x + 1 - x0 : x0 - x) * tdx;
+         double tmy = dy == 0.0 ? Double.MAX_VALUE : (sy > 0 ? y + 1 - y0 : y0 - y) * tdy;
+         double tmz = dz == 0.0 ? Double.MAX_VALUE : (sz > 0 ? z + 1 - z0 : z0 - z) * tdz;
+         MutableBlockPos pos = new MutableBlockPos();
 
-         for (int var41 = 0; var41 < 256; var41++) {
-            if (var19 == var22 && var20 == var23 && var21 == var24) {
+         for (int i = 0; i < 256; i++) {
+            if (x == ex && y == ey && z == ez) {
                return true;
             }
 
-            if (var34 < var36 && var34 < var38) {
-               var19 += var25;
-               var34 += var28;
-            } else if (var36 < var38) {
-               var20 += var26;
-               var36 += var30;
+            if (tmx < tmy && tmx < tmz) {
+               x += sx;
+               tmx += tdx;
+            } else if (tmy < tmz) {
+               y += sy;
+               tmy += tdy;
             } else {
-               var21 += var27;
-               var38 += var32;
+               z += sz;
+               tmz += tdz;
             }
 
-            if (var19 == var22 && var20 == var23 && var21 == var24) {
+            if (x == ex && y == ey && z == ez) {
                return true;
             }
 
-            var40.set(var19, var20, var21);
-            if (var0.getBlockState(var40).isSolidRender()) {
+            pos.set(x, y, z);
+            if (w.getBlockState(pos).isSolidRender()) {
                return false;
             }
          }
@@ -187,9 +198,11 @@ public final class Performance {
       final Setting.Mode level = this.add(new Setting.Mode("Stufe", 1, "Leicht", "Stark", "Maximum", "EXTREM"));
       final Setting.Bool clouds = this.add(new Setting.Bool("Wolken aus", true));
       final Setting.Bool shadows = this.add(new Setting.Bool("Entity-Schatten aus", true));
+      final Setting.Bool bobbing = this.add(new Setting.Bool("View-Bobbing aus", false));
+      final Setting.Bool fovEffect = this.add(new Setting.Bool("FOV-Effekte aus", true));
       private final Map<String, String> saved = new HashMap<>();
       private final Map<String, Object[]> opts = new LinkedHashMap<>();
-      private static final Performance.FpsBoost.Parse INT = var0 -> (int)Double.parseDouble(var0);
+      private static final Performance.FpsBoost.Parse INT = s -> (int)Double.parseDouble(s);
       private static final Performance.FpsBoost.Parse BOOL = Boolean::parseBoolean;
       private static final Performance.FpsBoost.Parse DBL = Double::parseDouble;
 
@@ -209,39 +222,39 @@ public final class Performance {
             }
 
             @Override
-            public void load(Object var1) {
-               if (var1 instanceof Map) {
+            public void load(Object o) {
+               if (o instanceof Map) {
                   FpsBoost.this.saved.clear();
 
-                  for (Entry var3 : (Iterable<Entry>) (Iterable<?>) (((Map)var1).entrySet())) {
-                     FpsBoost.this.saved.put((String)var3.getKey(), String.valueOf(var3.getValue()));
+                  for (Entry<String, Object> e : ((Map)o).entrySet()) {
+                     FpsBoost.this.saved.put(e.getKey(), String.valueOf(e.getValue()));
                   }
                }
             }
          });
       }
 
-      private void set(String var1, OptionInstance var2, Object var3, Performance.FpsBoost.Parse var4) {
-         if (var2 != null) {
-            this.opts.put(var1, new Object[]{var2, var4});
-            Object var5 = var2.get();
-            if (!this.saved.containsKey(var1)) {
-               this.saved.put(var1, var5 instanceof Enum ? ((Enum)var5).name() : String.valueOf(var5));
+      private void set(String key, OptionInstance opt, Object value, Performance.FpsBoost.Parse parse) {
+         if (opt != null) {
+            this.opts.put(key, new Object[]{opt, parse});
+            Object cur = opt.get();
+            if (!this.saved.containsKey(key)) {
+               this.saved.put(key, cur instanceof Enum ? ((Enum)cur).name() : String.valueOf(cur));
             }
 
             try {
-               var2.set(var3);
+               opt.set(value);
             } catch (Throwable var7) {
-               LegoClient.LOG("FPS-Boost " + var1 + ": " + var7);
+               LegoClient.LOG("FPS-Boost " + key + ": " + var7);
             }
          }
       }
 
-      private void capInt(String var1, OptionInstance var2, int var3) {
-         if (var2 != null) {
-            Object var4 = var2.get();
-            if (var4 instanceof Integer && (Integer)var4 > var3) {
-               this.set(var1, var2, var3, INT);
+      private void capInt(String key, OptionInstance opt, int max) {
+         if (opt != null) {
+            Object cur = opt.get();
+            if (cur instanceof Integer && (Integer)cur > max) {
+               this.set(key, opt, max, INT);
             }
          }
       }
@@ -255,51 +268,59 @@ public final class Performance {
       }
 
       void apply() {
-         Options var1 = Mc.options();
+         Options o = Mc.options();
 
          try {
-            int var2 = this.level.index;
-            this.set("vsync", var1.enableVsync(), Boolean.FALSE, BOOL);
-            this.set("maxFps", var1.framerateLimit(), 260, INT);
-            this.set("particles", var1.particles(), var2 == 0 ? ParticleStatus.DECREASED : ParticleStatus.MINIMAL, var0 -> ParticleStatus.valueOf(var0));
+            int l = this.level.index;
+            this.set("vsync", o.enableVsync(), Boolean.FALSE, BOOL);
+            this.set("maxFps", o.framerateLimit(), 260, INT);
+            this.set("particles", o.particles(), l == 0 ? ParticleStatus.DECREASED : ParticleStatus.MINIMAL, s -> ParticleStatus.valueOf(s));
             if (this.clouds.get()) {
-               this.set("clouds", var1.cloudStatus(), var2 == 0 ? CloudStatus.FAST : CloudStatus.OFF, var0 -> CloudStatus.valueOf(var0));
+               this.set("clouds", o.cloudStatus(), l == 0 ? CloudStatus.FAST : CloudStatus.OFF, s -> CloudStatus.valueOf(s));
             }
 
             if (this.shadows.get()) {
-               this.set("shadows", var1.entityShadows(), Boolean.FALSE, BOOL);
+               this.set("shadows", o.entityShadows(), Boolean.FALSE, BOOL);
             }
 
-            this.set("blend", var1.biomeBlendRadius(), var2 == 0 ? 2 : (var2 == 1 ? 1 : 0), INT);
-            this.set("menuBlur", var1.menuBackgroundBlurriness(), 0, INT);
-            this.set("improvedTransparency", var1.improvedTransparency(), Boolean.FALSE, BOOL);
-            this.capInt("weather", var1.weatherRadius(), var2 == 0 ? 8 : 5);
-            this.capInt("anisotropy", var1.maxAnisotropyBit(), var2 == 0 ? 2 : 1);
-            if (var2 >= 3) {
-               this.set("particles", var1.particles(), ParticleStatus.MINIMAL, var0 -> ParticleStatus.valueOf(var0));
-               this.set("clouds", var1.cloudStatus(), CloudStatus.OFF, var0 -> CloudStatus.valueOf(var0));
-               this.set("shadows", var1.entityShadows(), Boolean.FALSE, BOOL);
-               this.set("chunkFade", var1.chunkSectionFadeInTime(), 0.0, DBL);
-               this.capInt("weather", var1.weatherRadius(), 3);
-               this.capInt("renderDist", var1.renderDistance(), 6);
-               this.capInt("simDist", var1.simulationDistance(), 5);
-               this.capInt("cloudDist", var1.cloudRange(), 2);
-               this.set("entityDist", var1.entityDistanceScaling(), 0.5, DBL);
-               this.set("ao", var1.ambientOcclusion(), Boolean.FALSE, BOOL);
-               this.set("cutoutLeaves", var1.cutoutLeaves(), Boolean.FALSE, BOOL);
-               this.capInt("mipmaps", var1.mipmapLevels(), 0);
-               this.capInt("anisotropy", var1.maxAnisotropyBit(), 1);
-            } else if (var2 >= 1) {
-               this.set("entityDist", var1.entityDistanceScaling(), var2 == 1 ? 0.75 : 0.5, DBL);
-               this.set("ao", var1.ambientOcclusion(), Boolean.FALSE, BOOL);
-               this.set("cutoutLeaves", var1.cutoutLeaves(), Boolean.FALSE, BOOL);
-               this.capInt("mipmaps", var1.mipmapLevels(), var2 == 1 ? 2 : 0);
-               this.capInt("renderDist", var1.renderDistance(), var2 == 1 ? 12 : 8);
-               this.capInt("simDist", var1.simulationDistance(), var2 == 1 ? 8 : 5);
-               this.capInt("cloudDist", var1.cloudRange(), 8);
+            if (this.bobbing.get() || l >= 2) {
+               this.set("bobView", o.toggleCrouch(), Boolean.FALSE, BOOL);
             }
 
-            var1.save();
+            if (this.fovEffect.get()) {
+               this.set("fovEffects", o.fovEffectScale(), 0.0, DBL);
+            }
+
+            this.set("blend", o.biomeBlendRadius(), l == 0 ? 2 : (l == 1 ? 1 : 0), INT);
+            this.set("menuBlur", o.menuBackgroundBlurriness(), 0, INT);
+            this.set("improvedTransparency", o.improvedTransparency(), Boolean.FALSE, BOOL);
+            this.capInt("weather", o.weatherRadius(), l == 0 ? 8 : 5);
+            this.capInt("anisotropy", o.maxAnisotropyBit(), l == 0 ? 2 : 1);
+            if (l >= 3) {
+               this.set("particles", o.particles(), ParticleStatus.MINIMAL, s -> ParticleStatus.valueOf(s));
+               this.set("clouds", o.cloudStatus(), CloudStatus.OFF, s -> CloudStatus.valueOf(s));
+               this.set("shadows", o.entityShadows(), Boolean.FALSE, BOOL);
+               this.set("chunkFade", o.chunkSectionFadeInTime(), 0.0, DBL);
+               this.capInt("weather", o.weatherRadius(), 3);
+               this.capInt("renderDist", o.renderDistance(), 6);
+               this.capInt("simDist", o.simulationDistance(), 5);
+               this.capInt("cloudDist", o.cloudRange(), 2);
+               this.set("entityDist", o.entityDistanceScaling(), 0.5, DBL);
+               this.set("ao", o.ambientOcclusion(), Boolean.FALSE, BOOL);
+               this.set("cutoutLeaves", o.cutoutLeaves(), Boolean.FALSE, BOOL);
+               this.capInt("mipmaps", o.mipmapLevels(), 0);
+               this.capInt("anisotropy", o.maxAnisotropyBit(), 1);
+            } else if (l >= 1) {
+               this.set("entityDist", o.entityDistanceScaling(), l == 1 ? 0.75 : 0.5, DBL);
+               this.set("ao", o.ambientOcclusion(), Boolean.FALSE, BOOL);
+               this.set("cutoutLeaves", o.cutoutLeaves(), Boolean.FALSE, BOOL);
+               this.capInt("mipmaps", o.mipmapLevels(), l == 1 ? 2 : 0);
+               this.capInt("renderDist", o.renderDistance(), l == 1 ? 12 : 8);
+               this.capInt("simDist", o.simulationDistance(), l == 1 ? 8 : 5);
+               this.capInt("cloudDist", o.cloudRange(), 8);
+            }
+
+            o.save();
             Modules.scheduleSave();
          } catch (Throwable var3) {
             LegoClient.LOG("FPS-Boost: " + var3);
@@ -321,46 +342,48 @@ public final class Performance {
       @Override
       public void onDisable() {
          if (Mc.mc() != null && Mc.options() != null) {
-            Options var1 = Mc.options();
-            LinkedHashMap var2 = new LinkedHashMap<>(this.opts);
-            Object[][] var3 = new Object[][]{
-               {"vsync", var1.enableVsync(), BOOL},
-               {"maxFps", var1.framerateLimit(), INT},
-               {"particles", var1.particles(), (Performance.FpsBoost.Parse)var0 -> ParticleStatus.valueOf(var0)},
-               {"clouds", var1.cloudStatus(), (Performance.FpsBoost.Parse)var0 -> CloudStatus.valueOf(var0)},
-               {"shadows", var1.entityShadows(), BOOL},
-               {"blend", var1.biomeBlendRadius(), INT},
-               {"menuBlur", var1.menuBackgroundBlurriness(), INT},
-               {"improvedTransparency", var1.improvedTransparency(), BOOL},
-               {"weather", var1.weatherRadius(), INT},
-               {"anisotropy", var1.maxAnisotropyBit(), INT},
-               {"entityDist", var1.entityDistanceScaling(), DBL},
-               {"ao", var1.ambientOcclusion(), BOOL},
-               {"cutoutLeaves", var1.cutoutLeaves(), BOOL},
-               {"chunkFade", var1.chunkSectionFadeInTime(), DBL},
-               {"mipmaps", var1.mipmapLevels(), INT},
-               {"renderDist", var1.renderDistance(), INT},
-               {"simDist", var1.simulationDistance(), INT},
-               {"cloudDist", var1.cloudRange(), INT}
+            Options o = Mc.options();
+            Map<String, Object[]> all = new LinkedHashMap<>(this.opts);
+            Object[][] known = new Object[][]{
+               {"vsync", o.enableVsync(), BOOL},
+               {"maxFps", o.framerateLimit(), INT},
+               {"particles", o.particles(), (Performance.FpsBoost.Parse)x -> ParticleStatus.valueOf(x)},
+               {"clouds", o.cloudStatus(), (Performance.FpsBoost.Parse)x -> CloudStatus.valueOf(x)},
+               {"shadows", o.entityShadows(), BOOL},
+               {"bobView", o.toggleCrouch(), BOOL},
+               {"fovEffects", o.fovEffectScale(), DBL},
+               {"blend", o.biomeBlendRadius(), INT},
+               {"menuBlur", o.menuBackgroundBlurriness(), INT},
+               {"improvedTransparency", o.improvedTransparency(), BOOL},
+               {"weather", o.weatherRadius(), INT},
+               {"anisotropy", o.maxAnisotropyBit(), INT},
+               {"entityDist", o.entityDistanceScaling(), DBL},
+               {"ao", o.ambientOcclusion(), BOOL},
+               {"cutoutLeaves", o.cutoutLeaves(), BOOL},
+               {"chunkFade", o.chunkSectionFadeInTime(), DBL},
+               {"mipmaps", o.mipmapLevels(), INT},
+               {"renderDist", o.renderDistance(), INT},
+               {"simDist", o.simulationDistance(), INT},
+               {"cloudDist", o.cloudRange(), INT}
             };
 
-            for (Object[] var7 : var3) {
-               var2.putIfAbsent((String)var7[0], new Object[]{var7[1], var7[2]});
+            for (Object[] k : known) {
+               all.putIfAbsent((String)k[0], new Object[]{k[1], k[2]});
             }
 
-            for (Entry var11 : this.saved.entrySet()) {
-               Object[] var12 = (Object[])var2.get(var11.getKey());
-               if (var12 != null && var12[0] != null) {
+            for (Entry<String, String> e : this.saved.entrySet()) {
+               Object[] op = all.get(e.getKey());
+               if (op != null && op[0] != null) {
                   try {
-                     ((OptionInstance)var12[0]).set(((Performance.FpsBoost.Parse)var12[1]).of((String)var11.getValue()));
+                     ((OptionInstance)op[0]).set(((Performance.FpsBoost.Parse)op[1]).of(e.getValue()));
                   } catch (Throwable var9) {
-                     LegoClient.LOG("FPS-Boost restore " + (String)var11.getKey() + ": " + var9);
+                     LegoClient.LOG("FPS-Boost restore " + e.getKey() + ": " + var9);
                   }
                }
             }
 
             try {
-               var1.save();
+               o.save();
             } catch (Throwable var8) {
             }
 
@@ -389,15 +412,15 @@ public final class Performance {
       }
 
       public static void run() {
-         Runtime var0 = Runtime.getRuntime();
-         long var1 = var0.totalMemory() - var0.freeMemory();
+         Runtime r = Runtime.getRuntime();
+         long before = r.totalMemory() - r.freeMemory();
          new Thread(
                () -> {
                   System.gc();
-                  long var3 = var0.totalMemory() - var0.freeMemory();
-                  long var5 = Math.max(0L, var1 - var3) / 1048576L;
+                  long after = r.totalMemory() - r.freeMemory();
+                  long freed = Math.max(0L, before - after) / 1048576L;
                   Toasts.show(
-                     "memory", "RAM freigegeben", var5 + " MB frei · " + var3 / 1048576L + " / " + var0.maxMemory() / 1048576L + " MB belegt", -16735270, 3500L
+                     "memory", "RAM freigegeben", freed + " MB frei · " + after / 1048576L + " / " + r.maxMemory() / 1048576L + " MB belegt", -16735270, 3500L
                   );
                },
                "Lego-GC"
@@ -430,31 +453,31 @@ public final class Performance {
 
       @Override
       public void tick() {
-         long var1 = System.currentTimeMillis();
-         if (var1 >= this.nextCheck) {
-            this.nextCheck = var1 + 500L;
+         long now = System.currentTimeMillis();
+         if (now >= this.nextCheck) {
+            this.nextCheck = now + 500L;
             if (this.memory.get()) {
-               Runtime var3 = Runtime.getRuntime();
-               long var4 = var3.totalMemory() - var3.freeMemory();
-               long var6 = var3.maxMemory();
-               if (var4 > var6 * 0.92 && var1 >= this.nextGc) {
-                  this.nextGc = var1 + 45000L;
+               Runtime r = Runtime.getRuntime();
+               long used = r.totalMemory() - r.freeMemory();
+               long max = r.maxMemory();
+               if (used > max * 0.92 && now >= this.nextGc) {
+                  this.nextGc = now + 45000L;
                   new Thread(System::gc, "Lego-Guard-GC").start();
-                  Toasts.show("memory", "RAM fast voll", var4 / 1048576L + " / " + var6 / 1048576L + " MB - Speicher wird aufgeräumt", -13053, 3500L);
+                  Toasts.show("memory", "RAM fast voll", used / 1048576L + " / " + max / 1048576L + " MB - Speicher wird aufgeräumt", -13053, 3500L);
                }
             }
 
             if (!this.lowFps.get()) {
                this.low = false;
             } else {
-               int var8 = Mc.fps();
-               if (var8 > 0 && var8 < this.limit.getI() && Mc.windowFocused()) {
+               int fps = Mc.fps();
+               if (fps > 0 && fps < this.limit.getI() && Mc.windowFocused()) {
                   this.okSince = 0L;
                   if (this.lowSince == 0L) {
-                     this.lowSince = var1;
+                     this.lowSince = now;
                   }
 
-                  if (!this.low && var1 - this.lowSince > 3000L) {
+                  if (!this.low && now - this.lowSince > 3000L) {
                      this.low = true;
                      Toasts.show("boost", "Extras pausiert", "Wegen niedriger FPS - kommt zurück, sobald es wieder flüssig ist", -13053, 3000L);
                   }
@@ -462,10 +485,10 @@ public final class Performance {
                   this.lowSince = 0L;
                   if (this.low) {
                      if (this.okSince == 0L) {
-                        this.okSince = var1;
+                        this.okSince = now;
                      }
 
-                     if (var1 - this.okSince > 5000L) {
+                     if (now - this.okSince > 5000L) {
                         this.low = false;
                      }
                   }
@@ -480,6 +503,227 @@ public final class Performance {
       }
    }
 
+   public static final class Moltron extends Module {
+      final Setting.Bool killVisuals = this.add(new Setting.Bool("Visuelle Module pausieren", true));
+      final Setting.Num renderDist = this.add(new Setting.Num("Render-Distanz", 2.0, 6.0, 1.0, 2.0, " Chunks"));
+      final Setting.Num simDist = this.add(new Setting.Num("Sim-Distanz", 2.0, 5.0, 1.0, 2.0, " Chunks"));
+      final Setting.Num entityDist = this.add(new Setting.Num("Entity-Distanz", 0.25, 1.0, 0.25, 0.25, "x"));
+      private final Map<String, String> saved = new HashMap<>();
+      private final Set<String> disabledMods = new HashSet<>();
+      private static final Set<String> KEEP = Set.of(
+         "fullbright", "zoom", "nohurtcam", "lowfire", "crosshair", "timechanger", "clearweather", "blockoutline", "damagenum"
+      );
+      private final Map<String, Object[]> opts = new LinkedHashMap<>();
+      private static final Performance.Moltron.Parse INT = s -> (int)Double.parseDouble(s);
+      private static final Performance.Moltron.Parse BOOL = Boolean::parseBoolean;
+      private static final Performance.Moltron.Parse DBL = Double::parseDouble;
+
+      Moltron() {
+         super("moltron", "Moltron", "Potato-Grafik: alles auf Minimum, visuelle Module aus, GPU-Last minimal · macht aus 200 FPS 500+", Category.PERFORMANCE);
+         this.icon("boost");
+         this.fresh();
+         Modules.persist("moltron", new Modules.Persist() {
+            @Override
+            public Object save() {
+               Map<String, Object> m = new LinkedHashMap<>();
+               m.put("opts", new LinkedHashMap<>(Moltron.this.saved));
+               m.put("mods", new ArrayList<>(Moltron.this.disabledMods));
+               return m;
+            }
+
+            @Override
+            public void load(Object o) {
+               if (o instanceof Map<String, Object> m) {
+                  Moltron.this.saved.clear();
+                  Moltron.this.disabledMods.clear();
+                  Object os = m.get("opts");
+                  if (os instanceof Map) {
+                     for (Entry<String, Object> e : ((Map)os).entrySet()) {
+                        Moltron.this.saved.put(e.getKey(), String.valueOf(e.getValue()));
+                     }
+                  }
+
+                  Object ms = m.get("mods");
+                  if (ms instanceof List) {
+                     for (Object v : (List)ms) {
+                        Moltron.this.disabledMods.add(String.valueOf(v));
+                     }
+                  }
+               }
+            }
+         });
+      }
+
+      private void set(String key, OptionInstance opt, Object value, Performance.Moltron.Parse parse) {
+         if (opt != null) {
+            this.opts.put(key, new Object[]{opt, parse});
+            Object cur = opt.get();
+            if (!this.saved.containsKey(key)) {
+               this.saved.put(key, cur instanceof Enum ? ((Enum)cur).name() : String.valueOf(cur));
+            }
+
+            try {
+               opt.set(value);
+            } catch (Throwable var7) {
+               LegoClient.LOG("Moltron " + key + ": " + var7);
+            }
+         }
+      }
+
+      @Override
+      public void onEnable() {
+         if (Mc.mc() != null && Mc.options() != null) {
+            Options o = Mc.options();
+
+            try {
+               this.set("vsync", o.enableVsync(), Boolean.FALSE, BOOL);
+               this.set("maxFps", o.framerateLimit(), 260, INT);
+               this.set("particles", o.particles(), ParticleStatus.MINIMAL, s -> ParticleStatus.valueOf(s));
+               this.set("clouds", o.cloudStatus(), CloudStatus.OFF, s -> CloudStatus.valueOf(s));
+               this.set("shadows", o.entityShadows(), Boolean.FALSE, BOOL);
+               this.set("bobView", o.toggleCrouch(), Boolean.FALSE, BOOL);
+               this.set("fovEffects", o.fovEffectScale(), 0.0, DBL);
+               this.set("blend", o.biomeBlendRadius(), 0, INT);
+               this.set("menuBlur", o.menuBackgroundBlurriness(), 0, INT);
+               this.set("improvedTransparency", o.improvedTransparency(), Boolean.FALSE, BOOL);
+               this.set("weather", o.weatherRadius(), 0, INT);
+               this.set("anisotropy", o.maxAnisotropyBit(), 1, INT);
+               this.set("chunkFade", o.chunkSectionFadeInTime(), 0.0, DBL);
+               this.set("renderDist", o.renderDistance(), this.renderDist.getI(), INT);
+               this.set("simDist", o.simulationDistance(), this.simDist.getI(), INT);
+               this.set("cloudDist", o.cloudRange(), 2, INT);
+               this.set("entityDist", o.entityDistanceScaling(), this.entityDist.get(), DBL);
+               this.set("ao", o.ambientOcclusion(), Boolean.FALSE, BOOL);
+               this.set("cutoutLeaves", o.cutoutLeaves(), Boolean.FALSE, BOOL);
+               this.set("mipmaps", o.mipmapLevels(), 0, INT);
+               o.save();
+            } catch (Throwable var4) {
+               LegoClient.LOG("Moltron: " + var4);
+            }
+
+            if (this.killVisuals.get()) {
+               this.disabledMods.clear();
+
+               for (Module m : Modules.ALL) {
+                  if (m != this && m.enabled && (m.category == Category.VISUALS || m.category == Category.WORLD_FX) && !KEEP.contains(m.id)) {
+                     this.disabledMods.add(m.id);
+                     m.setEnabled(false);
+                  }
+               }
+
+               if (Performance.boost != null && Performance.boost.enabled) {
+                  this.disabledMods.add(Performance.boost.id);
+                  Performance.boost.setEnabled(false);
+               }
+            }
+
+            new Thread(System::gc, "Moltron-GC").start();
+            Modules.scheduleSave();
+            Toasts.show(
+               "moltron",
+               "MOLTRON AN",
+               "Potato-Grafik · RD " + this.renderDist.getI() + " · " + this.disabledMods.size() + " Module pausiert",
+               -14756000,
+               4000L
+            );
+         }
+      }
+
+      @Override
+      public void onDisable() {
+         if (Mc.mc() != null && Mc.options() != null) {
+            Options o = Mc.options();
+            Map<String, Object[]> all = new LinkedHashMap<>(this.opts);
+            Object[][] known = new Object[][]{
+               {"vsync", o.enableVsync(), BOOL},
+               {"maxFps", o.framerateLimit(), INT},
+               {"particles", o.particles(), (Performance.Moltron.Parse)x -> ParticleStatus.valueOf(x)},
+               {"clouds", o.cloudStatus(), (Performance.Moltron.Parse)x -> CloudStatus.valueOf(x)},
+               {"shadows", o.entityShadows(), BOOL},
+               {"bobView", o.toggleCrouch(), BOOL},
+               {"fovEffects", o.fovEffectScale(), DBL},
+               {"blend", o.biomeBlendRadius(), INT},
+               {"menuBlur", o.menuBackgroundBlurriness(), INT},
+               {"improvedTransparency", o.improvedTransparency(), BOOL},
+               {"weather", o.weatherRadius(), INT},
+               {"anisotropy", o.maxAnisotropyBit(), INT},
+               {"entityDist", o.entityDistanceScaling(), DBL},
+               {"ao", o.ambientOcclusion(), BOOL},
+               {"cutoutLeaves", o.cutoutLeaves(), BOOL},
+               {"chunkFade", o.chunkSectionFadeInTime(), DBL},
+               {"mipmaps", o.mipmapLevels(), INT},
+               {"renderDist", o.renderDistance(), INT},
+               {"simDist", o.simulationDistance(), INT},
+               {"cloudDist", o.cloudRange(), INT}
+            };
+
+            for (Object[] k : known) {
+               all.putIfAbsent((String)k[0], new Object[]{k[1], k[2]});
+            }
+
+            for (Entry<String, String> e : this.saved.entrySet()) {
+               Object[] op = all.get(e.getKey());
+               if (op != null && op[0] != null) {
+                  try {
+                     ((OptionInstance)op[0]).set(((Performance.Moltron.Parse)op[1]).of(e.getValue()));
+                  } catch (Throwable var9) {
+                     LegoClient.LOG("Moltron restore " + e.getKey() + ": " + var9);
+                  }
+               }
+            }
+
+            try {
+               o.save();
+            } catch (Throwable var8) {
+            }
+
+            int reEnabled = 0;
+
+            for (String id : this.disabledMods) {
+               Module m = Modules.get(id);
+               if (m != null && !m.enabled) {
+                  m.setEnabled(true);
+                  reEnabled++;
+               }
+            }
+
+            this.saved.clear();
+            this.disabledMods.clear();
+            Modules.scheduleSave();
+            Toasts.show("moltron", "MOLTRON AUS", "Grafik zurückgesetzt · " + reEnabled + " Module reaktiviert", -7696487, 3000L);
+         } else {
+            this.disabledMods.clear();
+            this.saved.clear();
+         }
+      }
+
+      public double blockEntityDist() {
+         return this.enabled ? 16.0 : 0.0;
+      }
+
+      public void drawHud(int W, int H) {
+         if (this.enabled) {
+            int S = Gx.S;
+            float fs = 8.0F * S;
+            int fps = Mc.fps();
+            String txt = "POTATO  " + fps + " FPS";
+            int tw = Math.round(Gx.width(txt, fs, 3)) + Math.round((float)(16 * S));
+            int h = Math.round((float)(18 * S));
+            int r = Math.round((float)(6 * S));
+            int x = W - tw - Math.round((float)(8 * S));
+            int y = Math.round((float)(8 * S));
+            Gx.rect(x, y, tw, h, r, -871296751);
+            int col = fps >= 240 ? -14756000 : (fps >= 120 ? -15043 : (fps >= 60 ? -27392 : -45730));
+            Gx.rect(x, y, Math.round((float)(4 * S)), h, r, col);
+            Gx.textCenter(txt, x + tw / 2.0F + Math.round((float)(2 * S)), y + h / 2.0F, fs, 3, col);
+         }
+      }
+
+      private interface Parse {
+         Object of(String var1);
+      }
+   }
+
    public static final class Monitor extends Module {
       Monitor() {
          super("perfmonitor", "Leistungs-Monitor", "Zeigt, wie viele Millisekunden pro Bild jeder Teil des Clients kostet", Category.PERFORMANCE);
@@ -487,33 +731,33 @@ public final class Performance {
          this.fresh();
       }
 
-      public void draw(int var1, int var2) {
-         int var3 = Gx.S;
-         float var4 = 7.4F * var3;
-         Map var5 = Perf.sections();
-         int var6 = Math.round((float)(150 * var3));
-         int var7 = Math.round((float)(11 * var3));
-         int var8 = var7 * (var5.size() + 2) + Math.round((float)(8 * var3));
-         int var9 = var1 - var6 - Math.round((float)(8 * var3));
-         int var10 = var2 / 2 - var8 / 2;
-         Gx.rect(var9, var10, var6, var8, Math.round((float)(6 * var3)), -938865904);
-         int var11 = Mc.fps();
+      public void draw(int W, int H) {
+         int S = Gx.S;
+         float fs = 7.4F * S;
+         Map<String, double[]> m = Perf.sections();
+         int w = Math.round((float)(150 * S));
+         int lh = Math.round((float)(11 * S));
+         int h = lh * (m.size() + 2) + Math.round((float)(8 * S));
+         int x = W - w - Math.round((float)(8 * S));
+         int y = H / 2 - h / 2;
+         Gx.rect(x, y, w, h, Math.round((float)(6 * S)), -938865904);
+         int fps = Mc.fps();
          Gx.text(
-            "FPS " + var11 + "  ·  " + String.format(Locale.ROOT, "%.1f ms", 1000.0 / Math.max(1, var11)),
-            var9 + 6 * var3,
-            var10 + 4 * var3,
-            var4,
+            "FPS " + fps + "  ·  " + String.format(Locale.ROOT, "%.1f ms", 1000.0 / Math.max(1, fps)),
+            x + 6 * S,
+            y + 4 * S,
+            fs,
             3,
-            var11 >= 60 ? -14756000 : (var11 >= 30 ? -13053 : -45730)
+            fps >= 60 ? -14756000 : (fps >= 30 ? -13053 : -45730)
          );
-         int var12 = var10 + 4 * var3 + var7 + 2 * var3;
+         int yy = y + 4 * S + lh + 2 * S;
 
-         for (Entry var14 : (Iterable<Entry>) (Iterable<?>) (var5.entrySet())) {
-            double var15 = ((double[])var14.getValue())[0];
-            int var17 = var15 < 1.0 ? -4670008 : (var15 < 4.0 ? -13053 : -45730);
-            Gx.text((String)var14.getKey(), var9 + 6 * var3, var12, var4, 2, -1512980);
-            Gx.textRight(String.format(Locale.ROOT, "%.2f ms", var15), var9 + var6 - 6 * var3, var12 + var4 * 0.45F, var4, 3, var17);
-            var12 += var7;
+         for (Entry<String, double[]> e : m.entrySet()) {
+            double v = e.getValue()[0];
+            int col = v < 1.0 ? -4670008 : (v < 4.0 ? -13053 : -45730);
+            Gx.text(e.getKey(), x + 6 * S, yy, fs, 2, -1512980);
+            Gx.textRight(String.format(Locale.ROOT, "%.2f ms", v), x + w - 6 * S, yy + fs * 0.45F, fs, 3, col);
+            yy += lh;
          }
       }
    }
@@ -526,6 +770,7 @@ public final class Performance {
       ParticleLimit() {
          super("particlelimit", "Partikel-Limit", "Begrenzt Partikel-Explosionen (TNT, Farmen) - weniger Ruckler", Category.PERFORMANCE);
          this.icon("particles");
+         this.enabled = true;
          this.fresh();
       }
 
@@ -535,14 +780,14 @@ public final class Performance {
       }
 
       public boolean allow() {
-         long var1 = System.currentTimeMillis() / 50L;
-         if (var1 != this.tickId) {
-            this.tickId = var1;
+         long id = System.currentTimeMillis() / 50L;
+         if (id != this.tickId) {
+            this.tickId = id;
             this.count = 0;
          }
 
-         boolean var3 = Performance.boost != null && Performance.boost.extreme() || Performance.lowMode();
-         return !this.enabled && !var3 ? true : ++this.count <= (this.enabled ? (var3 ? Math.min(40, this.perTick.getI()) : this.perTick.getI()) : 40);
+         boolean ext = Performance.boost != null && Performance.boost.extreme() || Performance.lowMode();
+         return !this.enabled && !ext ? true : ++this.count <= (this.enabled ? (ext ? Math.min(40, this.perTick.getI()) : this.perTick.getI()) : 40);
       }
    }
 }

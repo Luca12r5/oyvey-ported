@@ -4,266 +4,244 @@ final class PetGeo {
    private PetGeo() {
    }
 
-   static float sin(double var0) {
-      return (float)Math.sin(var0);
+   static float sin(double a) {
+      return (float)Math.sin(a);
    }
 
-   static float cos(double var0) {
-      return (float)Math.cos(var0);
+   static float cos(double a) {
+      return (float)Math.cos(a);
    }
 
-   static void blob(G var0, String var1, float var2, float var3, float var4, float var5, float var6, float var7, int var8, int var9) {
-      var0.push();
-      var0.translate(var2, var3, var4);
-      var0.scale(var5, var6, var7);
-      var0.sphere(var1, 1.0F, Math.max(8, var8), Math.max(4, var9), 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.pop();
+   static void blob(G g, String tex, float x, float y, float z, float rx, float ry, float rz, int seg, int rings) {
+      g.push();
+      g.translate(x, y, z);
+      g.scale(rx, ry, rz);
+      g.sphere(tex, 1.0F, Math.max(8, seg), Math.max(4, rings), 0.0F, 0.0F, 1.0F, 1.0F);
+      g.pop();
    }
 
-   static void blob2(G var0, String var1, float var2, float var3, float var4, float var5, float var6, float var7, float var8, int var9, int var10) {
-      float[][] var11 = new float[(var10 + 1) * (var9 + 1)][];
+   static void blob2(G g, String tex, float x, float y, float z, float rx, float ryUp, float ryDown, float rz, int seg, int rings) {
+      float[][] pt = new float[(rings + 1) * (seg + 1)][];
 
-      for (int var12 = 0; var12 <= var10; var12++) {
-         double var13 = Math.PI * var12 / var10 - (Math.PI / 2);
-         float var15 = (float)Math.sin(var13);
-         float var16 = (float)Math.cos(var13);
-         var15 *= var15 > 0.0F ? var6 : var7;
+      for (int i = 0; i <= rings; i++) {
+         double t = Math.PI * i / rings - (Math.PI / 2);
+         float yy = (float)Math.sin(t);
+         float cr = (float)Math.cos(t);
+         yy *= yy > 0.0F ? ryUp : ryDown;
 
-         for (int var17 = 0; var17 <= var9; var17++) {
-            double var18 = (Math.PI * 2) * var17 / var9;
-            var11[var12 * (var9 + 1) + var17] = new float[]{
-               var2 + (float)Math.cos(var18) * var16 * var5, var3 + var15, var4 + (float)Math.sin(var18) * var16 * var8
-            };
+         for (int j = 0; j <= seg; j++) {
+            double a = (Math.PI * 2) * j / seg;
+            pt[i * (seg + 1) + j] = new float[]{x + (float)Math.cos(a) * cr * rx, y + yy, z + (float)Math.sin(a) * cr * rz};
          }
       }
 
-      for (int var20 = 0; var20 < var10; var20++) {
-         for (int var21 = 0; var21 < var9; var21++) {
-            float var14 = (float)var21 / var9;
-            float var23 = (float)(var21 + 1) / var9;
-            float var24 = 1.0F - (float)var20 / var10;
-            float var25 = 1.0F - (float)(var20 + 1) / var10;
-            var0.quad(
-               var1,
-               var11[(var20 + 1) * (var9 + 1) + var21],
-               var11[(var20 + 1) * (var9 + 1) + var21 + 1],
-               var11[var20 * (var9 + 1) + var21 + 1],
-               var11[var20 * (var9 + 1) + var21],
-               new float[]{var14, var25, var23, var25, var23, var24, var14, var24}
+      for (int i = 0; i < rings; i++) {
+         for (int j = 0; j < seg; j++) {
+            float u0 = (float)j / seg;
+            float u1 = (float)(j + 1) / seg;
+            float v0 = 1.0F - (float)i / rings;
+            float v1 = 1.0F - (float)(i + 1) / rings;
+            g.quad(
+               tex,
+               pt[(i + 1) * (seg + 1) + j],
+               pt[(i + 1) * (seg + 1) + j + 1],
+               pt[i * (seg + 1) + j + 1],
+               pt[i * (seg + 1) + j],
+               new float[]{u0, v1, u1, v1, u1, v0, u0, v0}
             );
          }
       }
    }
 
-   static void cone(G var0, String var1, float var2, float var3, int var4, boolean var5) {
-      for (int var6 = 0; var6 < var4; var6++) {
-         double var7 = (Math.PI * 2) * var6 / var4;
-         double var9 = (Math.PI * 2) * (var6 + 1) / var4;
-         float var11 = cos(var7);
-         float var12 = sin(var7);
-         float var13 = cos(var9);
-         float var14 = sin(var9);
-         float var15 = (float)var6 / var4;
-         float var16 = (float)(var6 + 1) / var4;
-         float[] var17 = new float[]{0.0F, var3, 0.0F};
-         var0.quad(
-            var1,
-            var17,
-            var17,
-            new float[]{var13 * var2, 0.0F, var14 * var2},
-            new float[]{var11 * var2, 0.0F, var12 * var2},
-            new float[]{var15, 0.0F, var16, 0.0F, var16, 1.0F, var15, 1.0F}
-         );
-         if (var5) {
-            float[] var18 = new float[]{0.0F, 0.0F, 0.0F};
-            var0.quad(
-               var1,
-               var18,
-               new float[]{var11 * var2, 0.0F, var12 * var2},
-               new float[]{var13 * var2, 0.0F, var14 * var2},
-               var18,
-               new float[]{0.5F, 0.9F, var15, 1.0F, var16, 1.0F, 0.5F, 0.9F}
-            );
+   static void cone(G g, String tex, float r, float h, int seg, boolean cap) {
+      for (int i = 0; i < seg; i++) {
+         double a0 = (Math.PI * 2) * i / seg;
+         double a1 = (Math.PI * 2) * (i + 1) / seg;
+         float c0 = cos(a0);
+         float s0 = sin(a0);
+         float c1 = cos(a1);
+         float s1 = sin(a1);
+         float u0 = (float)i / seg;
+         float u1 = (float)(i + 1) / seg;
+         float[] top = new float[]{0.0F, h, 0.0F};
+         g.quad(tex, top, top, new float[]{c1 * r, 0.0F, s1 * r}, new float[]{c0 * r, 0.0F, s0 * r}, new float[]{u0, 0.0F, u1, 0.0F, u1, 1.0F, u0, 1.0F});
+         if (cap) {
+            float[] m = new float[]{0.0F, 0.0F, 0.0F};
+            g.quad(tex, m, new float[]{c0 * r, 0.0F, s0 * r}, new float[]{c1 * r, 0.0F, s1 * r}, m, new float[]{0.5F, 0.9F, u0, 1.0F, u1, 1.0F, 0.5F, 0.9F});
          }
       }
    }
 
-   static void tri(G var0, String var1, float[] var2, float[] var3, float[] var4) {
-      var0.quad(var1, var2, var3, var4, var4, new float[]{0.5F, 0.0F, 1.0F, 1.0F, 0.0F, 1.0F, 0.0F, 1.0F});
+   static void tri(G g, String tex, float[] a, float[] b, float[] c) {
+      g.quad(tex, a, b, c, c, new float[]{0.5F, 0.0F, 1.0F, 1.0F, 0.0F, 1.0F, 0.0F, 1.0F});
    }
 
-   static void rbox(G var0, String var1, float var2, float var3, float var4, float var5, float var6, float var7, float var8) {
-      float[] var9 = new float[]{var2 + var8, var3 + var8, var4 + var8};
-      float[] var10 = new float[]{var5 - var8, var6 - var8, var7 - var8};
-      float[] var11 = new float[]{0.0F, 0.0F, 1.0F, 0.0F, 1.0F, 1.0F, 0.0F, 1.0F};
-      float[] var12 = new float[]{0.3F, 0.3F, 0.7F, 0.3F, 0.7F, 0.7F, 0.3F, 0.7F};
-      int[][] var13 = new int[][]{{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
+   static void rbox(G g, String tex, float x0, float y0, float z0, float x1, float y1, float z1, float b) {
+      float[] lo = new float[]{x0 + b, y0 + b, z0 + b};
+      float[] hi = new float[]{x1 - b, y1 - b, z1 - b};
+      float[] full = new float[]{0.0F, 0.0F, 1.0F, 0.0F, 1.0F, 1.0F, 0.0F, 1.0F};
+      float[] mid = new float[]{0.3F, 0.3F, 0.7F, 0.3F, 0.7F, 0.7F, 0.3F, 0.7F};
+      int[][] sq = new int[][]{{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
 
-      for (int var14 = 0; var14 < 3; var14++) {
-         for (int var15 = -1; var15 <= 1; var15 += 2) {
-            int var16 = (var14 + 1) % 3;
-            int var17 = (var14 + 2) % 3;
-            float[][] var18 = new float[4][];
+      for (int ax = 0; ax < 3; ax++) {
+         for (int s = -1; s <= 1; s += 2) {
+            int u = (ax + 1) % 3;
+            int v = (ax + 2) % 3;
+            float[][] pts = new float[4][];
 
-            for (int var19 = 0; var19 < 4; var19++) {
-               float[] var20 = new float[3];
-               var20[var14] = (var15 < 0 ? var9[var14] : var10[var14]) + var15 * var8;
-               var20[var16] = var13[var19][0] < 0 ? var9[var16] : var10[var16];
-               var20[var17] = var13[var19][1] < 0 ? var9[var17] : var10[var17];
-               var18[var19] = var20;
+            for (int k = 0; k < 4; k++) {
+               float[] p = new float[3];
+               p[ax] = (s < 0 ? lo[ax] : hi[ax]) + s * b;
+               p[u] = sq[k][0] < 0 ? lo[u] : hi[u];
+               p[v] = sq[k][1] < 0 ? lo[v] : hi[v];
+               pts[k] = p;
             }
 
-            var0.quad(var1, var18[0], var18[1], var18[2], var18[3], var11);
+            g.quad(tex, pts[0], pts[1], pts[2], pts[3], full);
          }
       }
 
-      for (int var23 = 0; var23 < 3; var23++) {
-         for (int var25 = var23 + 1; var25 < 3; var25++) {
-            int var27 = 3 - var23 - var25;
+      for (int a = 0; a < 3; a++) {
+         for (int c = a + 1; c < 3; c++) {
+            int t = 3 - a - c;
 
-            for (int var29 = -1; var29 <= 1; var29 += 2) {
-               for (int var31 = -1; var31 <= 1; var31 += 2) {
-                  float[][] var33 = new float[4][];
-                  int[] var35 = new int[]{-1, 1, 1, -1};
+            for (int sa = -1; sa <= 1; sa += 2) {
+               for (int sc = -1; sc <= 1; sc += 2) {
+                  float[][] pts = new float[4][];
+                  int[] tt = new int[]{-1, 1, 1, -1};
 
-                  for (int var21 = 0; var21 < 4; var21++) {
-                     float[] var22 = new float[3];
-                     var22[var23] = var29 < 0 ? var9[var23] : var10[var23];
-                     var22[var25] = var31 < 0 ? var9[var25] : var10[var25];
-                     var22[var27] = var35[var21] < 0 ? var9[var27] : var10[var27];
-                     if (var21 < 2) {
-                        var22[var23] += var29 * var8;
+                  for (int k = 0; k < 4; k++) {
+                     float[] p = new float[3];
+                     p[a] = sa < 0 ? lo[a] : hi[a];
+                     p[c] = sc < 0 ? lo[c] : hi[c];
+                     p[t] = tt[k] < 0 ? lo[t] : hi[t];
+                     if (k < 2) {
+                        p[a] += sa * b;
                      } else {
-                        var22[var25] += var31 * var8;
+                        p[c] += sc * b;
                      }
 
-                     var33[var21] = var22;
+                     pts[k] = p;
                   }
 
-                  var0.quad(var1, var33[0], var33[1], var33[2], var33[3], var12);
+                  g.quad(tex, pts[0], pts[1], pts[2], pts[3], mid);
                }
             }
          }
       }
 
-      for (int var24 = -1; var24 <= 1; var24 += 2) {
-         for (int var26 = -1; var26 <= 1; var26 += 2) {
-            for (int var28 = -1; var28 <= 1; var28 += 2) {
-               float var30 = var24 < 0 ? var9[0] : var10[0];
-               float var32 = var26 < 0 ? var9[1] : var10[1];
-               float var34 = var28 < 0 ? var9[2] : var10[2];
-               tri(
-                  var0,
-                  var1,
-                  new float[]{var30 + var24 * var8, var32, var34},
-                  new float[]{var30, var32 + var26 * var8, var34},
-                  new float[]{var30, var32, var34 + var28 * var8}
-               );
+      for (int sx = -1; sx <= 1; sx += 2) {
+         for (int sy = -1; sy <= 1; sy += 2) {
+            for (int sz = -1; sz <= 1; sz += 2) {
+               float px = sx < 0 ? lo[0] : hi[0];
+               float py = sy < 0 ? lo[1] : hi[1];
+               float pz = sz < 0 ? lo[2] : hi[2];
+               tri(g, tex, new float[]{px + sx * b, py, pz}, new float[]{px, py + sy * b, pz}, new float[]{px, py, pz + sz * b});
             }
          }
       }
    }
 
    static void decal(
-      G var0,
-      String var1,
-      float var2,
-      float var3,
-      float var4,
-      float var5,
-      float var6,
-      float var7,
-      float var8,
-      float var9,
-      float var10,
-      float var11,
-      float var12,
-      float var13,
-      float var14,
-      float var15
+      G g,
+      String tex,
+      float cx,
+      float cy,
+      float cz,
+      float rx,
+      float ry,
+      float rz,
+      float az0,
+      float el0,
+      float spanAz,
+      float u0,
+      float v0,
+      float u1,
+      float v1,
+      float lift
    ) {
-      decal(var0, var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13, var14, var15, 6, 5);
+      decal(g, tex, cx, cy, cz, rx, ry, rz, az0, el0, spanAz, u0, v0, u1, v1, lift, 6, 5);
    }
 
    static void decal(
-      G var0,
-      String var1,
-      float var2,
-      float var3,
-      float var4,
-      float var5,
-      float var6,
-      float var7,
-      float var8,
-      float var9,
-      float var10,
-      float var11,
-      float var12,
-      float var13,
-      float var14,
-      float var15,
-      int var16,
-      int var17
+      G g,
+      String tex,
+      float cx,
+      float cy,
+      float cz,
+      float rx,
+      float ry,
+      float rz,
+      float az0,
+      float el0,
+      float spanAz,
+      float u0,
+      float v0,
+      float u1,
+      float v1,
+      float lift,
+      int nu,
+      int nv
    ) {
-      float var18 = var10 * ((var14 - var12) * 192.0F) / ((var13 - var11) * 256.0F) * var5 / var6;
-      float[][] var19 = new float[(var16 + 1) * (var17 + 1)][];
+      float spanEl = spanAz * ((v1 - v0) * 192.0F) / ((u1 - u0) * 256.0F) * rx / ry;
+      float[][] pts = new float[(nu + 1) * (nv + 1)][];
 
-      for (int var20 = 0; var20 <= var17; var20++) {
-         for (int var21 = 0; var21 <= var16; var21++) {
-            double var22 = var8 + var10 * (1.0 - 2.0 * var21 / var16);
-            double var24 = var9 + var18 * (1.0 - 2.0 * var20 / var17);
-            var19[var20 * (var16 + 1) + var21] = new float[]{
-               var2 + (float)(Math.sin(var22) * Math.cos(var24)) * var5 * var15,
-               var3 + (float)Math.sin(var24) * var6 * var15,
-               var4 + (float)(Math.cos(var22) * Math.cos(var24)) * var7 * var15
+      for (int j = 0; j <= nv; j++) {
+         for (int i = 0; i <= nu; i++) {
+            double az = az0 + spanAz * (1.0 - 2.0 * i / nu);
+            double elv = el0 + spanEl * (1.0 - 2.0 * j / nv);
+            pts[j * (nu + 1) + i] = new float[]{
+               cx + (float)(Math.sin(az) * Math.cos(elv)) * rx * lift,
+               cy + (float)Math.sin(elv) * ry * lift,
+               cz + (float)(Math.cos(az) * Math.cos(elv)) * rz * lift
             };
          }
       }
 
-      for (int var26 = 0; var26 < var17; var26++) {
-         for (int var27 = 0; var27 < var16; var27++) {
-            float var28 = var11 + (var13 - var11) * var27 / var16;
-            float var23 = var11 + (var13 - var11) * (var27 + 1) / var16;
-            float var29 = var12 + (var14 - var12) * var26 / var17;
-            float var25 = var12 + (var14 - var12) * (var26 + 1) / var17;
-            var0.quad(
-               var1,
-               var19[var26 * (var16 + 1) + var27],
-               var19[var26 * (var16 + 1) + var27 + 1],
-               var19[(var26 + 1) * (var16 + 1) + var27 + 1],
-               var19[(var26 + 1) * (var16 + 1) + var27],
-               new float[]{var28, var29, var23, var29, var23, var25, var28, var25}
+      for (int j = 0; j < nv; j++) {
+         for (int i = 0; i < nu; i++) {
+            float ua = u0 + (u1 - u0) * i / nu;
+            float ub = u0 + (u1 - u0) * (i + 1) / nu;
+            float va = v0 + (v1 - v0) * j / nv;
+            float vb = v0 + (v1 - v0) * (j + 1) / nv;
+            g.quad(
+               tex,
+               pts[j * (nu + 1) + i],
+               pts[j * (nu + 1) + i + 1],
+               pts[(j + 1) * (nu + 1) + i + 1],
+               pts[(j + 1) * (nu + 1) + i],
+               new float[]{ua, va, ub, va, ub, vb, ua, vb}
             );
          }
       }
    }
 
-   static void flat(G var0, String var1, float var2, float var3, float var4, float var5, float var6) {
-      float var7 = var2 + var5 / 2.0F;
-      float var8 = var2 - var5 / 2.0F;
-      float var9 = var3 + var6 / 2.0F;
-      float var10 = var3 - var6 / 2.0F;
-      var0.quad(
-         var1,
-         new float[]{var7, var9, var4},
-         new float[]{var8, var9, var4},
-         new float[]{var8, var10, var4},
-         new float[]{var7, var10, var4},
+   static void flat(G g, String tex, float cx, float cy, float z, float w, float h) {
+      float x0 = cx + w / 2.0F;
+      float x1 = cx - w / 2.0F;
+      float y0 = cy + h / 2.0F;
+      float y1 = cy - h / 2.0F;
+      g.quad(
+         tex,
+         new float[]{x0, y0, z},
+         new float[]{x1, y0, z},
+         new float[]{x1, y1, z},
+         new float[]{x0, y1, z},
          new float[]{0.0F, 0.0F, 1.0F, 0.0F, 1.0F, 1.0F, 0.0F, 1.0F}
       );
    }
 
-   static void sprite(G var0, String var1, float var2, float var3, float var4, float var5, int var6) {
-      int var7 = var0.color;
-      boolean var8 = var0.glow;
-      var0.color(var6).glow(true);
-      var0.push();
-      var0.translate(var2, var3, var4);
-      var0.rotY(25.0F);
-      var0.plane(var1, 0.0F, 0.0F, var5, var5, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.rotY(90.0F);
-      var0.plane(var1, 0.0F, 0.0F, var5, var5, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.pop();
-      var0.color(var7).glow(var8);
+   static void sprite(G g, String tex, float x, float y, float z, float s, int argb) {
+      int oc = g.color;
+      boolean og = g.glow;
+      g.color(argb).glow(true);
+      g.push();
+      g.translate(x, y, z);
+      g.rotY(25.0F);
+      g.plane(tex, 0.0F, 0.0F, s, s, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.rotY(90.0F);
+      g.plane(tex, 0.0F, 0.0F, s, s, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.pop();
+      g.color(oc).glow(og);
    }
 }

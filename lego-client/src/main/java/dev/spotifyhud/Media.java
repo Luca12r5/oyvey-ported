@@ -6,10 +6,10 @@ public final class Media {
    private volatile String toast = "";
    private volatile long toastAt = 0L;
 
-   Media(SmtcBridge var1, SpotifyApi var2) {
-      this.smtc = var1;
-      this.api = var2;
-      var2.setErrorListener(this::toast);
+   Media(SmtcBridge smtc, SpotifyApi api) {
+      this.smtc = smtc;
+      this.api = api;
+      api.setErrorListener(this::toast);
    }
 
    public SmtcBridge smtc() {
@@ -20,8 +20,8 @@ public final class Media {
       return this.api;
    }
 
-   public void toast(String var1) {
-      this.toast = var1;
+   public void toast(String s) {
+      this.toast = s;
       this.toastAt = System.currentTimeMillis();
    }
 
@@ -41,12 +41,12 @@ public final class Media {
       this.api.setLightMode(this.smtc.active());
    }
 
-   private boolean apiMatches(PlayerState var1) {
+   private boolean apiMatches(PlayerState s) {
       if (!this.api.isLoggedIn()) {
          return false;
       } else {
-         PlayerState var2 = this.api.state();
-         return var2.hasTrack && var2.title != null && var2.title.equalsIgnoreCase(var1.title);
+         PlayerState a = this.api.state();
+         return a.hasTrack && a.title != null && a.title.equalsIgnoreCase(s.title);
       }
    }
 
@@ -54,43 +54,43 @@ public final class Media {
       if (!this.smtc.active()) {
          return this.api.isLoggedIn() ? this.api.state() : PlayerState.EMPTY;
       } else {
-         PlayerState var1 = this.smtc.state();
-         if (this.apiMatches(var1)) {
-            PlayerState var2 = this.api.state();
-            if (var1.durationMs <= 0L && var2.durationMs > 0L) {
-               var1 = new PlayerState(
+         PlayerState s = this.smtc.state();
+         if (this.apiMatches(s)) {
+            PlayerState a = this.api.state();
+            if (s.durationMs <= 0L && a.durationMs > 0L) {
+               s = new PlayerState(
                   true,
-                  var2.trackId,
-                  var2.uri,
-                  var1.title,
-                  var1.artist,
-                  var2.artUrl,
-                  var2.durationMs,
-                  var2.progressMs,
-                  var2.sampledAt,
-                  var1.playing,
-                  var1.shuffle,
-                  var1.repeat,
-                  var1.volume,
-                  var2.liked
+                  a.trackId,
+                  a.uri,
+                  s.title,
+                  s.artist,
+                  a.artUrl,
+                  a.durationMs,
+                  a.progressMs,
+                  a.sampledAt,
+                  s.playing,
+                  s.shuffle,
+                  s.repeat,
+                  s.volume,
+                  a.liked
                );
             } else {
-               var1 = var1.withLiked(var2.liked);
+               s = s.withLiked(a.liked);
             }
          }
 
-         return var1;
+         return s;
       }
    }
 
    public Object art() {
       if (this.smtc.active()) {
-         Object var1 = this.smtc.art();
-         if (var1 == null && this.apiMatches(this.smtc.state())) {
-            var1 = this.api.artImage();
+         Object a = this.smtc.art();
+         if (a == null && this.apiMatches(this.smtc.state())) {
+            a = this.api.artImage();
          }
 
-         return var1;
+         return a;
       } else {
          return this.api.isLoggedIn() ? this.api.artImage() : null;
       }
@@ -106,22 +106,22 @@ public final class Media {
 
    public String sourceName() {
       if (this.smtc.active()) {
-         String var1 = this.smtc.app();
+         String app = this.smtc.app();
          if (this.smtc.isSpotify()) {
             return "Spotify (automatisch erkannt)";
          } else {
-            String var2 = var1;
-            int var3 = var1.lastIndexOf(33);
-            if (var3 >= 0) {
-               var2 = var1.substring(var3 + 1);
+            String n = app;
+            int i = app.lastIndexOf(33);
+            if (i >= 0) {
+               n = app.substring(i + 1);
             }
 
-            var3 = var2.lastIndexOf(92);
-            if (var3 >= 0) {
-               var2 = var2.substring(var3 + 1);
+            i = n.lastIndexOf(92);
+            if (i >= 0) {
+               n = n.substring(i + 1);
             }
 
-            return (var2.isEmpty() ? "Windows-Medien" : var2) + " (automatisch erkannt)";
+            return (n.isEmpty() ? "Windows-Medien" : n) + " (automatisch erkannt)";
          }
       } else {
          return this.api.isLoggedIn() && this.api.state().hasTrack ? "Spotify-Konto" : null;
@@ -167,12 +167,12 @@ public final class Media {
       }
    }
 
-   public void seek(long var1) {
+   public void seek(long ms) {
       if (!this.noSource()) {
          if (this.smtc.active() && this.smtc.canSeek()) {
-            this.smtc.seek(var1);
+            this.smtc.seek(ms);
          } else if (this.api.isLoggedIn()) {
-            this.api.seek(var1);
+            this.api.seek(ms);
          } else {
             this.toast("Spulen wird von dieser App nicht unterstützt");
          }
@@ -203,12 +203,12 @@ public final class Media {
       }
    }
 
-   public void setVolume(int var1, boolean var2) {
+   public void setVolume(int v, boolean immediate) {
       if (!this.noSource()) {
          if (this.smtc.active() && this.smtc.volumeSupported()) {
-            this.smtc.setVolume(var1);
+            this.smtc.setVolume(v);
          } else if (this.api.isLoggedIn()) {
-            this.api.setVolume(var1, var2);
+            this.api.setVolume(v, immediate);
          } else {
             this.toast("Lautstärke nicht verfügbar");
          }
@@ -235,32 +235,32 @@ public final class Media {
       }
    }
 
-   void onBridgeFailed(String var1) {
-      boolean var2 = this.api.isLoggedIn();
-      if (var1.startsWith("shuffle")) {
-         if (var2) {
+   void onBridgeFailed(String cmd) {
+      boolean api = this.api.isLoggedIn();
+      if (cmd.startsWith("shuffle")) {
+         if (api) {
             this.api.toggleShuffle();
          } else {
             this.toast("Zufall wird über Windows nicht unterstützt - Spotify-Konto verbinden (H)");
          }
-      } else if (var1.startsWith("repeat")) {
-         if (var2) {
+      } else if (cmd.startsWith("repeat")) {
+         if (api) {
             this.api.cycleRepeat();
          } else {
             this.toast("Wiederholen wird über Windows nicht unterstützt - Spotify-Konto verbinden (H)");
          }
-      } else if (var1.startsWith("seek ")) {
-         if (var2) {
+      } else if (cmd.startsWith("seek ")) {
+         if (api) {
             try {
-               this.api.seek(Long.parseLong(var1.substring(5).trim()));
+               this.api.seek(Long.parseLong(cmd.substring(5).trim()));
             } catch (NumberFormatException var4) {
             }
          } else {
             this.toast("Spulen wurde abgelehnt");
          }
-      } else if (!var1.startsWith("vol") && !var1.equals("mute")) {
-         this.toast("Aktion wurde abgelehnt (" + var1 + ")");
-      } else if (var2) {
+      } else if (!cmd.startsWith("vol") && !cmd.equals("mute")) {
+         this.toast("Aktion wurde abgelehnt (" + cmd + ")");
+      } else if (api) {
          this.toast("Lautstärke über Windows fehlgeschlagen");
       } else {
          this.toast("Lautstärke: Spotify-Audio nicht gefunden");

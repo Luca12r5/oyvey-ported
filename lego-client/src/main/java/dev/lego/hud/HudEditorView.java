@@ -56,29 +56,29 @@ public final class HudEditorView extends View {
    public void draw() {
       SpotifyHudMod.editorOpen = true;
       Kit.hit(0, 0, this.W, this.H).id("hud");
-      float var1 = this.open;
-      Gx.fill(0, 0, this.W, this.H, Gx.rgba(0, 0.22F * var1));
-      int var2 = Math.max(8, Math.round((float)(20 * Gx.S)));
+      float t = this.open;
+      Gx.fill(0, 0, this.W, this.H, Gx.rgba(0, 0.22F * t));
+      int step = Math.max(8, Math.round((float)(20 * Gx.S)));
 
-      for (int var3 = 0; var3 < this.W; var3 += var2) {
-         Gx.fill(var3, 0, 1, this.H, Gx.rgba(16777215, 0.035F * var1));
+      for (int x = 0; x < this.W; x += step) {
+         Gx.fill(x, 0, 1, this.H, Gx.rgba(16777215, 0.035F * t));
       }
 
-      for (int var20 = 0; var20 < this.H; var20 += var2) {
-         Gx.fill(0, var20, this.W, 1, Gx.rgba(16777215, 0.035F * var1));
+      for (int y = 0; y < this.H; y += step) {
+         Gx.fill(0, y, this.W, 1, Gx.rgba(16777215, 0.035F * t));
       }
 
-      Gx.fill(this.W / 2, 0, Math.max(1, Gx.S / 2), this.H, Gx.rgba(16777215, 0.1F * var1));
-      Gx.fill(0, this.H / 2, this.W, Math.max(1, Gx.S / 2), Gx.rgba(16777215, 0.1F * var1));
-      int var21 = Math.round(this.mx / Gx.S);
-      int var4 = Math.round(this.my / Gx.S);
+      Gx.fill(this.W / 2, 0, Math.max(1, Gx.S / 2), this.H, Gx.rgba(16777215, 0.1F * t));
+      Gx.fill(0, this.H / 2, this.W, Math.max(1, Gx.S / 2), Gx.rgba(16777215, 0.1F * t));
+      int gmx = Math.round(this.mx / Gx.S);
+      int gmy = Math.round(this.my / Gx.S);
       if (Gx.B instanceof McBackend) {
          Gx.push();
          Gx.scale(Gx.S);
 
          try {
-            HudManager.render(((McBackend)Gx.B).ctx(), this.gw(), this.gh(), true, var21, var4);
-            SpotifyHudMod.editorRender(((McBackend)Gx.B).ctx(), var21, var4, this.gw(), this.gh());
+            HudManager.render(((McBackend)Gx.B).ctx(), this.gw(), this.gh(), true, gmx, gmy);
+            SpotifyHudMod.editorRender(((McBackend)Gx.B).ctx(), gmx, gmy, this.gw(), this.gh());
          } catch (Throwable var19) {
             LegoClient.LOG("HUD-Editor: " + var19);
          }
@@ -94,104 +94,96 @@ public final class HudEditorView extends View {
          Gx.fill(0, (int)Math.round(HudManager.snapY * Gx.S), this.W, Math.max(1, Gx.S / 2), Style.accent);
       }
 
-      String[] var5 = new String[]{"Ziehen = verschieben", "Mausrad = Größe", "Rechtsklick = zurücksetzen", "R = alle zurücksetzen", "ESC = speichern"};
-      float var6 = this.pf(7.4F);
-      float var7 = 0.0F;
+      String[] hints = new String[]{"Ziehen = verschieben", "Mausrad = Größe", "Rechtsklick = zurücksetzen", "R = alle zurücksetzen", "ESC = speichern"};
+      float fs = this.pf(7.4F);
+      float total = 0.0F;
 
-      for (String var11 : var5) {
-         var7 += Gx.width(var11, var6, 2);
+      for (String h : hints) {
+         total += Gx.width(h, fs, 2);
       }
 
-      var7 += (var5.length - 1) * this.pf(14.0) + this.pf(28.0);
-      int var23 = Math.round(this.W / 2.0F - var7 / 2.0F);
-      int var24 = this.p(10.0);
-      int var25 = this.p(24.0);
-      Gx.pushAlpha(var1);
-      Gx.shadow(var23, var24, Math.round(var7), var25, var25 / 2, this.p(6.0), 0.35F);
-      Gx.rect(var23, var24, Math.round(var7), var25, var25 / 2, -435088874);
-      Gx.outline(var23, var24, Math.round(var7), var25, var25 / 2, Math.max(1, this.p(0.6)), 587202559);
-      float var26 = var23 + this.pf(14.0);
+      total += (hints.length - 1) * this.pf(14.0) + this.pf(28.0);
+      int hx = Math.round(this.W / 2.0F - total / 2.0F);
+      int hy = this.p(10.0);
+      int hh = this.p(24.0);
+      Gx.pushAlpha(t);
+      Gx.shadow(hx, hy, Math.round(total), hh, hh / 2, this.p(6.0), 0.35F);
+      Gx.rect(hx, hy, Math.round(total), hh, hh / 2, -435088874);
+      Gx.outline(hx, hy, Math.round(total), hh, hh / 2, Math.max(1, this.p(0.6)), 587202559);
+      float x = hx + this.pf(14.0);
 
-      for (int var12 = 0; var12 < var5.length; var12++) {
-         var26 += Gx.textMid(var5[var12], var26, var24 + var25 / 2.0F, var6, 2, -419430401);
-         if (var12 < var5.length - 1) {
-            Gx.circle(Math.round(var26 + this.pf(7.0)), var24 + var25 / 2, Math.max(1, this.p(1.3)), Style.accent);
-            var26 += this.pf(14.0);
+      for (int i = 0; i < hints.length; i++) {
+         x += Gx.textMid(hints[i], x, hy + hh / 2.0F, fs, 2, -419430401);
+         if (i < hints.length - 1) {
+            Gx.circle(Math.round(x + this.pf(7.0)), hy + hh / 2, Math.max(1, this.p(1.3)), Style.accent);
+            x += this.pf(14.0);
          }
       }
 
-      int var27 = this.p(28.0);
-      int var13 = this.W - var27 - this.p(12.0);
-      int var14 = this.p(10.0);
-      boolean var15 = this.hover(var13, var14, var27, var27);
-      Gx.rect(var13, var14, var27, var27, this.p(8.0), var15 ? -265934800 : -435088874);
-      Gx.icon("list", var13 + var27 / 2.0F, var14 + var27 / 2.0F, this.pf(13.0), this.panelOpen ? Style.accent : -1);
-      Kit.hit(var13, var14, var27, var27).click(() -> this.panelOpen = !this.panelOpen);
-      int var16 = var13 - var27 - this.p(6.0);
-      boolean var17 = this.hover(var16, var14, var27, var27);
-      Gx.rect(var16, var14, var27, var27, this.p(8.0), var17 ? -265934800 : -435088874);
-      Gx.icon("mods", var16 + var27 / 2.0F, var14 + var27 / 2.0F, this.pf(13.0), -1);
-      Kit.hit(var16, var14, var27, var27).click(() -> {
+      int bs = this.p(28.0);
+      int bx = this.W - bs - this.p(12.0);
+      int by = this.p(10.0);
+      boolean hb = this.hover(bx, by, bs, bs);
+      Gx.rect(bx, by, bs, bs, this.p(8.0), hb ? -265934800 : -435088874);
+      Gx.icon("list", bx + bs / 2.0F, by + bs / 2.0F, this.pf(13.0), this.panelOpen ? Style.accent : -1);
+      Kit.hit(bx, by, bs, bs).click(() -> this.panelOpen = !this.panelOpen);
+      int bx2 = bx - bs - this.p(6.0);
+      boolean hb2 = this.hover(bx2, by, bs, bs);
+      Gx.rect(bx2, by, bs, bs, this.p(8.0), hb2 ? -265934800 : -435088874);
+      Gx.icon("mods", bx2 + bs / 2.0F, by + bs / 2.0F, this.pf(13.0), -1);
+      Kit.hit(bx2, by, bs, bs).click(() -> {
          this.save();
          this.host.open(new HubView());
       });
       Gx.popAlpha();
-      float var18 = Ease.to("hudedit:panel", this.panelOpen ? 1.0F : 0.0F, 14.0F);
-      if (var18 > 0.01F) {
-         this.drawPanel(var18);
+      float po = Ease.to("hudedit:panel", this.panelOpen ? 1.0F : 0.0F, 14.0F);
+      if (po > 0.01F) {
+         this.drawPanel(po);
       }
    }
 
-   private void drawPanel(float var1) {
-      int var2 = this.p(190.0);
-      int var3 = this.H - this.p(60.0);
-      int var4 = this.p(46.0);
-      int var5 = Math.round(this.W - this.p(12.0) - var2 + (1.0F - Ease.outCubic(var1)) * (var2 + this.p(20.0)));
-      Gx.pushAlpha(var1);
-      Gx.shadow(var5, var4, var2, var3, this.p(12.0), this.p(8.0), 0.45F);
-      Gx.rect(var5, var4, var2, var3, this.p(12.0), -233762282);
-      Gx.outline(var5, var4, var2, var3, this.p(12.0), Math.max(1, this.p(0.6)), 587202559);
-      Gx.text("HUD-Module", var5 + this.p(14.0), var4 + this.p(12.0), this.pf(10.0), 3, -1);
-      List var6 = HudManager.modules();
-      int var7 = this.p(26.0);
-      int var8 = var4 + this.p(36.0);
-      int var9 = var3 - this.p(44.0);
-      float var10 = Math.max(0, var6.size() * var7 - var9);
-      this.listTarget = Math.max(0.0F, Math.min(var10, this.listTarget));
+   private void drawPanel(float po) {
+      int pw = this.p(190.0);
+      int ph = this.H - this.p(60.0);
+      int py = this.p(46.0);
+      int px = Math.round(this.W - this.p(12.0) - pw + (1.0F - Ease.outCubic(po)) * (pw + this.p(20.0)));
+      Gx.pushAlpha(po);
+      Gx.shadow(px, py, pw, ph, this.p(12.0), this.p(8.0), 0.45F);
+      Gx.rect(px, py, pw, ph, this.p(12.0), -233762282);
+      Gx.outline(px, py, pw, ph, this.p(12.0), Math.max(1, this.p(0.6)), 587202559);
+      Gx.text("HUD-Module", px + this.p(14.0), py + this.p(12.0), this.pf(10.0), 3, -1);
+      List<HudModule> mods = HudManager.modules();
+      int rowH = this.p(26.0);
+      int ly = py + this.p(36.0);
+      int lh = ph - this.p(44.0);
+      float max = Math.max(0, mods.size() * rowH - lh);
+      this.listTarget = Math.max(0.0F, Math.min(max, this.listTarget));
       this.listScroll = this.listScroll + (this.listTarget - this.listScroll) * (1.0F - (float)Math.exp(-Gx.dt * 16.0F));
-      Gx.clip(var5, var8, var2, var9);
-      Kit.clip(var5, var8, var2, var9);
-      Kit.hit(var5, var8, var2, var9).scroll(var1x -> this.listTarget = this.listTarget - var1x.floatValue() * this.p(30.0));
+      Gx.clip(px, ly, pw, lh);
+      Kit.clip(px, ly, pw, lh);
+      Kit.hit(px, ly, pw, lh).scroll(a -> this.listTarget = this.listTarget - a.floatValue() * this.p(30.0));
 
-      for (int var11 = 0; var11 < var6.size(); var11++) {
-         HudModule var12 = (HudModule)var6.get(var11);
-         int var13 = Math.round(var8 + var11 * var7 - this.listScroll);
-         if (var13 + var7 >= var8 && var13 <= var8 + var9) {
-            boolean var14 = this.hover(var5 + this.p(6.0), var13, var2 - this.p(12.0), var7 - this.p(2.0));
-            if (var14) {
-               Gx.rect(var5 + this.p(6.0), var13, var2 - this.p(12.0), var7 - this.p(2.0), this.p(7.0), 352321535);
+      for (int i = 0; i < mods.size(); i++) {
+         HudModule m = mods.get(i);
+         int ry = Math.round(ly + i * rowH - this.listScroll);
+         if (ry + rowH >= ly && ry <= ly + lh) {
+            boolean hv = this.hover(px + this.p(6.0), ry, pw - this.p(12.0), rowH - this.p(2.0));
+            if (hv) {
+               Gx.rect(px + this.p(6.0), ry, pw - this.p(12.0), rowH - this.p(2.0), this.p(7.0), 352321535);
             }
 
-            Gx.icon(var12.icon, var5 + this.p(18.0), var13 + (var7 - this.p(2.0)) / 2.0F, this.pf(10.0), var12.enabled ? Style.accent : -7696487);
+            Gx.icon(m.icon, px + this.p(18.0), ry + (rowH - this.p(2.0)) / 2.0F, this.pf(10.0), m.enabled ? Style.accent : -7696487);
             Gx.textMid(
-               Fonts.ellipsize(var12.name, 2, this.pf(7.8F), var2 - this.p(80.0)),
-               var5 + this.p(30.0),
-               var13 + (var7 - this.p(2.0)) / 2.0F,
+               Fonts.ellipsize(m.name, 2, this.pf(7.8F), pw - this.p(80.0)),
+               px + this.p(30.0),
+               ry + (rowH - this.p(2.0)) / 2.0F,
                this.pf(7.8F),
                2,
-               var12.enabled ? -1 : -7696487
+               m.enabled ? -1 : -7696487
             );
-            Kit.toggle(
-               "hudp:" + var12.id,
-               var5 + var2 - this.p(40.0),
-               var13 + (var7 - this.p(2.0)) / 2 - this.p(7.0),
-               this.p(26.0),
-               this.p(14.0),
-               var12.enabled,
-               this.P
-            );
-            Kit.hit(var5 + this.p(6.0), var13, var2 - this.p(12.0), var7 - this.p(2.0)).click(() -> {
-               var12.toggle();
+            Kit.toggle("hudp:" + m.id, px + pw - this.p(40.0), ry + (rowH - this.p(2.0)) / 2 - this.p(7.0), this.p(26.0), this.p(14.0), m.enabled, this.P);
+            Kit.hit(px + this.p(6.0), ry, pw - this.p(12.0), rowH - this.p(2.0)).click(() -> {
+               m.toggle();
                Modules.scheduleSave();
             });
          }
@@ -203,17 +195,17 @@ public final class HudEditorView extends View {
    }
 
    @Override
-   public boolean mouseDown(float var1, float var2, int var3, boolean var4) {
-      Kit.Region var5 = Kit.at(var1, var2);
-      if (var5 != null && !"hud".equals(var5.idOrNull())) {
-         return Kit.down(var1, var2, var3);
+   public boolean mouseDown(float x, float y, int button, boolean dbl) {
+      Kit.Region r = Kit.at(x, y);
+      if (r != null && !"hud".equals(r.idOrNull())) {
+         return Kit.down(x, y, button);
       } else {
-         int var6 = Math.round(var1 / Gx.S);
-         int var7 = Math.round(var2 / Gx.S);
-         if (SpotifyHudMod.editorDown(var6, var7, var3, this.gw(), this.gh())) {
+         int gx = Math.round(x / Gx.S);
+         int gy = Math.round(y / Gx.S);
+         if (SpotifyHudMod.editorDown(gx, gy, button, this.gw(), this.gh())) {
             this.draggingHud = true;
             return true;
-         } else if (HudManager.mouseDown(var6, var7, var3, this.gw(), this.gh())) {
+         } else if (HudManager.mouseDown(gx, gy, button, this.gw(), this.gh())) {
             this.draggingHud = true;
             return true;
          } else {
@@ -223,18 +215,18 @@ public final class HudEditorView extends View {
    }
 
    @Override
-   public boolean mouseDrag(float var1, float var2, int var3) {
+   public boolean mouseDrag(float x, float y, int button) {
       if (Kit.dragging()) {
-         return Kit.drag(var1, var2);
+         return Kit.drag(x, y);
       } else {
-         double var4 = var1 / Gx.S;
-         double var6 = var2 / Gx.S;
-         return SpotifyHudMod.editorDrag(var4, var6, this.gw(), this.gh()) ? true : HudManager.mouseDrag(var4, var6, this.gw(), this.gh(), true);
+         double gx = x / Gx.S;
+         double gy = y / Gx.S;
+         return SpotifyHudMod.editorDrag(gx, gy, this.gw(), this.gh()) ? true : HudManager.mouseDrag(gx, gy, this.gw(), this.gh(), true);
       }
    }
 
    @Override
-   public boolean mouseUp(float var1, float var2, int var3) {
+   public boolean mouseUp(float x, float y, int button) {
       Kit.up();
       SpotifyHudMod.editorUp();
       HudManager.mouseUp();
@@ -243,19 +235,19 @@ public final class HudEditorView extends View {
    }
 
    @Override
-   public boolean scroll(float var1, float var2, double var3) {
-      if (Kit.scroll(var1, var2, var3)) {
+   public boolean scroll(float x, float y, double amount) {
+      if (Kit.scroll(x, y, amount)) {
          return true;
       } else {
-         double var5 = var1 / Gx.S;
-         double var7 = var2 / Gx.S;
-         return SpotifyHudMod.editorScroll(var5, var7, var3, this.gw(), this.gh()) ? true : HudManager.scroll(var5, var7, var3, this.gw(), this.gh());
+         double gx = x / Gx.S;
+         double gy = y / Gx.S;
+         return SpotifyHudMod.editorScroll(gx, gy, amount, this.gw(), this.gh()) ? true : HudManager.scroll(gx, gy, amount, this.gw(), this.gh());
       }
    }
 
    @Override
-   public boolean key(int var1, int var2) {
-      if (var1 == 82) {
+   public boolean key(int key, int mods) {
+      if (key == 82) {
          HudManager.resetAll();
          return true;
       } else {

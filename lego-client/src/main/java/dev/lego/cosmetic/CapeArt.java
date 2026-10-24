@@ -36,919 +36,903 @@ final class CapeArt {
       Capes.def("matrix", 16, 12.0F, 9240488, 670230, 133636, CapeArt::matrix);
    }
 
-   private static Font bold(float var0) {
-      return Fonts.get(3, var0);
+   private static Font bold(float size) {
+      return Fonts.get(3, size);
    }
 
-   static void lego(Graphics2D var0, BufferedImage var1, double var2, int var4, int var5) {
-      Capes.field(var1, (var0x, var2x, var4x, var5x) -> {
-         int var6x = Capes.mix(16003642, 9045776, var2x * 0.85 + var0x * 0.15);
-         double var7x = Math.hypot(var0x - 0.5, (var2x - 0.42) * 0.62);
-         return Capes.add(var6x, 16743002, Math.exp(-var7x * var7x / 0.03) * 0.25);
+   static void lego(Graphics2D g, BufferedImage img, double ph, int k, int n) {
+      Capes.field(img, (u, v, x, yx) -> {
+         int c = Capes.mix(16003642, 9045776, v * 0.85 + u * 0.15);
+         double d = Math.hypot(u - 0.5, (v - 0.42) * 0.62);
+         return Capes.add(c, 16743002, Math.exp(-d * d / 0.03) * 0.25);
       });
 
-      for (int var6 = 0; var6 < 14; var6++) {
-         for (int var7 = 0; var7 < 9; var7++) {
-            double var8 = 16 + var7 * 16;
-            double var10 = 16.0 + var6 * 18.5;
-            double var12 = Math.hypot((var8 - 80.0) / 60.0, (var10 - 110.0) / 70.0);
-            double var14 = 0.35 + 0.65 * Capes.clamp01(var12 - 0.55);
-            var0.setColor(Capes.col(3801092, 0.28 * var14));
-            var0.fill(new Double(var8 - 5.0 + 1.4, var10 - 5.0 + 2.0, 10.0, 10.0));
-            var0.setPaint(
-               new GradientPaint(
-                  (float)var8 - 5.0F,
-                  (float)var10 - 5.0F,
-                  Capes.col(16777215, 0.3 * var14),
-                  (float)var8 + 5.0F,
-                  (float)var10 + 5.0F,
-                  Capes.col(5898246, 0.25 * var14)
-               )
+      for (int row = 0; row < 14; row++) {
+         for (int col = 0; col < 9; col++) {
+            double x = 16 + col * 16;
+            double y = 16.0 + row * 18.5;
+            double dc = Math.hypot((x - 80.0) / 60.0, (y - 110.0) / 70.0);
+            double a = 0.35 + 0.65 * Capes.clamp01(dc - 0.55);
+            g.setColor(Capes.col(3801092, 0.28 * a));
+            g.fill(new Double(x - 5.0 + 1.4, y - 5.0 + 2.0, 10.0, 10.0));
+            g.setPaint(
+               new GradientPaint((float)x - 5.0F, (float)y - 5.0F, Capes.col(16777215, 0.3 * a), (float)x + 5.0F, (float)y + 5.0F, Capes.col(5898246, 0.25 * a))
             );
-            var0.fill(new Double(var8 - 5.0, var10 - 5.0, 10.0, 10.0));
-            var0.setColor(Capes.col(16777215, 0.14 * var14));
-            var0.setStroke(new BasicStroke(0.8F));
-            var0.draw(new Double(var8 - 3.2, var10 - 3.2, 6.4, 6.4));
+            g.fill(new Double(x - 5.0, y - 5.0, 10.0, 10.0));
+            g.setColor(Capes.col(16777215, 0.14 * a));
+            g.setStroke(new BasicStroke(0.8F));
+            g.draw(new Double(x - 3.2, y - 3.2, 6.4, 6.4));
          }
       }
 
-      Capes.dot(var0, 80.0, 104.0, 62.0, 3801092, 0.35);
-      Art.brick(var0, 34.0, 54.0, 92.0, new Color(16764163));
-      String var16 = "LEGO";
-      var0.setFont(bold(31.0F));
-      float var17 = var0.getFontMetrics().stringWidth(var16);
-      var0.setColor(Capes.col(3801092, 0.55));
-      var0.drawString(var16, 80.0F - var17 / 2.0F + 1.5F, 198.5F);
-      var0.setPaint(new GradientPaint(0.0F, 170.0F, Color.WHITE, 0.0F, 198.0F, new Color(16770992)));
-      var0.drawString(var16, 80.0F - var17 / 2.0F, 196.0F);
-      var0.setFont(bold(11.0F));
-      String var18 = "C L I E N T";
-      float var9 = var0.getFontMetrics().stringWidth(var18);
-      var0.setColor(Capes.col(16769658, 0.9));
-      var0.drawString(var18, 80.0F - var9 / 2.0F, 216.0F);
-      var0.setColor(Capes.col(16769658, 0.5));
-      var0.setStroke(new BasicStroke(1.2F));
-      var0.drawLine(30, 211, (int)(80.0F - var9 / 2.0F - 6.0F), 211);
-      var0.drawLine((int)(80.0F + var9 / 2.0F + 6.0F), 211, 130, 211);
-      Capes.sweep(var1, (double)var4 / var5, 0.09, 0.42);
+      Capes.dot(g, 80.0, 104.0, 62.0, 3801092, 0.35);
+      Art.brick(g, 34.0, 54.0, 92.0, new Color(16764163));
+      String s = "LEGO";
+      g.setFont(bold(31.0F));
+      float w = g.getFontMetrics().stringWidth(s);
+      g.setColor(Capes.col(3801092, 0.55));
+      g.drawString(s, 80.0F - w / 2.0F + 1.5F, 198.5F);
+      g.setPaint(new GradientPaint(0.0F, 170.0F, Color.WHITE, 0.0F, 198.0F, new Color(16770992)));
+      g.drawString(s, 80.0F - w / 2.0F, 196.0F);
+      g.setFont(bold(11.0F));
+      String c2 = "C L I E N T";
+      float w2 = g.getFontMetrics().stringWidth(c2);
+      g.setColor(Capes.col(16769658, 0.9));
+      g.drawString(c2, 80.0F - w2 / 2.0F, 216.0F);
+      g.setColor(Capes.col(16769658, 0.5));
+      g.setStroke(new BasicStroke(1.2F));
+      g.drawLine(30, 211, (int)(80.0F - w2 / 2.0F - 6.0F), 211);
+      g.drawLine((int)(80.0F + w2 / 2.0F + 6.0F), 211, 130, 211);
+      Capes.sweep(img, (double)k / n, 0.09, 0.42);
    }
 
-   static void galaxy(Graphics2D var0, BufferedImage var1, double var2, int var4, int var5) {
-      double var6 = var2 / 2.0;
-      Capes.field(var1, (var2x, var4x, var6x, var7) -> {
-         double var8x = var2x * 2.6;
-         double var10x = var4x * 4.2;
-         double var12x = Capes.fbm(var8x + 3.0, var10x, 0, 0, 3, 11);
-         double var14x = Capes.fbm(var8x + var12x * 1.6, var10x + var12x * 1.2, 0, 0, 5, 12);
-         double var16x = Capes.fbm(var8x * 0.6 + 9.0, var10x * 0.6, 0, 0, 3, 13);
-         int var18 = Capes.mix(131337, 721952, var4x);
-         double var19x = Math.pow(Capes.smooth(0.38, 0.9, var14x), 1.5);
-         var18 = Capes.add(var18, Capes.ramp(var16x, 1981183, 6958048, 14696607, 16743002), var19x * 0.7);
-         double var21x = var6x + 0.5 - 80.0;
-         double var23 = (var7 + 0.5 - 110.08) / 0.62;
-         double var25 = Math.sqrt(var21x * var21x + var23 * var23) + 0.001;
-         double var27 = Math.atan2(var23, var21x) - var6 - 2.9 * Math.log(var25 / 16.0 + 0.2);
-         double var29 = (var27 % Math.PI + Math.PI) % Math.PI;
-         double var31 = Math.pow(0.5 + 0.5 * Math.cos(2.0 * var27), 2.4);
-         double var33 = Capes.fbm(var25 * 0.11, var29 * 8.0 / Math.PI, 0, 8, 3, 21);
-         double var35 = Math.exp(-var25 / 34.0);
-         double var37 = var31 * var35 * (0.35 + 0.95 * var33) + Math.exp(-(var25 / 8.0) * (var25 / 8.0)) * 1.4 + Math.exp(-var25 / 18.0) * 0.3;
-         int var39 = Capes.mix(16773328, 10273023, Capes.smooth(4.0, 30.0, var25));
-         var18 = Capes.add(var18, var39, var37 * 0.95);
-         if (var33 > 0.62) {
-            var18 = Capes.add(var18, 16734888, (var33 - 0.62) * 2.2 * var31 * var35);
+   static void galaxy(Graphics2D g, BufferedImage img, double ph, int k, int n) {
+      double rot = ph / 2.0;
+      double cx = 80.0;
+      double cy = 110.08;
+      Capes.field(img, (u, v, xx, yx) -> {
+         double nx = u * 2.6;
+         double ny = v * 4.2;
+         double w1 = Capes.fbm(nx + 3.0, ny, 0, 0, 3, 11);
+         double neb = Capes.fbm(nx + w1 * 1.6, ny + w1 * 1.2, 0, 0, 5, 12);
+         double hueN = Capes.fbm(nx * 0.6 + 9.0, ny * 0.6, 0, 0, 3, 13);
+         int c = Capes.mix(131337, 721952, v);
+         double ni = Math.pow(Capes.smooth(0.38, 0.9, neb), 1.5);
+         c = Capes.add(c, Capes.ramp(hueN, 1981183, 6958048, 14696607, 16743002), ni * 0.7);
+         double dx = xx + 0.5 - 80.0;
+         double dy = (yx + 0.5 - 110.08) / 0.62;
+         double r = Math.sqrt(dx * dx + dy * dy) + 0.001;
+         double th = Math.atan2(dy, dx) - rot - 2.9 * Math.log(r / 16.0 + 0.2);
+         double tt = (th % Math.PI + Math.PI) % Math.PI;
+         double arms = Math.pow(0.5 + 0.5 * Math.cos(2.0 * th), 2.4);
+         double dust = Capes.fbm(r * 0.11, tt * 8.0 / Math.PI, 0, 8, 3, 21);
+         double fall = Math.exp(-r / 34.0);
+         double inten = arms * fall * (0.35 + 0.95 * dust) + Math.exp(-(r / 8.0) * (r / 8.0)) * 1.4 + Math.exp(-r / 18.0) * 0.3;
+         int gc = Capes.mix(16773328, 10273023, Capes.smooth(4.0, 30.0, r));
+         c = Capes.add(c, gc, inten * 0.95);
+         if (dust > 0.62) {
+            c = Capes.add(c, 16734888, (dust - 0.62) * 2.2 * arms * fall);
          }
 
-         double var40 = Capes.smooth(0.5, 0.75, Capes.fbm(var25 * 0.2 + 5.0, var29 * 8.0 / Math.PI, 0, 8, 2, 23)) * var31 * Math.exp(-var25 / 45.0) * 0.55;
-         return Capes.shade(var18, 1.0 - var40);
+         double lane = Capes.smooth(0.5, 0.75, Capes.fbm(r * 0.2 + 5.0, tt * 8.0 / Math.PI, 0, 8, 2, 23)) * arms * Math.exp(-r / 45.0) * 0.55;
+         return Capes.shade(c, 1.0 - lane);
       });
-      Random var8 = new Random(5L);
+      Random rn = new Random(5L);
 
-      for (int var9 = 0; var9 < 150; var9++) {
-         double var10 = var8.nextDouble() * 160.0;
-         double var12 = var8.nextDouble() * 256.0;
-         double var14 = Math.pow(var8.nextDouble(), 5.0);
-         int var16 = 1 + var8.nextInt(2);
-         double var17 = var8.nextDouble() * Math.PI * 2.0;
-         double var19 = (0.35 + 0.65 * (0.5 + 0.5 * Math.sin(var2 * var16 + var17))) * (0.5 + 0.5 * var8.nextDouble());
-         int var21 = var8.nextInt(3) == 0 ? 16766640 : (var8.nextBoolean() ? 12112127 : 16777215);
-         Capes.star(var0, var10, var12, 0.7 + var14 * 2.6, var21, var19);
+      for (int i = 0; i < 150; i++) {
+         double x = rn.nextDouble() * 160.0;
+         double y = rn.nextDouble() * 256.0;
+         double big = Math.pow(rn.nextDouble(), 5.0);
+         int j = 1 + rn.nextInt(2);
+         double p0 = rn.nextDouble() * Math.PI * 2.0;
+         double a = (0.35 + 0.65 * (0.5 + 0.5 * Math.sin(ph * j + p0))) * (0.5 + 0.5 * rn.nextDouble());
+         int tint = rn.nextInt(3) == 0 ? 16766640 : (rn.nextBoolean() ? 12112127 : 16777215);
+         Capes.star(g, x, y, 0.7 + big * 2.6, tint, a);
       }
    }
 
-   static void flames(Graphics2D var0, BufferedImage var1, double var2, int var4, int var5) {
-      double var6 = (double)var4 / var5;
-      Capes.field(var1, (var2x, var4x, var6x, var7) -> {
-         double var8x = var2x * 4.0;
-         double var10x = var4x * 6.0 + var6 * 12.0;
-         double var12x = Capes.fbm(var8x * 1.2 + 7.0, var10x, 0, 6, 3, 5);
-         double var14x = Capes.fbm(var8x + (var12x - 0.5) * 1.6, var10x + (var12x - 0.5) * 0.8, 0, 6, 5, 7);
-         double var16 = 0.13 * Math.cos(var2x * Math.PI * 2.0 * 3.0 + (var12x - 0.5) * 4.0);
-         double var18 = var4x * 1.32 - 0.42 + (var14x - 0.5) * 1.25 + var16;
-         int var20 = Capes.mix(655874, 3016709, var4x);
-         var20 = Capes.add(var20, 16730640, Math.pow(var4x, 3.0) * 0.35);
-         int var21x = Capes.ramp(var18 / 1.2, 5900805, 11540490, 15747598, 16748062, 16763210, 16774092);
-         double var22 = Capes.smooth(-0.02, 0.14, var18);
-         int var24 = Capes.mix(var20, var21x, var22);
-         return Capes.add(var24, 16771232, Capes.smooth(0.85, 1.3, var18) * 0.25);
+   static void flames(Graphics2D g, BufferedImage img, double ph, int k, int n) {
+      double t = (double)k / n;
+      Capes.field(img, (u, v, xx, yx) -> {
+         double X = u * 4.0;
+         double Yn = v * 6.0 + t * 12.0;
+         double w = Capes.fbm(X * 1.2 + 7.0, Yn, 0, 6, 3, 5);
+         double n1 = Capes.fbm(X + (w - 0.5) * 1.6, Yn + (w - 0.5) * 0.8, 0, 6, 5, 7);
+         double tongues = 0.13 * Math.cos(u * Math.PI * 2.0 * 3.0 + (w - 0.5) * 4.0);
+         double heat = v * 1.32 - 0.42 + (n1 - 0.5) * 1.25 + tongues;
+         int bg = Capes.mix(655874, 3016709, v);
+         bg = Capes.add(bg, 16730640, Math.pow(v, 3.0) * 0.35);
+         int fire = Capes.ramp(heat / 1.2, 5900805, 11540490, 15747598, 16748062, 16763210, 16774092);
+         double a = Capes.smooth(-0.02, 0.14, heat);
+         int c = Capes.mix(bg, fire, a);
+         return Capes.add(c, 16771232, Capes.smooth(0.85, 1.3, heat) * 0.25);
       });
-      Random var8 = new Random(8L);
+      Random rn = new Random(8L);
 
-      for (int var9 = 0; var9 < 46; var9++) {
-         double var10 = var8.nextDouble();
-         double var12 = var8.nextDouble();
-         int var14 = 1 + var8.nextInt(2);
-         double var15 = var8.nextDouble() * Math.PI * 2.0;
-         double var17 = ((var12 - var14 * var6) % 1.0 + 1.0) % 1.0;
-         double var19 = (var10 + 0.035 * Math.sin(var2 * var14 + var15)) * 160.0;
-         double var21 = Math.pow(var17, 0.7);
-         double var23 = 1.2 + var8.nextDouble() * 1.8;
-         Capes.addDot(var1, var19, var17 * 256.0, var23 * 3.0, 16738832, 0.5 * var21);
-         Capes.addDot(var1, var19, var17 * 256.0, var23, 16769184, 0.9 * var21);
+      for (int i = 0; i < 46; i++) {
+         double x0 = rn.nextDouble();
+         double y0 = rn.nextDouble();
+         int j = 1 + rn.nextInt(2);
+         double s = rn.nextDouble() * Math.PI * 2.0;
+         double y = ((y0 - j * t) % 1.0 + 1.0) % 1.0;
+         double x = (x0 + 0.035 * Math.sin(ph * j + s)) * 160.0;
+         double life = Math.pow(y, 0.7);
+         double r = 1.2 + rn.nextDouble() * 1.8;
+         Capes.addDot(img, x, y * 256.0, r * 3.0, 16738832, 0.5 * life);
+         Capes.addDot(img, x, y * 256.0, r, 16769184, 0.9 * life);
       }
    }
 
-   static void ice(Graphics2D var0, BufferedImage var1, double var2, int var4, int var5) {
-      Capes.field(var1, (var0x, var2x, var4x, var5x) -> {
-         int var6x = Capes.ramp(var2x, 15399935, 10935542, 5612762, 1921686);
-         int var7 = var4x / 26;
-         int var8x = var5x / 30;
-         double var9 = 1.0E9;
-         double var11 = 1.0E9;
-         int var13x = 0;
+   static void ice(Graphics2D g, BufferedImage img, double ph, int k, int n) {
+      int CW = 26;
+      int CH = 30;
+      Capes.field(img, (u, v, xx, yx) -> {
+         int base = Capes.ramp(v, 15399935, 10935542, 5612762, 1921686);
+         int gx = xx / 26;
+         int gy = yx / 30;
+         double d1 = 1.0E9;
+         double d2 = 1.0E9;
+         int best = 0;
 
-         for (int var14x = -1; var14x <= 1; var14x++) {
-            for (int var15x = -1; var15x <= 1; var15x++) {
-               int var16x = var7 + var15x;
-               int var17 = var8x + var14x;
-               double var18x = (var16x + 0.15 + 0.7 * Capes.hash(var16x, var17, 3)) * 26.0;
-               double var20 = (var17 + 0.15 + 0.7 * Capes.hash(var16x, var17, 4)) * 30.0;
-               double var22 = Math.hypot(var4x - var18x, var5x - var20);
-               if (var22 < var9) {
-                  var11 = var9;
-                  var9 = var22;
-                  var13x = var16x * 131 + var17;
-               } else if (var22 < var11) {
-                  var11 = var22;
+         for (int oy = -1; oy <= 1; oy++) {
+            for (int ox = -1; ox <= 1; ox++) {
+               int cxx = gx + ox;
+               int cyx = gy + oy;
+               double px = (cxx + 0.15 + 0.7 * Capes.hash(cxx, cyx, 3)) * 26.0;
+               double py = (cyx + 0.15 + 0.7 * Capes.hash(cxx, cyx, 4)) * 30.0;
+               double d = Math.hypot(xx - px, yx - py);
+               if (d < d1) {
+                  d2 = d1;
+                  d1 = d;
+                  best = cxx * 131 + cyx;
+               } else if (d < d2) {
+                  d2 = d;
                }
             }
          }
 
-         double var25x = 0.86 + 0.26 * Capes.hash(var13x, 1, 9);
-         int var26 = Capes.shade(var6x, var25x);
-         double var28x = 1.0 - Capes.smooth(0.0, 3.2, var11 - var9);
-         var26 = Capes.add(var26, 16777215, var28x * 0.38);
-         double var19 = Math.min(var0x, 1.0 - var0x) * 1.6;
-         double var21 = Math.min(var2x, 1.0 - var2x);
-         double var23x = Capes.smooth(0.45, 0.85, Capes.fbm(var0x * 9.0, var2x * 14.0, 0, 0, 4, 44) + (0.3 - Math.min(var19, var21)) * 1.4);
-         return Capes.mix(var26, 16055551, var23x * 0.75);
+         double facet = 0.86 + 0.26 * Capes.hash(best, 1, 9);
+         int c = Capes.shade(base, facet);
+         double edge = 1.0 - Capes.smooth(0.0, 3.2, d2 - d1);
+         c = Capes.add(c, 16777215, edge * 0.38);
+         double ex = Math.min(u, 1.0 - u) * 1.6;
+         double ey = Math.min(v, 1.0 - v);
+         double frost = Capes.smooth(0.45, 0.85, Capes.fbm(u * 9.0, v * 14.0, 0, 0, 4, 44) + (0.3 - Math.min(ex, ey)) * 1.4);
+         return Capes.mix(c, 16055551, frost * 0.75);
       });
-      double var6 = 80.0;
-      double var8 = 112.0;
-      double var10 = 44.0;
-      java.awt.geom.Path2D.Double var12 = new java.awt.geom.Path2D.Double();
+      double cx = 80.0;
+      double cy = 112.0;
+      double R = 44.0;
+      Path2D sf = new java.awt.geom.Path2D.Double();
 
-      for (int var13 = 0; var13 < 6; var13++) {
-         double var14 = (Math.PI / 3) * var13 - (Math.PI / 2);
-         double var16 = Math.cos(var14);
-         double var18 = Math.sin(var14);
-         var12.moveTo(var6, var8);
-         var12.lineTo(var6 + var16 * var10, var8 + var18 * var10);
+      for (int i = 0; i < 6; i++) {
+         double a = (Math.PI / 3) * i - (Math.PI / 2);
+         double ca = Math.cos(a);
+         double sa = Math.sin(a);
+         sf.moveTo(cx, cy);
+         sf.lineTo(cx + ca * R, cy + sa * R);
 
-         for (double var23 : new double[]{0.38, 0.62, 0.82}) {
-            double var25 = var10 * (0.34 - (var23 - 0.38) * 0.35);
+         for (double t : new double[]{0.38, 0.62, 0.82}) {
+            double bl = R * (0.34 - (t - 0.38) * 0.35);
 
-            for (int var27 = -1; var27 <= 1; var27 += 2) {
-               double var28 = var14 + var27 * Math.PI / 4.0;
-               var12.moveTo(var6 + var16 * var10 * var23, var8 + var18 * var10 * var23);
-               var12.lineTo(var6 + var16 * var10 * var23 + Math.cos(var28) * var25, var8 + var18 * var10 * var23 + Math.sin(var28) * var25);
+            for (int sgn = -1; sgn <= 1; sgn += 2) {
+               double b = a + sgn * Math.PI / 4.0;
+               sf.moveTo(cx + ca * R * t, cy + sa * R * t);
+               sf.lineTo(cx + ca * R * t + Math.cos(b) * bl, cy + sa * R * t + Math.sin(b) * bl);
             }
          }
       }
 
-      Capes.dot(var0, var6, var8, 64.0, 670330, 0.35);
-      var0.setColor(Capes.col(932984, 0.55));
-      var0.setStroke(new BasicStroke(7.0F, 1, 1));
-      var0.draw(var12);
-      Capes.glowStroke(var0, var12, 14546687, 3.4F, 1.8F, 0.95);
-      java.awt.geom.Path2D.Double var30 = new java.awt.geom.Path2D.Double();
+      Capes.dot(g, cx, cy, 64.0, 670330, 0.35);
+      g.setColor(Capes.col(932984, 0.55));
+      g.setStroke(new BasicStroke(7.0F, 1, 1));
+      g.draw(sf);
+      Capes.glowStroke(g, sf, 14546687, 3.4F, 1.8F, 0.95);
+      Path2D hex = new java.awt.geom.Path2D.Double();
 
-      for (int var31 = 0; var31 < 6; var31++) {
-         double var15 = (Math.PI / 3) * var31 - (Math.PI / 2);
-         if (var31 == 0) {
-            var30.moveTo(var6 + Math.cos(var15) * 9.0, var8 + Math.sin(var15) * 9.0);
+      for (int i = 0; i < 6; i++) {
+         double a = (Math.PI / 3) * i - (Math.PI / 2);
+         if (i == 0) {
+            hex.moveTo(cx + Math.cos(a) * 9.0, cy + Math.sin(a) * 9.0);
          } else {
-            var30.lineTo(var6 + Math.cos(var15) * 9.0, var8 + Math.sin(var15) * 9.0);
+            hex.lineTo(cx + Math.cos(a) * 9.0, cy + Math.sin(a) * 9.0);
          }
       }
 
-      var30.closePath();
-      var0.setPaint(new GradientPaint((float)var6 - 9.0F, (float)var8 - 9.0F, Color.WHITE, (float)var6 + 9.0F, (float)var8 + 9.0F, new Color(8374512)));
-      var0.fill(var30);
-      Capes.sweep(var1, (double)var4 / var5, 0.07, 0.35);
-      Random var32 = new Random(21L);
+      hex.closePath();
+      g.setPaint(new GradientPaint((float)cx - 9.0F, (float)cy - 9.0F, Color.WHITE, (float)cx + 9.0F, (float)cy + 9.0F, new Color(8374512)));
+      g.fill(hex);
+      Capes.sweep(img, (double)k / n, 0.07, 0.35);
+      Random rn = new Random(21L);
 
-      for (int var33 = 0; var33 < 26; var33++) {
-         double var34 = 14.0 + var32.nextDouble() * 132.0;
-         double var35 = 14.0 + var32.nextDouble() * 228.0;
-         int var36 = 1 + var32.nextInt(2);
-         double var37 = Math.pow(Math.max(0.0, Math.sin(var2 * var36 + var32.nextDouble() * 6.28)), 3.0);
-         Capes.star(var0, var34, var35, 1.2 + var32.nextDouble() * 1.6, 13628415, var37);
+      for (int ix = 0; ix < 26; ix++) {
+         double x = 14.0 + rn.nextDouble() * 132.0;
+         double y = 14.0 + rn.nextDouble() * 228.0;
+         int j = 1 + rn.nextInt(2);
+         double a = Math.pow(Math.max(0.0, Math.sin(ph * j + rn.nextDouble() * 6.28)), 3.0);
+         Capes.star(g, x, y, 1.2 + rn.nextDouble() * 1.6, 13628415, a);
       }
    }
 
-   private static int auroraSky(double var0, double var2, double var4) {
-      int var6 = Capes.ramp(var2 / 0.78, 66313, 200746, 665668, 1261644);
-      double[] var7 = new double[]{0.34, 0.46, 0.24};
-      double[] var8 = new double[]{0.95, 0.7, 0.5};
+   private static int auroraSky(double u, double v, double ph) {
+      int c = Capes.ramp(v / 0.78, 66313, 200746, 665668, 1261644);
+      double[] base = new double[]{0.34, 0.46, 0.24};
+      double[] str = new double[]{0.95, 0.7, 0.5};
 
-      for (int var9 = 0; var9 < 3; var9++) {
-         double var10 = var7[var9]
-            + 0.055 * Math.sin((Math.PI * 2) * var0 + var4 + var9 * 2.1)
-            + 0.03 * Math.sin((Math.PI * 4) * var0 - var4 * 2.0 + var9)
-            + 0.012 * Math.sin((Math.PI * 10) * var0 + var4 * 3.0 + var9);
-         double var12 = var2 - var10;
-         double var14 = var12 > 0.0 ? Math.exp(-var12 / 0.016) : Math.exp(var12 / (0.15 + 0.05 * var9));
-         if (!(var14 < 0.004)) {
-            double var16 = 0.55
-               + 0.3 * Math.sin(var0 * Math.PI * 2.0 * 9.0 + 2.4 * Math.sin(var0 * Math.PI * 2.0 * 2.0 + var4 + var9) + var9)
-               + 0.15 * Math.sin(var0 * Math.PI * 2.0 * 23.0 - var4 * 2.0 + var9 * 3);
-            double var18 = Capes.clamp01(-var12 / 0.24);
-            int var20 = Capes.ramp(var18, 8191928, 3074232, 3836927, 11557887);
-            var6 = Capes.add(var6, var20, var14 * Capes.clamp01(var16) * var8[var9]);
+      for (int i = 0; i < 3; i++) {
+         double yl = base[i]
+            + 0.055 * Math.sin((Math.PI * 2) * u + ph + i * 2.1)
+            + 0.03 * Math.sin((Math.PI * 4) * u - ph * 2.0 + i)
+            + 0.012 * Math.sin((Math.PI * 10) * u + ph * 3.0 + i);
+         double d = v - yl;
+         double e = d > 0.0 ? Math.exp(-d / 0.016) : Math.exp(d / (0.15 + 0.05 * i));
+         if (!(e < 0.004)) {
+            double rays = 0.55
+               + 0.3 * Math.sin(u * Math.PI * 2.0 * 9.0 + 2.4 * Math.sin(u * Math.PI * 2.0 * 2.0 + ph + i) + i)
+               + 0.15 * Math.sin(u * Math.PI * 2.0 * 23.0 - ph * 2.0 + i * 3);
+            double tt = Capes.clamp01(-d / 0.24);
+            int col = Capes.ramp(tt, 8191928, 3074232, 3836927, 11557887);
+            c = Capes.add(c, col, e * Capes.clamp01(rays) * str[i]);
          }
       }
 
-      return var6;
+      return c;
    }
 
-   private static double mountain(double var0) {
+   private static double mountain(double u) {
       return 0.735
-         + 0.05 * Math.sin(var0 * 7.0 + 1.0)
-         + 0.03 * Math.sin(var0 * 17.0 + 2.0)
-         + 0.018 * (Capes.vn(var0 * 26.0, 0.5, 0, 0, 3) - 0.5)
-         - 0.07 * Math.exp(-Math.pow((var0 - 0.3) / 0.12, 2.0));
+         + 0.05 * Math.sin(u * 7.0 + 1.0)
+         + 0.03 * Math.sin(u * 17.0 + 2.0)
+         + 0.018 * (Capes.vn(u * 26.0, 0.5, 0, 0, 3) - 0.5)
+         - 0.07 * Math.exp(-Math.pow((u - 0.3) / 0.12, 2.0));
    }
 
-   static void aurora(Graphics2D var0, BufferedImage var1, double var2, int var4, int var5) {
-      Random var6 = new Random(2L);
-      double[][] var7 = new double[70][];
+   static void aurora(Graphics2D g, BufferedImage img, double ph, int k, int n) {
+      double lake = 0.86;
+      Random rn = new Random(2L);
+      double[][] stars = new double[70][];
 
-      for (int var8 = 0; var8 < var7.length; var8++) {
-         var7[var8] = new double[]{var6.nextDouble(), var6.nextDouble() * 0.7, var6.nextDouble(), 1 + var6.nextInt(2), var6.nextDouble() * 6.28};
+      for (int i = 0; i < stars.length; i++) {
+         stars[i] = new double[]{rn.nextDouble(), rn.nextDouble() * 0.7, rn.nextDouble(), 1 + rn.nextInt(2), rn.nextDouble() * 6.28};
       }
 
-      Capes.field(var1, (var2x, var4x, var6x, var7x) -> {
-         double var8x = var4x;
-         boolean var10 = var4x > 0.86;
-         if (var10) {
-            var8x = 1.72 - var4x + 0.006 * Math.sin(var4x * 160.0 + var2 * 2.0);
+      Capes.field(img, (u, v, x, yx) -> {
+         double vv = v;
+         boolean refl = v > 0.86;
+         if (refl) {
+            vv = 1.72 - v + 0.006 * Math.sin(v * 160.0 + ph * 2.0);
          }
 
-         double var11x = mountain(var2x);
-         int var19;
-         if (var8x > var11x) {
-            var19 = Capes.mix(462362, 132362, (var8x - var11x) * 6.0);
-            double var14x = Math.exp(-(var8x - var11x) / 0.006);
-            var19 = Capes.add(var19, 14545663, var14x * 0.35);
-            double var16 = Capes.smooth(0.02, 0.0, var8x - var11x) * Capes.smooth(0.72, 0.68, var11x);
-            var19 = Capes.mix(var19, 12112616, var16 * 0.6 * (0.5 + 0.5 * Capes.vn(var2x * 40.0, var8x * 40.0, 0, 0, 5)));
+         double m = mountain(u);
+         int c;
+         if (vv > m) {
+            c = Capes.mix(462362, 132362, (vv - m) * 6.0);
+            double rim = Math.exp(-(vv - m) / 0.006);
+            c = Capes.add(c, 14545663, rim * 0.35);
+            double snow = Capes.smooth(0.02, 0.0, vv - m) * Capes.smooth(0.72, 0.68, m);
+            c = Capes.mix(c, 12112616, snow * 0.6 * (0.5 + 0.5 * Capes.vn(u * 40.0, vv * 40.0, 0, 0, 5)));
          } else {
-            var19 = auroraSky(var2x, var8x, var2);
+            c = auroraSky(u, vv, ph);
          }
 
-         if (var10) {
-            var19 = Capes.shade(Capes.mix(var19, 664632, 0.25), 0.55);
-            var19 = Capes.add(var19, 16777215, Math.exp(-(var4x - 0.86) / 0.004) * 0.12);
+         if (refl) {
+            c = Capes.shade(Capes.mix(c, 664632, 0.25), 0.55);
+            c = Capes.add(c, 16777215, Math.exp(-(v - 0.86) / 0.004) * 0.12);
          }
 
-         return var19;
+         return c;
       });
 
-      for (double[] var11 : var7) {
-         double var12 = var11[1] * 256.0;
-         if (!(var11[1] > mountain(var11[0]) - 0.02)) {
-            double var14 = (0.4 + 0.6 * (0.5 + 0.5 * Math.sin(var2 * var11[3] + var11[4]))) * (0.4 + 0.6 * var11[2]);
-            Capes.star(var0, var11[0] * 160.0, var12, 0.6 + var11[2] * var11[2] * 1.8, 14543103, var14);
+      for (double[] s : stars) {
+         double y = s[1] * 256.0;
+         if (!(s[1] > mountain(s[0]) - 0.02)) {
+            double a = (0.4 + 0.6 * (0.5 + 0.5 * Math.sin(ph * s[3] + s[4]))) * (0.4 + 0.6 * s[2]);
+            Capes.star(g, s[0] * 160.0, y, 0.6 + s[2] * s[2] * 1.8, 14543103, a);
          }
       }
    }
 
-   static void sunset(Graphics2D var0, BufferedImage var1, double var2, int var4, int var5) {
-      double var6 = (double)var4 / var5;
-      Capes.field(var1, (var2x, var4x, var6x, var7) -> {
-         if (var4x < 0.6) {
-            int var35 = Capes.ramp(var4x / 0.6, 787234, 3016786, 9051256, 15219324, 16751194);
-            double var9x = var6x + 0.5 - 80.0;
-            double var11 = var7 + 0.5 - 102.4;
-            double var39 = Math.hypot(var9x, var11);
-            var35 = Capes.add(var35, 16734874, Math.exp(-Math.max(0.0, var39 - 49.6) / 16.0) * 0.45);
-            if (var39 < 49.6) {
-               double var40 = (var11 + 49.6) / 99.2;
-               int var42 = Capes.ramp(var40, 16775072, 16760906, 16738906, 16723594);
-               boolean var18 = false;
-               if (var40 > 0.48) {
-                  double var45 = ((var40 * 9.0 - var6) % 1.0 + 1.0) % 1.0;
-                  var18 = var45 < (var40 - 0.48) * 1.25;
+   static void sunset(Graphics2D g, BufferedImage img, double ph, int k, int n) {
+      double t = (double)k / n;
+      double hz = 0.6;
+      double scx = 80.0;
+      double scy = 102.4;
+      double sr = 49.6;
+      Capes.field(img, (u, v, xx, yx) -> {
+         if (v < 0.6) {
+            int c = Capes.ramp(v / 0.6, 787234, 3016786, 9051256, 15219324, 16751194);
+            double dx = xx + 0.5 - 80.0;
+            double dy = yx + 0.5 - 102.4;
+            double d = Math.hypot(dx, dy);
+            c = Capes.add(c, 16734874, Math.exp(-Math.max(0.0, d - 49.6) / 16.0) * 0.45);
+            if (d < 49.6) {
+               double s = (dy + 49.6) / 99.2;
+               int sc = Capes.ramp(s, 16775072, 16760906, 16738906, 16723594);
+               boolean gap = false;
+               if (s > 0.48) {
+                  double f = ((s * 9.0 - t) % 1.0 + 1.0) % 1.0;
+                  gap = f < (s - 0.48) * 1.25;
                }
 
-               double var46 = Capes.smooth(49.6, 48.1, var39);
-               if (!var18) {
-                  var35 = Capes.mix(var35, var42, var46);
+               double edgeA = Capes.smooth(49.6, 48.1, d);
+               if (!gap) {
+                  c = Capes.mix(c, sc, edgeA);
                }
             }
 
-            double var41 = 0.6 - (0.035 + 0.11 * Math.pow(Math.abs(var2x - 0.5) * 2.0, 1.6)) * (0.75 + 0.5 * Capes.vn(var2x * 9.0, 1.0, 0, 0, 77));
-            if (var4x > var41) {
-               int var43 = Capes.mix(3804766, 1311786, (var4x - var41) / 0.1);
-               var43 = Capes.add(var43, 16739016, Math.exp(-(var4x - var41) / 0.005) * 0.6);
-               var35 = var43;
+            double mh = 0.6 - (0.035 + 0.11 * Math.pow(Math.abs(u - 0.5) * 2.0, 1.6)) * (0.75 + 0.5 * Capes.vn(u * 9.0, 1.0, 0, 0, 77));
+            if (v > mh) {
+               int mc = Capes.mix(3804766, 1311786, (v - mh) / 0.1);
+               mc = Capes.add(mc, 16739016, Math.exp(-(v - mh) / 0.005) * 0.6);
+               c = mc;
             }
 
-            return var35;
+            return c;
          } else {
-            double var8x = var4x - 0.6 + 0.0015;
-            double var10x = 0.07 / var8x;
-            int var12x = Capes.mix(2229822, 524562, Capes.smooth(0.0, 0.4, var8x));
-            double var13 = ((var10x + var6) % 1.0 + 1.0) % 1.0;
-            double var15 = Math.min(var13, 1.0 - var13);
-            double var17 = 0.07 / (var8x * var8x) * 0.005078125;
-            double var19 = Capes.smooth(var17 * 1.6, var17 * 0.3, var15);
-            double var21 = (var2x - 0.5) * var10x * 7.0;
-            double var23 = (var21 % 1.0 + 1.0) % 1.0;
-            double var25 = Math.min(var23, 1.0 - var23);
-            double var27 = var10x * 7.0 * 0.008125;
-            double var29 = Capes.smooth(var27 * 1.6, var27 * 0.3, var25);
-            double var31 = Capes.smooth(0.005, 0.12, var8x);
-            double var33 = Math.max(var19, var29) * var31;
-            var12x = Capes.add(var12x, 16726736, var33 * 0.95);
-            var12x = Capes.add(var12x, 16777215, var33 * var33 * 0.35);
-            return Capes.add(var12x, 16730784, Math.exp(-var8x / 0.03) * 0.5);
+            double dv = v - 0.6 + 0.0015;
+            double z = 0.07 / dv;
+            int cx = Capes.mix(2229822, 524562, Capes.smooth(0.0, 0.4, dv));
+            double zl = ((z + t) % 1.0 + 1.0) % 1.0;
+            double dz = Math.min(zl, 1.0 - zl);
+            double thick = 0.07 / (dv * dv) * 0.005078125;
+            double hl = Capes.smooth(thick * 1.6, thick * 0.3, dz);
+            double xw = (u - 0.5) * z * 7.0;
+            double xl = (xw % 1.0 + 1.0) % 1.0;
+            double dxx = Math.min(xl, 1.0 - xl);
+            double thx = z * 7.0 * 0.008125;
+            double vl = Capes.smooth(thx * 1.6, thx * 0.3, dxx);
+            double fade = Capes.smooth(0.005, 0.12, dv);
+            double line = Math.max(hl, vl) * fade;
+            cx = Capes.add(cx, 16726736, line * 0.95);
+            cx = Capes.add(cx, 16777215, line * line * 0.35);
+            return Capes.add(cx, 16730784, Math.exp(-dv / 0.03) * 0.5);
          }
       });
-      Random var8 = new Random(33L);
+      Random rn = new Random(33L);
 
-      for (int var9 = 0; var9 < 40; var9++) {
-         double var10 = var8.nextDouble() * 160.0;
-         double var12 = var8.nextDouble() * 256.0 * 0.3;
-         double var14 = (0.5 + 0.5 * Math.sin(var2 * (1 + var8.nextInt(2)) + var8.nextDouble() * 6.28)) * (1.0 - var12 / 76.8);
-         Capes.star(var0, var10, var12, 0.6 + var8.nextDouble() * 1.4, 16767216, var14);
+      for (int i = 0; i < 40; i++) {
+         double x = rn.nextDouble() * 160.0;
+         double y = rn.nextDouble() * 256.0 * 0.3;
+         double a = (0.5 + 0.5 * Math.sin(ph * (1 + rn.nextInt(2)) + rn.nextDouble() * 6.28)) * (1.0 - y / 76.8);
+         Capes.star(g, x, y, 0.6 + rn.nextDouble() * 1.4, 16767216, a);
       }
    }
 
-   static void carbon(Graphics2D var0, BufferedImage var1, double var2, int var4, int var5) {
-      Capes.field(
-         var1,
-         (var0x, var2x, var4x, var5x) -> {
-            int var6x = var4x / 8;
-            int var7x = var5x / 8;
-            double var8x = (var4x % 8 + 0.5) / 8.0;
-            double var10x = (var5x % 8 + 0.5) / 8.0;
-            boolean var12 = (var6x + var7x & 3) < 2;
-            double var13 = var12 ? var10x : var8x;
-            double var15 = var12 ? var8x : var10x;
-            double var17 = Math.pow(Math.sin(Math.PI * var13), 0.6);
-            double var19 = 0.93 + 0.07 * Math.sin(var13 * Math.PI * 7.0 + var15 * 0.6);
-            double var21 = var12 ? 0.55 + 0.45 * Math.sin(var0x * 5.0 - var2x * 3.0 + 1.0) : 0.55 + 0.45 * Math.sin(var0x * 4.0 + var2x * 2.0 + 3.0);
-            int var23 = Capes.mix(789776, 4869720, var17 * var19 * (0.35 + 0.5 * var21));
-            double var24 = Math.exp(-Math.pow((var0x * 0.9 - var2x * 0.55 - 0.12) / 0.1, 2.0)) * 0.14
-               + Math.exp(-Math.pow((var0x * 0.9 - var2x * 0.55 + 0.35) / 0.2, 2.0)) * 0.08;
-            return Capes.add(var23, 16777215, var24);
-         }
-      );
+   static void carbon(Graphics2D g, BufferedImage img, double ph, int k, int n) {
+      int C = 8;
+      Capes.field(img, (u, v, x, yx) -> {
+         int cxx = x / 8;
+         int cyx = yx / 8;
+         double fx = (x % 8 + 0.5) / 8.0;
+         double fy = (yx % 8 + 0.5) / 8.0;
+         boolean horiz = (cxx + cyx & 3) < 2;
+         double across = horiz ? fy : fx;
+         double along = horiz ? fx : fy;
+         double tow = Math.pow(Math.sin(Math.PI * across), 0.6);
+         double fib = 0.93 + 0.07 * Math.sin(across * Math.PI * 7.0 + along * 0.6);
+         double lightDir = horiz ? 0.55 + 0.45 * Math.sin(u * 5.0 - v * 3.0 + 1.0) : 0.55 + 0.45 * Math.sin(u * 4.0 + v * 2.0 + 3.0);
+         int c = Capes.mix(789776, 4869720, tow * fib * (0.35 + 0.5 * lightDir));
+         double coat = Math.exp(-Math.pow((u * 0.9 - v * 0.55 - 0.12) / 0.1, 2.0)) * 0.14 + Math.exp(-Math.pow((u * 0.9 - v * 0.55 + 0.35) / 0.2, 2.0)) * 0.08;
+         return Capes.add(c, 16777215, coat);
+      });
 
-      for (int var6 = 0; var6 < 2; var6++) {
-         double var7 = var6 == 0 ? 40.0 : 212.0;
-         var0.setPaint(new GradientPaint(0.0F, (float)var7 - 5.0F, new Color(16726586), 0.0F, (float)var7 + 5.0F, new Color(9046538)));
-         var0.fill(new java.awt.geom.Rectangle2D.Double(0.0, var7 - 5.0, 160.0, 10.0));
-         var0.setColor(Capes.col(16777215, 0.35));
-         var0.fill(new java.awt.geom.Rectangle2D.Double(0.0, var7 - 5.0, 160.0, 1.5));
-         var0.setColor(Capes.col(16726586, 0.8));
-         var0.fill(new java.awt.geom.Rectangle2D.Double(0.0, var7 + 8.0, 160.0, 2.0));
+      for (int s = 0; s < 2; s++) {
+         double y = s == 0 ? 40.0 : 212.0;
+         g.setPaint(new GradientPaint(0.0F, (float)y - 5.0F, new Color(16726586), 0.0F, (float)y + 5.0F, new Color(9046538)));
+         g.fill(new java.awt.geom.Rectangle2D.Double(0.0, y - 5.0, 160.0, 10.0));
+         g.setColor(Capes.col(16777215, 0.35));
+         g.fill(new java.awt.geom.Rectangle2D.Double(0.0, y - 5.0, 160.0, 1.5));
+         g.setColor(Capes.col(16726586, 0.8));
+         g.fill(new java.awt.geom.Rectangle2D.Double(0.0, y + 8.0, 160.0, 2.0));
       }
 
-      double var10 = 80.0;
-      double var8 = 124.0;
-      Capes.dot(var0, var10, var8, 58.0, 0, 0.55);
-      var0.setPaint(
+      double cx = 80.0;
+      double cy = 124.0;
+      Capes.dot(g, cx, cy, 58.0, 0, 0.55);
+      g.setPaint(
          new LinearGradientPaint(
-            (float)var10 - 34.0F,
-            (float)var8 - 34.0F,
-            (float)var10 + 34.0F,
-            (float)var8 + 34.0F,
+            (float)cx - 34.0F,
+            (float)cy - 34.0F,
+            (float)cx + 34.0F,
+            (float)cy + 34.0F,
             new float[]{0.0F, 0.45F, 0.55F, 1.0F},
             new Color[]{new Color(16054010), new Color(10134192), new Color(5923440), new Color(13160152)}
          )
       );
-      var0.fill(new Double(var10 - 34.0, var8 - 34.0, 68.0, 68.0));
-      var0.setPaint(
-         new RadialGradientPaint((float)var10, (float)var8 - 8.0F, 36.0F, new float[]{0.0F, 1.0F}, new Color[]{new Color(2763826), new Color(921362)})
-      );
-      var0.fill(new Double(var10 - 29.0, var8 - 29.0, 58.0, 58.0));
-      Art.brick(var0, var10 - 24.0, var8 - 27.0, 48.0, new Color(14876683));
-      var0.setColor(Capes.col(16777215, 0.45));
-      var0.setStroke(new BasicStroke(1.2F));
-      var0.draw(new java.awt.geom.Arc2D.Double(var10 - 32.0, var8 - 32.0, 64.0, 64.0, 60.0, 90.0, 0));
+      g.fill(new Double(cx - 34.0, cy - 34.0, 68.0, 68.0));
+      g.setPaint(new RadialGradientPaint((float)cx, (float)cy - 8.0F, 36.0F, new float[]{0.0F, 1.0F}, new Color[]{new Color(2763826), new Color(921362)}));
+      g.fill(new Double(cx - 29.0, cy - 29.0, 58.0, 58.0));
+      Art.brick(g, cx - 24.0, cy - 27.0, 48.0, new Color(14876683));
+      g.setColor(Capes.col(16777215, 0.45));
+      g.setStroke(new BasicStroke(1.2F));
+      g.draw(new java.awt.geom.Arc2D.Double(cx - 32.0, cy - 32.0, 64.0, 64.0, 60.0, 90.0, 0));
    }
 
-   static void neon(Graphics2D var0, BufferedImage var1, double var2, int var4, int var5) {
-      double var6 = (double)var4 / var5;
-      double var8 = 0.78 + 0.22 * Math.sin(var2);
-      int var10 = Capes.mix(16726736, 2811647, 0.5 + 0.5 * Math.sin(var2));
-      Capes.field(var1, (var4x, var6x, var8x, var9) -> {
-         if (var6x < 0.64) {
-            int var35 = Capes.ramp(var6x / 0.64, 327948, 1049386, 2754632);
-            double var11x = var4x * 10.0 % 1.0;
-            double var13x = var6x * 16.0 % 1.0;
-            double var39 = Math.max(Capes.smooth(0.06, 0.0, Math.min(var11x, 1.0 - var11x)), Capes.smooth(0.06, 0.0, Math.min(var13x, 1.0 - var13x)));
-            var35 = Capes.add(var35, 6958048, var39 * 0.12);
-            return Capes.add(var35, 16726736, Math.exp(-(0.64 - var6x) / 0.04) * 0.45);
+   static void neon(Graphics2D g, BufferedImage img, double ph, int k, int n) {
+      double t = (double)k / n;
+      double hz = 0.64;
+      double pulse = 0.78 + 0.22 * Math.sin(ph);
+      int hue = Capes.mix(16726736, 2811647, 0.5 + 0.5 * Math.sin(ph));
+      Capes.field(img, (u, v, xx, yx) -> {
+         if (v < 0.64) {
+            int c = Capes.ramp(v / 0.64, 327948, 1049386, 2754632);
+            double vx = u * 10.0 % 1.0;
+            double vy = v * 16.0 % 1.0;
+            double gl = Math.max(Capes.smooth(0.06, 0.0, Math.min(vx, 1.0 - vx)), Capes.smooth(0.06, 0.0, Math.min(vy, 1.0 - vy)));
+            c = Capes.add(c, 6958048, gl * 0.12);
+            return Capes.add(c, 16726736, Math.exp(-(0.64 - v) / 0.04) * 0.45);
          } else {
-            double var10x = var6x - 0.64 + 0.0015;
-            double var12 = 0.06 / var10x;
-            int var14 = Capes.mix(1311274, 262152, Capes.smooth(0.0, 0.3, var10x));
-            double var15x = ((var12 + var6) % 1.0 + 1.0) % 1.0;
-            double var17x = Math.min(var15x, 1.0 - var15x);
-            double var19x = 0.06 / (var10x * var10x) * 0.00546875;
-            double var21x = Capes.smooth(var19x * 1.8, var19x * 0.3, var17x);
-            double var23x = (var4x - 0.5) * var12 * 8.0;
-            double var25x = (var23x % 1.0 + 1.0) % 1.0;
-            double var27x = Math.min(var25x, 1.0 - var25x);
-            double var29x = var12 * 8.0 * 0.008749999999999999;
-            double var31 = Capes.smooth(var29x * 1.8, var29x * 0.3, var27x);
-            double var33 = Math.max(var21x, var31) * Capes.smooth(0.005, 0.1, var10x) * var8;
-            var14 = Capes.add(var14, 2811647, var33);
-            var14 = Capes.add(var14, 16777215, var33 * var33 * 0.3);
-            return Capes.add(var14, 16726736, Math.exp(-var10x / 0.025) * 0.55);
+            double dv = v - 0.64 + 0.0015;
+            double z = 0.06 / dv;
+            int c = Capes.mix(1311274, 262152, Capes.smooth(0.0, 0.3, dv));
+            double zl = ((z + t) % 1.0 + 1.0) % 1.0;
+            double dz = Math.min(zl, 1.0 - zl);
+            double thick = 0.06 / (dv * dv) * 0.00546875;
+            double hl = Capes.smooth(thick * 1.8, thick * 0.3, dz);
+            double xw = (u - 0.5) * z * 8.0;
+            double xl = (xw % 1.0 + 1.0) % 1.0;
+            double dx = Math.min(xl, 1.0 - xl);
+            double thx = z * 8.0 * 0.008749999999999999;
+            double vl = Capes.smooth(thx * 1.8, thx * 0.3, dx);
+            double line = Math.max(hl, vl) * Capes.smooth(0.005, 0.1, dv) * pulse;
+            c = Capes.add(c, 2811647, line);
+            c = Capes.add(c, 16777215, line * line * 0.3);
+            return Capes.add(c, 16726736, Math.exp(-dv / 0.025) * 0.55);
          }
       });
-      double var11 = 80.0;
-      double var13 = 98.0;
-      double var15 = 46.0;
-      java.awt.geom.Path2D.Double var17 = new java.awt.geom.Path2D.Double();
+      double cx = 80.0;
+      double cy = 98.0;
+      double R = 46.0;
+      Path2D tri = new java.awt.geom.Path2D.Double();
 
-      for (int var18 = 0; var18 < 3; var18++) {
-         double var19 = (-Math.PI / 2) + var18 * Math.PI * 2.0 / 3.0;
-         if (var18 == 0) {
-            var17.moveTo(var11 + Math.cos(var19) * var15, var13 + Math.sin(var19) * var15);
+      for (int i = 0; i < 3; i++) {
+         double a = (-Math.PI / 2) + i * Math.PI * 2.0 / 3.0;
+         if (i == 0) {
+            tri.moveTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
          } else {
-            var17.lineTo(var11 + Math.cos(var19) * var15, var13 + Math.sin(var19) * var15);
+            tri.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
          }
       }
 
-      var17.closePath();
-      Capes.addDot(var1, var11, var13 + 4.0, 46.0, var10, 0.35 * var8);
-      var0.setPaint(
-         new GradientPaint((float)var11, (float)(var13 - var15), Capes.col(2754632, 0.2), (float)var11, (float)(var13 + var15 / 2.0), Capes.col(16726736, 0.28))
-      );
-      var0.fill(var17);
-      Capes.glowStroke(var0, var17, var10, 3.2F, 2.4F, var8);
-      java.awt.geom.Path2D.Double var26 = new java.awt.geom.Path2D.Double();
+      tri.closePath();
+      Capes.addDot(img, cx, cy + 4.0, 46.0, hue, 0.35 * pulse);
+      g.setPaint(new GradientPaint((float)cx, (float)(cy - R), Capes.col(2754632, 0.2), (float)cx, (float)(cy + R / 2.0), Capes.col(16726736, 0.28)));
+      g.fill(tri);
+      Capes.glowStroke(g, tri, hue, 3.2F, 2.4F, pulse);
+      Path2D tri2 = new java.awt.geom.Path2D.Double();
 
-      for (int var27 = 0; var27 < 3; var27++) {
-         double var20 = (Math.PI / 2) + var27 * Math.PI * 2.0 / 3.0;
-         double var22 = var15 * 0.34;
-         if (var27 == 0) {
-            var26.moveTo(var11 + Math.cos(var20) * var22, var13 + 2.0 + Math.sin(var20) * var22);
+      for (int ix = 0; ix < 3; ix++) {
+         double a = (Math.PI / 2) + ix * Math.PI * 2.0 / 3.0;
+         double r2 = R * 0.34;
+         if (ix == 0) {
+            tri2.moveTo(cx + Math.cos(a) * r2, cy + 2.0 + Math.sin(a) * r2);
          } else {
-            var26.lineTo(var11 + Math.cos(var20) * var22, var13 + 2.0 + Math.sin(var20) * var22);
+            tri2.lineTo(cx + Math.cos(a) * r2, cy + 2.0 + Math.sin(a) * r2);
          }
       }
 
-      var26.closePath();
-      Capes.glowStroke(var0, var26, Capes.mix(2811647, 16726736, 0.5 + 0.5 * Math.sin(var2)), 1.6F, 1.4F, 0.8);
-      double var28 = var6 * 256.0;
-      int[] var21 = Capes.px(var1);
+      tri2.closePath();
+      Capes.glowStroke(g, tri2, Capes.mix(2811647, 16726736, 0.5 + 0.5 * Math.sin(ph)), 1.6F, 1.4F, 0.8);
+      double sy = t * 256.0;
+      int[] p = Capes.px(img);
 
-      for (int var29 = Math.max(0, (int)var28 - 6); var29 < Math.min(256, (int)var28 + 6); var29++) {
-         double var23 = Math.exp(-Math.pow((var29 - var28) / 2.2, 2.0)) * 0.35;
+      for (int y = Math.max(0, (int)sy - 6); y < Math.min(256, (int)sy + 6); y++) {
+         double a = Math.exp(-Math.pow((y - sy) / 2.2, 2.0)) * 0.35;
 
-         for (int var25 = 0; var25 < 160; var25++) {
-            var21[var29 * 160 + var25] = Capes.add(var21[var29 * 160 + var25], 12121855, var23);
+         for (int x = 0; x < 160; x++) {
+            p[y * 160 + x] = Capes.add(p[y * 160 + x], 12121855, a);
          }
       }
    }
 
-   static void spotify(Graphics2D var0, BufferedImage var1, double var2, int var4, int var5) {
-      double var6 = SpotifyCape.LIVE.get() != null ? 0.7 + 0.3 * SpotifyCape.LIVE.get().beat : 0.7 + 0.3 * Math.pow(Math.max(0.0, Math.cos(var2 * 2.0)), 4.0);
-      Capes.field(var1, (var2x, var4x, var6x, var7) -> {
-         int var8x = Capes.ramp(var4x, 925461, 1184787, 658186);
-         double var9 = Math.hypot(var6x - 80, (var7 - 92) * 0.9);
-         var8x = Capes.add(var8x, 2021216, Math.exp(-(var9 / 62.0) * (var9 / 62.0)) * 0.32 * var6);
-         double var11 = 0.5 + 0.5 * Math.sin((var2x * 0.8 - var4x * 1.1) * 40.0);
-         return Capes.shade(var8x, 0.96 + 0.04 * var11);
+   static void spotify(Graphics2D g, BufferedImage img, double ph, int k, int n) {
+      double beat = SpotifyCape.LIVE.get() != null ? 0.7 + 0.3 * SpotifyCape.LIVE.get().beat : 0.7 + 0.3 * Math.pow(Math.max(0.0, Math.cos(ph * 2.0)), 4.0);
+      Capes.field(img, (u, v, xx, y) -> {
+         int c = Capes.ramp(v, 925461, 1184787, 658186);
+         double d = Math.hypot(xx - 80, (y - 92) * 0.9);
+         c = Capes.add(c, 2021216, Math.exp(-(d / 62.0) * (d / 62.0)) * 0.32 * beat);
+         double stripes = 0.5 + 0.5 * Math.sin((u * 0.8 - v * 1.1) * 40.0);
+         return Capes.shade(c, 0.96 + 0.04 * stripes);
       });
-      double var8 = 80.0;
-      double var10 = 92.0;
-      double var12 = 36.0 * (0.97 + 0.03 * var6);
-      Capes.dot(var0, var8 + 2.0, var10 + 5.0, var12 * 1.3, 0, 0.55);
-      var0.setPaint(
+      double cx = 80.0;
+      double cy = 92.0;
+      double R = 36.0 * (0.97 + 0.03 * beat);
+      Capes.dot(g, cx + 2.0, cy + 5.0, R * 1.3, 0, 0.55);
+      g.setPaint(
          new RadialGradientPaint(
-            (float)(var8 - var12 * 0.4),
-            (float)(var10 - var12 * 0.5),
-            (float)(var12 * 1.6),
+            (float)(cx - R * 0.4),
+            (float)(cy - R * 0.5),
+            (float)(R * 1.6),
             new float[]{0.0F, 0.6F, 1.0F},
             new Color[]{new Color(6090894), new Color(2021216), new Color(1022530)}
          )
       );
-      var0.fill(new Double(var8 - var12, var10 - var12, var12 * 2.0, var12 * 2.0));
-      var0.setColor(new Color(789516));
-      float[] var14 = new float[]{7.4F, 6.2F, 5.0F};
-      double[] var15 = new double[]{-13.0, 1.0, 14.0};
-      double[] var16 = new double[]{26.0, 22.0, 17.0};
+      g.fill(new Double(cx - R, cy - R, R * 2.0, R * 2.0));
+      g.setColor(new Color(789516));
+      float[] wd = new float[]{7.4F, 6.2F, 5.0F};
+      double[] wy = new double[]{-13.0, 1.0, 14.0};
+      double[] ww = new double[]{26.0, 22.0, 17.0};
 
-      for (int var17 = 0; var17 < 3; var17++) {
-         var0.setStroke(new BasicStroke(var14[var17] * (float)(var12 / 36.0), 1, 1));
-         double var18 = var10 + var15[var17] * var12 / 36.0;
-         double var20 = var16[var17] * var12 / 36.0;
-         var0.draw(
-            new java.awt.geom.QuadCurve2D.Double(var8 - var20, var18, var8 + var20 * 0.1, var18 - 10.0 * var12 / 36.0, var8 + var20, var18 + 4.0 * var12 / 36.0)
-         );
+      for (int i = 0; i < 3; i++) {
+         g.setStroke(new BasicStroke(wd[i] * (float)(R / 36.0), 1, 1));
+         double y = cy + wy[i] * R / 36.0;
+         double hw = ww[i] * R / 36.0;
+         g.draw(new java.awt.geom.QuadCurve2D.Double(cx - hw, y, cx + hw * 0.1, y - 10.0 * R / 36.0, cx + hw, y + 4.0 * R / 36.0));
       }
 
-      var0.setPaint(new GradientPaint((float)var8, (float)(var10 - var12), Capes.col(16777215, 0.3), (float)var8, (float)var10, Capes.col(16777215, 0.0)));
-      var0.fill(new Double(var8 - var12 * 0.8, var10 - var12 * 0.95, var12 * 1.6, var12 * 1.0));
-      SpotifyCape.Live var43 = SpotifyCape.LIVE.get();
-      byte var44 = 11;
-      double var19 = 7.2;
-      double var21 = 3.6;
-      double var23 = 80.0 - (var44 * var19 + (var44 - 1) * var21) / 2.0;
-      double var25 = 214.0;
-      Random var27 = new Random(4L);
+      g.setPaint(new GradientPaint((float)cx, (float)(cy - R), Capes.col(16777215, 0.3), (float)cx, (float)cy, Capes.col(16777215, 0.0)));
+      g.fill(new Double(cx - R * 0.8, cy - R * 0.95, R * 1.6, R * 1.0));
+      SpotifyCape.Live live = SpotifyCape.LIVE.get();
+      int bars = 11;
+      double bw = 7.2;
+      double gap = 3.6;
+      double x0 = 80.0 - (bars * bw + (bars - 1) * gap) / 2.0;
+      double by = 214.0;
+      Random rn = new Random(4L);
 
-      for (int var28 = 0; var28 < var44; var28++) {
-         int var29 = 1 + var27.nextInt(3);
-         int var30 = 1 + var27.nextInt(3);
-         double var31 = var27.nextDouble() * 6.28;
-         double var33 = var27.nextDouble() * 6.28;
-         double var35 = 0.55 + 0.45 * Math.sin(Math.PI * (var28 + 0.5) / var44);
-         double var37 = var43 != null
-            ? 5.0 + 44.0 * var43.bars[var28]
-            : 6.0 + 46.0 * var35 * (0.25 + 0.75 * (0.5 + 0.5 * Math.sin(var2 * var29 + var31)) * (0.55 + 0.45 * (0.5 + 0.5 * Math.sin(var2 * var30 + var33))));
-         double var39 = var23 + var28 * (var19 + var21);
-         var0.setPaint(new GradientPaint(0.0F, (float)(var25 - var37), new Color(12124112), 0.0F, (float)var25, new Color(1355852)));
-         var0.fill(new java.awt.geom.RoundRectangle2D.Double(var39, var25 - var37, var19, var37, 4.0, 4.0));
-         if (var43 != null && var43.peaks[var28] > 0.0) {
-            double var41 = var25 - 5.0 - 44.0 * var43.peaks[var28] - 4.0;
-            var0.setColor(Capes.col(15269872, 0.9));
-            var0.fill(new java.awt.geom.RoundRectangle2D.Double(var39, var41, var19, 2.2, 2.0, 2.0));
+      for (int i = 0; i < bars; i++) {
+         int a1 = 1 + rn.nextInt(3);
+         int a2 = 1 + rn.nextInt(3);
+         double b1 = rn.nextDouble() * 6.28;
+         double b2 = rn.nextDouble() * 6.28;
+         double env = 0.55 + 0.45 * Math.sin(Math.PI * (i + 0.5) / bars);
+         double h = live != null
+            ? 5.0 + 44.0 * live.bars[i]
+            : 6.0 + 46.0 * env * (0.25 + 0.75 * (0.5 + 0.5 * Math.sin(ph * a1 + b1)) * (0.55 + 0.45 * (0.5 + 0.5 * Math.sin(ph * a2 + b2))));
+         double x = x0 + i * (bw + gap);
+         g.setPaint(new GradientPaint(0.0F, (float)(by - h), new Color(12124112), 0.0F, (float)by, new Color(1355852)));
+         g.fill(new java.awt.geom.RoundRectangle2D.Double(x, by - h, bw, h, 4.0, 4.0));
+         if (live != null && live.peaks[i] > 0.0) {
+            double py = by - 5.0 - 44.0 * live.peaks[i] - 4.0;
+            g.setColor(Capes.col(15269872, 0.9));
+            g.fill(new java.awt.geom.RoundRectangle2D.Double(x, py, bw, 2.2, 2.0, 2.0));
          }
 
-         var0.setPaint(new GradientPaint(0.0F, (float)var25 + 2.0F, Capes.col(2021216, 0.3), 0.0F, (float)(var25 + 2.0 + var37 * 0.4), Capes.col(2021216, 0.0)));
-         var0.fill(new java.awt.geom.RoundRectangle2D.Double(var39, var25 + 2.0, var19, var37 * 0.4, 4.0, 4.0));
+         g.setPaint(new GradientPaint(0.0F, (float)by + 2.0F, Capes.col(2021216, 0.3), 0.0F, (float)(by + 2.0 + h * 0.4), Capes.col(2021216, 0.0)));
+         g.fill(new java.awt.geom.RoundRectangle2D.Double(x, by + 2.0, bw, h * 0.4, 4.0, 4.0));
       }
 
-      if (var43 != null) {
-         var0.setFont(bold(10.5F));
-         FontMetrics var45 = var0.getFontMetrics();
-         String var47 = fit(var43.title, var45, 140);
-         var0.setColor(Capes.col(16777215, 0.95));
-         var0.drawString(var47, (float)(80.0 - var45.stringWidth(var47) / 2.0), 140.0F);
-         var0.setFont(bold(8.0F));
-         var45 = var0.getFontMetrics();
-         String var48 = fit(var43.artist, var45, 140);
-         var0.setColor(Capes.col(10155452, 0.85));
-         var0.drawString(var48, (float)(80.0 - var45.stringWidth(var48) / 2.0), 151.0F);
-         double var49 = 22.0;
-         double var50 = 116.0;
-         double var51 = 232.0;
-         var0.setColor(Capes.col(16777215, 0.18));
-         var0.fill(new java.awt.geom.RoundRectangle2D.Double(var49, var51, var50, 3.0, 3.0, 3.0));
-         var0.setColor(new Color(2021216));
-         var0.fill(new java.awt.geom.RoundRectangle2D.Double(var49, var51, var50 * var43.progress, 3.0, 3.0, 3.0));
-         Capes.dot(var0, var49 + var50 * var43.progress, var51 + 1.5, 3.2, 16777215, 0.95);
-         if (!var43.playing) {
-            var0.setColor(Capes.col(16777215, 0.8));
-            var0.fill(new java.awt.geom.RoundRectangle2D.Double(71.0, 180.0, 6.0, 18.0, 2.0, 2.0));
-            var0.fill(new java.awt.geom.RoundRectangle2D.Double(83.0, 180.0, 6.0, 18.0, 2.0, 2.0));
+      if (live != null) {
+         g.setFont(bold(10.5F));
+         FontMetrics fm = g.getFontMetrics();
+         String tt = fit(live.title, fm, 140);
+         g.setColor(Capes.col(16777215, 0.95));
+         g.drawString(tt, (float)(80.0 - fm.stringWidth(tt) / 2.0), 140.0F);
+         g.setFont(bold(8.0F));
+         fm = g.getFontMetrics();
+         String ar = fit(live.artist, fm, 140);
+         g.setColor(Capes.col(10155452, 0.85));
+         g.drawString(ar, (float)(80.0 - fm.stringWidth(ar) / 2.0), 151.0F);
+         double px = 22.0;
+         double pw = 116.0;
+         double py = 232.0;
+         g.setColor(Capes.col(16777215, 0.18));
+         g.fill(new java.awt.geom.RoundRectangle2D.Double(px, py, pw, 3.0, 3.0, 3.0));
+         g.setColor(new Color(2021216));
+         g.fill(new java.awt.geom.RoundRectangle2D.Double(px, py, pw * live.progress, 3.0, 3.0, 3.0));
+         Capes.dot(g, px + pw * live.progress, py + 1.5, 3.2, 16777215, 0.95);
+         if (!live.playing) {
+            g.setColor(Capes.col(16777215, 0.8));
+            g.fill(new java.awt.geom.RoundRectangle2D.Double(71.0, 180.0, 6.0, 18.0, 2.0, 2.0));
+            g.fill(new java.awt.geom.RoundRectangle2D.Double(83.0, 180.0, 6.0, 18.0, 2.0, 2.0));
          }
       }
    }
 
-   private static String fit(String var0, FontMetrics var1, int var2) {
-      if (var0 == null) {
+   private static String fit(String s, FontMetrics fm, int w) {
+      if (s == null) {
          return "";
-      } else if (var1.stringWidth(var0) <= var2) {
-         return var0;
+      } else if (fm.stringWidth(s) <= w) {
+         return s;
       } else {
-         while (var0.length() > 1 && var1.stringWidth(var0 + "…") > var2) {
-            var0 = var0.substring(0, var0.length() - 1);
+         while (s.length() > 1 && fm.stringWidth(s + "…") > w) {
+            s = s.substring(0, s.length() - 1);
          }
 
-         return var0 + "…";
+         return s + "…";
       }
    }
 
-   private static Path2D petal(double var0, double var2) {
-      java.awt.geom.Path2D.Double var4 = new java.awt.geom.Path2D.Double();
-      var4.moveTo(0.0, var0 * 0.5);
-      var4.curveTo(var2 * 0.9, var0 * 0.2, var2 * 0.7, -var0 * 0.45, var2 * 0.18, -var0 * 0.5);
-      var4.lineTo(0.0, -var0 * 0.36);
-      var4.lineTo(-var2 * 0.18, -var0 * 0.5);
-      var4.curveTo(-var2 * 0.7, -var0 * 0.45, -var2 * 0.9, var0 * 0.2, 0.0, var0 * 0.5);
-      var4.closePath();
-      return var4;
+   private static Path2D petal(double len, double wid) {
+      Path2D p = new java.awt.geom.Path2D.Double();
+      p.moveTo(0.0, len * 0.5);
+      p.curveTo(wid * 0.9, len * 0.2, wid * 0.7, -len * 0.45, wid * 0.18, -len * 0.5);
+      p.lineTo(0.0, -len * 0.36);
+      p.lineTo(-wid * 0.18, -len * 0.5);
+      p.curveTo(-wid * 0.7, -len * 0.45, -wid * 0.9, len * 0.2, 0.0, len * 0.5);
+      p.closePath();
+      return p;
    }
 
-   static void blossom(Graphics2D var0, double var1, double var3, double var5, double var7, int var9) {
-      AffineTransform var10 = var0.getTransform();
-      var0.translate(var1, var3);
-      var0.rotate(var7);
+   static void blossom(Graphics2D g, double x, double y, double r, double rot, int pink) {
+      AffineTransform o = g.getTransform();
+      g.translate(x, y);
+      g.rotate(rot);
 
-      for (int var11 = 0; var11 < 5; var11++) {
-         AffineTransform var12 = var0.getTransform();
-         var0.rotate((Math.PI * 2) * var11 / 5.0);
-         var0.translate(0.0, -var5 * 0.55);
-         Path2D var13 = petal(var5 * 1.05, var5 * 0.95);
-         var0.setPaint(new GradientPaint(0.0F, (float)(var5 * 0.5), new Color(var9), 0.0F, (float)(-var5 * 0.5), new Color(16774906)));
-         var0.fill(var13);
-         var0.setColor(Capes.col(12599402, 0.35));
-         var0.setStroke(new BasicStroke(0.6F));
-         var0.draw(var13);
-         var0.setTransform(var12);
+      for (int i = 0; i < 5; i++) {
+         AffineTransform o2 = g.getTransform();
+         g.rotate((Math.PI * 2) * i / 5.0);
+         g.translate(0.0, -r * 0.55);
+         Path2D p = petal(r * 1.05, r * 0.95);
+         g.setPaint(new GradientPaint(0.0F, (float)(r * 0.5), new Color(pink), 0.0F, (float)(-r * 0.5), new Color(16774906)));
+         g.fill(p);
+         g.setColor(Capes.col(12599402, 0.35));
+         g.setStroke(new BasicStroke(0.6F));
+         g.draw(p);
+         g.setTransform(o2);
       }
 
-      var0.setColor(new Color(14696558));
-      var0.fill(new Double(-var5 * 0.25, -var5 * 0.25, var5 * 0.5, var5 * 0.5));
-      var0.setColor(new Color(16769658));
+      g.setColor(new Color(14696558));
+      g.fill(new Double(-r * 0.25, -r * 0.25, r * 0.5, r * 0.5));
+      g.setColor(new Color(16769658));
 
-      for (int var14 = 0; var14 < 6; var14++) {
-         double var15 = (Math.PI * 2) * var14 / 6.0;
-         var0.fill(new Double(Math.cos(var15) * var5 * 0.36 - 0.8, Math.sin(var15) * var5 * 0.36 - 0.8, 1.6, 1.6));
+      for (int i = 0; i < 6; i++) {
+         double a = (Math.PI * 2) * i / 6.0;
+         g.fill(new Double(Math.cos(a) * r * 0.36 - 0.8, Math.sin(a) * r * 0.36 - 0.8, 1.6, 1.6));
       }
 
-      var0.setTransform(var10);
+      g.setTransform(o);
    }
 
-   static void sakura(Graphics2D var0, BufferedImage var1, double var2, int var4, int var5) {
-      double var6 = (double)var4 / var5;
-      Capes.field(var1, (var0x, var2x, var4x, var5x) -> {
-         int var6x = Capes.ramp(var2x, 16773622, 16767463, 16366803, 15442628);
-         var6x = Capes.add(var6x, 16777215, Math.exp(-Math.hypot(var0x - 0.78, var2x - 0.18) / 0.12) * 0.35);
-         double var7 = 0.64 + 0.42 * Math.pow(Math.abs(var0x - 0.56), 1.25) + 0.012 * (Capes.vn(var0x * 18.0, 3.0, 0, 0, 51) - 0.5);
-         if (var2x > var7) {
-            int var9x = Capes.mix(13017816, 15320284, (var2x - var7) * 2.5);
-            double var10 = 0.69 + 0.02 * Math.sin(var0x * 60.0) * Capes.vn(var0x * 30.0, 1.0, 0, 0, 5);
-            if (var2x < var10) {
-               var9x = Capes.mix(16777215, 14470127, (var2x - var7) / 0.06);
+   static void sakura(Graphics2D g, BufferedImage img, double ph, int k, int n) {
+      double t = (double)k / n;
+      Capes.field(img, (u, v, xx, yx) -> {
+         int c = Capes.ramp(v, 16773622, 16767463, 16366803, 15442628);
+         c = Capes.add(c, 16777215, Math.exp(-Math.hypot(u - 0.78, v - 0.18) / 0.12) * 0.35);
+         double m = 0.64 + 0.42 * Math.pow(Math.abs(u - 0.56), 1.25) + 0.012 * (Capes.vn(u * 18.0, 3.0, 0, 0, 51) - 0.5);
+         if (v > m) {
+            int mc = Capes.mix(13017816, 15320284, (v - m) * 2.5);
+            double capLine = 0.69 + 0.02 * Math.sin(u * 60.0) * Capes.vn(u * 30.0, 1.0, 0, 0, 5);
+            if (v < capLine) {
+               mc = Capes.mix(16777215, 14470127, (v - m) / 0.06);
             }
 
-            var6x = Capes.mix(var6x, var9x, Capes.smooth(0.0, 0.004, var2x - var7) * 0.85);
+            c = Capes.mix(c, mc, Capes.smooth(0.0, 0.004, v - m) * 0.85);
          }
 
-         return Capes.mix(var6x, 16774392, Capes.smooth(0.78, 1.0, var2x) * 0.55);
+         return Capes.mix(c, 16774392, Capes.smooth(0.78, 1.0, v) * 0.55);
       });
-      java.awt.geom.Path2D.Double var8 = new java.awt.geom.Path2D.Double();
-      var8.moveTo(-10.0, 22.0);
-      var8.curveTo(40.0, 30.0, 70.0, 58.0, 128.0, 64.0);
-      var0.setStroke(new BasicStroke(8.0F, 1, 1));
-      var0.setColor(new Color(3808806));
-      var0.draw(var8);
-      var0.setStroke(new BasicStroke(2.2F, 1, 1));
-      var0.setColor(Capes.col(9067104, 0.8));
-      var0.draw(new java.awt.geom.QuadCurve2D.Double(-10.0, 19.0, 40.0, 24.0, 124.0, 61.0));
-      double[][] var9 = new double[][]{
+      Path2D br = new java.awt.geom.Path2D.Double();
+      br.moveTo(-10.0, 22.0);
+      br.curveTo(40.0, 30.0, 70.0, 58.0, 128.0, 64.0);
+      g.setStroke(new BasicStroke(8.0F, 1, 1));
+      g.setColor(new Color(3808806));
+      g.draw(br);
+      g.setStroke(new BasicStroke(2.2F, 1, 1));
+      g.setColor(Capes.col(9067104, 0.8));
+      g.draw(new java.awt.geom.QuadCurve2D.Double(-10.0, 19.0, 40.0, 24.0, 124.0, 61.0));
+      double[][] twigs = new double[][]{
          {30.0, 30.0, 44.0, 8.0}, {64.0, 48.0, 58.0, 86.0}, {94.0, 58.0, 120.0, 36.0}, {108.0, 62.0, 132.0, 90.0}, {48.0, 38.0, 20.0, 62.0}
       };
-      var0.setColor(new Color(3808806));
-      var0.setStroke(new BasicStroke(3.2F, 1, 1));
+      g.setColor(new Color(3808806));
+      g.setStroke(new BasicStroke(3.2F, 1, 1));
 
-      for (double[] var13 : var9) {
-         var0.draw(
-            new java.awt.geom.QuadCurve2D.Double(var13[0], var13[1], (var13[0] + var13[2]) / 2.0 + 4.0, (var13[1] + var13[3]) / 2.0 - 4.0, var13[2], var13[3])
-         );
+      for (double[] tw : twigs) {
+         g.draw(new java.awt.geom.QuadCurve2D.Double(tw[0], tw[1], (tw[0] + tw[2]) / 2.0 + 4.0, (tw[1] + tw[3]) / 2.0 - 4.0, tw[2], tw[3]));
       }
 
-      Random var28 = new Random(12L);
-      double[][] var29 = new double[][]{
+      Random rn = new Random(12L);
+      double[][] cl = new double[][]{
          {44.0, 8.0}, {58.0, 86.0}, {120.0, 36.0}, {132.0, 90.0}, {20.0, 62.0}, {84.0, 58.0}, {12.0, 26.0}, {100.0, 70.0}, {70.0, 44.0}
       };
 
-      for (double[] var15 : var29) {
-         for (int var16 = 0; var16 < 3; var16++) {
-            double var17 = 6.0 + var28.nextDouble() * 4.0;
-            blossom(
-               var0,
-               var15[0] + var28.nextGaussian() * 7.0,
-               var15[1] + var28.nextGaussian() * 6.0,
-               var17,
-               var28.nextDouble() * 6.28,
-               var28.nextBoolean() ? 16752320 : 16758994
-            );
+      for (double[] c : cl) {
+         for (int i = 0; i < 3; i++) {
+            double r = 6.0 + rn.nextDouble() * 4.0;
+            blossom(g, c[0] + rn.nextGaussian() * 7.0, c[1] + rn.nextGaussian() * 6.0, r, rn.nextDouble() * 6.28, rn.nextBoolean() ? 16752320 : 16758994);
          }
       }
 
-      for (int var31 = 0; var31 < 30; var31++) {
-         double var33 = var28.nextDouble();
-         double var34 = var28.nextDouble();
-         double var35 = var28.nextDouble() * 6.28;
-         int var19 = var28.nextBoolean() ? 1 : -1;
-         double var20 = (var34 + var6) % 1.0 * 286.0 - 15.0;
-         double var22 = (var33 + var6) % 1.0 * 190.0 - 15.0 + Math.sin(var2 + var35) * 8.0;
-         double var24 = 4.0 + var28.nextDouble() * 3.5;
-         AffineTransform var26 = var0.getTransform();
-         var0.translate(var22, var20);
-         var0.rotate(var35 + var2 * var19);
-         var0.scale(0.35 + 0.65 * Math.abs(Math.cos(var2 + var35)), 1.0);
-         Path2D var27 = petal(var24 * 1.3, var24);
-         var0.setPaint(new GradientPaint(0.0F, (float)var24, new Color(16748468), 0.0F, (float)(-var24), new Color(16773366)));
-         var0.fill(var27);
-         var0.setTransform(var26);
+      for (int i = 0; i < 30; i++) {
+         double x0 = rn.nextDouble();
+         double y0 = rn.nextDouble();
+         double s = rn.nextDouble() * 6.28;
+         int dir = rn.nextBoolean() ? 1 : -1;
+         double y = (y0 + t) % 1.0 * 286.0 - 15.0;
+         double x = (x0 + t) % 1.0 * 190.0 - 15.0 + Math.sin(ph + s) * 8.0;
+         double sz = 4.0 + rn.nextDouble() * 3.5;
+         AffineTransform o = g.getTransform();
+         g.translate(x, y);
+         g.rotate(s + ph * dir);
+         g.scale(0.35 + 0.65 * Math.abs(Math.cos(ph + s)), 1.0);
+         Path2D p = petal(sz * 1.3, sz);
+         g.setPaint(new GradientPaint(0.0F, (float)sz, new Color(16748468), 0.0F, (float)(-sz), new Color(16773366)));
+         g.fill(p);
+         g.setTransform(o);
       }
    }
 
-   static void lava(Graphics2D var0, BufferedImage var1, double var2, int var4, int var5) {
-      double var6 = (double)var4 / var5;
-      Capes.field(var1, (var4x, var6x, var8x, var9x) -> {
-         double var10x = var9x - var6 * 32.0;
-         int var12x = Math.floorDiv(var8x, 32);
-         int var13 = (int)Math.floor(var10x / 32.0);
-         double var14x = 1.0E9;
-         double var16x = 1.0E9;
-         int var18 = 0;
+   static void lava(Graphics2D g, BufferedImage img, double ph, int k, int n) {
+      double t = (double)k / n;
+      int CX = 5;
+      int CY = 8;
+      int CW = 32;
+      int CH = 32;
+      Capes.field(img, (u, v, xx, yx) -> {
+         double yy = yx - t * 32.0;
+         int gx = Math.floorDiv(xx, 32);
+         int gy = (int)Math.floor(yy / 32.0);
+         double d1 = 1.0E9;
+         double d2 = 1.0E9;
+         int best = 0;
 
-         for (int var19 = -1; var19 <= 1; var19++) {
-            for (int var20 = -1; var20 <= 1; var20++) {
-               int var21 = var12x + var20;
-               int var22 = var13 + var19;
-               int var23 = Math.floorMod(var21, 5);
-               int var24 = Math.floorMod(var22, 8);
-               double var25 = (var21 + 0.15 + 0.7 * Capes.hash(var23, var24, 61)) * 32.0;
-               double var27 = (var22 + 0.15 + 0.7 * Capes.hash(var23, var24, 62)) * 32.0;
-               double var29 = var8x - var25;
-               double var31 = var10x - var27;
-               double var33 = Math.sqrt(var29 * var29 + var31 * var31 * 1.2);
-               if (var33 < var14x) {
-                  var16x = var14x;
-                  var14x = var33;
-                  var18 = var23 * 17 + var24;
-               } else if (var33 < var16x) {
-                  var16x = var33;
+         for (int oy = -1; oy <= 1; oy++) {
+            for (int ox = -1; ox <= 1; ox++) {
+               int cx = gx + ox;
+               int cy = gy + oy;
+               int hx = Math.floorMod(cx, 5);
+               int hy = Math.floorMod(cy, 8);
+               double px = (cx + 0.15 + 0.7 * Capes.hash(hx, hy, 61)) * 32.0;
+               double py = (cy + 0.15 + 0.7 * Capes.hash(hx, hy, 62)) * 32.0;
+               double dx = xx - px;
+               double dy = yy - py;
+               double d = Math.sqrt(dx * dx + dy * dy * 1.2);
+               if (d < d1) {
+                  d2 = d1;
+                  d1 = d;
+                  best = hx * 17 + hy;
+               } else if (d < d2) {
+                  d2 = d;
                }
             }
          }
 
-         double var35 = var16x - var14x;
-         double var36 = Capes.fbm(var4x * 5.0, var6x * 8.0 - var6 * 8.0, 0, 8, 3, 63);
-         double var37 = 0.72 + 0.28 * Math.sin(var2 + Capes.hash(var18, 2, 64) * Math.PI * 2.0);
-         double var38 = Capes.fbm(var4x * 14.0, var10x / 256.0 * 22.0, 0, 0, 4, 65);
-         int var39 = Capes.mix(4074020, 1050888, var38 * 0.8 + Capes.hash(var18, 5, 66) * 0.3);
-         var39 = Capes.shade(var39, 0.75 + 0.35 * Capes.smooth(0.0, 16.0, var35));
-         double var28 = Math.exp(-var35 / 3.2) * (0.6 + 0.6 * var36) * var37;
-         double var30 = Math.exp(-var35 / 12.0) * 0.35 * var37;
-         int var32 = Capes.add(var39, 16726538, var30);
-         int var41 = Capes.ramp(var28, 0, 10097152, 16730624, 16752672, 16773280);
-         return Capes.mix(var32, var41, Capes.smooth(0.15, 0.55, var28));
+         double crack = d2 - d1;
+         double flow = Capes.fbm(u * 5.0, v * 8.0 - t * 8.0, 0, 8, 3, 63);
+         double pulse = 0.72 + 0.28 * Math.sin(ph + Capes.hash(best, 2, 64) * Math.PI * 2.0);
+         double rockN = Capes.fbm(u * 14.0, yy / 256.0 * 22.0, 0, 0, 4, 65);
+         int rock = Capes.mix(4074020, 1050888, rockN * 0.8 + Capes.hash(best, 5, 66) * 0.3);
+         rock = Capes.shade(rock, 0.75 + 0.35 * Capes.smooth(0.0, 16.0, crack));
+         double glow = Math.exp(-crack / 3.2) * (0.6 + 0.6 * flow) * pulse;
+         double warm = Math.exp(-crack / 12.0) * 0.35 * pulse;
+         int c = Capes.add(rock, 16726538, warm);
+         int lava = Capes.ramp(glow, 0, 10097152, 16730624, 16752672, 16773280);
+         return Capes.mix(c, lava, Capes.smooth(0.15, 0.55, glow));
       });
-      Random var8 = new Random(18L);
+      Random rn = new Random(18L);
 
-      for (int var9 = 0; var9 < 22; var9++) {
-         double var10 = var8.nextDouble();
-         double var12 = var8.nextDouble();
-         double var14 = ((var12 - var6) % 1.0 + 1.0) % 1.0;
-         double var16 = (var10 + 0.03 * Math.sin(var2 + var9)) * 160.0;
-         Capes.addDot(var1, var16, var14 * 256.0, 3.5, 16742938, 0.5 * var14);
-         Capes.addDot(var1, var16, var14 * 256.0, 1.2, 16771232, 0.8 * var14);
+      for (int i = 0; i < 22; i++) {
+         double x0 = rn.nextDouble();
+         double y0 = rn.nextDouble();
+         double y = ((y0 - t) % 1.0 + 1.0) % 1.0;
+         double x = (x0 + 0.03 * Math.sin(ph + i)) * 160.0;
+         Capes.addDot(img, x, y * 256.0, 3.5, 16742938, 0.5 * y);
+         Capes.addDot(img, x, y * 256.0, 1.2, 16771232, 0.8 * y);
       }
    }
 
-   static void ocean(Graphics2D var0, BufferedImage var1, double var2, int var4, int var5) {
-      double var6 = (double)var4 / var5;
-      double var8 = Math.cos(var2);
-      double var10 = Math.sin(var2);
-      Capes.field(
-         var1,
-         (var2x, var4x, var6x, var7) -> {
-            int var8x = Capes.ramp(var4x, 5954806, 1413839, 678558, 338014, 135734);
-            double var9 = var2x + var4x * 0.28;
-            double var11 = 0.0;
-            double[] var13x = new double[]{0.12, 0.3, 0.52, 0.7, 0.9};
+   static void ocean(Graphics2D g, BufferedImage img, double ph, int k, int n) {
+      double t = (double)k / n;
+      double cph = Math.cos(ph);
+      double sph = Math.sin(ph);
+      Capes.field(img, (u, v, xx, yx) -> {
+         int c = Capes.ramp(v, 5954806, 1413839, 678558, 338014, 135734);
+         double s = u + v * 0.28;
+         double rays = 0.0;
+         double[] rc = new double[]{0.12, 0.3, 0.52, 0.7, 0.9};
 
-            for (int var14x = 0; var14x < var13x.length; var14x++) {
-               double var15 = (var9 - var13x[var14x] - 0.02 * Math.sin(var2 + var14x)) / (0.035 + 0.02 * (var14x % 2));
-               var11 += Math.exp(-var15 * var15) * (0.6 + 0.4 * Math.sin(var2 * (1 + var14x % 2) + var14x * 1.7));
-            }
-
-            var8x = Capes.add(var8x, 13630463, var11 * 0.28 * Math.exp(-var4x * 2.4));
-            double var29x = var2x * 16.0;
-            double var16x = var4x * 22.0;
-            double var18x = Math.sin(var29x + 1.4 * Math.sin(var16x * 0.7 + var2))
-               + Math.sin(var16x + 1.4 * Math.sin(var29x * 0.8 - var2))
-               + Math.sin((var29x + var16x) * 0.55 + var2);
-            double var20x = Math.pow(Capes.clamp01(var18x / 3.0), 3.0) * 2.2;
-            var8x = Capes.add(var8x, 14745599, var20x * 0.32 * Math.pow(1.0 - var4x, 2.2));
-            double var22x = 0.055 + 0.01 * Math.sin(var2x * Math.PI * 6.0 + var2) + 0.005 * Math.sin(var2x * Math.PI * 14.0 - var2 * 2.0);
-            if (var4x < var22x) {
-               var8x = Capes.mix(var8x, 14220031, 0.55 + 0.45 * Capes.smooth(var22x, var22x - 0.03, var4x));
-            }
-
-            var8x = Capes.add(var8x, 16777215, Math.exp(-Math.abs(var4x - var22x) / 0.005) * 0.5);
-            double var24 = 0.93 + 0.02 * Math.sin(var2x * 9.0 + 1.0);
-            if (var4x > var24) {
-               var8x = Capes.mix(var8x, Capes.mix(9075282, 3814434, (var4x - var24) * 10.0), Capes.smooth(var24, var24 + 0.01, var4x) * 0.8);
-            }
-
-            return var8x;
-         }
-      );
-      Random var12 = new Random(44L);
-
-      for (int var13 = 0; var13 < 6; var13++) {
-         double var14 = 10 + var13 * 28 + var12.nextDouble() * 10.0;
-         double var16 = 60.0 + var12.nextDouble() * 70.0;
-         double var18 = var12.nextDouble() * 6.28;
-         java.awt.geom.Path2D.Double var20 = new java.awt.geom.Path2D.Double();
-         var20.moveTo(var14, 256.0);
-
-         for (int var21 = 1; var21 <= 10; var21++) {
-            double var22 = 256.0 - var16 * var21 / 10.0;
-            var20.lineTo(var14 + Math.sin(var2 + var18 + var21 * 0.5) * var21 * 0.9, var22);
+         for (int ix = 0; ix < rc.length; ix++) {
+            double d = (s - rc[ix] - 0.02 * Math.sin(ph + ix)) / (0.035 + 0.02 * (ix % 2));
+            rays += Math.exp(-d * d) * (0.6 + 0.4 * Math.sin(ph * (1 + ix % 2) + ix * 1.7));
          }
 
-         var0.setColor(Capes.col(Capes.mix(936506, 2787930, var12.nextDouble()), 0.85));
-         var0.setStroke(new BasicStroke(3.2F, 1, 1));
-         var0.draw(var20);
+         c = Capes.add(c, 13630463, rays * 0.28 * Math.exp(-v * 2.4));
+         double X = u * 16.0;
+         double Y = v * 22.0;
+         double cs = Math.sin(X + 1.4 * Math.sin(Y * 0.7 + ph)) + Math.sin(Y + 1.4 * Math.sin(X * 0.8 - ph)) + Math.sin((X + Y) * 0.55 + ph);
+         double caus = Math.pow(Capes.clamp01(cs / 3.0), 3.0) * 2.2;
+         c = Capes.add(c, 14745599, caus * 0.32 * Math.pow(1.0 - v, 2.2));
+         double sl = 0.055 + 0.01 * Math.sin(u * Math.PI * 6.0 + ph) + 0.005 * Math.sin(u * Math.PI * 14.0 - ph * 2.0);
+         if (v < sl) {
+            c = Capes.mix(c, 14220031, 0.55 + 0.45 * Capes.smooth(sl, sl - 0.03, v));
+         }
+
+         c = Capes.add(c, 16777215, Math.exp(-Math.abs(v - sl) / 0.005) * 0.5);
+         double sand = 0.93 + 0.02 * Math.sin(u * 9.0 + 1.0);
+         if (v > sand) {
+            c = Capes.mix(c, Capes.mix(9075282, 3814434, (v - sand) * 10.0), Capes.smooth(sand, sand + 0.01, v) * 0.8);
+         }
+
+         return c;
+      });
+      Random rn = new Random(44L);
+
+      for (int i = 0; i < 6; i++) {
+         double bx = 10 + i * 28 + rn.nextDouble() * 10.0;
+         double hgt = 60.0 + rn.nextDouble() * 70.0;
+         double s = rn.nextDouble() * 6.28;
+         Path2D kp = new java.awt.geom.Path2D.Double();
+         kp.moveTo(bx, 256.0);
+
+         for (int j = 1; j <= 10; j++) {
+            double yy = 256.0 - hgt * j / 10.0;
+            kp.lineTo(bx + Math.sin(ph + s + j * 0.5) * j * 0.9, yy);
+         }
+
+         g.setColor(Capes.col(Capes.mix(936506, 2787930, rn.nextDouble()), 0.85));
+         g.setStroke(new BasicStroke(3.2F, 1, 1));
+         g.draw(kp);
       }
 
-      for (int var25 = 0; var25 < 8; var25++) {
-         double var27 = var12.nextDouble();
-         double var29 = 90.0 + var12.nextDouble() * 70.0;
-         double var31 = (var27 + var6) % 1.0 * 200.0 - 20.0;
-         double var33 = var29 + Math.sin(var2 * 2.0 + var25) * 2.0;
-         AffineTransform var35 = var0.getTransform();
-         var0.translate(var31, var33);
-         var0.setColor(Capes.col(405594, 0.6));
-         var0.fill(new Double(-7.0, -2.6, 12.0, 5.2));
-         java.awt.geom.Path2D.Double var23 = new java.awt.geom.Path2D.Double();
-         var23.moveTo(-6.0, 0.0);
-         var23.lineTo(-11.0, -3.5 + Math.sin(var2 * 4.0 + var25));
-         var23.lineTo(-11.0, 3.5 + Math.sin(var2 * 4.0 + var25));
-         var23.closePath();
-         var0.fill(var23);
-         var0.setTransform(var35);
+      for (int i = 0; i < 8; i++) {
+         double x0 = rn.nextDouble();
+         double y = 90.0 + rn.nextDouble() * 70.0;
+         double x = (x0 + t) % 1.0 * 200.0 - 20.0;
+         double yy = y + Math.sin(ph * 2.0 + i) * 2.0;
+         AffineTransform o = g.getTransform();
+         g.translate(x, yy);
+         g.setColor(Capes.col(405594, 0.6));
+         g.fill(new Double(-7.0, -2.6, 12.0, 5.2));
+         Path2D tail = new java.awt.geom.Path2D.Double();
+         tail.moveTo(-6.0, 0.0);
+         tail.lineTo(-11.0, -3.5 + Math.sin(ph * 4.0 + i));
+         tail.lineTo(-11.0, 3.5 + Math.sin(ph * 4.0 + i));
+         tail.closePath();
+         g.fill(tail);
+         g.setTransform(o);
       }
 
-      for (int var26 = 0; var26 < 26; var26++) {
-         double var28 = var12.nextDouble() * 160.0;
-         double var30 = var12.nextDouble();
-         int var32 = 1 + var12.nextInt(2);
-         double var19 = 1.4 + Math.pow(var12.nextDouble(), 2.0) * 4.0;
-         double var34 = ((var30 - var32 * var6) % 1.0 + 1.0) % 1.0 * 256.0;
-         double var36 = var28 + Math.sin(var2 * var32 * 2.0 + var26) * 3.0;
-         var0.setColor(Capes.col(15269887, 0.55));
-         var0.setStroke(new BasicStroke(0.9F));
-         var0.draw(new Double(var36 - var19, var34 - var19, var19 * 2.0, var19 * 2.0));
-         var0.setColor(Capes.col(16777215, 0.14));
-         var0.fill(new Double(var36 - var19, var34 - var19, var19 * 2.0, var19 * 2.0));
-         var0.setColor(Capes.col(16777215, 0.85));
-         var0.fill(new Double(var36 - var19 * 0.55, var34 - var19 * 0.6, var19 * 0.5, var19 * 0.45));
+      for (int i = 0; i < 26; i++) {
+         double x0 = rn.nextDouble() * 160.0;
+         double y0 = rn.nextDouble();
+         int j = 1 + rn.nextInt(2);
+         double r = 1.4 + Math.pow(rn.nextDouble(), 2.0) * 4.0;
+         double y = ((y0 - j * t) % 1.0 + 1.0) % 1.0 * 256.0;
+         double x = x0 + Math.sin(ph * j * 2.0 + i) * 3.0;
+         g.setColor(Capes.col(15269887, 0.55));
+         g.setStroke(new BasicStroke(0.9F));
+         g.draw(new Double(x - r, y - r, r * 2.0, r * 2.0));
+         g.setColor(Capes.col(16777215, 0.14));
+         g.fill(new Double(x - r, y - r, r * 2.0, r * 2.0));
+         g.setColor(Capes.col(16777215, 0.85));
+         g.fill(new Double(x - r * 0.55, y - r * 0.6, r * 0.5, r * 0.45));
       }
    }
 
-   static void matrix(Graphics2D var0, BufferedImage var1, double var2, int var4, int var5) {
-      Capes.field(var1, (var0x, var2x, var4x, var5x) -> {
-         int var6x = Capes.ramp(var2x, 67587, 134405, 66818);
-         double var7x = Math.hypot(var0x - 0.5, var2x - 0.45);
-         return Capes.add(var6x, 678426, Math.exp(-var7x * var7x / 0.08) * 0.25);
+   static void matrix(Graphics2D g, BufferedImage img, double ph, int k, int n) {
+      Capes.field(img, (u, v, x, y) -> {
+         int cx = Capes.ramp(v, 67587, 134405, 66818);
+         double d = Math.hypot(u - 0.5, v - 0.45);
+         return Capes.add(cx, 678426, Math.exp(-d * d / 0.08) * 0.25);
       });
-      byte var6 = 10;
-      byte var7 = 16;
-      byte var8 = 16;
-      int[] var9 = Capes.px(var1);
+      int cols = 10;
+      int rows = 16;
+      int cs = 16;
+      int[] p = Capes.px(img);
 
-      for (int var10 = 0; var10 < var6; var10++) {
-         for (int var11 = 0; var11 < 2; var11++) {
-            int var12 = Capes.hash(var10, var11, 91) < 0.4 ? 2 : 1;
-            int var13 = (int)(Capes.hash(var10, var11, 92) * var7) + var11 * var7 / 2;
-            int var14 = 5 + (int)(Capes.hash(var10, var11, 93) * 9.0);
-            int var15 = Math.floorMod(var13 + var12 * var4, var7);
+      for (int c = 0; c < cols; c++) {
+         for (int drop = 0; drop < 2; drop++) {
+            int sp = Capes.hash(c, drop, 91) < 0.4 ? 2 : 1;
+            int head = (int)(Capes.hash(c, drop, 92) * rows) + drop * rows / 2;
+            int L = 5 + (int)(Capes.hash(c, drop, 93) * 9.0);
+            int hr = Math.floorMod(head + sp * k, rows);
 
-            for (int var16 = 0; var16 < var7; var16++) {
-               int var17 = Math.floorMod(var15 - var16, var7);
-               if (var17 < var14) {
-                  double var18 = var17 == 0 ? 1.0 : Math.pow(1.0 - (double)var17 / var14, 1.4) * 0.85;
-                  int var20 = Capes.hash(var10, var16, 94) < 0.2 ? var4 / 4 : 0;
-                  int var21 = (int)(Capes.hash(var10 * 31 + var20, var16, 95) * 1000000.0);
-                  int var22 = var17 == 0 ? 15400938 : Capes.mix(409626, 3997560, var18);
+            for (int r = 0; r < rows; r++) {
+               int dist = Math.floorMod(hr - r, rows);
+               if (dist < L) {
+                  double b = dist == 0 ? 1.0 : Math.pow(1.0 - (double)dist / L, 1.4) * 0.85;
+                  int flick = Capes.hash(c, r, 94) < 0.2 ? k / 4 : 0;
+                  int gly = (int)(Capes.hash(c * 31 + flick, r, 95) * 1000000.0);
+                  int color = dist == 0 ? 15400938 : Capes.mix(409626, 3997560, b);
 
-                  for (int var23 = 0; var23 < 7; var23++) {
-                     for (int var24 = 0; var24 < 5; var24++) {
-                        int var25 = var24 < 3 ? var21 >> var23 * 3 + var24 & 1 : var21 >> var23 * 3 + (4 - var24) & 1;
-                        if (var24 == 2 && var23 % 3 == 0) {
-                           var25 = 1;
+                  for (int gy = 0; gy < 7; gy++) {
+                     for (int gx = 0; gx < 5; gx++) {
+                        int bit = gx < 3 ? gly >> gy * 3 + gx & 1 : gly >> gy * 3 + (4 - gx) & 1;
+                        if (gx == 2 && gy % 3 == 0) {
+                           bit = 1;
                         }
 
-                        if ((var21 >> 21 & 1) == 1 && var24 >= 3) {
-                           var25 = var21 >> var23 + 22 + var24 & 1;
+                        if ((gly >> 21 & 1) == 1 && gx >= 3) {
+                           bit = gly >> gy + 22 + gx & 1;
                         }
 
-                        if (var25 != 0) {
-                           for (int var26 = 0; var26 < 2; var26++) {
-                              for (int var27 = 0; var27 < 2; var27++) {
-                                 int var28 = var10 * var8 + 3 + var24 * 2 + var27;
-                                 int var29 = var16 * var8 + 1 + var23 * 2 + var26;
-                                 if (var28 < 160 && var29 < 256) {
-                                    var9[var29 * 160 + var28] = Capes.over(var9[var29 * 160 + var28], var22, 0.25 + 0.75 * var18);
+                        if (bit != 0) {
+                           for (int yy = 0; yy < 2; yy++) {
+                              for (int xx = 0; xx < 2; xx++) {
+                                 int px = c * cs + 3 + gx * 2 + xx;
+                                 int py = r * cs + 1 + gy * 2 + yy;
+                                 if (px < 160 && py < 256) {
+                                    p[py * 160 + px] = Capes.over(p[py * 160 + px], color, 0.25 + 0.75 * b);
                                  }
                               }
                            }
@@ -956,8 +940,8 @@ final class CapeArt {
                      }
                   }
 
-                  if (var17 == 0) {
-                     Capes.addDot(var1, var10 * var8 + 8, var16 * var8 + 8, 9.0, 3997560, 0.35);
+                  if (dist == 0) {
+                     Capes.addDot(img, c * cs + 8, r * cs + 8, 9.0, 3997560, 0.35);
                   }
                }
             }

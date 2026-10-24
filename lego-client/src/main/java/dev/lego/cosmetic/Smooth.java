@@ -10,85 +10,85 @@ final class Smooth {
    private Smooth() {
    }
 
-   static int group(String var0, boolean var1) {
-      return !var0.contains("crystal") && !var0.contains("gem") ? var0.hashCode() * 7 + (var1 ? 1 : 0) : Integer.MIN_VALUE;
+   static int group(String tex, boolean glow) {
+      return !tex.contains("crystal") && !tex.contains("gem") ? tex.hashCode() * 7 + (glow ? 1 : 0) : Integer.MIN_VALUE;
    }
 
-   static float[] normals(float[][] var0, float[][] var1, int[] var2, int var3) {
-      HashMap var4 = new HashMap(var3 * 3);
-      long[] var5 = new long[var3 * 4];
+   static float[] normals(float[][] p, float[][] n, int[] grp, int cnt) {
+      HashMap<Long, int[]> map = new HashMap<>(cnt * 3);
+      long[] keys = new long[cnt * 4];
 
-      for (int var6 = 0; var6 < var3; var6++) {
-         if (var2[var6] != Integer.MIN_VALUE) {
-            float[] var7 = var0[var6];
+      for (int q = 0; q < cnt; q++) {
+         if (grp[q] != Integer.MIN_VALUE) {
+            float[] pp = p[q];
 
-            for (int var8 = 0; var8 < 4; var8++) {
-               long var9 = key(var7[var8 * 3], var7[var8 * 3 + 1], var7[var8 * 3 + 2], var2[var6]);
-               var5[var6 * 4 + var8] = var9;
-               int[] var11 = (int[])var4.get(var9);
-               if (var11 == null) {
-                  var11 = new int[5];
-                  var4.put(var9, var11);
-               } else if (var11[0] + 1 >= var11.length) {
-                  var11 = Arrays.copyOf(var11, var11.length * 2);
-                  var4.put(var9, var11);
+            for (int k = 0; k < 4; k++) {
+               long key = key(pp[k * 3], pp[k * 3 + 1], pp[k * 3 + 2], grp[q]);
+               keys[q * 4 + k] = key;
+               int[] l = map.get(key);
+               if (l == null) {
+                  l = new int[5];
+                  map.put(key, l);
+               } else if (l[0] + 1 >= l.length) {
+                  l = Arrays.copyOf(l, l.length * 2);
+                  map.put(key, l);
                }
 
-               if (var11[0] == 0 || var11[var11[0]] != var6) {
-                  var11[++var11[0]] = var6;
+               if (l[0] == 0 || l[l[0]] != q) {
+                  l[++l[0]] = q;
                }
             }
          }
       }
 
-      float[] var16 = new float[var3 * 12];
+      float[] out = new float[cnt * 12];
 
-      for (int var17 = 0; var17 < var3; var17++) {
-         float[] var18 = var1[var17];
-         if (var2[var17] == Integer.MIN_VALUE) {
-            for (int var20 = 0; var20 < 4; var20++) {
-               var16[var17 * 12 + var20 * 3] = var18[0];
-               var16[var17 * 12 + var20 * 3 + 1] = var18[1];
-               var16[var17 * 12 + var20 * 3 + 2] = var18[2];
+      for (int qx = 0; qx < cnt; qx++) {
+         float[] fn = n[qx];
+         if (grp[qx] == Integer.MIN_VALUE) {
+            for (int k = 0; k < 4; k++) {
+               out[qx * 12 + k * 3] = fn[0];
+               out[qx * 12 + k * 3 + 1] = fn[1];
+               out[qx * 12 + k * 3 + 2] = fn[2];
             }
          } else {
-            for (int var19 = 0; var19 < 4; var19++) {
-               int[] var10 = (int[])var4.get(var5[var17 * 4 + var19]);
-               float var21 = 0.0F;
-               float var12 = 0.0F;
-               float var13 = 0.0F;
+            for (int k = 0; k < 4; k++) {
+               int[] lx = map.get(keys[qx * 4 + k]);
+               float sx = 0.0F;
+               float sy = 0.0F;
+               float sz = 0.0F;
 
-               for (int var14 = 1; var14 <= var10[0]; var14++) {
-                  float[] var15 = var1[var10[var14]];
-                  if (!(var15[0] * var18[0] + var15[1] * var18[1] + var15[2] * var18[2] < 0.42F)) {
-                     var21 += var15[0];
-                     var12 += var15[1];
-                     var13 += var15[2];
+               for (int i = 1; i <= lx[0]; i++) {
+                  float[] o = n[lx[i]];
+                  if (!(o[0] * fn[0] + o[1] * fn[1] + o[2] * fn[2] < 0.42F)) {
+                     sx += o[0];
+                     sy += o[1];
+                     sz += o[2];
                   }
                }
 
-               float var22 = (float)Math.sqrt(var21 * var21 + var12 * var12 + var13 * var13);
-               if (var22 < 1.0E-5F) {
-                  var21 = var18[0];
-                  var12 = var18[1];
-                  var13 = var18[2];
-                  var22 = 1.0F;
+               float len = (float)Math.sqrt(sx * sx + sy * sy + sz * sz);
+               if (len < 1.0E-5F) {
+                  sx = fn[0];
+                  sy = fn[1];
+                  sz = fn[2];
+                  len = 1.0F;
                }
 
-               var16[var17 * 12 + var19 * 3] = var21 / var22;
-               var16[var17 * 12 + var19 * 3 + 1] = var12 / var22;
-               var16[var17 * 12 + var19 * 3 + 2] = var13 / var22;
+               out[qx * 12 + k * 3] = sx / len;
+               out[qx * 12 + k * 3 + 1] = sy / len;
+               out[qx * 12 + k * 3 + 2] = sz / len;
             }
          }
       }
 
-      return var16;
+      return out;
    }
 
-   private static long key(float var0, float var1, float var2, int var3) {
-      long var4 = Math.round(var0 * 40.0F) & 1048575;
-      long var6 = Math.round(var1 * 40.0F) & 1048575;
-      long var8 = Math.round(var2 * 40.0F) & 1048575;
-      return (var4 << 40 | var6 << 20 | var8) * 31L + var3;
+   private static long key(float x, float y, float z, int g) {
+      long qx = Math.round(x * 40.0F) & 1048575;
+      long qy = Math.round(y * 40.0F) & 1048575;
+      long qz = Math.round(z * 40.0F) & 1048575;
+      return (qx << 40 | qy << 20 | qz) * 31L + g;
    }
 }

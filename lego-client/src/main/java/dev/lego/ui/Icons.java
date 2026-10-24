@@ -13,67 +13,67 @@ public final class Icons {
    private Icons() {
    }
 
-   private static void stroke(double var0) {
-      g.setStroke(new BasicStroke((float)(var0 * k), 1, 1));
+   private static void stroke(double w) {
+      g.setStroke(new BasicStroke((float)(w * k), 1, 1));
    }
 
-   private static void line(double var0, double var2, double var4, double var6) {
-      g.draw(new Double(var0 * k, var2 * k, var4 * k, var6 * k));
+   private static void line(double x1, double y1, double x2, double y2) {
+      g.draw(new Double(x1 * k, y1 * k, x2 * k, y2 * k));
    }
 
-   private static void circ(double var0, double var2, double var4) {
-      g.draw(new java.awt.geom.Ellipse2D.Double((var0 - var4) * k, (var2 - var4) * k, 2.0 * var4 * k, 2.0 * var4 * k));
+   private static void circ(double cx, double cy, double r) {
+      g.draw(new java.awt.geom.Ellipse2D.Double((cx - r) * k, (cy - r) * k, 2.0 * r * k, 2.0 * r * k));
    }
 
-   private static void disc(double var0, double var2, double var4) {
-      g.fill(new java.awt.geom.Ellipse2D.Double((var0 - var4) * k, (var2 - var4) * k, 2.0 * var4 * k, 2.0 * var4 * k));
+   private static void disc(double cx, double cy, double r) {
+      g.fill(new java.awt.geom.Ellipse2D.Double((cx - r) * k, (cy - r) * k, 2.0 * r * k, 2.0 * r * k));
    }
 
-   private static void rr(double var0, double var2, double var4, double var6, double var8) {
-      g.draw(new java.awt.geom.RoundRectangle2D.Double(var0 * k, var2 * k, var4 * k, var6 * k, 2.0 * var8 * k, 2.0 * var8 * k));
+   private static void rr(double x, double y, double w, double h, double r) {
+      g.draw(new java.awt.geom.RoundRectangle2D.Double(x * k, y * k, w * k, h * k, 2.0 * r * k, 2.0 * r * k));
    }
 
-   private static void rrf(double var0, double var2, double var4, double var6, double var8) {
-      g.fill(new java.awt.geom.RoundRectangle2D.Double(var0 * k, var2 * k, var4 * k, var6 * k, 2.0 * var8 * k, 2.0 * var8 * k));
+   private static void rrf(double x, double y, double w, double h, double r) {
+      g.fill(new java.awt.geom.RoundRectangle2D.Double(x * k, y * k, w * k, h * k, 2.0 * r * k, 2.0 * r * k));
    }
 
-   private static void arc(double var0, double var2, double var4, double var6, double var8) {
-      g.draw(new java.awt.geom.Arc2D.Double((var0 - var4) * k, (var2 - var4) * k, 2.0 * var4 * k, 2.0 * var4 * k, var6, var8, 0));
+   private static void arc(double cx, double cy, double r, double start, double ext) {
+      g.draw(new java.awt.geom.Arc2D.Double((cx - r) * k, (cy - r) * k, 2.0 * r * k, 2.0 * r * k, start, ext, 0));
    }
 
-   private static java.awt.geom.Path2D.Double p(double... var0) {
-      java.awt.geom.Path2D.Double var1 = new java.awt.geom.Path2D.Double();
-      var1.moveTo(var0[0] * k, var0[1] * k);
+   private static java.awt.geom.Path2D.Double p(double... xy) {
+      java.awt.geom.Path2D.Double path = new java.awt.geom.Path2D.Double();
+      path.moveTo(xy[0] * k, xy[1] * k);
 
-      for (int var2 = 2; var2 < var0.length; var2 += 2) {
-         var1.lineTo(var0[var2] * k, var0[var2 + 1] * k);
+      for (int i = 2; i < xy.length; i += 2) {
+         path.lineTo(xy[i] * k, xy[i + 1] * k);
       }
 
-      return var1;
+      return path;
    }
 
-   private static void poly(double... var0) {
-      g.draw(p(var0));
+   private static void poly(double... xy) {
+      g.draw(p(xy));
    }
 
-   private static void polyC(double... var0) {
-      java.awt.geom.Path2D.Double var1 = p(var0);
-      var1.closePath();
-      g.draw(var1);
+   private static void polyC(double... xy) {
+      java.awt.geom.Path2D.Double path = p(xy);
+      path.closePath();
+      g.draw(path);
    }
 
-   private static void polyF(double... var0) {
-      java.awt.geom.Path2D.Double var1 = p(var0);
-      var1.closePath();
-      g.fill(var1);
+   private static void polyF(double... xy) {
+      java.awt.geom.Path2D.Double path = p(xy);
+      path.closePath();
+      g.fill(path);
    }
 
-   public static void paint(Graphics2D var0, String var1, int var2, Color var3) {
-      g = var0;
-      k = var2 / 24.0;
-      g.setColor(var3);
+   public static void paint(Graphics2D gg, String name, int size, Color c) {
+      g = gg;
+      k = size / 24.0;
+      g.setColor(c);
       stroke(2.0);
-      switch (var1) {
+      switch (name) {
          case "mods":
          case "grid":
             rr(3.0, 3.0, 7.0, 7.0, 1.5);
@@ -156,9 +156,9 @@ public final class Icons {
          case "settings":
             circ(12.0, 12.0, 3.2);
 
-            for (int var16 = 0; var16 < 8; var16++) {
-               double var19 = (Math.PI * 2) * var16 / 8.0;
-               line(12.0 + Math.cos(var19) * 6.3, 12.0 + Math.sin(var19) * 6.3, 12.0 + Math.cos(var19) * 9.0, 12.0 + Math.sin(var19) * 9.0);
+            for (int i = 0; i < 8; i++) {
+               double a = (Math.PI * 2) * i / 8.0;
+               line(12.0 + Math.cos(a) * 6.3, 12.0 + Math.sin(a) * 6.3, 12.0 + Math.cos(a) * 9.0, 12.0 + Math.sin(a) * 9.0);
             }
 
             circ(12.0, 12.0, 6.6);
@@ -239,12 +239,12 @@ public final class Icons {
             rr(5.5, 5.5, 13.0, 13.0, 2.0);
             rr(9.0, 9.0, 6.0, 6.0, 1.0);
 
-            for (int var15 = 0; var15 < 3; var15++) {
-               double var18 = 9 + var15 * 3;
-               line(var18, 2.0, var18, 5.5);
-               line(var18, 18.5, var18, 22.0);
-               line(2.0, var18, 5.5, var18);
-               line(18.5, var18, 22.0, var18);
+            for (int i = 0; i < 3; i++) {
+               double o = 9 + i * 3;
+               line(o, 2.0, o, 5.5);
+               line(o, 18.5, o, 22.0);
+               line(2.0, o, 5.5, o);
+               line(18.5, o, 22.0, o);
             }
             break;
          case "globe":
@@ -276,9 +276,9 @@ public final class Icons {
          case "keyboard":
             rr(2.0, 5.0, 20.0, 14.0, 2.5);
 
-            for (int var14 = 0; var14 < 4; var14++) {
-               disc(6 + var14 * 4, 9.5, 0.9);
-               disc(6 + var14 * 4, 13.0, 0.9);
+            for (int i = 0; i < 4; i++) {
+               disc(6 + i * 4, 9.5, 0.9);
+               disc(6 + i * 4, 13.0, 0.9);
             }
 
             line(8.0, 16.0, 16.0, 16.0);
@@ -286,9 +286,9 @@ public final class Icons {
          case "sun":
             circ(12.0, 12.0, 4.2);
 
-            for (int var13 = 0; var13 < 8; var13++) {
-               double var17 = (Math.PI * 2) * var13 / 8.0;
-               line(12.0 + Math.cos(var17) * 7.0, 12.0 + Math.sin(var17) * 7.0, 12.0 + Math.cos(var17) * 9.5, 12.0 + Math.sin(var17) * 9.5);
+            for (int i = 0; i < 8; i++) {
+               double a = (Math.PI * 2) * i / 8.0;
+               line(12.0 + Math.cos(a) * 7.0, 12.0 + Math.sin(a) * 7.0, 12.0 + Math.cos(a) * 9.5, 12.0 + Math.sin(a) * 9.5);
             }
             break;
          case "moon":
@@ -422,11 +422,11 @@ public final class Icons {
             });
             break;
          case "snow":
-            for (int var6 = 0; var6 < 3; var6++) {
-               double var7 = Math.PI * var6 / 3.0;
-               double var9 = Math.cos(var7) * 9.5;
-               double var11 = Math.sin(var7) * 9.5;
-               line(12.0 - var9, 12.0 - var11, 12.0 + var9, 12.0 + var11);
+            for (int i = 0; i < 3; i++) {
+               double a = Math.PI * i / 3.0;
+               double dx = Math.cos(a) * 9.5;
+               double dy = Math.sin(a) * 9.5;
+               line(12.0 - dx, 12.0 - dy, 12.0 + dx, 12.0 + dy);
             }
 
             circ(12.0, 12.0, 2.0);
@@ -854,15 +854,15 @@ public final class Icons {
    }
 
    private static GeneralPath heart() {
-      GeneralPath var0 = new GeneralPath();
-      var0.moveTo(12.0 * k, 20.5 * k);
-      var0.curveTo(12.0 * k, 20.5 * k, 2.5 * k, 14.5 * k, 2.5 * k, 8.5 * k);
-      var0.curveTo(2.5 * k, 5.5 * k, 4.8 * k, 3.5 * k, 7.5 * k, 3.5 * k);
-      var0.curveTo(9.5 * k, 3.5 * k, 11.0 * k, 4.6 * k, 12.0 * k, 6.2 * k);
-      var0.curveTo(13.0 * k, 4.6 * k, 14.5 * k, 3.5 * k, 16.5 * k, 3.5 * k);
-      var0.curveTo(19.2 * k, 3.5 * k, 21.5 * k, 5.5 * k, 21.5 * k, 8.5 * k);
-      var0.curveTo(21.5 * k, 14.5 * k, 12.0 * k, 20.5 * k, 12.0 * k, 20.5 * k);
-      var0.closePath();
-      return var0;
+      GeneralPath h = new GeneralPath();
+      h.moveTo(12.0 * k, 20.5 * k);
+      h.curveTo(12.0 * k, 20.5 * k, 2.5 * k, 14.5 * k, 2.5 * k, 8.5 * k);
+      h.curveTo(2.5 * k, 5.5 * k, 4.8 * k, 3.5 * k, 7.5 * k, 3.5 * k);
+      h.curveTo(9.5 * k, 3.5 * k, 11.0 * k, 4.6 * k, 12.0 * k, 6.2 * k);
+      h.curveTo(13.0 * k, 4.6 * k, 14.5 * k, 3.5 * k, 16.5 * k, 3.5 * k);
+      h.curveTo(19.2 * k, 3.5 * k, 21.5 * k, 5.5 * k, 21.5 * k, 8.5 * k);
+      h.curveTo(21.5 * k, 14.5 * k, 12.0 * k, 20.5 * k, 12.0 * k, 20.5 * k);
+      h.closePath();
+      return h;
    }
 }

@@ -43,17 +43,18 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 public final class CosRender {
    private static final Map<String, Identifier> TEX = new HashMap<>();
-   private static final ExecutorService PAINT = Executors.newSingleThreadExecutor(var0 -> {
-      Thread var1 = new Thread(var0, "Lego-Cosmetics");
-      var1.setDaemon(true);
-      var1.setPriority(4);
-      return var1;
+   private static final ExecutorService PAINT = Executors.newSingleThreadExecutor(r -> {
+      Thread t = new Thread(r, "Lego-Cosmetics");
+      t.setDaemon(true);
+      t.setPriority(4);
+      return t;
    });
    private static final Set<String> QUEUED = ConcurrentHashMap.newKeySet();
    static Identifier skin;
@@ -68,71 +69,71 @@ public final class CosRender {
    private CosRender() {
    }
 
-   private static String idName(String var0) {
-      return var0.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_./-]", "_");
+   private static String idName(String name) {
+      return name.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_./-]", "_");
    }
 
-   static int mode(String var0) {
-      Integer var1 = MODE.get(var0);
-      if (var1 != null) {
-         return var1;
-      } else if (var0.equals("@skin")) {
-         MODE.put(var0, 0);
+   static int mode(String name) {
+      Integer m = MODE.get(name);
+      if (m != null) {
+         return m;
+      } else if (name.equals("@skin")) {
+         MODE.put(name, 0);
          return 0;
       } else {
-         CTex.T var2 = CTex.peek(var0);
-         if (var2 == null) {
+         CTex.T t = CTex.peek(name);
+         if (t == null) {
             return 0;
          } else {
-            int var3 = 0;
+            int soft = 0;
 
-            for (int var4 = 0; var4 < var2.argb.length; var4 += 3) {
-               int var5 = var2.argb[var4] >>> 24;
-               if (var5 > 12 && var5 < 235) {
-                  var3++;
+            for (int i = 0; i < t.argb.length; i += 3) {
+               int a = t.argb[i] >>> 24;
+               if (a > 12 && a < 235) {
+                  soft++;
                }
             }
 
-            var1 = var3 > var2.argb.length / 3 * 0.04 ? 1 : 0;
-            MODE.put(var0, var1);
-            return var1;
+            m = soft > t.argb.length / 3 * 0.04 ? 1 : 0;
+            MODE.put(name, m);
+            return m;
          }
       }
    }
 
-   public static Identifier texture(String var0) {
-      if (var0.equals("@skin")) {
+   public static Identifier texture(String name) {
+      if (name.equals("@skin")) {
          return skin;
       } else {
-         Identifier var1 = TEX.get(var0);
-         if (var1 != null) {
-            return var1;
+         Identifier id = TEX.get(name);
+         if (id != null) {
+            return id;
          } else {
-            CTex.T var2 = CTex.peek(var0);
-            if (var2 == null) {
-               if (QUEUED.add(var0)) {
+            CTex.T t = CTex.peek(name);
+            if (t == null) {
+               if (QUEUED.add(name)) {
                   PAINT.execute(() -> {
                      try {
-                        CTex.get(var0);
+                        CTex.get(name);
                      } catch (Throwable var2x) {
-                        LegoClient.LOG("Kosmetik-Textur " + var0 + ": " + var2x);
+                        LegoClient.LOG("Kosmetik-Textur " + name + ": " + var2x);
                      }
                   });
                }
 
                return null;
             } else {
-               QUEUED.remove(var0);
-               var1 = Identifier.fromNamespaceAndPath("legoclient", "cosmetic/" + idName(var0));
+               QUEUED.remove(name);
+               id = Identifier.fromNamespaceAndPath("legoclient", "cosmetic/" + idName(name));
 
                try {
-                  Tx.register(var1, var2.argb, var2.w, var2.h, true);
+                  Tx.register(id, t.argb, t.w, t.h, true);
                } catch (Throwable var4) {
-                  LegoClient.LOG("Kosmetik-Textur " + var0 + ": " + var4);
+                  LegoClient.LOG("Kosmetik-Textur " + name + ": " + var4);
                }
 
-               TEX.put(var0, var1);
-               return var1;
+               TEX.put(name, id);
+               return id;
             }
          }
       }
@@ -284,43 +285,43 @@ public final class CosRender {
    }
 
    public static Identifier capeTexture() {
-      Cos.Item var0 = Cos.equipped(Cos.Slot.CAPE);
-      String var1 = var0 == null ? null : var0.cape;
-      if (!Objects.equals(var1, capeBase)) {
+      Cos.Item c = Cos.equipped(Cos.Slot.CAPE);
+      String base = c == null ? null : c.cape;
+      if (!Objects.equals(base, capeBase)) {
          if (capeBase != null) {
-            Iterator var2 = TEX.entrySet().iterator();
+            Iterator<Entry<String, Identifier>> it = TEX.entrySet().iterator();
 
-            while (var2.hasNext()) {
-               Entry var3 = (Entry)var2.next();
-               if (((String)var3.getKey()).equals(capeBase) || ((String)var3.getKey()).startsWith(capeBase + "#")) {
-                  Tx.destroy((Identifier)var3.getValue());
-                  var2.remove();
+            while (it.hasNext()) {
+               Entry<String, Identifier> e = it.next();
+               if (e.getKey().equals(capeBase) || e.getKey().startsWith(capeBase + "#")) {
+                  Tx.destroy(e.getValue());
+                  it.remove();
                }
             }
          }
 
-         capeBase = var1;
+         capeBase = base;
          lastCape = null;
-         if (var1 != null) {
-            for (int var4 = 0; var4 < Capes.frames(var1); var4++) {
-               texture(var4 == 0 ? var1 : var1 + "#" + var4);
+         if (base != null) {
+            for (int k = 0; k < Capes.frames(base); k++) {
+               texture(k == 0 ? base : base + "#" + k);
             }
          }
       }
 
-      if (var1 == null) {
+      if (base == null) {
          return null;
       } else {
-         if (var1.equals("cape_spotify") || var1.equals("spotify")) {
-            Identifier var5 = SpotifyCape.texture();
-            if (var5 != null) {
-               return var5;
+         if (base.equals("cape_spotify") || base.equals("spotify")) {
+            Identifier live = SpotifyCape.texture();
+            if (live != null) {
+               return live;
             }
          }
 
-         Identifier var6 = texture(Capes.frameName(var1, (float)System.currentTimeMillis() / 1000.0F));
-         if (var6 != null) {
-            lastCape = var6;
+         Identifier t = texture(Capes.frameName(base, (float)System.currentTimeMillis() / 1000.0F));
+         if (t != null) {
+            lastCape = t;
          }
 
          return lastCape;
@@ -330,125 +331,123 @@ public final class CosRender {
    public static void prewarm() {
       if (warmed != Cos.version) {
          warmed = Cos.version;
-         Thread var0 = new Thread(() -> {
+         Thread t = new Thread(() -> {
             try {
-               LinkedHashSet var0x = new LinkedHashSet();
-               G var1 = new G((var1x, var2x, var3x, var4, var5x, var6x, var7, var8) -> var0x.add(var1x));
-               Cos.A var2 = new Cos.A();
-               Cos.renderEquipped(var1, var2, true);
-               Cos.renderEquipped(var1, var2, false);
-               Cos.Item var3 = Cos.equipped(Cos.Slot.CAPE);
-               if (var3 != null && var3.cape != null) {
-                  var0x.add(var3.cape);
+               Set<String> names = new LinkedHashSet<>();
+               G g = new G((tex, p, uv, argb, gl, nx, ny, nz) -> names.add(tex));
+               Cos.A a = new Cos.A();
+               Cos.renderEquipped(g, a, true);
+               Cos.renderEquipped(g, a, false);
+               Cos.Item c = Cos.equipped(Cos.Slot.CAPE);
+               if (c != null && c.cape != null) {
+                  names.add(c.cape);
                }
 
-               for (String var5 : (Iterable<String>) (Iterable<?>) (var0x)) {
-                  CTex.get(var5);
+               for (String n : names) {
+                  CTex.get(n);
                }
             } catch (Throwable var6) {
                LegoClient.LOG("Kosmetik vorbereiten: " + var6);
             }
          }, "Lego-Cosmetics");
-         var0.setDaemon(true);
-         var0.start();
+         t.setDaemon(true);
+         t.start();
       }
    }
 
-   public static RenderLayer feature(RenderLayerParent var0) {
-      return new CosRender.Feature(var0);
+   public static RenderLayer feature(RenderLayerParent ctx) {
+      return new CosRender.Feature(ctx);
    }
 
-   private static void draw(PoseStack var0, SubmitNodeCollector var1, int var2, ModelPart var3, Cos.A var4, boolean var5) {
-      long var6 = System.currentTimeMillis();
-      int var8 = Math.round(var4.move * 10.0F);
-      CosRender.Built var9 = BUILT[var5 ? 1 : 0];
-      if (var9 == null || var6 - var9.t > 33L || var9.ver != Cos.version || var9.sneak != var4.sneak || var9.mq != var8 || var9.flags != flagsKey) {
-         LinkedHashMap<String, List<CosRender.Q>> var10 = new LinkedHashMap<>();
-         LinkedHashMap<String, List<CosRender.Q>> var11 = new LinkedHashMap<>();
-         G var12 = new G(
-            (var2x, var3x, var4x, var5x, var6x, var7, var8x, var9x) -> (var6x ? var11 : var10)
-               .computeIfAbsent(var2x, var0xx -> new ArrayList<>())
-               .add(new CosRender.Q(var3x, var4x, var5x, var7, var8x, var9x))
+   private static void draw(PoseStack matrices, SubmitNodeCollector queue, int light, ModelPart part, Cos.A anim, boolean head) {
+      long now = System.currentTimeMillis();
+      int mq = Math.round(anim.move * 10.0F);
+      CosRender.Built b = BUILT[head ? 1 : 0];
+      if (b == null || now - b.t > 33L || b.ver != Cos.version || b.sneak != anim.sneak || b.mq != mq || b.flags != flagsKey) {
+         Map<String, List<CosRender.Q>> nrm = new LinkedHashMap<>();
+         Map<String, List<CosRender.Q>> glw = new LinkedHashMap<>();
+         G g = new G(
+            (tex, p, uv, argb, gl, nx, ny, nz) -> (gl ? glw : nrm).computeIfAbsent(tex, k -> new ArrayList<>()).add(new CosRender.Q(p, uv, argb, nx, ny, nz))
          );
 
          try {
-            Cos.renderEquipped(var12, var4, var5);
+            Cos.renderEquipped(g, anim, head);
          } finally {
-            Cos.slotTransform = var5 ? null : Cos.slotTransform;
+            Cos.slotTransform = head ? null : Cos.slotTransform;
          }
 
-         smooth(var10);
-         var9 = new CosRender.Built();
-         var9.t = var6;
-         var9.ver = Cos.version;
-         var9.mq = var8;
-         var9.flags = flagsKey;
-         var9.sneak = var4.sneak;
-         var9.normal = var10;
-         var9.glow = var11;
-         BUILT[var5 ? 1 : 0] = var9;
+         smooth(nrm);
+         b = new CosRender.Built();
+         b.t = now;
+         b.ver = Cos.version;
+         b.mq = mq;
+         b.flags = flagsKey;
+         b.sneak = anim.sneak;
+         b.normal = nrm;
+         b.glow = glw;
+         BUILT[head ? 1 : 0] = b;
       }
 
-      Map var16 = var9.normal;
-      Map var17 = var9.glow;
-      if (!var16.isEmpty() || !var17.isEmpty()) {
-         var0.pushPose();
-         var3.translateAndRotate(var0);
-         var0.scale(-0.0625F, -0.0625F, -0.0625F);
-         submit(var0, var1, var16, false, var2);
-         submit(var0, var1, var17, true, var2);
-         var0.popPose();
+      Map<String, List<CosRender.Q>> normal = b.normal;
+      Map<String, List<CosRender.Q>> glow = b.glow;
+      if (!normal.isEmpty() || !glow.isEmpty()) {
+         matrices.pushPose();
+         part.translateAndRotate(matrices);
+         matrices.scale(-0.0625F, -0.0625F, -0.0625F);
+         submit(matrices, queue, normal, false, light);
+         submit(matrices, queue, glow, true, light);
+         matrices.popPose();
       }
    }
 
-   private static void smooth(Map<String, List<CosRender.Q>> var0) {
-      int var1 = 0;
+   private static void smooth(Map<String, List<CosRender.Q>> quads) {
+      int n = 0;
 
-      for (List var3 : var0.values()) {
-         var1 += var3.size();
+      for (List<CosRender.Q> l : quads.values()) {
+         n += l.size();
       }
 
-      if (var1 != 0 && var1 <= 20000) {
-         float[][] var12 = new float[var1][];
-         float[][] var13 = new float[var1][];
-         int[] var4 = new int[var1];
-         CosRender.Q[] var5 = new CosRender.Q[var1];
-         int var6 = 0;
+      if (n != 0 && n <= 20000) {
+         float[][] P = new float[n][];
+         float[][] N = new float[n][];
+         int[] grp = new int[n];
+         CosRender.Q[] all = new CosRender.Q[n];
+         int i = 0;
 
-         for (Entry var8 : var0.entrySet()) {
-            int var9 = Smooth.group((String)var8.getKey(), false);
+         for (Entry<String, List<CosRender.Q>> e : quads.entrySet()) {
+            int h = Smooth.group(e.getKey(), false);
 
-            for (CosRender.Q var11 : (Iterable<CosRender.Q>) (Iterable<?>) ((List)var8.getValue())) {
-               var5[var6] = var11;
-               var12[var6] = var11.p;
-               var13[var6] = var11.n;
-               var4[var6] = var9;
-               var6++;
+            for (CosRender.Q q : e.getValue()) {
+               all[i] = q;
+               P[i] = q.p;
+               N[i] = q.n;
+               grp[i] = h;
+               i++;
             }
          }
 
-         float[] var14 = Smooth.normals(var12, var13, var4, var1);
+         float[] vn = Smooth.normals(P, N, grp, n);
 
-         for (int var15 = 0; var15 < var1; var15++) {
-            var5[var15].vn = Arrays.copyOfRange(var14, var15 * 12, var15 * 12 + 12);
+         for (int k = 0; k < n; k++) {
+            all[k].vn = Arrays.copyOfRange(vn, k * 12, k * 12 + 12);
          }
       }
    }
 
-   private static void submit(PoseStack var0, SubmitNodeCollector var1, Map<String, List<CosRender.Q>> var2, boolean var3, int var4) {
-      for (Entry var6 : var2.entrySet()) {
-         Identifier var7 = texture((String)var6.getKey());
-         if (var7 != null) {
-            int var8 = var3 ? 2 : mode((String)var6.getKey());
-            RenderType var9 = var8 == 2
-               ? RenderTypes.entityTranslucentEmissive(var7)
-               : (var8 == 1 ? RenderTypes.entityTranslucent(var7) : RenderTypes.entityCutoutNoCull(var7));
-            List var10 = (List)var6.getValue();
-            int var11 = var3 ? 15728880 : var4;
-            var1.submitCustomGeometry(var0, var9, (var2x, var3x) -> {
-               for (CosRender.Q var5 : (Iterable<CosRender.Q>) (Iterable<?>) (var10)) {
-                  for (int var6x = 0; var6x < 4; var6x++) {
-                     v(var3x, var2x, var5, var6x, var11);
+   private static void submit(PoseStack matrices, SubmitNodeCollector queue, Map<String, List<CosRender.Q>> quads, boolean glow, int light) {
+      for (Entry<String, List<CosRender.Q>> e : quads.entrySet()) {
+         Identifier tex = texture(e.getKey());
+         if (tex != null) {
+            int md = glow ? 2 : mode(e.getKey());
+            RenderType layer = md == 2
+               ? RenderTypes.entityTranslucentEmissive(tex)
+               : (md == 1 ? RenderTypes.entityTranslucent(tex) : RenderTypes.entityCutoutNoCull(tex));
+            List<CosRender.Q> list = e.getValue();
+            int li = glow ? 15728880 : light;
+            queue.submitCustomGeometry(matrices, layer, (entry, vc) -> {
+               for (CosRender.Q q : list) {
+                  for (int k = 0; k < 4; k++) {
+                     v(vc, entry, q, k, li);
                   }
                }
             });
@@ -456,116 +455,109 @@ public final class CosRender {
       }
    }
 
-   private static void v(VertexConsumer var0, Pose var1, CosRender.Q var2, int var3, int var4) {
-      var0.addVertex(var1, var2.p[var3 * 3], var2.p[var3 * 3 + 1], var2.p[var3 * 3 + 2])
-         .setColor(var2.argb)
-         .setUv(var2.uv[var3 * 2], var2.uv[var3 * 2 + 1])
+   private static void v(VertexConsumer vc, Pose entry, CosRender.Q q, int k, int light) {
+      vc.addVertex(entry, q.p[k * 3], q.p[k * 3 + 1], q.p[k * 3 + 2])
+         .setColor(q.argb)
+         .setUv(q.uv[k * 2], q.uv[k * 2 + 1])
          .setOverlay(OverlayTexture.NO_OVERLAY)
-         .setLight(var4)
-         .setNormal(
-            var1,
-            var2.vn != null ? var2.vn[var3 * 3] : var2.n[0],
-            var2.vn != null ? var2.vn[var3 * 3 + 1] : var2.n[1],
-            var2.vn != null ? var2.vn[var3 * 3 + 2] : var2.n[2]
-         );
+         .setLight(light)
+         .setNormal(entry, q.vn != null ? q.vn[k * 3] : q.n[0], q.vn != null ? q.vn[k * 3 + 1] : q.n[1], q.vn != null ? q.vn[k * 3 + 2] : q.n[2]);
    }
 
-   public static void drawWorld(Cos.Model var0, Cos.A var1, double var2, double var4, double var6, float var8, float var9, float var10, float var11, int var12) {
-      double var13 = Math.toRadians(var8);
-      double var15 = var11 / 16.0;
-      double var17 = -Math.sin(var13);
-      double var19 = Math.cos(var13);
-      double var21 = -Math.cos(var13);
-      double var23 = -Math.sin(var13);
-      double var25 = Math.cos(Math.toRadians(var9));
-      double var27 = Math.sin(Math.toRadians(var9));
-      double var29 = Math.cos(Math.toRadians(var10));
-      double var31 = Math.sin(Math.toRadians(var10));
-      LinkedHashMap<String, List<Object[]>> var33 = new LinkedHashMap<>();
-      G var34 = new G((var25x, var26, var27x, var28, var29x, var30, var31x, var32) -> {
-         double[] var33x = new double[12];
+   public static void drawWorld(Cos.Model model, Cos.A a, double x, double y, double z, float yawDeg, float pitchDeg, float rollDeg, float scale, int light) {
+      double th = Math.toRadians(yawDeg);
+      double s = scale / 16.0;
+      double fx = -Math.sin(th);
+      double fz = Math.cos(th);
+      double rx = -Math.cos(th);
+      double rz = -Math.sin(th);
+      double cp = Math.cos(Math.toRadians(pitchDeg));
+      double sp = Math.sin(Math.toRadians(pitchDeg));
+      double cr = Math.cos(Math.toRadians(rollDeg));
+      double sr = Math.sin(Math.toRadians(rollDeg));
+      Map<String, List<Object[]>> groups = new LinkedHashMap<>();
+      G g = new G((tex, p, uv, argb, glowx, nx, ny, nz) -> {
+         double[] w = new double[12];
 
-         for (int var34x = 0; var34x < 4; var34x++) {
-            double[] var35 = local(var26[var34x * 3], var26[var34x * 3 + 1], var26[var34x * 3 + 2], var25, var27, var29, var31);
-            var33x[var34x * 3] = var2 + (var35[0] * var21 + var35[2] * var17) * var15;
-            var33x[var34x * 3 + 1] = var4 + var35[1] * var15;
-            var33x[var34x * 3 + 2] = var6 + (var35[0] * var23 + var35[2] * var19) * var15;
+         for (int k = 0; k < 4; k++) {
+            double[] qx = local(p[k * 3], p[k * 3 + 1], p[k * 3 + 2], cp, sp, cr, sr);
+            w[k * 3] = x + (qx[0] * rx + qx[2] * fx) * s;
+            w[k * 3 + 1] = y + qx[1] * s;
+            w[k * 3 + 2] = z + (qx[0] * rz + qx[2] * fz) * s;
          }
 
-         double[] var36x = local(var30, var31x, var32, var25, var27, var29, var31);
-         float[] var37x = new float[]{(float)(var36x[0] * var21 + var36x[2] * var17), (float)var36x[1], (float)(var36x[0] * var23 + var36x[2] * var19)};
-         var33.computeIfAbsent((var29x ? "!" : "") + var25x, var0xx -> new ArrayList<>()).add(new Object[]{var33x, var27x, var28, var37x});
+         double[] n = local(nx, ny, nz, cp, sp, cr, sr);
+         float[] wnx = new float[]{(float)(n[0] * rx + n[2] * fx), (float)n[1], (float)(n[0] * rz + n[2] * fz)};
+         groups.computeIfAbsent((glowx ? "!" : "") + tex, k -> new ArrayList<>()).add(new Object[]{w, uv, argb, wnx});
       });
 
       try {
-         var0.render(var34, var1);
+         model.render(g, a);
       } catch (Throwable var44) {
          if (LegoClient.DEBUG) {
             LegoClient.LOG("Modell: " + var44);
          }
       }
 
-      for (Entry var36 : (Iterable<Entry>) (Iterable<?>) (var33.entrySet())) {
-         boolean var37 = ((String)var36.getKey()).startsWith("!");
-         String var38 = var37 ? ((String)var36.getKey()).substring(1) : (String)var36.getKey();
-         Identifier var39 = texture(var38);
-         if (var39 != null) {
-            int var40 = var37 ? 2 : mode(var38);
+      for (Entry<String, List<Object[]>> e : groups.entrySet()) {
+         boolean glow = e.getKey().startsWith("!");
+         String name = glow ? e.getKey().substring(1) : e.getKey();
+         Identifier id = texture(name);
+         if (id != null) {
+            int md = glow ? 2 : mode(name);
 
-            for (Object[] var42 : (Iterable<Object[]>) (Iterable<?>) ((List)var36.getValue())) {
-               float[] var43 = (float[])var42[3];
-               R3.texQuad(var39, var40, (double[])var42[0], (float[])var42[1], (Integer)var42[2], var12, var43[0], var43[1], var43[2]);
+            for (Object[] q : e.getValue()) {
+               float[] wn = (float[])q[3];
+               R3.texQuad(id, md, (double[])q[0], (float[])q[1], (Integer)q[2], light, wn[0], wn[1], wn[2]);
             }
          }
       }
    }
 
-   private static double[] local(double var0, double var2, double var4, double var6, double var8, double var10, double var12) {
-      double var14 = var2 * var6 + var4 * var8;
-      double var16 = -var2 * var8 + var4 * var6;
-      double var18 = var0 * var10 - var14 * var12;
-      double var20 = var0 * var12 + var14 * var10;
-      return new double[]{var18, var20, var16};
+   private static double[] local(double x, double y, double z, double cp, double sp, double cr, double sr) {
+      double y1 = y * cp + z * sp;
+      double z1 = -y * sp + z * cp;
+      double x2 = x * cr - y1 * sr;
+      double y2 = x * sr + y1 * cr;
+      return new double[]{x2, y2, z1};
    }
 
-   public static int light(double var0, double var2, double var4) {
+   public static int light(double x, double y, double z) {
       try {
-         return LevelRenderer.getLightColor(Mc.world(), BlockPos.containing(var0, var2, var4));
+         return LevelRenderer.getLightColor(Mc.world(), BlockPos.containing(x, y, z));
       } catch (Throwable var7) {
          return 15728880;
       }
    }
 
-   public static boolean preview(int var0, int var1, int var2, int var3, float var4, float var5) {
-      LocalPlayer var6 = Mc.player();
-      if (var6 != null && Gx.B instanceof McBackend) {
+   public static boolean preview(int x, int y, int w, int h, float yaw, float pitch) {
+      LocalPlayer p = Mc.player();
+      if (p != null && Gx.B instanceof McBackend) {
          try {
             if (stateOf == null) {
                stateOf = InventoryScreen.class.getDeclaredMethod(dev.lego.util.Remap.method("net.minecraft.class_490", "method_48472", "(Lnet/minecraft/class_1309;)Lnet/minecraft/class_10017;"), LivingEntity.class);
                stateOf.setAccessible(true);
             }
 
-            EntityRenderState var7 = (EntityRenderState)stateOf.invoke(null, var6);
-            if (var7 instanceof LivingEntityRenderState var8) {
-               var8.bodyRot = 180.0F + var4;
-               var8.yRot = 0.0F;
-               var8.xRot = var5;
+            EntityRenderState st = (EntityRenderState)stateOf.invoke(null, p);
+            if (st instanceof LivingEntityRenderState ls) {
+               ls.bodyRot = 180.0F + yaw;
+               ls.yRot = 0.0F;
+               ls.xRot = pitch;
             }
 
-            GuiGraphics var18 = ((McBackend)Gx.B).ctx();
-            int var9 = Gx.S;
-            int var10 = var0 / var9;
-            int var11 = var1 / var9;
-            int var12 = (var0 + var2) / var9;
-            int var13 = (var1 + var3) / var9;
-            float var14 = Math.min((var12 - var10) * 0.9F, (var13 - var11) / Math.max(1.2F, var7.boundingBoxHeight * 1.15F));
+            GuiGraphics ctx = ((McBackend)Gx.B).ctx();
+            int S = Gx.S;
+            int x1 = x / S;
+            int y1 = y / S;
+            int x2 = (x + w) / S;
+            int y2 = (y + h) / S;
+            float size = Math.min((x2 - x1) * 0.9F, (y2 - y1) / Math.max(1.2F, st.boundingBoxHeight * 1.15F));
             Gx.push();
-            Gx.B.scale(var9, var9);
-            Quaternionf var15 = new Quaternionf().rotateZ((float) Math.PI);
-            Quaternionf var16 = new Quaternionf();
-            var18.submitEntityRenderState(
-               var7, var14, new Vector3f(0.0F, var7.boundingBoxHeight / 2.0F + 0.0625F, 0.0F), var15, var16, var10, var11, var12, var13
-            );
+            Gx.B.scale(S, S);
+            Quaternionf rot = new Quaternionf().rotateZ((float) Math.PI);
+            Quaternionf cam = new Quaternionf();
+            ctx.submitEntityRenderState(st, size, new Vector3f(0.0F, st.boundingBoxHeight / 2.0F + 0.0625F, 0.0F), rot, cam, x1, y1, x2, y2);
             Gx.pop();
             return true;
          } catch (Throwable var17) {
@@ -591,8 +583,8 @@ public final class CosRender {
    }
 
    static final class Feature extends RenderLayer<AvatarRenderState, PlayerModel> {
-      Feature(RenderLayerParent<AvatarRenderState, PlayerModel> var1) {
-         super(var1);
+      Feature(RenderLayerParent<AvatarRenderState, PlayerModel> ctx) {
+         super(ctx);
       }
 
       /** Other players: render their LEGO items if the backend reported any. */
@@ -619,71 +611,75 @@ public final class CosRender {
       }
 
       @Override
-      public void submit(PoseStack var1, SubmitNodeCollector var2, int var3, AvatarRenderState var4, float var5, float var6) {
+      public void submit(PoseStack matrices, SubmitNodeCollector queue, int light, AvatarRenderState state, float a1, float a2) {
          Perf.begin("Kosmetik");
 
          try {
             try {
-               SkinLayers3D.submit(var1, var2, var3, var4, this.getParentModel());
+               SkinLayers3D.submit(matrices, queue, light, state, this.getParentModel());
             } catch (Throwable e) {
                // never break the player render
             }
-            LocalPlayer var7 = Mc.player();
-            if (var7 != null && var4.id != Mc.id(var7)) {
+            LocalPlayer me = Mc.player();
+            if (me == null) {
+               return;
+            }
+
+            if (state.id != Mc.id(me)) {
                if (dev.lego.net.LegoNet.cosmeticsEnabled()) {
-                  this.remote(var1, var2, var3, var4);
+                  this.remote(matrices, queue, light, state);
                }
                return;
             }
 
-            if (var7 == null || !Cos.anyEquipped()) {
+            if (!Cos.anyEquipped()) {
                return;
             }
 
-            if (!var7.isInvisible()) {
-               Cos.A var8 = new Cos.A();
-               var8.time = var4.ageInTicks / 20.0F;
-               var8.sneak = var4.isCrouching;
-               var8.move = Math.min(1.0F, var4.walkAnimationSpeed * 1.4F);
+            if (!me.isInvisible()) {
+               Cos.A anim = new Cos.A();
+               anim.time = state.ageInTicks / 20.0F;
+               anim.sneak = state.isCrouching;
+               anim.move = Math.min(1.0F, state.walkAnimationSpeed * 1.4F);
 
                try {
-                  CosRender.skin = var4.skin.body().texturePath();
+                  CosRender.skin = state.skin.body().texturePath();
                } catch (Throwable var17) {
                }
 
-               boolean var9 = !Mc.empty(Mc.armor(39));
-               boolean var10 = !Mc.empty(Mc.armor(38));
-               boolean var11 = !Mc.empty(Mc.armor(37));
-               Cos.slotTransform = (var3x, var4x) -> {
-                  switch (var4x) {
+               boolean helmet = !Mc.empty(Mc.armor(39));
+               boolean chest = !Mc.empty(Mc.armor(38));
+               boolean legs = !Mc.empty(Mc.armor(37));
+               Cos.slotTransform = (g, slot) -> {
+                  switch (slot) {
                      case HAT:
-                        if (var9) {
-                           var3x.translate(0.0F, 0.9F, 0.0F);
-                           var3x.scale(1.1F);
+                        if (helmet) {
+                           g.translate(0.0F, 0.9F, 0.0F);
+                           g.scale(1.1F);
                         }
                         break;
                      case FACE:
-                        if (var9) {
-                           var3x.translate(0.0F, 0.0F, 0.9F);
+                        if (helmet) {
+                           g.translate(0.0F, 0.0F, 0.9F);
                         }
                         break;
                      case BACK:
                      case WINGS:
-                        if (var10) {
-                           var3x.translate(0.0F, 0.0F, -1.1F);
+                        if (chest) {
+                           g.translate(0.0F, 0.0F, -1.1F);
                         }
                         break;
                      case AURA:
-                        if (var10 || var11) {
-                           var3x.scale(1.08F, 1.0F, 1.08F);
+                        if (chest || legs) {
+                           g.scale(1.08F, 1.0F, 1.08F);
                         }
                   }
                };
-               CosRender.flagsKey = (var9 ? 1 : 0) | (var10 ? 2 : 0) | (var11 ? 4 : 0);
-               PlayerModel var12 = this.getParentModel();
-               CosRender.draw(var1, var2, var3, var12.body, var8, false);
-               CosRender.draw(var1, var2, var3, var12.head, var8, true);
-               if (var7.getMainHandItem().isEmpty()) CosRender.drawKnife(null, null, var1, var2, var3, var12.rightArm, var8);
+               CosRender.flagsKey = (helmet ? 1 : 0) | (chest ? 2 : 0) | (legs ? 4 : 0);
+               PlayerModel model = this.getParentModel();
+               CosRender.draw(matrices, queue, light, model.body, anim, false);
+               CosRender.draw(matrices, queue, light, model.head, anim, true);
+               if (me.getMainHandItem().isEmpty()) CosRender.drawKnife(null, null, matrices, queue, light, model.rightArm, anim);
                return;
             }
          } catch (Throwable var18) {
@@ -705,11 +701,11 @@ public final class CosRender {
       float[] vn;
       final int argb;
 
-      Q(float[] var1, float[] var2, int var3, float var4, float var5, float var6) {
-         this.p = var1;
-         this.uv = var2;
-         this.argb = var3;
-         this.n = new float[]{var4, var5, var6};
+      Q(float[] p, float[] uv, int argb, float nx, float ny, float nz) {
+         this.p = p;
+         this.uv = uv;
+         this.argb = argb;
+         this.n = new float[]{nx, ny, nz};
       }
    }
 }

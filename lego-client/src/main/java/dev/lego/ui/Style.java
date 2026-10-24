@@ -1,10 +1,68 @@
 package dev.lego.ui;
 
+import dev.lego.core.Lang;
 import dev.lego.core.Modules;
 
 public final class Style {
-   public static final String[] THEMES = new String[]{"nacht", "halloween", "winter", "standard", "midnight", "glass", "purple", "ocean", "sunset", "christmas", "light"};
-   public static final String[] THEME_NAMES = new String[]{"Nacht", "Halloween Nocturne", "Winterzauber", "Standard", "Mitternacht", "Glas", "Lila", "Ozean", "Sunset", "Weihnachten", "Hell"};
+   public static final String[] THEMES = new String[]{
+      "nacht",
+      "winter",
+      "standard",
+      "midnight",
+      "glass",
+      "purple",
+      "ocean",
+      "sunset",
+      "christmas",
+      "light",
+      "neon",
+      "cyberpunk",
+      "forest",
+      "cherry",
+      "gold",
+      "aqua",
+      "ash",
+      "carbon",
+      "halloween",
+      "volcano",
+      "lavender",
+      "nord",
+      "mint",
+      "rose",
+      "copper",
+      "blood",
+      "storm"
+   };
+   private static final String[] THEME_NAMES_DE = new String[]{
+      "Nacht",
+      "Winterzauber",
+      "Standard",
+      "Mitternacht",
+      "Glas",
+      "Lila",
+      "Ozean",
+      "Sunset",
+      "Weihnachten",
+      "Hell",
+      "Neon",
+      "Cyberpunk",
+      "Wald",
+      "Kirschblüte",
+      "Gold",
+      "Aqua",
+      "Asche",
+      "Carbon",
+      "Halloween",
+      "Vulkan",
+      "Lavendel",
+      "Nord",
+      "Minze",
+      "Rose",
+      "Kupfer",
+      "Blut",
+      "Sturm"
+   };
+   public static String[] THEME_NAMES = THEME_NAMES_DE;
    public static int bg;
    public static int bg2;
    public static int surface;
@@ -26,21 +84,31 @@ public final class Style {
    private Style() {
    }
 
-   public static int[] palette(String var0) {
-      String var1 = Modules.theme;
-      Modules.theme = var0;
+   public static void updateThemeNames() {
+      String[] n = new String[THEME_NAMES_DE.length];
+
+      for (int i = 0; i < n.length; i++) {
+         n[i] = Lang.get("theme." + i, THEME_NAMES_DE[i]);
+      }
+
+      THEME_NAMES = n;
+   }
+
+   public static int[] palette(String theme) {
+      String old = Modules.theme;
+      Modules.theme = theme;
       update();
-      int[] var2 = new int[]{bg, surface, surface2, text, sub, surfaceHover};
-      Modules.theme = var1;
+      int[] r = new int[]{bg, surface, surface2, text, sub, surfaceHover};
+      Modules.theme = old;
       update();
-      return var2;
+      return r;
    }
 
    public static void update() {
       accent = Modules.accentArgb();
-      String var0 = Modules.theme;
-      light = "light".equals(var0);
-      switch (var0) {
+      String t = Modules.theme;
+      light = "light".equals(t);
+      switch (t) {
          case "nacht":
             // Same as the launcher's default look (night blue, NoRisk-style panels).
             bg = 0xF0070E19;
@@ -48,14 +116,6 @@ public final class Style {
             surface = 0xFF1E1E1E;
             surface2 = 0xFF262626;
             surfaceHover = 0xFF2E2E34;
-            break;
-         case "halloween":
-            // Nocturne palette shared with the launcher (packages/shared/src/design.ts).
-            bg = 0xF007060B;
-            bg2 = 0xF015101E;
-            surface = 0xFF1C1527;
-            surface2 = 0xFF271D36;
-            surfaceHover = 0xFF302443;
             break;
          case "winter":
             bg = -267709400;
@@ -106,12 +166,132 @@ public final class Style {
             surface2 = -14798301;
             surfaceHover = -14271189;
             break;
+         case "halloween":
+            // Nocturne palette shared with the launcher (packages/shared/src/design.ts).
+            bg = 0xF007060B;
+            bg2 = 0xF015101E;
+            surface = 0xFF1C1527;
+            surface2 = 0xFF271D36;
+            surfaceHover = 0xFF302443;
+            break;
          case "light":
             bg = -168561417;
             bg2 = -169219088;
             surface = -1;
             surface2 = -920843;
             surfaceHover = -1644306;
+            break;
+         case "neon":
+            bg = -234552048;
+            bg2 = -234354666;
+            surface = -15987682;
+            surface2 = -15592920;
+            surfaceHover = -15066570;
+            break;
+         case "cyberpunk":
+            bg = -233568238;
+            bg2 = -233042918;
+            surface = -14545376;
+            surface2 = -13888472;
+            surfaceHover = -13100492;
+            break;
+         case "forest":
+            bg = -234089460;
+            bg2 = -233759727;
+            surface = -15457772;
+            surface2 = -15061990;
+            surfaceHover = -14600671;
+            break;
+         case "cherry":
+            bg = -233041896;
+            bg2 = -232516576;
+            surface = -13887450;
+            surface2 = -13099472;
+            surfaceHover = -12311238;
+            break;
+         case "gold":
+            bg = -233435128;
+            bg2 = -232909300;
+            surface = -14279666;
+            surface2 = -13622254;
+            surfaceHover = -12833256;
+            break;
+         case "aqua":
+            bg = -234351592;
+            bg2 = -234087390;
+            surface = -15850968;
+            surface2 = -15586252;
+            surfaceHover = -15190466;
+            break;
+         case "ash":
+            bg = -233301992;
+            bg2 = -232907234;
+            surface = -14277082;
+            surface2 = -13750738;
+            surfaceHover = -13092808;
+            break;
+         case "carbon":
+            bg = -233959406;
+            bg2 = -233564648;
+            surface = -15197154;
+            surface2 = -14802394;
+            surfaceHover = -14275536;
+            break;
+         case "volcano":
+            bg = -233042936;
+            bg2 = -232517620;
+            surface = -13888496;
+            surface2 = -13100524;
+            surfaceHover = -12312550;
+            break;
+         case "lavender":
+            bg = -233566176;
+            bg2 = -233040344;
+            surface = -14541774;
+            surface2 = -14015938;
+            surfaceHover = -13358004;
+            break;
+         case "nord":
+            bg = -232773582;
+            bg2 = -232247240;
+            surface = -13748672;
+            surface2 = -13222326;
+            surfaceHover = -12695466;
+            break;
+         case "mint":
+            bg = -234220012;
+            bg2 = -233955812;
+            surface = -15587806;
+            surface2 = -15192020;
+            surfaceHover = -14795722;
+            break;
+         case "rose":
+            bg = -233173484;
+            bg2 = -232647652;
+            surface = -14018526;
+            surface2 = -13361620;
+            surfaceHover = -12573130;
+            break;
+         case "copper":
+            bg = -233303536;
+            bg2 = -232777706;
+            surface = -14148070;
+            surface2 = -13490656;
+            surfaceHover = -12701656;
+            break;
+         case "blood":
+            bg = -233306104;
+            bg2 = -232649716;
+            surface = -13890034;
+            surface2 = -13102060;
+            surfaceHover = -12314086;
+            break;
+         case "storm":
+            bg = -233827304;
+            bg2 = -233432030;
+            surface = -14933464;
+            surface2 = -14538190;
+            surfaceHover = -14011330;
             break;
          default:
             bg = -234025454;
@@ -142,10 +322,10 @@ public final class Style {
       ok = -14756000;
    }
 
-   public static double brightness(int var0) {
-      int var1 = var0 >> 16 & 0xFF;
-      int var2 = var0 >> 8 & 0xFF;
-      int var3 = var0 & 0xFF;
-      return (0.299 * var1 + 0.587 * var2 + 0.114 * var3) / 255.0;
+   public static double brightness(int argb) {
+      int r = argb >> 16 & 0xFF;
+      int g = argb >> 8 & 0xFF;
+      int b = argb & 0xFF;
+      return (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
    }
 }

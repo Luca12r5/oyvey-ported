@@ -13,27 +13,43 @@ public abstract class Module {
    public final Category category;
    public boolean enabled;
    public int key = -1;
+   public boolean hidden;
+   public String customName;
    public final List<Setting> settings = new ArrayList<>();
    public String icon;
    public boolean fresh = false;
    private final Map<String, Object> defaults = new LinkedHashMap<>();
    private boolean defaultOn;
 
-   protected Module(String var1, String var2, String var3, Category var4) {
-      this.id = var1;
-      this.name = var2;
-      this.description = var3;
-      this.category = var4;
-      this.icon = var4.icon;
+   protected Module(String id, String name, String description, Category category) {
+      this.id = id;
+      this.name = name;
+      this.description = description;
+      this.category = category;
+      this.icon = category.icon;
    }
 
-   protected <T extends Setting> T add(T var1) {
-      this.settings.add(var1);
-      return (T)var1;
+   protected <T extends Setting> T add(T s) {
+      this.settings.add(s);
+      return s;
    }
 
-   public Module icon(String var1) {
-      this.icon = var1;
+   public String displayName() {
+      if (this.customName != null && !this.customName.isEmpty()) {
+         return this.customName;
+      } else {
+         String t = Lang.get("mod." + this.id);
+         return t != null ? t : this.name;
+      }
+   }
+
+   public String displayDesc() {
+      String t = Lang.get("mod." + this.id + ".desc");
+      return t != null ? t : this.description;
+   }
+
+   public Module icon(String i) {
+      this.icon = i;
       return this;
    }
 
@@ -42,12 +58,12 @@ public abstract class Module {
       return this;
    }
 
-   public void setEnabled(boolean var1) {
-      if (var1 != this.enabled) {
-         this.enabled = var1;
+   public void setEnabled(boolean v) {
+      if (v != this.enabled) {
+         this.enabled = v;
 
          try {
-            if (var1) {
+            if (v) {
                this.onEnable();
             } else {
                this.onDisable();
@@ -78,18 +94,18 @@ public abstract class Module {
    void captureDefaults() {
       this.defaultOn = this.enabled;
 
-      for (Setting var2 : this.settings) {
-         Object var3 = var2.save();
-         if (var3 != null) {
-            this.defaults.put(var2.name, var3);
+      for (Setting s : this.settings) {
+         Object v = s.save();
+         if (v != null) {
+            this.defaults.put(s.name, v);
          }
       }
    }
 
    public void resetSettings() {
-      for (Setting var2 : this.settings) {
-         if (this.defaults.containsKey(var2.name)) {
-            var2.load(this.defaults.get(var2.name));
+      for (Setting s : this.settings) {
+         if (this.defaults.containsKey(s.name)) {
+            s.load(this.defaults.get(s.name));
          }
       }
    }

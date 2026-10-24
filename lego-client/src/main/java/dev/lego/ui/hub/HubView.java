@@ -1,10 +1,12 @@
 package dev.lego.ui.hub;
 
 import dev.lego.ui.Art;
+import dev.lego.ui.BgFx;
 import dev.lego.ui.Ease;
 import dev.lego.ui.Env;
 import dev.lego.ui.Fonts;
 import dev.lego.ui.Gx;
+import dev.lego.ui.Halloween;
 import dev.lego.ui.Kit;
 import dev.lego.ui.MenuView;
 import dev.lego.ui.Style;
@@ -22,28 +24,28 @@ public final class HubView extends View {
       this(HubView.Section.MODS);
    }
 
-   public HubView(HubView.Section var1) {
-      this.select(var1);
+   public HubView(HubView.Section s) {
+      this.select(s);
    }
 
    public HubView.Section section() {
       return this.section;
    }
 
-   public void select(HubView.Section var1) {
-      if (var1 == HubView.Section.HUD) {
+   public void select(HubView.Section s) {
+      if (s == HubView.Section.HUD) {
          if (this.host != null) {
             this.host.closeThen(Env.openHudEditor);
             return;
          }
 
-         var1 = HubView.Section.MODS;
+         s = HubView.Section.MODS;
       }
 
-      if (var1 != this.section) {
-         this.section = var1;
+      if (s != this.section) {
+         this.section = s;
          this.switchedAt = System.currentTimeMillis();
-         switch (var1) {
+         switch (s) {
             case COSMETICS:
                this.part = new CosmeticsPart();
                break;
@@ -65,18 +67,18 @@ public final class HubView extends View {
       }
    }
 
-   public float sectionT(float var1) {
-      return Math.min(1.0F, (float)(System.currentTimeMillis() - this.switchedAt) * UiSettings.anim() / var1);
+   public float sectionT(float ms) {
+      return Math.min(1.0F, (float)(System.currentTimeMillis() - this.switchedAt) * UiSettings.anim() / ms);
    }
 
    @Override
    public float designW() {
-      return 720.0F;
+      return 740.0F;
    }
 
    @Override
    public float designH() {
-      return 440.0F;
+      return 450.0F;
    }
 
    @Override
@@ -84,88 +86,151 @@ public final class HubView extends View {
       return 380.0F;
    }
 
+   private void glassPanel(int x, int y, int w, int h, int r, float t, boolean anim) {
+      float glass = (float)UiSettings.glass;
+      Gx.shadow(x, y, w, h, r, this.p(16.0), 0.5F);
+      Gx.rectV(x, y, w, h, r, Gx.withAlpha(Gx.mix(Style.bg, -14016192, 0.22F), 0.94F * glass + 0.04F), Gx.withAlpha(Style.bg, 0.97F * glass + 0.03F));
+      if (anim) {
+         BgFx.drawIn(x + r / 3, y + r / 3, w - 2 * (r / 3), h - 2 * (r / 3), t * 0.9F);
+      }
+
+      Gx.rectV(x, y, w, Math.min(h, this.p(70.0)), r, Gx.withAlpha(-1, 0.05F), 16777215);
+      Gx.outline(x, y, w, h, r, Math.max(1, this.p(0.7)), Gx.withAlpha(-1, 0.12F));
+   }
+
    @Override
    public void draw() {
-      boolean var1 = this.host != null && this.host.closing();
-      float var2 = var1 ? this.open : Ease.outQuint(this.open);
-      Gx.fill(0, 0, this.W, this.H, Gx.rgba(0, 0.25F * this.open));
-      int var3 = this.p(66.0);
-      int var4 = this.p(10.0);
-      int var5 = this.p(644.0);
-      int var6 = this.p(440.0);
-      int var7 = var3 + var4 + var5;
-      int var8 = (this.W - var7) / 2;
-      int var9 = (this.H - var6) / 2;
-      int var10 = this.W / 2;
-      int var11 = this.H / 2;
-      Gx.pushAlpha(var2);
+      boolean closing = this.host != null && this.host.closing();
+      float t = closing ? this.open : Ease.outQuint(this.open);
+      Gx.fill(0, 0, this.W, this.H, Gx.rgba(0, 0.3F * this.open));
+      int sw = this.p(70.0);
+      int gap = this.p(10.0);
+      int mw = this.p(652.0);
+      int hh = this.p(446.0);
+      int total = sw + gap + mw;
+      int x0 = (this.W - total) / 2;
+      int y0 = (this.H - hh) / 2;
+      int cx = this.W / 2;
+      int cy = this.H / 2;
+      int R = this.p(18.0);
+      Gx.pushAlpha(t);
       Gx.push();
-      Gx.scaleAt(var10, var11, 0.94F + 0.06F * var2);
-      Gx.translate(0.0F, this.pf(10.0) * (1.0F - var2));
+      Gx.scaleAt(cx, cy, 0.95F + 0.05F * t);
+      Gx.translate(0.0F, this.pf(10.0) * (1.0F - t));
       Gx.push();
-      Gx.translate(-this.pf(24.0) * (1.0F - var2), 0.0F);
-      Gx.shadow(var8, var9, var3, var6, this.p(16.0), this.p(10.0), 0.45F);
-      Gx.rect(var8, var9, var3, var6, this.p(16.0), Style.bg);
-      Gx.outline(var8, var9, var3, var6, this.p(16.0), Math.max(1, this.p(0.6)), Style.stroke);
-      int var12 = this.p(34.0);
-      Gx.image(Art.brickImg(var12, Xmas.on() ? -1890757 : Style.accent), var8 + (var3 - var12) / 2, var9 + this.p(14.0), var12, var12, -1);
-      Xmas.hat(var8 + var3 / 2.0F + this.p(2.0), var9 + this.p(20.0), this.p(30.0), 0.0F);
-      Kit.hit(var8, var9 + this.p(10.0), var3, this.p(40.0)).click(() -> this.host.open(new MenuView()));
-      HubView.Section[] var13 = HubView.Section.values();
-      int var14 = this.p(54.0);
-      int var15 = var9 + this.p(64.0);
-      int var16 = this.section.ordinal();
-      float var17 = Ease.to("hub:side", var15 + var16 * var14, 18.0F, var15 + var16 * var14);
-      Gx.rect(var8 + this.p(8.0), Math.round(var17) + this.p(3.0), var3 - this.p(16.0), var14 - this.p(6.0), this.p(11.0), Gx.withAlpha(Style.accent, 0.16F));
-      Gx.rect(var8 + this.p(2.0), Math.round(var17) + this.p(15.0), this.p(3.0), var14 - this.p(30.0), this.p(2.0), Style.accent);
-
-      for (int var18 = 0; var18 < var13.length; var18++) {
-         HubView.Section var19 = var13[var18];
-         int var20 = var15 + var18 * var14;
-         boolean var21 = this.hover(var8, var20, var3, var14);
-         float var22 = Ease.to("hub:si" + var18, var21 ? 1.0F : 0.0F, 14.0F);
-         boolean var23 = var19 == this.section;
-         int var24 = var23 ? Style.accent : Gx.mix(Style.sub, Style.text, var22);
-         Gx.icon(var19.icon, var8 + var3 / 2.0F, var20 + this.p(20.0), this.pf(19.0F + var22 * 1.5F), var24);
-         Gx.textCenter(var19.label, var8 + var3 / 2.0F, var20 + this.p(40.0), this.pf(6.2F), 3, var23 ? Style.text : Gx.mix(Style.muted, Style.sub, var22));
-         Kit.hit(var8, var20, var3, var14).click(() -> this.select(var19));
+      Gx.translate(-this.pf(24.0) * (1.0F - t), 0.0F);
+      this.glassPanel(x0, y0, sw, hh, R, t, false);
+      int logo = this.p(34.0);
+      boolean hl = this.hover(x0, y0 + this.p(8.0), sw, this.p(46.0));
+      float hlf = Ease.to("hub:logo", hl ? 1.0F : 0.0F, 14.0F);
+      Gx.glow(x0 + sw / 2, y0 + this.p(14.0) + logo / 2, this.p(34.0), Gx.withAlpha(Style.accent, 0.1F + 0.12F * hlf));
+      Gx.image(
+         Art.brickImg(logo, Halloween.on() ? -38118 : (Xmas.on() ? -1890757 : Style.accent)),
+         x0 + (sw - logo) / 2,
+         y0 + this.p(14.0) - Math.round(this.pf(2.0) * hlf),
+         logo,
+         logo,
+         -1
+      );
+      if (Halloween.on()) {
+         Halloween.witchHat(x0 + sw / 2.0F + this.p(2.0), y0 + this.p(20.0) - this.pf(2.0) * hlf, this.p(30.0), 0.0F);
+      } else {
+         Xmas.hat(x0 + sw / 2.0F + this.p(2.0), y0 + this.p(20.0) - this.pf(2.0) * hlf, this.p(30.0), 0.0F);
       }
 
-      int var25 = var9 + var6 - this.p(46.0);
-      boolean var26 = this.hover(var8, var25, var3, this.p(40.0));
-      Gx.icon("x", var8 + var3 / 2.0F, var25 + this.p(20.0), this.pf(16.0), var26 ? Style.danger : Style.muted);
-      Kit.hit(var8, var25, var3, this.p(40.0)).click(() -> this.host.close());
-      Xmas.snowCap(var8, var9, var3, this.P);
+      Kit.hit(x0, y0 + this.p(8.0), sw, this.p(46.0)).click(() -> this.host.open(new MenuView()));
+      Gx.fill(x0 + this.p(16.0), y0 + this.p(60.0), sw - this.p(32.0), Math.max(1, this.p(0.6)), Gx.withAlpha(-1, 0.08F));
+      HubView.Section[] items = HubView.Section.values();
+      boolean modern = UiSettings.guiStyle == 1;
+      int itemH = this.p(56.0);
+      int iy = y0 + this.p(68.0);
+      int active = this.section.ordinal();
+      float ay = Ease.to("hub:side", iy + active * itemH, 18.0F, iy + active * itemH);
+      if (modern) {
+         Gx.rect(x0 + this.p(20.0), Math.round(ay) + itemH - this.p(5.0), sw - this.p(40.0), Math.max(2, this.p(2.0)), this.p(1.0), Style.accent);
+      } else {
+         Gx.glow(x0 + sw / 2, Math.round(ay + itemH / 2.0F), this.p(38.0), Gx.withAlpha(Style.accent, 0.14F));
+         Gx.rect(x0 + this.p(8.0), Math.round(ay) + this.p(3.0), sw - this.p(16.0), itemH - this.p(6.0), this.p(12.0), Gx.withAlpha(Style.accent, 0.18F));
+         Gx.outline(
+            x0 + this.p(8.0),
+            Math.round(ay) + this.p(3.0),
+            sw - this.p(16.0),
+            itemH - this.p(6.0),
+            this.p(12.0),
+            Math.max(1, this.p(0.6)),
+            Gx.withAlpha(Style.accent, 0.35F)
+         );
+         Gx.rect(x0 + this.p(2.0), Math.round(ay) + this.p(16.0), this.p(3.0), itemH - this.p(32.0), this.p(2.0), Style.accent);
+      }
+
+      for (int i = 0; i < items.length; i++) {
+         HubView.Section s = items[i];
+         int y = iy + i * itemH;
+         boolean h = this.hover(x0, y, sw, itemH);
+         float hv = Ease.to("hub:si" + i, h ? 1.0F : 0.0F, 14.0F);
+         boolean act = s == this.section;
+         if (modern) {
+            int col = act ? Style.accent : Gx.mix(Style.muted, Style.text, hv);
+            Gx.icon(s.icon, x0 + sw / 2.0F, y + itemH / 2.0F - this.pf(1.0) * hv, this.pf(20.0F + hv), col);
+         } else {
+            int col = act ? Style.accent : Gx.mix(Style.sub, Style.text, hv);
+            Gx.icon(s.icon, x0 + sw / 2.0F, y + this.p(21.0) - this.pf(1.5) * hv, this.pf(18.0F + hv * 1.5F), col);
+            Gx.textCenter(s.label, x0 + sw / 2.0F, y + this.p(41.0), this.pf(6.1F), 3, act ? Style.text : Gx.mix(Style.muted, Style.sub, hv));
+         }
+
+         Kit.hit(x0, y, sw, itemH).click(() -> this.select(s));
+      }
+
+      int by = y0 + hh - this.p(48.0);
+      boolean hc = this.hover(x0 + this.p(12.0), by, sw - this.p(24.0), this.p(36.0));
+      float hcf = Ease.to("hub:close", hc ? 1.0F : 0.0F, 16.0F);
+      Gx.rect(x0 + this.p(12.0), by, sw - this.p(24.0), this.p(36.0), this.p(12.0), Gx.withAlpha(Style.danger, 0.18F * hcf));
+      Gx.icon("x", x0 + sw / 2.0F, by + this.p(18.0), this.pf(15.0), Gx.mix(Style.muted, Style.danger, hcf));
+      Kit.hit(x0 + this.p(12.0), by, sw - this.p(24.0), this.p(36.0)).click(() -> this.host.close());
+      if (Halloween.on()) {
+         Halloween.cobweb(x0, y0, sw, this.P);
+      } else {
+         Xmas.snowCap(x0, y0, sw, this.P);
+      }
+
       Gx.pop();
-      int var27 = var8 + var3 + var4;
-      Gx.shadow(var27, var9, var5, var6, this.p(16.0), this.p(12.0), 0.5F);
-      Gx.rect(var27, var9, var5, var6, this.p(16.0), Style.bg);
-      Gx.outline(var27, var9, var5, var6, this.p(16.0), Math.max(1, this.p(0.6)), Style.stroke);
-      if (Xmas.on()) {
-         Gx.gradientV(var27 + this.p(16.0), var9 + Math.max(1, this.p(0.6)), var5 - this.p(32.0), this.p(40.0), Gx.withAlpha(-1890757, 0.1F), 0);
+      int mx0 = x0 + sw + gap;
+      this.glassPanel(mx0, y0, mw, hh, R, t, true);
+      if (UiSettings.guiLine) {
+         int lw = this.p(180.0);
+         float sweep = (float)(0.5 + 0.5 * Math.sin(System.currentTimeMillis() / 2600.0));
+         int lx = mx0 + R + Math.round((mw - 2 * R - lw) * sweep);
+         Gx.rect(lx, y0, lw, Math.max(1, this.p(1.4)), this.p(1.0), Gx.withAlpha(Style.accent, 0.85F));
+         Gx.glow(lx + lw / 2, y0, this.p(60.0), Gx.withAlpha(Style.accent, 0.16F));
       }
 
-      float var28 = Ease.outCubic(this.sectionT(260.0F));
-      Gx.pushAlpha(var28);
+      float st = Ease.outCubic(this.sectionT(260.0F));
+      Gx.pushAlpha(st);
       Gx.push();
-      Gx.translate(0.0F, this.pf(8.0) * (1.0F - var28));
-      this.part.draw(this, var27, var9, var5, var6);
+      Gx.translate(0.0F, this.pf(8.0) * (1.0F - st));
+      this.part.draw(this, mx0, y0, mw, hh);
       Gx.pop();
       Gx.popAlpha();
-      Xmas.snowCap(var27, var9, var5, this.P);
-      Xmas.lights(var8 - this.p(10.0), var9 - this.p(34.0), var27 + var5 + this.p(10.0), this.P, this.p(14.0), 0);
+      if (Halloween.on()) {
+         Halloween.cobweb(mx0, y0, mw, this.P);
+         Halloween.lanterns(x0 - this.p(10.0), y0 - this.p(34.0), mx0 + mw + this.p(10.0), this.P, this.p(14.0), 0);
+      } else {
+         Xmas.snowCap(mx0, y0, mw, this.P);
+         Xmas.lights(x0 - this.p(10.0), y0 - this.p(34.0), mx0 + mw + this.p(10.0), this.P, this.p(14.0), 0);
+      }
+
       Gx.pop();
       Gx.popAlpha();
    }
 
    @Override
-   public boolean key(int var1, int var2) {
-      return this.part.key(var1, var2);
+   public boolean key(int key, int mods) {
+      return this.part.key(key, mods);
    }
 
    @Override
-   public boolean chr(String var1) {
-      return this.part.chr(var1);
+   public boolean chr(String s) {
+      return this.part.chr(s);
    }
 
    @Override
@@ -173,33 +238,37 @@ public final class HubView extends View {
       this.part.tick();
    }
 
-   public int header(int var1, int var2, String var3, String var4) {
-      Gx.text(var3, var1, var2, this.pf(17.0), 3, Style.text);
-      if (var4 != null) {
-         Gx.text(var4, var1, var2 + this.pf(24.0), this.pf(8.2F), 1, Style.sub);
+   public int header(int x, int y, String title, String sub) {
+      Gx.text(title, x, y, this.pf(17.0), 3, Style.text);
+      if (sub != null) {
+         Gx.text(sub, x, y + this.pf(24.0), this.pf(8.2F), 1, Style.sub);
       }
 
-      return var2 + this.p(var4 != null ? 44.0 : 28.0);
+      return y + this.p(sub != null ? 44.0 : 28.0);
    }
 
-   public void searchBox(String var1, int var2, int var3, int var4, int var5, String var6, boolean var7) {
-      boolean var8 = this.hover(var2, var3, var4, var5);
-      float var9 = Ease.to("sb:" + var1, var7 ? 1.0F : (var8 ? 0.4F : 0.0F), 14.0F);
-      Gx.rect(var2, var3, var4, var5, var5 / 2, Gx.mix(Style.surface, Style.surface2, var9));
-      Gx.outline(var2, var3, var4, var5, var5 / 2, Math.max(1, this.p(0.7)), Gx.mix(Style.stroke, Style.accent, var9));
-      Gx.icon("search", var2 + this.p(15.0), var3 + var5 / 2.0F, this.pf(11.0), Gx.mix(Style.muted, Style.accent, var9));
-      float var10 = this.pf(8.4F);
-      if (var6.isEmpty()) {
-         Gx.textMid("Suchen…", var2 + this.p(27.0), var3 + var5 / 2.0F, var10, 1, Style.muted);
+   public void searchBox(String key, int x, int y, int w, int h, String text, boolean focus) {
+      this.searchBox(key, x, y, w, h, text, focus, "Suchen…");
+   }
+
+   public void searchBox(String key, int x, int y, int w, int h, String text, boolean focus, String placeholder) {
+      boolean hv = this.hover(x, y, w, h);
+      float f = Ease.to("sb:" + key, focus ? 1.0F : (hv ? 0.4F : 0.0F), 14.0F);
+      Gx.rect(x, y, w, h, h / 2, Gx.mix(Style.surface, Style.surface2, f));
+      Gx.outline(x, y, w, h, h / 2, Math.max(1, this.p(0.7)), Gx.mix(Style.stroke, Style.accent, f));
+      Gx.icon("search", x + this.p(15.0), y + h / 2.0F, this.pf(11.0), Gx.mix(Style.muted, Style.accent, f));
+      float fs = this.pf(8.4F);
+      if (text.isEmpty()) {
+         Gx.textMid(placeholder, x + this.p(27.0), y + h / 2.0F, fs, 1, Style.muted);
       } else {
-         String var11 = Fonts.ellipsize(var6, 2, var10, var4 - this.p(50.0));
-         float var12 = Gx.textMid(var11, var2 + this.p(27.0), var3 + var5 / 2.0F, var10, 2, Style.text);
-         if (var7 && System.currentTimeMillis() / 500L % 2L == 0L) {
-            Gx.fill(Math.round(var2 + this.p(28.0) + var12), var3 + var5 / 2 - this.p(6.0), Math.max(1, this.p(0.9)), this.p(12.0), Style.accent);
+         String shown = Fonts.ellipsize(text, 2, fs, w - this.p(50.0));
+         float tw = Gx.textMid(shown, x + this.p(27.0), y + h / 2.0F, fs, 2, Style.text);
+         if (focus && System.currentTimeMillis() / 500L % 2L == 0L) {
+            Gx.fill(Math.round(x + this.p(28.0) + tw), y + h / 2 - this.p(6.0), Math.max(1, this.p(0.9)), this.p(12.0), Style.accent);
          }
 
-         boolean var13 = this.hover(var2 + var4 - var5, var3, var5, var5);
-         Gx.icon("x", var2 + var4 - var5 / 2.0F, var3 + var5 / 2.0F, this.pf(9.0), var13 ? Style.text : Style.muted);
+         boolean hx = this.hover(x + w - h, y, h, h);
+         Gx.icon("x", x + w - h / 2.0F, y + h / 2.0F, this.pf(9.0), hx ? Style.text : Style.muted);
       }
    }
 
@@ -215,50 +284,50 @@ public final class HubView extends View {
       if (this.part instanceof ModsPart m) m.searchFor(text);
    }
 
-   public void tabs(String var1, int var2, int var3, String[] var4, int var5, IntConsumer var6) {
-      float var7 = this.pf(7.8F);
-      float var8 = this.pf(1.1F);
-      int var9 = this.p(12.0);
-      int var10 = this.p(26.0);
-      int var11 = this.p(4.0);
-      int[] var12 = new int[var4.length];
-      int[] var13 = new int[var4.length];
-      int var14 = var2;
+   public void tabs(String key, int x, int y, String[] labels, int selected, IntConsumer onPick) {
+      float fs = this.pf(7.8F);
+      float sp = this.pf(1.1F);
+      int padX = this.p(12.0);
+      int h = this.p(26.0);
+      int gap = this.p(4.0);
+      int[] xs = new int[labels.length];
+      int[] ws = new int[labels.length];
+      int cx = x;
 
-      for (int var15 = 0; var15 < var4.length; var15++) {
-         int var16 = Math.round(Gx.spacedWidth(var4[var15], var7, 3, var8)) + var9 * 2;
-         var12[var15] = var14;
-         var13[var15] = var16;
-         var14 += var16 + var11;
+      for (int i = 0; i < labels.length; i++) {
+         int w = Math.round(Gx.spacedWidth(labels[i], fs, 3, sp)) + padX * 2;
+         xs[i] = cx;
+         ws[i] = w;
+         cx += w + gap;
       }
 
-      float var23 = Ease.to("tabx:" + var1, var12[var5], 18.0F, var12[var5]);
-      float var24 = Ease.to("tabw:" + var1, var13[var5], 18.0F, var13[var5]);
-      Gx.rect(Math.round(var23), var3, Math.round(var24), var10, var10 / 2, Style.accent);
+      float ax = Ease.to("tabx:" + key, xs[selected], 18.0F, xs[selected]);
+      float aw = Ease.to("tabw:" + key, ws[selected], 18.0F, ws[selected]);
+      Gx.rect(Math.round(ax), y, Math.round(aw), h, h / 2, Style.accent);
 
-      for (int var17 = 0; var17 < var4.length; var17++) {
-         boolean var18 = this.hover(var12[var17], var3, var13[var17], var10) && var17 != var5;
-         float var19 = Ease.to("tabh:" + var1 + var17, var18 ? 1.0F : 0.0F, 14.0F);
-         if (var19 > 0.01F) {
-            Gx.rect(var12[var17], var3, var13[var17], var10, var10 / 2, Gx.withAlpha(Style.surfaceHover, var19));
+      for (int i = 0; i < labels.length; i++) {
+         boolean hv = this.hover(xs[i], y, ws[i], h) && i != selected;
+         float hvv = Ease.to("tabh:" + key + i, hv ? 1.0F : 0.0F, 14.0F);
+         if (hvv > 0.01F) {
+            Gx.rect(xs[i], y, ws[i], h, h / 2, Gx.withAlpha(Style.surfaceHover, hvv));
          }
 
-         float var20 = Math.max(0.0F, 1.0F - Math.abs(var23 - var12[var17]) / Math.max(1, var13[var17]));
-         int var21 = Gx.mix(Gx.mix(Style.sub, Style.text, var19), Style.accentText, var20);
-         Gx.textSpaced(var4[var17], var12[var17] + var13[var17] / 2.0F, var3 + var10 / 2.0F, var7, 3, var21, var8);
-         int var22 = var17;
-         Kit.hit(var12[var17], var3, var13[var17], var10).click(() -> var6.accept(var22));
+         float sel = Math.max(0.0F, 1.0F - Math.abs(ax - xs[i]) / Math.max(1, ws[i]));
+         int col = Gx.mix(Gx.mix(Style.sub, Style.text, hvv), Style.accentText, sel);
+         Gx.textSpaced(labels[i], xs[i] + ws[i] / 2.0F, y + h / 2.0F, fs, 3, col, sp);
+         int idx = i;
+         Kit.hit(xs[i], y, ws[i], h).click(() -> onPick.accept(idx));
       }
    }
 
    public interface Part {
       void draw(HubView var1, int var2, int var3, int var4, int var5);
 
-      default boolean key(int var1, int var2) {
+      default boolean key(int key, int mods) {
          return false;
       }
 
-      default boolean chr(String var1) {
+      default boolean chr(String s) {
          return false;
       }
 
@@ -280,9 +349,9 @@ public final class HubView extends View {
       public final String icon;
       public final String label;
 
-      private Section(String nullxx, String nullxxx) {
-         this.icon = nullxx;
-         this.label = nullxxx;
+      private Section(String icon, String label) {
+         this.icon = icon;
+         this.label = label;
       }
    }
 }

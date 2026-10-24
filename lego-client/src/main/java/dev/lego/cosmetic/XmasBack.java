@@ -2,6 +2,7 @@ package dev.lego.cosmetic;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 final class XmasBack {
    private XmasBack() {
@@ -19,672 +20,642 @@ final class XmasBack {
       Cos.add("xm_wings_angel", "Goldene Sternenflügel", Cos.Slot.WINGS, Cos.Rarity.LEGENDARY, XmasBack::starWings);
    }
 
-   static float mv(Cos.A var0) {
-      return var0.preview ? 0.0F : Cos3Geo.clamp(var0.move, 0.0F, 1.0F);
+   static float mv(Cos.A a) {
+      return a.preview ? 0.0F : Cos3Geo.clamp(a.move, 0.0F, 1.0F);
    }
 
-   static void scarf(G var0, Cos.A var1) {
-      float var2 = var1.time;
-      float var3 = mv(var1);
-      float[][] var4 = densLoop(Cos3Geo.roundLoop(3.35F, 1.35F, 1.35F, 6), 0.6F);
-      int var5 = var4.length;
-      byte var6 = 10;
-      float var7 = 0.66F;
-      float var8 = 1.05F;
-      float var9 = -1.2F;
-      float[][][] var10 = new float[var5 + 1][var6 + 1][];
+   static void scarf(G g, Cos.A a) {
+      float t = a.time;
+      float mv = mv(a);
+      float[][] loop = densLoop(Cos3Geo.roundLoop(3.35F, 1.35F, 1.35F, 6), 0.6F);
+      int n = loop.length;
+      int seg = 10;
+      float rh = 0.66F;
+      float rv = 1.05F;
+      float yc = -1.2F;
+      float[][][] ring = new float[n + 1][seg + 1][];
 
-      for (int var11 = 0; var11 <= var5; var11++) {
-         float[] var12 = var4[var11 % var5];
-         float var13 = (float)Math.cos(var12[2]);
-         float var14 = (float)Math.sin(var12[2]);
-         float var15 = 1.0F + 0.06F * Cos3Geo.sin(var11 * 2.1F);
+      for (int j = 0; j <= n; j++) {
+         float[] L = loop[j % n];
+         float ca = (float)Math.cos(L[2]);
+         float sa = (float)Math.sin(L[2]);
+         float puff = 1.0F + 0.06F * Cos3Geo.sin(j * 2.1F);
 
-         for (int var16 = 0; var16 <= var6; var16++) {
-            double var17 = (Math.PI * 2) * var16 / var6;
-            float var19 = (float)Math.cos(var17) * var7 * var15;
-            float var20 = (float)Math.sin(var17) * var8 * var15;
-            var10[var11][var16] = new float[]{var12[0] + var13 * var19, var9 + var20, var12[1] + var14 * var19};
+         for (int i = 0; i <= seg; i++) {
+            double ph = (Math.PI * 2) * i / seg;
+            float h = (float)Math.cos(ph) * rh * puff;
+            float v = (float)Math.sin(ph) * rv * puff;
+            ring[j][i] = new float[]{L[0] + ca * h, yc + v, L[1] + sa * h};
          }
       }
 
-      var0.color(-1);
+      g.color(-1);
 
-      for (int var21 = 0; var21 < var5; var21++) {
-         float var23 = var4[var21][3];
-         float var25 = var21 + 1 < var5 ? var4[var21 + 1][3] : 1.0F;
+      for (int j = 0; j < n; j++) {
+         float va = loop[j][3];
+         float vb = j + 1 < n ? loop[j + 1][3] : 1.0F;
 
-         for (int var27 = 0; var27 < var6; var27++) {
-            float var29 = (float)var27 / var6;
-            float var31 = (float)(var27 + 1) / var6;
-            var0.quad(
-               "xm_scarf",
-               var10[var21][var27],
-               var10[var21][var27 + 1],
-               var10[var21 + 1][var27 + 1],
-               var10[var21 + 1][var27],
-               new float[]{var29, var23, var31, var23, var31, var25, var29, var25}
-            );
+         for (int i = 0; i < seg; i++) {
+            float ua = (float)i / seg;
+            float ub = (float)(i + 1) / seg;
+            g.quad("xm_scarf", ring[j][i], ring[j][i + 1], ring[j + 1][i + 1], ring[j + 1][i], new float[]{ua, va, ub, va, ub, vb, ua, vb});
          }
       }
 
-      var0.color(-1);
-      Geo.ellipsoid(var0, "xm_scarf", 2.2F, -1.5F, 2.95F, 1.15F, 1.05F, 0.75F, 10, 6);
+      g.color(-1);
+      Geo.ellipsoid(g, "xm_scarf", 2.2F, -1.5F, 2.95F, 1.15F, 1.05F, 0.75F, 10, 6);
 
-      for (int var22 = 0; var22 < 2; var22++) {
-         float var24 = var22 == 0 ? 8.2F : 6.8F;
-         float var26 = var22 == 0 ? 2.85F : 3.3F;
-         float var28 = Cos3Geo.sin(var2 * 1.6F + var22 * 1.3F) * 0.18F + var3 * (0.6F + 0.2F * Cos3Geo.sin(var2 * 9.0F + var22));
-         var0.push();
-         var0.translate(2.2F, -1.6F, 0.0F);
-         var0.rotZ(var22 == 0 ? 7.0F : -13.0F);
-         byte var30 = 8;
-         float[][] var32 = new float[var30][];
-         float[] var33 = new float[var30];
+      for (int k = 0; k < 2; k++) {
+         float len = k == 0 ? 8.2F : 6.8F;
+         float z0 = k == 0 ? 2.85F : 3.3F;
+         float sw = Cos3Geo.sin(t * 1.6F + k * 1.3F) * 0.18F + mv * (0.6F + 0.2F * Cos3Geo.sin(t * 9.0F + k));
+         g.push();
+         g.translate(2.2F, -1.6F, 0.0F);
+         g.rotZ(k == 0 ? 7.0F : -13.0F);
+         int m = 8;
+         float[][] yz = new float[m][];
+         float[] w = new float[m];
 
-         for (int var18 = 0; var18 < var30; var18++) {
-            float var35 = (float)var18 / (var30 - 1);
-            var32[var18] = new float[]{
-               -var35 * var24, var26 + 0.25F * var35 + var28 * var35 * var35 * 2.2F + 0.15F * Cos3Geo.sin(var35 * 5.0F + var2 * 1.2F + var22)
-            };
-            var33[var18] = 2.0F + 0.15F * var35;
+         for (int i = 0; i < m; i++) {
+            float f = (float)i / (m - 1);
+            yz[i] = new float[]{-f * len, z0 + 0.25F * f + sw * f * f * 2.2F + 0.15F * Cos3Geo.sin(f * 5.0F + t * 1.2F + k)};
+            w[i] = 2.0F + 0.15F * f;
          }
 
-         Cos3Geo.ribbon(var0, "xm_scarf", 0.0F, var32, var33, 0.36F);
-         float[] var34 = var32[var30 - 1];
-         var0.color(-723724);
+         Cos3Geo.ribbon(g, "xm_scarf", 0.0F, yz, w, 0.36F);
+         float[] e = yz[m - 1];
+         g.color(-723724);
 
-         for (int var36 = 0; var36 < 5; var36++) {
-            float var37 = -0.85F + var36 * 0.425F;
+         for (int f = 0; f < 5; f++) {
+            float x = -0.85F + f * 0.425F;
             Geo.tube(
-               var0,
+               g,
                "xm_knit",
-               new float[]{var37, var34[0] + 0.1F, var34[1]},
-               new float[]{var37 + Cos3Geo.sin(var2 * 2.0F + var36) * 0.08F, var34[0] - 0.9F, var34[1] + var28 * 0.4F},
+               new float[]{x, e[0] + 0.1F, e[1]},
+               new float[]{x + Cos3Geo.sin(t * 2.0F + f) * 0.08F, e[0] - 0.9F, e[1] + sw * 0.4F},
                0.11F,
                0.08F,
                4
             );
          }
 
-         var0.color(-1);
-         var0.pop();
+         g.color(-1);
+         g.pop();
       }
    }
 
-   static float[][] densLoop(float[][] var0, float var1) {
-      ArrayList var2 = new ArrayList();
-      int var3 = var0.length;
+   static float[][] densLoop(float[][] in, float maxLen) {
+      List<float[]> out = new ArrayList<>();
+      int n = in.length;
 
-      for (int var4 = 0; var4 < var3; var4++) {
-         float[] var5 = var0[var4];
-         float[] var6 = var0[(var4 + 1) % var3];
-         float var7 = (float)Math.hypot(var6[0] - var5[0], var6[1] - var5[1]);
-         int var8 = Math.max(1, (int)Math.ceil(var7 / var1));
-         float var9 = var6[2] < var5[2] - 1.0F ? var6[2] + (float) (Math.PI * 2) : var6[2];
+      for (int i = 0; i < n; i++) {
+         float[] a = in[i];
+         float[] b = in[(i + 1) % n];
+         float l = (float)Math.hypot(b[0] - a[0], b[1] - a[1]);
+         int k = Math.max(1, (int)Math.ceil(l / maxLen));
+         float ab = b[2] < a[2] - 1.0F ? b[2] + (float) (Math.PI * 2) : b[2];
 
-         for (int var10 = 0; var10 < var8; var10++) {
-            float var11 = (float)var10 / var8;
-            var2.add(new float[]{var5[0] + (var6[0] - var5[0]) * var11, var5[1] + (var6[1] - var5[1]) * var11, var5[2] + (var9 - var5[2]) * var11, 0.0F});
+         for (int j = 0; j < k; j++) {
+            float f = (float)j / k;
+            out.add(new float[]{a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (ab - a[2]) * f, 0.0F});
          }
       }
 
-      float var12 = 0.0F;
-      float[] var13 = new float[var2.size()];
+      float per = 0.0F;
+      float[] acc = new float[out.size()];
 
-      for (int var14 = 0; var14 < var2.size(); var14++) {
-         var13[var14] = var12;
-         float[] var16 = (float[])var2.get(var14);
-         float[] var17 = (float[])var2.get((var14 + 1) % var2.size());
-         var12 += (float)Math.hypot(var17[0] - var16[0], var17[1] - var16[1]);
+      for (int i = 0; i < out.size(); i++) {
+         acc[i] = per;
+         float[] a = out.get(i);
+         float[] b = out.get((i + 1) % out.size());
+         per += (float)Math.hypot(b[0] - a[0], b[1] - a[1]);
       }
 
-      for (int var15 = 0; var15 < var2.size(); var15++) {
-         ((float[])var2.get(var15))[3] = var13[var15] / var12;
+      for (int i = 0; i < out.size(); i++) {
+         out.get(i)[3] = acc[i] / per;
       }
 
-      return (float[][])var2.toArray(new float[0][]);
+      return out.toArray(new float[0][]);
    }
 
-   static void treePack(G var0, Cos.A var1) {
-      float var2 = var1.time;
-      float var3 = mv(var1);
-      float var4 = -6.0F;
-      var0.color(-4159408);
-      Cos3Geo.bbox(var0, "xm_wood", -2.9F, -11.0F, var4 - 2.9F, 2.9F, -7.3F, -2.3F, 0.3F);
-      var0.color(-8762840);
+   static void treePack(G g, Cos.A a) {
+      float t = a.time;
+      float mv = mv(a);
+      float Z = -6.0F;
+      g.color(-4159408);
+      Cos3Geo.bbox(g, "xm_wood", -2.9F, -11.0F, Z - 2.9F, 2.9F, -7.3F, -2.3F, 0.3F);
+      g.color(-8762840);
 
-      for (int var5 = 0; var5 < 2; var5++) {
-         float var6 = -10.2F + var5 * 1.9F;
-         Cos3Geo.bbox(var0, "xm_wood", -3.0F, var6 - 0.25F, var4 - 3.0F, 3.0F, var6 + 0.25F, -2.2F, 0.1F);
+      for (int i = 0; i < 2; i++) {
+         float y = -10.2F + i * 1.9F;
+         Cos3Geo.bbox(g, "xm_wood", -3.0F, y - 0.25F, Z - 3.0F, 3.0F, y + 0.25F, -2.2F, 0.1F);
       }
 
-      var0.color(-1);
-      Geo.ellipsoid(var0, "xm_snow", 0.0F, -7.3F, var4 + 0.35F, 2.6F, 0.4F, 2.9F, 12, 4);
-      var0.color(-9813470);
-      var0.push();
-      var0.translate(0.0F, 0.0F, var4);
-      var0.cylinder("xm_bark", 0.62F, 0.55F, -7.4F, -6.2F, 8, false, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.pop();
-      float var21 = Cos3Geo.sin(var2 * 1.4F) * 1.5F + var3 * Cos3Geo.sin(var2 * 8.0F) * 3.0F;
-      var0.push();
-      var0.translate(0.0F, -7.3F, var4);
-      var0.rotX(var21 * 0.4F);
-      var0.rotZ(var21);
-      var0.translate(0.0F, 7.3F, 0.0F);
-      float[][] var22 = new float[][]{{-6.9F, -2.1F, 3.25F}, {-3.9F, 0.9F, 2.65F}, {-1.2F, 3.3F, 2.05F}, {1.4F, 5.3F, 1.4F}};
-      int[] var7 = new int[]{-13727158, -13330342, -12934046, -12275606};
+      g.color(-1);
+      Geo.ellipsoid(g, "xm_snow", 0.0F, -7.3F, Z + 0.35F, 2.6F, 0.4F, 2.9F, 12, 4);
+      g.color(-9813470);
+      g.push();
+      g.translate(0.0F, 0.0F, Z);
+      g.cylinder("xm_bark", 0.62F, 0.55F, -7.4F, -6.2F, 8, false, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.pop();
+      float sway = Cos3Geo.sin(t * 1.4F) * 1.5F + mv * Cos3Geo.sin(t * 8.0F) * 3.0F;
+      g.push();
+      g.translate(0.0F, -7.3F, Z);
+      g.rotX(sway * 0.4F);
+      g.rotZ(sway);
+      g.translate(0.0F, 7.3F, 0.0F);
+      float[][] tiers = new float[][]{{-6.9F, -2.1F, 3.25F}, {-3.9F, 0.9F, 2.65F}, {-1.2F, 3.3F, 2.05F}, {1.4F, 5.3F, 1.4F}};
+      int[] shades = new int[]{-13727158, -13330342, -12934046, -12275606};
 
-      for (int var8 = 0; var8 < var22.length; var8++) {
-         float var9 = var22[var8][0];
-         float var10 = var22[var8][1];
-         float var11 = var22[var8][2];
-         float var12 = var10 - var9;
-         var0.push();
-         var0.rotY(var8 * 23);
-         var0.color(var7[var8]);
+      for (int i = 0; i < tiers.length; i++) {
+         float y0 = tiers[i][0];
+         float y1 = tiers[i][1];
+         float R = tiers[i][2];
+         float h = y1 - y0;
+         g.push();
+         g.rotY(i * 23);
+         g.color(shades[i]);
          Cos3Geo.lathe(
-            var0,
+            g,
             "xm_pine",
-            new float[]{0.0F, var11 * 0.82F, var11, var11 * 0.9F, var11 * 0.55F, var11 * 0.22F, 0.0F},
-            new float[]{var9 + 0.25F, var9 - 0.05F, var9 + 0.2F, var9 + var12 * 0.18F, var9 + var12 * 0.5F, var9 + var12 * 0.82F, var10},
+            new float[]{0.0F, R * 0.82F, R, R * 0.9F, R * 0.55F, R * 0.22F, 0.0F},
+            new float[]{y0 + 0.25F, y0 - 0.05F, y0 + 0.2F, y0 + h * 0.18F, y0 + h * 0.5F, y0 + h * 0.82F, y1},
             14
          );
-         var0.pop();
+         g.pop();
       }
 
-      int[] var23 = new int[]{-2088918, -14278, -12940545, -2088918, -3618600, -14278, -5227800};
+      int[] bc = new int[]{-2088918, -14278, -12940545, -2088918, -3618600, -14278, -5227800};
 
-      for (int var24 = 0; var24 < 9; var24++) {
-         int var26 = var24 % 3;
-         float var28 = var22[var26][0];
-         float var30 = var22[var26][1];
-         float var13 = var22[var26][2];
-         float var14 = 0.22F + 0.1F * (var24 / 3);
-         float var15 = var28 + (var30 - var28) * var14;
-         float var16 = var13 * (0.95F - var14 * 1.05F) + 0.3F;
-         double var17 = var24 * 2.4 + 0.6;
-         float var19 = Cos3Geo.cos(var17) * var16;
-         float var20 = Cos3Geo.sin(var17) * var16;
-         var0.color(-3618616);
-         Geo.tube(var0, "c3_metal", new float[]{var19, var15 + 0.55F, var20}, new float[]{var19, var15 + 0.3F, var20}, 0.12F, 0.12F, 4);
-         var0.color(var23[var24 % var23.length]);
-         Cos3Geo.ball(var0, "xm_gloss", var19, var15, var20, 0.42F, 8);
+      for (int i = 0; i < 9; i++) {
+         int ti = i % 3;
+         float y0 = tiers[ti][0];
+         float y1 = tiers[ti][1];
+         float R = tiers[ti][2];
+         float f = 0.22F + 0.1F * (i / 3);
+         float y = y0 + (y1 - y0) * f;
+         float rr = R * (0.95F - f * 1.05F) + 0.3F;
+         double an = i * 2.4 + 0.6;
+         float x = Cos3Geo.cos(an) * rr;
+         float z = Cos3Geo.sin(an) * rr;
+         g.color(-3618616);
+         Geo.tube(g, "c3_metal", new float[]{x, y + 0.55F, z}, new float[]{x, y + 0.3F, z}, 0.12F, 0.12F, 4);
+         g.color(bc[i % bc.length]);
+         Cos3Geo.ball(g, "xm_gloss", x, y, z, 0.42F, 8);
       }
 
-      for (int var25 = 0; var25 < 16; var25++) {
-         float var27 = var25 / 16.0F;
-         float var29 = -6.6F + var27 * 11.2F;
-         float var31 = 0.0F;
+      for (int i = 0; i < 16; i++) {
+         float f = i / 16.0F;
+         float y = -6.6F + f * 11.2F;
+         float rr = 0.0F;
 
-         for (float[] var36 : var22) {
-            if (var29 >= var36[0] - 0.1F && var29 <= var36[1]) {
-               float var37 = (var29 - var36[0]) / (var36[1] - var36[0]);
-               var31 = Math.max(var31, var36[2] * (1.0F - var37) * 0.95F + 0.2F);
+         for (float[] tr : tiers) {
+            if (y >= tr[0] - 0.1F && y <= tr[1]) {
+               float u = (y - tr[0]) / (tr[1] - tr[0]);
+               rr = Math.max(rr, tr[2] * (1.0F - u) * 0.95F + 0.2F);
             }
          }
 
-         if (!(var31 < 0.35F)) {
-            double var33 = var27 * Math.PI * 2.0 * 3.2 + 1.1;
-            XmasGeo.fairy(
-               var0,
-               Cos3Geo.cos(var33) * var31,
-               var29,
-               Cos3Geo.sin(var33) * var31,
-               0.24F,
-               XmasGeo.LIGHTS[var25 % XmasGeo.LIGHTS.length],
-               XmasGeo.twinkle(var2, var25)
-            );
+         if (!(rr < 0.35F)) {
+            double an = f * Math.PI * 2.0 * 3.2 + 1.1;
+            XmasGeo.fairy(g, Cos3Geo.cos(an) * rr, y, Cos3Geo.sin(an) * rr, 0.24F, XmasGeo.LIGHTS[i % XmasGeo.LIGHTS.length], XmasGeo.twinkle(t, i));
          }
       }
 
-      var0.push();
-      var0.translate(0.0F, 6.05F, 0.0F);
-      var0.rotY(Cos3Geo.sin(var2 * 0.8F) * 35.0F);
-      var0.glow(true).color(-10166);
-      XmasGeo.star(var0, "xm_gold", 1.15F, 0.4F, 5);
-      var0.glow(false);
-      Cos3Geo.halo(var0, 0.0F, 0.0F, 0.0F, 3.6F, Cos3Geo.alpha(0.45 + 0.2 * Cos3Geo.sin(var2 * 3.0F), 16769146));
-      var0.pop();
-      var0.pop();
-      var0.color(-1);
+      g.push();
+      g.translate(0.0F, 6.05F, 0.0F);
+      g.rotY(Cos3Geo.sin(t * 0.8F) * 35.0F);
+      g.glow(true).color(-10166);
+      XmasGeo.star(g, "xm_gold", 1.15F, 0.4F, 5);
+      g.glow(false);
+      Cos3Geo.halo(g, 0.0F, 0.0F, 0.0F, 3.6F, Cos3Geo.alpha(0.45 + 0.2 * Cos3Geo.sin(t * 3.0F), 16769146));
+      g.pop();
+      g.pop();
+      g.color(-1);
    }
 
-   static void candyCanes(G var0, Cos.A var1) {
-      float var2 = var1.time;
-      float var3 = mv(var1);
-      var0.color(-1521496);
-      Cos3Geo.bbox(var0, "strap", -1.7F, -9.6F, -2.52F, 1.7F, -6.2F, -2.06F, 0.18F);
-      var0.color(-11414);
-      Cos3Geo.bbox(var0, "c3_metal", -0.55F, -8.3F, -2.64F, 0.55F, -7.5F, -2.45F, 0.08F);
+   static void candyCanes(G g, Cos.A a) {
+      float t = a.time;
+      float mv = mv(a);
+      g.color(-1521496);
+      Cos3Geo.bbox(g, "strap", -1.7F, -9.6F, -2.52F, 1.7F, -6.2F, -2.06F, 0.18F);
+      g.color(-11414);
+      Cos3Geo.bbox(g, "c3_metal", -0.55F, -8.3F, -2.64F, 0.55F, -7.5F, -2.45F, 0.08F);
 
-      for (int var4 = -1; var4 <= 1; var4 += 2) {
-         float var5 = var4 > 0 ? -2.95F : -4.2F;
-         float[] var6 = new float[]{-var4 * 2.3F, -11.8F, var5};
-         float[] var7 = new float[]{var4 * 6.2F, 2.3F, var5};
-         float var8 = var7[0] - var6[0];
-         float var9 = var7[1] - var6[1];
-         float var10 = (float)Math.hypot(var8, var9);
-         var8 /= var10;
-         var9 /= var10;
-         float var11 = var9 * var4;
-         float var12 = -var8 * var4;
-         float var13 = 1.55F;
-         float[] var14 = new float[]{var7[0] + var11 * var13, var7[1] + var12 * var13};
-         byte var15 = 10;
-         float[][] var16 = new float[2 + var15][];
-         var16[0] = var6;
-         var16[1] = new float[]{var6[0] + var8 * var10 * 0.5F, var6[1] + var9 * var10 * 0.5F, var5};
+      for (int s = -1; s <= 1; s += 2) {
+         float z = s > 0 ? -2.95F : -4.2F;
+         float[] bot = new float[]{-s * 2.3F, -11.8F, z};
+         float[] top = new float[]{s * 6.2F, 2.3F, z};
+         float dx = top[0] - bot[0];
+         float dy = top[1] - bot[1];
+         float l = (float)Math.hypot(dx, dy);
+         dx /= l;
+         dy /= l;
+         float px = dy * s;
+         float py = -dx * s;
+         float R = 1.55F;
+         float[] C = new float[]{top[0] + px * R, top[1] + py * R};
+         int nh = 10;
+         float[][] pts = new float[2 + nh][];
+         pts[0] = bot;
+         pts[1] = new float[]{bot[0] + dx * l * 0.5F, bot[1] + dy * l * 0.5F, z};
 
-         for (int var17 = 0; var17 < var15; var17++) {
-            double var18 = Math.PI * (var17 + 1) / var15 * 1.05;
-            float var20 = (float)(-var11 * Math.cos(var18) + var8 * Math.sin(var18));
-            float var21 = (float)(-var12 * Math.cos(var18) + var9 * Math.sin(var18));
-            var16[2 + var17] = new float[]{var14[0] + var20 * var13, var14[1] + var21 * var13, var5};
+         for (int i = 0; i < nh; i++) {
+            double th = Math.PI * (i + 1) / nh * 1.05;
+            float cx = (float)(-px * Math.cos(th) + dx * Math.sin(th));
+            float cy = (float)(-py * Math.cos(th) + dy * Math.sin(th));
+            pts[2 + i] = new float[]{C[0] + cx * R, C[1] + cy * R, z};
          }
 
-         var16[1] = var7;
-         float[] var24 = new float[var16.length];
-         Arrays.fill(var24, 0.62F);
-         var0.push();
-         var0.translate(0.0F, -7.9F, 0.0F);
-         var0.rotZ(Cos3Geo.sin(var2 * 1.2F + var4) * 1.2F + var3 * Cos3Geo.sin(var2 * 9.0F) * 2.0F);
-         var0.translate(0.0F, 7.9F, 0.0F);
-         var0.color(-1);
-         Cos3Geo.limb(var0, "xm_candy", var16, var24, 10);
-         var0.pop();
+         pts[1] = top;
+         float[] rr = new float[pts.length];
+         Arrays.fill(rr, 0.62F);
+         g.push();
+         g.translate(0.0F, -7.9F, 0.0F);
+         g.rotZ(Cos3Geo.sin(t * 1.2F + s) * 1.2F + mv * Cos3Geo.sin(t * 9.0F) * 2.0F);
+         g.translate(0.0F, 7.9F, 0.0F);
+         g.color(-1);
+         Cos3Geo.limb(g, "xm_candy", pts, rr, 10);
+         g.pop();
       }
 
-      var0.push();
-      var0.translate(0.0F, -7.2F, -5.0F);
-      var0.rotY(180.0F);
-      XmasGeo.bow(var0, -13719478, 1.1F);
-      var0.pop();
-      var0.push();
-      var0.translate(0.0F, -6.3F, -5.1F);
-      var0.rotX(-80.0F);
-      XmasGeo.holly(var0, 0.7F);
-      var0.pop();
+      g.push();
+      g.translate(0.0F, -7.2F, -5.0F);
+      g.rotY(180.0F);
+      XmasGeo.bow(g, -13719478, 1.1F);
+      g.pop();
+      g.push();
+      g.translate(0.0F, -6.3F, -5.1F);
+      g.rotX(-80.0F);
+      XmasGeo.holly(g, 0.7F);
+      g.pop();
    }
 
-   static void gift(G var0, String var1, int var2, float var3, float var4, float var5) {
-      float var6 = -var3 / 2.0F;
-      float var7 = var3 / 2.0F;
-      float var8 = 0.0F;
-      float var10 = -var5 / 2.0F;
-      float var11 = var5 / 2.0F;
-      var0.color(-1);
-      Cos3Geo.bbox(var0, var1, var6, var8, var10, var7, var4, var11, 0.14F);
-      float var12 = Math.min(var3, var5) * 0.1F + 0.2F;
-      var0.color(var2);
-      var0.box("xm_ribbon", -var12, var8 - 0.06F, var10 - 0.06F, var12, var4 + 0.06F, var11 + 0.06F, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.box("xm_ribbon", var6 - 0.12F, var8 - 0.12F, -var12, var7 + 0.12F, var4 + 0.12F, var12, 0.0F, 0.0F, 1.0F, 1.0F);
+   static void gift(G g, String paper, int ribbonC, float w, float h, float d) {
+      float x0 = -w / 2.0F;
+      float x1 = w / 2.0F;
+      float y0 = 0.0F;
+      float z0 = -d / 2.0F;
+      float z1 = d / 2.0F;
+      g.color(-1);
+      Cos3Geo.bbox(g, paper, x0, y0, z0, x1, h, z1, 0.14F);
+      float wr = Math.min(w, d) * 0.1F + 0.2F;
+      g.color(ribbonC);
+      g.box("xm_ribbon", -wr, y0 - 0.06F, z0 - 0.06F, wr, h + 0.06F, z1 + 0.06F, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.box("xm_ribbon", x0 - 0.12F, y0 - 0.12F, -wr, x1 + 0.12F, h + 0.12F, wr, 0.0F, 0.0F, 1.0F, 1.0F);
    }
 
-   static void giftStack(G var0, Cos.A var1) {
-      float var2 = var1.time;
-      float var3 = mv(var1);
-      float var4 = Cos3Geo.sin(var2 * 1.3F) * 1.2F + var3 * Cos3Geo.sin(var2 * 9.0F) * 2.5F;
-      var0.push();
-      var0.translate(0.0F, -11.6F, -4.3F);
-      gift(var0, "xm_gift:D8202A:FFD24A:1", -11414, 7.2F, 4.6F, 4.3F);
-      var0.translate(0.0F, 4.6F, -0.25F);
-      var0.rotZ(var4 * 0.5F);
-      var0.rotY(8.0F);
-      gift(var0, "xm_gift:2E9A48:FFFFFF:0", -2088918, 5.4F, 3.6F, 3.8F);
-      var0.translate(0.2F, 3.6F, -0.35F);
-      var0.rotZ(var4 * 0.8F);
-      var0.rotY(-22.0F);
-      gift(var0, "xm_gift:3A6AE8:E8F4FF:3", -986888, 3.4F, 2.5F, 2.8F);
-      var0.translate(0.0F, 2.62F, 0.0F);
-      XmasGeo.bow(var0, -986888, 0.95F);
-      var0.pop();
-      var0.push();
-      var0.translate(2.6F, -8.4F, -6.52F);
-      var0.rotZ(Cos3Geo.sin(var2 * 2.0F) * 6.0F - 10.0F);
-      var0.color(-726832);
-      Cos3Geo.bbox(var0, "xm_felt", -0.6F, -1.3F, -0.08F, 0.6F, 0.0F, 0.0F, 0.05F);
-      var0.pop();
+   static void giftStack(G g, Cos.A a) {
+      float t = a.time;
+      float mv = mv(a);
+      float wob = Cos3Geo.sin(t * 1.3F) * 1.2F + mv * Cos3Geo.sin(t * 9.0F) * 2.5F;
+      g.push();
+      g.translate(0.0F, -11.6F, -4.3F);
+      gift(g, "xm_gift:D8202A:FFD24A:1", -11414, 7.2F, 4.6F, 4.3F);
+      g.translate(0.0F, 4.6F, -0.25F);
+      g.rotZ(wob * 0.5F);
+      g.rotY(8.0F);
+      gift(g, "xm_gift:2E9A48:FFFFFF:0", -2088918, 5.4F, 3.6F, 3.8F);
+      g.translate(0.2F, 3.6F, -0.35F);
+      g.rotZ(wob * 0.8F);
+      g.rotY(-22.0F);
+      gift(g, "xm_gift:3A6AE8:E8F4FF:3", -986888, 3.4F, 2.5F, 2.8F);
+      g.translate(0.0F, 2.62F, 0.0F);
+      XmasGeo.bow(g, -986888, 0.95F);
+      g.pop();
+      g.push();
+      g.translate(2.6F, -8.4F, -6.52F);
+      g.rotZ(Cos3Geo.sin(t * 2.0F) * 6.0F - 10.0F);
+      g.color(-726832);
+      Cos3Geo.bbox(g, "xm_felt", -0.6F, -1.3F, -0.08F, 0.6F, 0.0F, 0.0F, 0.05F);
+      g.pop();
 
-      for (int var5 = 0; var5 < 4; var5++) {
-         float var6 = Cos3Geo.fract(var2 * 0.4F + var5 * 0.25F);
+      for (int i = 0; i < 4; i++) {
+         float ph = Cos3Geo.fract(t * 0.4F + i * 0.25F);
          Cos3Models.sparkle(
-            var0,
-            Cos3Geo.sin(var5 * 2.3F) * 3.8F,
-            -7.0F + var6 * 8.0F,
-            -4.5F - Cos3Geo.cos(var5 * 1.7F) * 2.8F,
-            0.28F,
-            Cos3Geo.alpha((1.0F - var6) * 0.9, 16773296)
+            g, Cos3Geo.sin(i * 2.3F) * 3.8F, -7.0F + ph * 8.0F, -4.5F - Cos3Geo.cos(i * 1.7F) * 2.8F, 0.28F, Cos3Geo.alpha((1.0F - ph) * 0.9, 16773296)
          );
       }
 
-      var0.color(-1);
+      g.color(-1);
    }
 
-   static void snowStorm(G var0, Cos.A var1) {
-      float var2 = var1.time;
+   static void snowStorm(G g, Cos.A a) {
+      float t = a.time;
 
-      for (int var3 = 0; var3 < 7; var3++) {
-         double var4 = Capes.hash1(var3, 501);
-         float var6 = Cos3Geo.fract(var2 * (0.05F + 0.03F * (float)var4) + var3 / 7.0F);
-         float var7 = 9.0F - var6 * 34.0F;
-         float var8 = (float)(var3 * 51.4 + var2 * (22.0 + var4 * 14.0));
-         float var9 = 10.0F + 2.2F * (float)Capes.hash1(var3, 502);
-         float var10 = Cos3Geo.smooth(var6 * 8.0F) * Cos3Geo.smooth((1.0F - var6) * 8.0F);
-         var0.push();
-         var0.rotY(var8);
-         var0.translate(var9, var7, 0.0F);
-         var0.rotY(var2 * 70.0F + var3 * 40);
-         var0.rotX(Cos3Geo.sin(var2 + var3) * 30.0F);
-         var0.glow(true).color(Cos3Geo.alpha(0.92 * var10, 15267583));
-         XmasGeo.flake(var0, "white", 1.0F + 0.45F * (float)var4, 0.07F);
-         var0.glow(false);
-         var0.pop();
+      for (int i = 0; i < 7; i++) {
+         double h = Capes.hash1(i, 501);
+         float ph = Cos3Geo.fract(t * (0.05F + 0.03F * (float)h) + i / 7.0F);
+         float y = 9.0F - ph * 34.0F;
+         float an = (float)(i * 51.4 + t * (22.0 + h * 14.0));
+         float R = 10.0F + 2.2F * (float)Capes.hash1(i, 502);
+         float fade = Cos3Geo.smooth(ph * 8.0F) * Cos3Geo.smooth((1.0F - ph) * 8.0F);
+         g.push();
+         g.rotY(an);
+         g.translate(R, y, 0.0F);
+         g.rotY(t * 70.0F + i * 40);
+         g.rotX(Cos3Geo.sin(t + i) * 30.0F);
+         g.glow(true).color(Cos3Geo.alpha(0.92 * fade, 15267583));
+         XmasGeo.flake(g, "white", 1.0F + 0.45F * (float)h, 0.07F);
+         g.glow(false);
+         g.pop();
       }
 
-      var0.color(-1);
+      g.color(-1);
 
-      for (int var14 = 0; var14 < 34; var14++) {
-         double var16 = Capes.hash1(var14, 511);
-         float var18 = Cos3Geo.fract(var2 * (0.09F + 0.06F * (float)var16) + (float)Capes.hash1(var14, 512));
-         float var20 = 10.0F - var18 * 35.0F;
-         float var23 = (float)(var16 * 360.0 + var2 * (35.0 + 25.0 * Capes.hash1(var14, 513)) + var18 * 120.0F);
-         float var26 = 9.0F + 4.5F * (float)Capes.hash1(var14, 514);
-         float var29 = Cos3Geo.smooth(var18 * 6.0F) * Cos3Geo.smooth((1.0F - var18) * 6.0F);
-         double var11 = Math.toRadians(var23);
-         float var13 = 0.6F + 0.7F * (float)Capes.hash1(var14, 515);
-         var0.glow(true).color(Cos3Geo.alpha(0.9 * var29, 16777215));
-         var0.push();
-         var0.translate(Cos3Geo.cos(var11) * var26, var20, Cos3Geo.sin(var11) * var26);
-         var0.rotY(-var23 + var2 * 50.0F);
-         var0.rotZ(var2 * 80.0F + var14 * 20);
-         var0.cross("xm_flake", 0.0F, 0.0F, 0.0F, var13, var13, 0.0F, 0.0F, 1.0F, 1.0F);
-         var0.pop();
+      for (int i = 0; i < 34; i++) {
+         double h = Capes.hash1(i, 511);
+         float ph = Cos3Geo.fract(t * (0.09F + 0.06F * (float)h) + (float)Capes.hash1(i, 512));
+         float y = 10.0F - ph * 35.0F;
+         float an = (float)(h * 360.0 + t * (35.0 + 25.0 * Capes.hash1(i, 513)) + ph * 120.0F);
+         float R = 9.0F + 4.5F * (float)Capes.hash1(i, 514);
+         float fade = Cos3Geo.smooth(ph * 6.0F) * Cos3Geo.smooth((1.0F - ph) * 6.0F);
+         double ar = Math.toRadians(an);
+         float s = 0.6F + 0.7F * (float)Capes.hash1(i, 515);
+         g.glow(true).color(Cos3Geo.alpha(0.9 * fade, 16777215));
+         g.push();
+         g.translate(Cos3Geo.cos(ar) * R, y, Cos3Geo.sin(ar) * R);
+         g.rotY(-an + t * 50.0F);
+         g.rotZ(t * 80.0F + i * 20);
+         g.cross("xm_flake", 0.0F, 0.0F, 0.0F, s, s, 0.0F, 0.0F, 1.0F, 1.0F);
+         g.pop();
       }
 
-      var0.glow(false);
+      g.glow(false);
 
-      for (int var15 = 0; var15 < 2; var15++) {
-         byte var17 = 40;
-         float[][] var5 = new float[var17 + 1][];
-         float[][] var19 = new float[var17 + 1][];
+      for (int k = 0; k < 2; k++) {
+         int n = 40;
+         float[][] top = new float[n + 1][];
+         float[][] bot = new float[n + 1][];
 
-         for (int var21 = 0; var21 <= var17; var21++) {
-            float var24 = (float)var21 / var17;
-            double var27 = var24 * Math.PI * 2.6 + var2 * (0.9 + var15 * 0.4) + var15 * Math.PI;
-            float var30 = 10.5F + var15 * 1.3F + Cos3Geo.sin(var24 * 9.0F + var2) * 0.5F;
-            float var12 = -20.0F + var24 * 26.0F + var15 * 3;
-            float var31 = 1.2F;
-            var5[var21] = new float[]{Cos3Geo.cos(var27) * var30, var12 + var31, Cos3Geo.sin(var27) * var30};
-            var19[var21] = new float[]{Cos3Geo.cos(var27) * var30, var12 - var31, Cos3Geo.sin(var27) * var30};
+         for (int i = 0; i <= n; i++) {
+            float f = (float)i / n;
+            double an = f * Math.PI * 2.6 + t * (0.9 + k * 0.4) + k * Math.PI;
+            float R = 10.5F + k * 1.3F + Cos3Geo.sin(f * 9.0F + t) * 0.5F;
+            float y = -20.0F + f * 26.0F + k * 3;
+            float wdt = 1.2F;
+            top[i] = new float[]{Cos3Geo.cos(an) * R, y + wdt, Cos3Geo.sin(an) * R};
+            bot[i] = new float[]{Cos3Geo.cos(an) * R, y - wdt, Cos3Geo.sin(an) * R};
          }
 
-         var0.glow(true).color(-1593835521);
+         g.glow(true).color(-1593835521);
 
-         for (int var22 = 0; var22 < var17; var22++) {
-            float var25 = (float)var22 / var17;
-            float var28 = (float)(var22 + 1) / var17;
-            var0.quad("xm_wind", var5[var22], var5[var22 + 1], var19[var22 + 1], var19[var22], new float[]{var25, 0.0F, var28, 0.0F, var28, 1.0F, var25, 1.0F});
+         for (int i = 0; i < n; i++) {
+            float ua = (float)i / n;
+            float ub = (float)(i + 1) / n;
+            g.quad("xm_wind", top[i], top[i + 1], bot[i + 1], bot[i], new float[]{ua, 0.0F, ub, 0.0F, ub, 1.0F, ua, 1.0F});
          }
 
-         var0.glow(false);
+         g.glow(false);
       }
 
-      var0.push();
-      var0.translate(0.0F, -23.9F, 0.0F);
-      var0.rotX(-90.0F);
-      var0.color(-1862270977);
-      var0.plane("orb", 0.0F, 0.0F, 24.0F, 24.0F, 0.0F, 0.0F, 1.0F, 1.0F);
-      var0.pop();
-      var0.color(-1);
+      g.push();
+      g.translate(0.0F, -23.9F, 0.0F);
+      g.rotX(-90.0F);
+      g.color(-1862270977);
+      g.plane("orb", 0.0F, 0.0F, 24.0F, 24.0F, 0.0F, 0.0F, 1.0F, 1.0F);
+      g.pop();
+      g.color(-1);
    }
 
-   static void lightSpiral(G var0, Cos.A var1) {
-      float var2 = var1.time;
-      float var3 = 3.1F;
-      float var4 = -23.0F;
-      float var5 = 10.0F;
-      byte var6 = 90;
-      float[][] var7 = new float[var6 + 1][];
-      double var8 = Math.toRadians(var2 * 18.0F);
+   static void lightSpiral(G g, Cos.A a) {
+      float t = a.time;
+      float turns = 3.1F;
+      float y0 = -23.0F;
+      float y1 = 10.0F;
+      int n = 90;
+      float[][] w = new float[n + 1][];
+      double rot = Math.toRadians(t * 18.0F);
 
-      for (int var10 = 0; var10 <= var6; var10++) {
-         float var11 = (float)var10 / var6;
-         double var12 = var11 * Math.PI * 2.0 * var3 + var8;
-         float var14 = 10.4F - 1.6F * var11 + 0.15F * Cos3Geo.sin(var11 * 60.0F);
-         var7[var10] = new float[]{
-            Cos3Geo.cos(var12) * var14,
-            var4 + (var5 - var4) * var11 - 0.25F * Math.abs(Cos3Geo.sin(var11 * Math.PI * 2.0 * var3 * 3.5)),
-            Cos3Geo.sin(var12) * var14
-         };
+      for (int i = 0; i <= n; i++) {
+         float f = (float)i / n;
+         double an = f * Math.PI * 2.0 * turns + rot;
+         float R = 10.4F - 1.6F * f + 0.15F * Cos3Geo.sin(f * 60.0F);
+         w[i] = new float[]{Cos3Geo.cos(an) * R, y0 + (y1 - y0) * f - 0.25F * Math.abs(Cos3Geo.sin(f * Math.PI * 2.0 * turns * 3.5)), Cos3Geo.sin(an) * R};
       }
 
-      var0.color(-14796254);
-      float[] var20 = new float[var6 + 1];
-      Arrays.fill(var20, 0.11F);
-      Geo.chain(var0, "c3_metal", var7, var20, 3);
-      byte var21 = 22;
+      g.color(-14796254);
+      float[] rr = new float[n + 1];
+      Arrays.fill(rr, 0.11F);
+      Geo.chain(g, "c3_metal", w, rr, 3);
+      int nb = 22;
 
-      for (int var22 = 0; var22 < var21; var22++) {
-         float var13 = (var22 + 0.5F) / var21;
-         double var23 = var13 * Math.PI * 2.0 * var3 + var8;
-         float var16 = 10.4F - 1.6F * var13;
-         float var17 = var4 + (var5 - var4) * var13 - 0.3F;
-         float var18 = 0.5F + 0.5F * Cos3Geo.sin(var22 * 0.9F - var2 * 4.5F);
-         float var19 = 0.3F + 0.7F * Cos3Geo.smooth(var18 * 1.5F - 0.25F);
-         var0.push();
-         var0.translate(Cos3Geo.cos(var23) * var16, var17, Cos3Geo.sin(var23) * var16);
-         var0.rotY((float)(-Math.toDegrees(var23)));
-         var0.rotZ(-150.0F + Cos3Geo.sin(var2 * 2.0F + var22) * 8.0F);
-         XmasGeo.bulbLite(var0, 1.05F, XmasGeo.LIGHTS[var22 % XmasGeo.LIGHTS.length], var19);
-         var0.pop();
+      for (int i = 0; i < nb; i++) {
+         float f = (i + 0.5F) / nb;
+         double an = f * Math.PI * 2.0 * turns + rot;
+         float R = 10.4F - 1.6F * f;
+         float y = y0 + (y1 - y0) * f - 0.3F;
+         float wave = 0.5F + 0.5F * Cos3Geo.sin(i * 0.9F - t * 4.5F);
+         float lit = 0.3F + 0.7F * Cos3Geo.smooth(wave * 1.5F - 0.25F);
+         g.push();
+         g.translate(Cos3Geo.cos(an) * R, y, Cos3Geo.sin(an) * R);
+         g.rotY((float)(-Math.toDegrees(an)));
+         g.rotZ(-150.0F + Cos3Geo.sin(t * 2.0F + i) * 8.0F);
+         XmasGeo.bulbLite(g, 1.05F, XmasGeo.LIGHTS[i % XmasGeo.LIGHTS.length], lit);
+         g.pop();
       }
 
-      var0.color(-1);
+      g.color(-1);
    }
 
-   static void auroraBand(G var0, Cos.A var1) {
-      float var2 = var1.time;
+   static void auroraBand(G g, Cos.A a) {
+      float t = a.time;
 
-      for (int var3 = 0; var3 < 2; var3++) {
-         byte var4 = 72;
-         float[][] var5 = new float[var4 + 1][];
-         float[][] var6 = new float[var4 + 1][];
-         double var7 = var2 * (var3 == 0 ? 0.25 : -0.18);
+      for (int k = 0; k < 2; k++) {
+         int n = 72;
+         float[][] top = new float[n + 1][];
+         float[][] bot = new float[n + 1][];
+         double spin = t * (k == 0 ? 0.25 : -0.18);
 
-         for (int var9 = 0; var9 <= var4; var9++) {
-            double var10 = (Math.PI * 2) * var9 / var4;
-            float var12 = (var3 == 0 ? 10.8F : 12.0F) + 0.9F * Cos3Geo.sin(var10 * 3.0 + var2 * 0.7F + var3) + 0.35F * Cos3Geo.sin(var10 * 17.0 + var2 * 1.3F);
-            float var13 = var3 == 0 ? 1.8F + 1.5F * Cos3Geo.sin(var10 * 2.0 - var2 * 0.6F) : -15.0F + 1.8F * Cos3Geo.sin(var10 * 2.0 + var2 * 0.5F + 1.0);
-            float var14 = (var3 == 0 ? 6.5F : 5.0F) + 1.8F * Cos3Geo.sin(var10 * 4.0 + var2 * 0.9F + var3 * 2);
-            double var15 = var10 + var7;
-            float var17 = Cos3Geo.cos(var15);
-            float var18 = Cos3Geo.sin(var15);
-            var6[var9] = new float[]{var17 * var12, var13, var18 * var12};
-            var5[var9] = new float[]{var17 * (var12 + 0.9F), var13 + var14, var18 * (var12 + 0.9F)};
+         for (int i = 0; i <= n; i++) {
+            double th = (Math.PI * 2) * i / n;
+            float R = (k == 0 ? 10.8F : 12.0F) + 0.9F * Cos3Geo.sin(th * 3.0 + t * 0.7F + k) + 0.35F * Cos3Geo.sin(th * 17.0 + t * 1.3F);
+            float yb = k == 0 ? 1.8F + 1.5F * Cos3Geo.sin(th * 2.0 - t * 0.6F) : -15.0F + 1.8F * Cos3Geo.sin(th * 2.0 + t * 0.5F + 1.0);
+            float hh = (k == 0 ? 6.5F : 5.0F) + 1.8F * Cos3Geo.sin(th * 4.0 + t * 0.9F + k * 2);
+            double a0 = th + spin;
+            float cx = Cos3Geo.cos(a0);
+            float cz = Cos3Geo.sin(a0);
+            bot[i] = new float[]{cx * R, yb, cz * R};
+            top[i] = new float[]{cx * (R + 0.9F), yb + hh, cz * (R + 0.9F)};
          }
 
-         var0.glow(true).color(var3 == 0 ? -251658241 : -922746881);
+         g.glow(true).color(k == 0 ? -251658241 : -922746881);
 
-         for (int var23 = 0; var23 < var4; var23++) {
-            float var24 = (float)var23 / var4 * 2.0F;
-            float var11 = (float)(var23 + 1) / var4 * 2.0F;
-            var0.quad("xm_aurora", var5[var23], var5[var23 + 1], var6[var23 + 1], var6[var23], new float[]{var24, 0.0F, var11, 0.0F, var11, 1.0F, var24, 1.0F});
+         for (int i = 0; i < n; i++) {
+            float ua = (float)i / n * 2.0F;
+            float ub = (float)(i + 1) / n * 2.0F;
+            g.quad("xm_aurora", top[i], top[i + 1], bot[i + 1], bot[i], new float[]{ua, 0.0F, ub, 0.0F, ub, 1.0F, ua, 1.0F});
          }
       }
 
-      var0.glow(false);
+      g.glow(false);
 
-      for (int var19 = 0; var19 < 10; var19++) {
-         float var20 = Cos3Geo.fract(var2 * 0.3F + var19 * 0.1F);
-         double var21 = var19 * 0.63 + var2 * 0.2;
-         float var22 = Cos3Geo.sin(Math.PI * var20);
+      for (int i = 0; i < 10; i++) {
+         float ph = Cos3Geo.fract(t * 0.3F + i * 0.1F);
+         double an = i * 0.63 + t * 0.2;
+         float tw = Cos3Geo.sin(Math.PI * ph);
          Cos3Models.sparkle(
-            var0,
-            Cos3Geo.cos(var21) * 11.5F,
-            5.0F + (float)Capes.hash1(var19, 531) * 7.0F - 20 * (var19 % 2),
-            Cos3Geo.sin(var21) * 11.5F,
+            g,
+            Cos3Geo.cos(an) * 11.5F,
+            5.0F + (float)Capes.hash1(i, 531) * 7.0F - 20 * (i % 2),
+            Cos3Geo.sin(an) * 11.5F,
             0.3F,
-            Cos3Geo.alpha(var22, var19 % 3 == 0 ? 12124120 : 15266047)
+            Cos3Geo.alpha(tw, i % 3 == 0 ? 12124120 : 15266047)
          );
       }
 
-      var0.color(-1);
+      g.color(-1);
    }
 
-   static void iceWings(G var0, Cos.A var1) {
-      float var2 = var1.time;
-      float var3 = mv(var1);
-      float var4 = Cos3Geo.sin(var2 * 1.5F) * 6.0F * (1.0F - var3) + Cos3Geo.sin(var2 * 6.0F) * 14.0F * var3;
+   static void iceWings(G g, Cos.A a) {
+      float t = a.time;
+      float mv = mv(a);
+      float flap = Cos3Geo.sin(t * 1.5F) * 6.0F * (1.0F - mv) + Cos3Geo.sin(t * 6.0F) * 14.0F * mv;
 
-      for (int var5 = -1; var5 <= 1; var5 += 2) {
-         var0.push();
-         var0.translate(var5 * 1.0F, -2.4F, -3.4F);
-         var0.scale(var5, 1.0F, 1.0F);
-         var0.rotY(var1.sneak ? 50.0F : 22.0F);
-         var0.rotZ(var4);
-         var0.scale(1.3F);
-         byte var6 = 8;
-         float[][] var7 = new float[var6][];
+      for (int s = -1; s <= 1; s += 2) {
+         g.push();
+         g.translate(s * 1.0F, -2.4F, -3.4F);
+         g.scale(s, 1.0F, 1.0F);
+         g.rotY(a.sneak ? 50.0F : 22.0F);
+         g.rotZ(flap);
+         g.scale(1.3F);
+         int n = 8;
+         float[][] tips = new float[n][];
 
-         for (int var8 = 0; var8 < var6; var8++) {
-            float var9 = 80 - var8 * 17;
-            float var10 = 4.5F + 7.5F * Cos3Geo.sin(Math.PI * (var8 + 0.6) / (var6 + 0.2));
-            double var11 = Math.toRadians(var9);
-            float var13 = -40.0F * Math.max(0.0F, (float)Math.sin(var11));
-            var0.push();
-            var0.rotX(var13);
-            var0.translate((float)Math.cos(var11) * 0.9F, (float)Math.sin(var11) * 0.9F, 0.0F);
-            var0.rotZ(var9 - 90.0F);
-            var0.scale(1.0F, 1.0F, 0.5F);
-            var0.glow(true).color(Cos3Geo.argb(215, Capes.mix(15268095, 9097471, (float)var8 / var6)));
-            Cos3Geo.shard(var0, "c3_crystal", 0.62F + 0.14F * Cos3Geo.sin(var8 * 1.3F), var10);
-            if (var8 % 2 == 1) {
-               var0.push();
-               var0.translate(0.0F, var10 * 0.45F, 0.0F);
-               var0.rotZ(28.0F);
-               var0.color(Cos3Geo.argb(200, 13167871));
-               Cos3Geo.shard(var0, "c3_crystal", 0.28F, var10 * 0.32F);
-               var0.pop();
+         for (int i = 0; i < n; i++) {
+            float an = 80 - i * 17;
+            float L = 4.5F + 7.5F * Cos3Geo.sin(Math.PI * (i + 0.6) / (n + 0.2));
+            double ar = Math.toRadians(an);
+            float lift = -40.0F * Math.max(0.0F, (float)Math.sin(ar));
+            g.push();
+            g.rotX(lift);
+            g.translate((float)Math.cos(ar) * 0.9F, (float)Math.sin(ar) * 0.9F, 0.0F);
+            g.rotZ(an - 90.0F);
+            g.scale(1.0F, 1.0F, 0.5F);
+            g.glow(true).color(Cos3Geo.argb(215, Capes.mix(15268095, 9097471, (float)i / n)));
+            Cos3Geo.shard(g, "c3_crystal", 0.62F + 0.14F * Cos3Geo.sin(i * 1.3F), L);
+            if (i % 2 == 1) {
+               g.push();
+               g.translate(0.0F, L * 0.45F, 0.0F);
+               g.rotZ(28.0F);
+               g.color(Cos3Geo.argb(200, 13167871));
+               Cos3Geo.shard(g, "c3_crystal", 0.28F, L * 0.32F);
+               g.pop();
             }
 
-            var0.pop();
-            float var14 = (float)Math.cos(var11);
-            float var15 = (float)Math.sin(var11);
-            float var16 = 0.9F + var10 + 0.6F;
-            double var17 = Math.toRadians(var13);
-            var7[var8] = new float[]{var14 * var16, var15 * var16 * (float)Math.cos(var17), var15 * var16 * (float)Math.sin(var17)};
+            g.pop();
+            float ca = (float)Math.cos(ar);
+            float sa = (float)Math.sin(ar);
+            float rr = 0.9F + L + 0.6F;
+            double lr = Math.toRadians(lift);
+            tips[i] = new float[]{ca * rr, sa * rr * (float)Math.cos(lr), sa * rr * (float)Math.sin(lr)};
          }
 
-         var0.glow(false);
+         g.glow(false);
 
-         for (int var21 = 0; var21 < var6; var21 += 3) {
-            float[] var23 = var7[var21];
-            var0.push();
-            var0.translate(var23[0], var23[1] + Cos3Geo.sin(var2 * 2.0F + var21) * 0.3F, var23[2]);
-            var0.rotY(var2 * 60.0F + var21 * 30);
-            var0.glow(true).color(-251658241);
-            XmasGeo.flake(var0, "white", 0.85F, 0.06F);
-            var0.glow(false);
-            var0.pop();
+         for (int i = 0; i < n; i += 3) {
+            float[] p = tips[i];
+            g.push();
+            g.translate(p[0], p[1] + Cos3Geo.sin(t * 2.0F + i) * 0.3F, p[2]);
+            g.rotY(t * 60.0F + i * 30);
+            g.glow(true).color(-251658241);
+            XmasGeo.flake(g, "white", 0.85F, 0.06F);
+            g.glow(false);
+            g.pop();
          }
 
-         byte var22 = 5;
-         float[][] var24 = new float[var22 * 6 + 1][];
-         int var25 = 0;
+         int m = 5;
+         float[][] str = new float[m * 6 + 1][];
+         int k = 0;
 
-         for (int var26 = 0; var26 < var22; var26++) {
-            float[] var12 = var7[var26];
-            float[] var29 = var7[var26 + 1];
-            float[] var30 = lerp3(new float[]{0.0F, 0.0F, 0.0F}, var12, 0.72F);
-            float[] var31 = lerp3(new float[]{0.0F, 0.0F, 0.0F}, var29, 0.72F);
+         for (int i = 0; i < m; i++) {
+            float[] p0 = tips[i];
+            float[] p1 = tips[i + 1];
+            float[] q0 = lerp3(new float[]{0.0F, 0.0F, 0.0F}, p0, 0.72F);
+            float[] q1 = lerp3(new float[]{0.0F, 0.0F, 0.0F}, p1, 0.72F);
 
-            for (int var32 = 0; var32 < 6; var32++) {
-               float var33 = var32 / 6.0F;
-               float var18 = 4.0F * var33 * (1.0F - var33) * 0.9F;
-               var24[var25++] = new float[]{
-                  var30[0] + (var31[0] - var30[0]) * var33, var30[1] + (var31[1] - var30[1]) * var33 - var18, var30[2] + (var31[2] - var30[2]) * var33 - 0.25F
-               };
+            for (int j = 0; j < 6; j++) {
+               float f = j / 6.0F;
+               float sag = 4.0F * f * (1.0F - f) * 0.9F;
+               str[k++] = new float[]{q0[0] + (q1[0] - q0[0]) * f, q0[1] + (q1[1] - q0[1]) * f - sag, q0[2] + (q1[2] - q0[2]) * f - 0.25F};
             }
 
-            if (var26 == var22 - 1) {
-               var24[var25++] = new float[]{var31[0], var31[1], var31[2] - 0.25F};
+            if (i == m - 1) {
+               str[k++] = new float[]{q1[0], q1[1], q1[2] - 0.25F};
             }
          }
 
-         XmasGeo.wire(var0, Arrays.copyOf(var24, var25), 0.07F);
+         XmasGeo.wire(g, Arrays.copyOf(str, k), 0.07F);
 
-         for (int var27 = 1; var27 < var25; var27 += 4) {
-            float[] var28 = var24[var27];
-            XmasGeo.fairy(
-               var0, var28[0], var28[1] - 0.25F, var28[2], 0.22F, XmasGeo.LIGHTS[var27 / 3 % XmasGeo.LIGHTS.length], XmasGeo.twinkle(var2, var27 + var5 * 7)
-            );
+         for (int i = 1; i < k; i += 4) {
+            float[] q = str[i];
+            XmasGeo.fairy(g, q[0], q[1] - 0.25F, q[2], 0.22F, XmasGeo.LIGHTS[i / 3 % XmasGeo.LIGHTS.length], XmasGeo.twinkle(t, i + s * 7));
          }
 
-         Cos3Geo.halo(var0, 0.0F, 0.0F, 0.0F, 2.0F, 1891166463);
-         var0.pop();
+         Cos3Geo.halo(g, 0.0F, 0.0F, 0.0F, 2.0F, 1891166463);
+         g.pop();
       }
 
-      for (int var19 = 0; var19 < 6; var19++) {
-         float var20 = Cos3Geo.fract(var2 * 0.35F + var19 / 6.0F);
+      for (int i = 0; i < 6; i++) {
+         float ph = Cos3Geo.fract(t * 0.35F + i / 6.0F);
          Cos3Models.sparkle(
-            var0,
-            (var19 % 2 == 0 ? 1 : -1) * (4.0F + 6.0F * (float)Capes.hash1(var19, 541)),
-            2.0F - var20 * 10.0F,
-            -5.0F - 2.0F * (float)Capes.hash1(var19, 542),
+            g,
+            (i % 2 == 0 ? 1 : -1) * (4.0F + 6.0F * (float)Capes.hash1(i, 541)),
+            2.0F - ph * 10.0F,
+            -5.0F - 2.0F * (float)Capes.hash1(i, 542),
             0.28F,
-            Cos3Geo.alpha(1.0F - var20, 15268095)
+            Cos3Geo.alpha(1.0F - ph, 15268095)
          );
       }
 
-      var0.color(-1);
+      g.color(-1);
    }
 
-   static float[] lerp3(float[] var0, float[] var1, float var2) {
-      return new float[]{var0[0] + (var1[0] - var0[0]) * var2, var0[1] + (var1[1] - var0[1]) * var2, var0[2] + (var1[2] - var0[2]) * var2};
+   static float[] lerp3(float[] a, float[] b, float f) {
+      return new float[]{a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f};
    }
 
-   static void starWings(G var0, Cos.A var1) {
-      Wings.feathered(var0, var1, "gold", 16.5F, false, 5);
-      Wings.Pose var2 = Wings.pose(var1, 1.0F);
-      float var3 = 16.5F;
-      float var4 = 1.0F - 0.18F * var2.fold;
-      float var5 = var1.time;
+   static void starWings(G g, Cos.A a) {
+      Wings.feathered(g, a, "gold", 16.5F, false, 5);
+      Wings.Pose p = Wings.pose(a, 1.0F);
+      float S = 16.5F;
+      float spanK = 1.0F - 0.18F * p.fold;
+      float t = a.time;
 
-      for (int var6 = 1; var6 >= -1; var6 -= 2) {
-         var0.push();
-         var0.scale(var6, 1.0F, 1.0F);
-         var0.translate(0.9F, -2.2F, -2.35F);
-         var0.rotY(var2.sweep);
-         var0.rotZ(var2.raise);
-         var0.rotX(-8.0F);
-         float[] var7 = new float[]{0.3F, 0.52F, 0.72F, 0.9F};
+      for (int side = 1; side >= -1; side -= 2) {
+         g.push();
+         g.scale(side, 1.0F, 1.0F);
+         g.translate(0.9F, -2.2F, -2.35F);
+         g.rotY(p.sweep);
+         g.rotZ(p.raise);
+         g.rotX(-8.0F);
+         float[] sp = new float[]{0.3F, 0.52F, 0.72F, 0.9F};
 
-         for (int var8 = 0; var8 < var7.length; var8++) {
-            float var9 = var7[var8];
-            float var10 = var3 * var9 * var4;
-            float var11 = var3 * (0.26F * Cos3Geo.sin(Math.PI * var9 * 0.92) + 0.1F * var9);
-            float var12 = -var3 * 0.09F * Cos3Geo.sin(Math.PI * var9) - 1.3F;
-            float var13 = 2.2F + var8 % 2 * 1.8F + var9 * 1.5F;
-            float var14 = Cos3Geo.sin(var5 * 2.1F + var8 * 1.3F) * 10.0F;
-            var0.push();
-            var0.translate(var10, var11 - 0.2F, var12);
-            var0.rotX(-var2.raise * 0.0F);
-            var0.rotZ(-var2.raise + var14);
-            var0.color(-5720);
-            Geo.tube(var0, "white", new float[]{0.0F, 0.0F, 0.0F}, new float[]{0.0F, -var13, 0.0F}, 0.05F, 0.05F, 3);
-            var0.translate(0.0F, -var13 - 0.85F, 0.0F);
-            var0.rotY(var5 * 50.0F + var8 * 60);
-            var0.glow(true).color(var8 % 2 == 0 ? -10166 : -3920);
-            XmasGeo.star(var0, "xm_gold", 0.95F, 0.32F, 5);
-            var0.glow(false);
-            Cos3Geo.halo(var0, 0.0F, 0.0F, 0.0F, 2.6F, Cos3Geo.alpha(0.35 + 0.2 * Cos3Geo.sin(var5 * 3.0F + var8), 16769146));
-            var0.pop();
+         for (int i = 0; i < sp.length; i++) {
+            float s = sp[i];
+            float x = S * s * spanK;
+            float y = S * (0.26F * Cos3Geo.sin(Math.PI * s * 0.92) + 0.1F * s);
+            float z = -S * 0.09F * Cos3Geo.sin(Math.PI * s) - 1.3F;
+            float len = 2.2F + i % 2 * 1.8F + s * 1.5F;
+            float sw = Cos3Geo.sin(t * 2.1F + i * 1.3F) * 10.0F;
+            g.push();
+            g.translate(x, y - 0.2F, z);
+            g.rotX(-p.raise * 0.0F);
+            g.rotZ(-p.raise + sw);
+            g.color(-5720);
+            Geo.tube(g, "white", new float[]{0.0F, 0.0F, 0.0F}, new float[]{0.0F, -len, 0.0F}, 0.05F, 0.05F, 3);
+            g.translate(0.0F, -len - 0.85F, 0.0F);
+            g.rotY(t * 50.0F + i * 60);
+            g.glow(true).color(i % 2 == 0 ? -10166 : -3920);
+            XmasGeo.star(g, "xm_gold", 0.95F, 0.32F, 5);
+            g.glow(false);
+            Cos3Geo.halo(g, 0.0F, 0.0F, 0.0F, 2.6F, Cos3Geo.alpha(0.35 + 0.2 * Cos3Geo.sin(t * 3.0F + i), 16769146));
+            g.pop();
          }
 
-         var0.pop();
+         g.pop();
       }
 
-      var0.color(-1);
+      g.color(-1);
    }
 }

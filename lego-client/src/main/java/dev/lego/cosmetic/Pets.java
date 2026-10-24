@@ -10,44 +10,44 @@ public final class Pets {
    private Pets() {
    }
 
-   public static float height(String var0) {
-      return height(var0, 0.5F);
+   public static float height(String id) {
+      return height(id, 0.5F);
    }
 
-   public static float height(String var0, float var1) {
-      float var2 = Math.round(Math.max(0.0F, Math.min(1.0F, var1)) * 20.0F) / 20.0F;
-      String var3 = var0 + "@" + var2;
-      Float var4 = HEIGHT.get(var3);
-      if (var4 != null) {
-         return var4;
+   public static float height(String id, float growth) {
+      float gq = Math.round(Math.max(0.0F, Math.min(1.0F, growth)) * 20.0F) / 20.0F;
+      String key = id + "@" + gq;
+      Float h = HEIGHT.get(key);
+      if (h != null) {
+         return h;
       } else {
-         Cos.Item var5 = Cos.get(var0);
-         float var6 = 10.0F;
-         if (var5 != null && var5.slot == Cos.Slot.PET) {
-            float[] var7 = new float[]{0.0F};
-            G var8 = new G((var1x, var2x, var3x, var4x, var5x, var6x, var7x, var8x) -> {
-               if (!var1x.equals("pet_star") && !var1x.equals("pet_heart")) {
-                  for (int var9x = 1; var9x < 12; var9x += 3) {
-                     var7[0] = Math.max(var7[0], var2x[var9x]);
+         Cos.Item it = Cos.get(id);
+         float v = 10.0F;
+         if (it != null && it.slot == Cos.Slot.PET) {
+            float[] max = new float[]{0.0F};
+            G g = new G((tex, p, uv, argb, glow, nx, ny, nz) -> {
+               if (!tex.equals("pet_star") && !tex.equals("pet_heart")) {
+                  for (int i = 1; i < 12; i += 3) {
+                     max[0] = Math.max(max[0], p[i]);
                   }
                }
             });
-            Cos.A var9 = new Cos.A();
-            var9.emotion = "happy";
-            var9.time = 0.35F;
-            var9.growth = var2;
-            var9.level = 1 + Math.round(var2 * 4.0F);
+            Cos.A a = new Cos.A();
+            a.emotion = "happy";
+            a.time = 0.35F;
+            a.growth = gq;
+            a.level = 1 + Math.round(gq * 4.0F);
 
             try {
-               var5.model.render(var8, var9);
-               var6 = Math.max(3.0F, var7[0]);
+               it.model.render(g, a);
+               v = Math.max(3.0F, max[0]);
             } catch (RuntimeException var11) {
             }
 
-            HEIGHT.put(var3, var6);
+            HEIGHT.put(key, v);
          }
 
-         return var6;
+         return v;
       }
    }
 
@@ -89,33 +89,33 @@ public final class Pets {
       Cos.add("pet_drake", "Drache", Cos.Slot.PET, Cos.Rarity.LEGENDARY, PetReal::drake);
    }
 
-   static Cos.Model grow(Cos.Model var0, float var1, float var2) {
-      return (var3, var4) -> {
-         float var5 = Math.max(0.0F, Math.min(1.0F, var4.growth));
-         float var6 = var4.preview ? 1.0F : 0.92F + (var1 - 0.92F) * var5;
-         var3.push();
-         var3.scale(var6);
+   static Cos.Model grow(Cos.Model m, float max, float ring) {
+      return (g, a) -> {
+         float k = Math.max(0.0F, Math.min(1.0F, a.growth));
+         float s = a.preview ? 1.0F : 0.92F + (max - 0.92F) * k;
+         g.push();
+         g.scale(s);
 
          try {
-            var0.render(var3, var4);
+            m.render(g, a);
          } finally {
-            var3.pop();
+            g.pop();
          }
 
-         if (var4.level >= 5 && !var4.preview) {
-            Pets.P var7 = new Pets.P();
-            var7.t = var4.time;
-            var7.lvl = var4.level;
-            PetRig.sparkles(var3, var7, var2 * var6);
+         if (a.level >= 5 && !a.preview) {
+            Pets.P p = new Pets.P();
+            p.t = a.time;
+            p.lvl = a.level;
+            PetRig.sparkles(g, p, ring * s);
          }
       };
    }
 
-   static String emotion(String var0) {
-      if (var0 != null) {
-         for (String var4 : EMOTIONS) {
-            if (var4.equals(var0)) {
-               return var4;
+   static String emotion(String e) {
+      if (e != null) {
+         for (String s : EMOTIONS) {
+            if (s.equals(e)) {
+               return s;
             }
          }
       }
@@ -123,386 +123,374 @@ public final class Pets {
       return "happy";
    }
 
-   static Pets.P pose(Cos.A var0) {
-      Pets.P var1 = new Pets.P();
-      float var2 = var1.t = var0.time;
-      float var3 = var1.sp = Math.max(0.0F, Math.min(1.0F, var0.speed));
-      var1.emo = emotion(var0.emotion);
-      var1.lookX = Math.max(-1.0F, Math.min(1.0F, var0.lookX));
-      var1.lookY = Math.max(-1.0F, Math.min(1.0F, var0.lookY));
-      float var4 = var2 * 11.0F;
-      var1.walk = PetGeo.sin(var4) * 38.0F * var3;
-      var1.breathe = PetGeo.sin(var2 * 2.2F);
-      var1.stepBob = Math.abs(PetGeo.sin(var4)) * 0.45F * var3;
-      var1.gr = Math.max(0.0F, Math.min(1.0F, var0.growth));
-      var1.lvl = Math.max(1, Math.min(5, var0.level));
-      var1.preview = var0.preview;
-      var1.sy = 1.0F + var1.breathe * 0.018F;
-      var1.sx = 1.0F - var1.breathe * 0.008F;
-      var1.headYaw = var1.lookX * 24.0F;
-      var1.headPitch = -var1.lookY * 14.0F;
-      var1.earTwitch = (float)Math.pow(Math.max(0.0, Math.sin(var2 * 0.9)), 40.0) * 14.0F;
-      float var5 = 18.0F;
-      float var6 = 7.0F;
-      var1.flapSpd = 13.0F;
-      String var7 = var1.emo;
-      switch (var7) {
+   static Pets.P pose(Cos.A a) {
+      Pets.P p = new Pets.P();
+      float t = p.t = a.time;
+      float sp = p.sp = Math.max(0.0F, Math.min(1.0F, a.speed));
+      p.emo = emotion(a.emotion);
+      p.lookX = Math.max(-1.0F, Math.min(1.0F, a.lookX));
+      p.lookY = Math.max(-1.0F, Math.min(1.0F, a.lookY));
+      float ph = t * 11.0F;
+      p.walk = PetGeo.sin(ph) * 38.0F * sp;
+      p.breathe = PetGeo.sin(t * 2.2F);
+      p.stepBob = Math.abs(PetGeo.sin(ph)) * 0.45F * sp;
+      p.gr = Math.max(0.0F, Math.min(1.0F, a.growth));
+      p.lvl = Math.max(1, Math.min(5, a.level));
+      p.preview = a.preview;
+      p.sy = 1.0F + p.breathe * 0.018F;
+      p.sx = 1.0F - p.breathe * 0.008F;
+      p.headYaw = p.lookX * 24.0F;
+      p.headPitch = -p.lookY * 14.0F;
+      p.earTwitch = (float)Math.pow(Math.max(0.0, Math.sin(t * 0.9)), 40.0) * 14.0F;
+      float tailAmp = 18.0F;
+      float tailSpd = 7.0F;
+      p.flapSpd = 13.0F;
+      String doze = p.emo;
+      switch (doze) {
          case "happy":
-            var1.headRoll = PetGeo.sin(var2 * 1.7F) * 5.0F;
-            var1.y = var1.y + Math.abs(PetGeo.sin(var2 * 3.4F)) * 0.2F;
-            var5 = 26.0F;
-            var6 = 10.0F;
+            p.headRoll = PetGeo.sin(t * 1.7F) * 5.0F;
+            p.y = p.y + Math.abs(PetGeo.sin(t * 3.4F)) * 0.2F;
+            tailAmp = 26.0F;
+            tailSpd = 10.0F;
             break;
          case "love":
-            var1.rotZ = PetGeo.sin(var2 * 2.3F) * 7.0F;
-            var1.headRoll = PetGeo.sin(var2 * 2.3F + 0.5F) * 10.0F;
-            var5 = 22.0F;
-            var6 = 5.0F;
+            p.rotZ = PetGeo.sin(t * 2.3F) * 7.0F;
+            p.headRoll = PetGeo.sin(t * 2.3F + 0.5F) * 10.0F;
+            tailAmp = 22.0F;
+            tailSpd = 5.0F;
             break;
          case "sleepy":
-            var1.lie = 1.0F - Math.min(1.0F, var3 * 2.0F);
-            var1.breathe = PetGeo.sin(var2 * 1.2F);
-            var1.sy = 1.0F + var1.breathe * 0.035F;
-            var1.sx = 1.0F - var1.breathe * 0.012F;
-            var1.headPitch = var1.headPitch + 7.0F * var1.lie;
-            var1.headRoll = 11.0F * var1.lie;
-            var1.ear = 0.35F;
-            var5 = 3.0F;
-            var6 = 1.0F;
-            var1.tailLift = -25.0F;
-            var1.hover = 0.45F;
-            var1.flapSpd = 5.0F;
+            p.lie = 1.0F - Math.min(1.0F, sp * 2.0F);
+            p.breathe = PetGeo.sin(t * 1.2F);
+            p.sy = 1.0F + p.breathe * 0.035F;
+            p.sx = 1.0F - p.breathe * 0.012F;
+            p.headPitch = p.headPitch + 7.0F * p.lie;
+            p.headRoll = 11.0F * p.lie;
+            p.ear = 0.35F;
+            tailAmp = 3.0F;
+            tailSpd = 1.0F;
+            p.tailLift = -25.0F;
+            p.hover = 0.45F;
+            p.flapSpd = 5.0F;
             break;
          case "sad":
-            var1.headPitch += 14.0F;
-            var1.ear = 0.0F;
-            var5 = 4.0F;
-            var6 = 2.0F;
-            var1.tailLift = -35.0F;
-            var1.y -= 0.08F;
-            var1.sy *= 0.97F;
-            var1.hover = 0.7F;
-            var1.flapSpd = 7.0F;
+            p.headPitch += 14.0F;
+            p.ear = 0.0F;
+            tailAmp = 4.0F;
+            tailSpd = 2.0F;
+            p.tailLift = -35.0F;
+            p.y -= 0.08F;
+            p.sy *= 0.97F;
+            p.hover = 0.7F;
+            p.flapSpd = 7.0F;
             break;
          case "excited":
-            float var9 = Math.abs(PetGeo.sin(var2 * 6.8F));
-            var1.y += var9 * 2.0F;
-            var1.sy *= 1.0F + (var9 - 0.35F) * 0.16F;
-            var1.sx *= 1.0F - (var9 - 0.35F) * 0.08F;
-            var1.headRoll = PetGeo.sin(var2 * 6.8F) * 6.0F;
-            var1.ear = 1.1F;
-            var5 = 36.0F;
-            var6 = 20.0F;
-            var1.hover = 1.1F;
-            var1.flapSpd = 22.0F;
+            float h = Math.abs(PetGeo.sin(t * 6.8F));
+            p.y += h * 2.0F;
+            p.sy *= 1.0F + (h - 0.35F) * 0.16F;
+            p.sx *= 1.0F - (h - 0.35F) * 0.08F;
+            p.headRoll = PetGeo.sin(t * 6.8F) * 6.0F;
+            p.ear = 1.1F;
+            tailAmp = 36.0F;
+            tailSpd = 20.0F;
+            p.hover = 1.1F;
+            p.flapSpd = 22.0F;
             break;
          case "angry":
-            var1.rootX = PetGeo.sin(var2 * 40.0F) * 0.2F;
-            var1.headPitch += 7.0F;
-            var1.ear = 0.45F;
-            var5 = 12.0F;
-            var6 = 24.0F;
-            var1.sx *= 1.05F;
-            var1.sy *= 0.97F;
-            var1.flapSpd = 18.0F;
+            p.rootX = PetGeo.sin(t * 40.0F) * 0.2F;
+            p.headPitch += 7.0F;
+            p.ear = 0.45F;
+            tailAmp = 12.0F;
+            tailSpd = 24.0F;
+            p.sx *= 1.05F;
+            p.sy *= 0.97F;
+            p.flapSpd = 18.0F;
             break;
          case "curious":
-            var1.headRoll = 18.0F + PetGeo.sin(var2 * 1.4F) * 4.0F;
-            var1.headYaw = var1.headYaw + PetGeo.sin(var2 * 0.6F) * 12.0F;
-            var1.headPitch -= 5.0F;
-            var1.ear = 1.12F;
-            var5 = 12.0F;
-            var6 = 3.0F;
-            var1.tailLift = 10.0F;
+            p.headRoll = 18.0F + PetGeo.sin(t * 1.4F) * 4.0F;
+            p.headYaw = p.headYaw + PetGeo.sin(t * 0.6F) * 12.0F;
+            p.headPitch -= 5.0F;
+            p.ear = 1.12F;
+            tailAmp = 12.0F;
+            tailSpd = 3.0F;
+            p.tailLift = 10.0F;
             break;
          case "dizzy":
-            var1.rotZ = PetGeo.sin(var2 * 3.1F) * 9.0F;
-            var1.rotX = PetGeo.cos(var2 * 3.1F) * 6.0F;
-            var1.headRoll = PetGeo.sin(var2 * 3.1F + 1.2F) * 14.0F;
-            var1.headYaw = var1.headYaw + PetGeo.cos(var2 * 3.1F) * 10.0F;
-            var1.ear = 0.6F;
-            var5 = 8.0F;
-            var6 = 2.0F;
+            p.rotZ = PetGeo.sin(t * 3.1F) * 9.0F;
+            p.rotX = PetGeo.cos(t * 3.1F) * 6.0F;
+            p.headRoll = PetGeo.sin(t * 3.1F + 1.2F) * 14.0F;
+            p.headYaw = p.headYaw + PetGeo.cos(t * 3.1F) * 10.0F;
+            p.ear = 0.6F;
+            tailAmp = 8.0F;
+            tailSpd = 2.0F;
       }
 
-      var1.tail = PetGeo.sin(var2 * var6) * var5;
-      PetRig.gait(var1);
-      var1.flap = PetGeo.sin(var2 * var1.flapSpd);
-      boolean var10 = var1.is("sleepy") && var3 < 0.3F && (var2 * 0.3F % 1.0F + 1.0F) % 1.0F < 0.78F;
-      var1.closed = var0.blink > 0.5F || var10;
-      return var1;
+      p.tail = PetGeo.sin(t * tailSpd) * tailAmp;
+      PetRig.gait(p);
+      p.flap = PetGeo.sin(t * p.flapSpd);
+      boolean doze = p.is("sleepy") && sp < 0.3F && (t * 0.3F % 1.0F + 1.0F) % 1.0F < 0.78F;
+      p.closed = a.blink > 0.5F || doze;
+      return p;
    }
 
-   static void root(G var0, Pets.P var1) {
-      var0.translate(var1.rootX, var1.y + var1.stepBob, 0.0F);
-      if (var1.rotZ != 0.0F) {
-         var0.rotZ(var1.rotZ);
+   static void root(G g, Pets.P p) {
+      g.translate(p.rootX, p.y + p.stepBob, 0.0F);
+      if (p.rotZ != 0.0F) {
+         g.rotZ(p.rotZ);
       }
 
-      if (var1.rotX != 0.0F) {
-         var0.rotX(var1.rotX);
+      if (p.rotX != 0.0F) {
+         g.rotX(p.rotX);
       }
 
-      var0.scale(var1.sx, var1.sy, var1.sx);
+      g.scale(p.sx, p.sy, p.sx);
    }
 
-   static void headTurn(G var0, Pets.P var1) {
-      var0.rotY(var1.headYaw);
-      var0.rotX(var1.headPitch);
-      var0.rotZ(var1.headRoll);
+   static void headTurn(G g, Pets.P p) {
+      g.rotY(p.headYaw);
+      g.rotX(p.headPitch);
+      g.rotZ(p.headRoll);
    }
 
-   static String fur(String var0) {
-      return "pet_fur:" + var0;
+   static String fur(String k) {
+      return "pet_fur:" + k;
    }
 
-   static String head(String var0) {
-      return "pet_head:" + var0;
+   static String head(String k) {
+      return "pet_head:" + k;
    }
 
-   static String col(int var0) {
-      return "pet_c:" + String.format("%06X", var0 & 16777215);
+   static String col(int rgb) {
+      return "pet_c:" + String.format("%06X", rgb & 16777215);
    }
 
-   static String gl(int var0) {
-      return "pet_gl:" + String.format("%06X", var0 & 16777215);
+   static String gl(int rgb) {
+      return "pet_gl:" + String.format("%06X", rgb & 16777215);
    }
 
-   static void face(G var0, Pets.P var1, String var2, float var3, float var4, float var5, float var6, float var7, float var8, float var9, float var10) {
-      boolean var11 = var0.glow;
-      int var12 = var0.color;
-      boolean var13 = var2.equals("led");
-      var0.color(-1).glow(var13);
-      PetGeo.decal(var0, "pet_face:" + var2 + ":" + var1.emo, var3, var4, var5, var6, var7, var8, 0.0F, var10, var9, 0.0F, 0.0F, 1.0F, 1.0F, 1.035F);
-      PetGeo.decal(
-         var0, eyes(var2, var1), var3, var4, var5, var6, var7, var8, var1.lookX * 0.09F, var10 + var1.lookY * 0.06F, var9, 0.0F, 0.0F, 1.0F, 1.0F, 1.05F
-      );
-      var0.color(var12).glow(var11);
+   static void face(G g, Pets.P p, String style, float cx, float cy, float cz, float rx, float ry, float rz, float span, float el0) {
+      boolean og = g.glow;
+      int oc = g.color;
+      boolean led = style.equals("led");
+      g.color(-1).glow(led);
+      PetGeo.decal(g, "pet_face:" + style + ":" + p.emo, cx, cy, cz, rx, ry, rz, 0.0F, el0, span, 0.0F, 0.0F, 1.0F, 1.0F, 1.035F);
+      PetGeo.decal(g, eyes(style, p), cx, cy, cz, rx, ry, rz, p.lookX * 0.09F, el0 + p.lookY * 0.06F, span, 0.0F, 0.0F, 1.0F, 1.0F, 1.05F);
+      g.color(oc).glow(og);
    }
 
-   static void faceFlat(G var0, Pets.P var1, String var2, float var3, float var4, float var5, float var6, float var7) {
-      boolean var8 = var0.glow;
-      int var9 = var0.color;
-      var0.color(-1).glow(var2.equals("led"));
-      PetGeo.flat(var0, "pet_face:" + var2 + ":" + var1.emo, var3, var4, var5, var6, var7);
-      PetGeo.flat(var0, eyes(var2, var1), var3 + var1.lookX * var6 * 0.05F, var4 + var1.lookY * var7 * 0.05F, var5 + 0.03F, var6, var7);
-      var0.color(var9).glow(var8);
+   static void faceFlat(G g, Pets.P p, String style, float cx, float cy, float z, float w, float h) {
+      boolean og = g.glow;
+      int oc = g.color;
+      g.color(-1).glow(style.equals("led"));
+      PetGeo.flat(g, "pet_face:" + style + ":" + p.emo, cx, cy, z, w, h);
+      PetGeo.flat(g, eyes(style, p), cx + p.lookX * w * 0.05F, cy + p.lookY * h * 0.05F, z + 0.03F, w, h);
+      g.color(oc).glow(og);
    }
 
-   static String eyes(String var0, Pets.P var1) {
-      return "pet_eyes:" + var0 + ":" + var1.emo + ":" + (var1.closed ? 1 : 0);
+   static String eyes(String style, Pets.P p) {
+      return "pet_eyes:" + style + ":" + p.emo + ":" + (p.closed ? 1 : 0);
    }
 
-   static void nose(G var0, int var1, float var2, float var3, float var4, float var5, float var6) {
-      PetGeo.blob(var0, gl(var1), 0.0F, PetGeo.sin(var5) * var3, PetGeo.cos(var5) * var4 * 0.99F, var6 * 1.25F, var6 * 0.85F, var6 * 0.8F, 6, 4);
+   static void nose(G g, int rgb, float rx, float ry, float rz, float el, float r) {
+      PetGeo.blob(g, gl(rgb), 0.0F, PetGeo.sin(el) * ry, PetGeo.cos(el) * rz * 0.99F, r * 1.25F, r * 0.85F, r * 0.8F, 6, 4);
    }
 
-   static void earPointy(G var0, Pets.P var1, String var2, String var3, float var4, float var5, float var6, int var7, float var8, float var9, float var10) {
-      earPointy(var0, var1, var2, var3, null, var4, var5, var6, var7, var8, var9, var10);
+   static void earPointy(G g, Pets.P p, String tex, String inner, float x, float y, float z, int side, float w, float h, float tilt) {
+      earPointy(g, p, tex, inner, null, x, y, z, side, w, h, tilt);
    }
 
-   static void earPointy(
-      G var0, Pets.P var1, String var2, String var3, String var4, float var5, float var6, float var7, int var8, float var9, float var10, float var11
-   ) {
-      var0.push();
-      var0.translate(var5, var6, var7);
-      float var12 = Math.max(0.0F, 1.0F - var1.ear);
-      float var13 = Math.max(0.0F, var1.ear - 1.0F) * 60.0F;
-      var0.rotZ(-var8 * (var11 + var12 * 58.0F - var13 + var1.earTwitch * (var8 > 0 ? 1 : 0)));
-      var0.rotX(-var12 * 22.0F);
-      var0.push();
-      var0.scale(1.0F, 1.0F, 0.42F);
-      PetGeo.cone(var0, var2, var9, var10, 8, false);
-      if (var4 != null) {
-         var0.translate(0.0F, var10 * 0.6F, 0.0F);
-         PetGeo.cone(var0, var4, var9 * 0.43F, var10 * 0.41F, 8, false);
+   static void earPointy(G g, Pets.P p, String tex, String inner, String tip, float x, float y, float z, int side, float w, float h, float tilt) {
+      g.push();
+      g.translate(x, y, z);
+      float droop = Math.max(0.0F, 1.0F - p.ear);
+      float perk = Math.max(0.0F, p.ear - 1.0F) * 60.0F;
+      g.rotZ(-side * (tilt + droop * 58.0F - perk + p.earTwitch * (side > 0 ? 1 : 0)));
+      g.rotX(-droop * 22.0F);
+      g.push();
+      g.scale(1.0F, 1.0F, 0.42F);
+      PetGeo.cone(g, tex, w, h, 8, false);
+      if (tip != null) {
+         g.translate(0.0F, h * 0.6F, 0.0F);
+         PetGeo.cone(g, tip, w * 0.43F, h * 0.41F, 8, false);
       }
 
-      var0.pop();
-      if (var3 != null) {
-         var0.push();
-         var0.translate(0.0F, var10 * 0.08F, var9 * 0.13F);
-         var0.scale(1.0F, 1.0F, 0.42F);
-         PetGeo.cone(var0, var3, var9 * 0.62F, var10 * 0.76F, 7, false);
-         var0.pop();
+      g.pop();
+      if (inner != null) {
+         g.push();
+         g.translate(0.0F, h * 0.08F, w * 0.13F);
+         g.scale(1.0F, 1.0F, 0.42F);
+         PetGeo.cone(g, inner, w * 0.62F, h * 0.76F, 7, false);
+         g.pop();
       }
 
-      var0.pop();
+      g.pop();
    }
 
-   static void earRound(G var0, Pets.P var1, String var2, String var3, float var4, float var5, float var6, int var7, float var8) {
-      var0.push();
-      var0.translate(var4, var5, var6);
-      float var9 = Math.max(0.0F, 1.0F - var1.ear);
-      var0.rotZ(-var7 * (15.0F + var9 * 35.0F + var1.earTwitch * (var7 > 0 ? 1 : 0)));
-      var0.rotX(-var9 * 15.0F);
-      PetGeo.blob(var0, var2, 0.0F, var8 * 0.55F, 0.0F, var8, var8, var8 * 0.55F, 7, 4);
-      if (var3 != null) {
-         PetGeo.blob(var0, var3, 0.0F, var8 * 0.5F, var8 * 0.26F, var8 * 0.62F, var8 * 0.62F, var8 * 0.33F, 5, 2);
+   static void earRound(G g, Pets.P p, String tex, String inner, float x, float y, float z, int side, float r) {
+      g.push();
+      g.translate(x, y, z);
+      float droop = Math.max(0.0F, 1.0F - p.ear);
+      g.rotZ(-side * (15.0F + droop * 35.0F + p.earTwitch * (side > 0 ? 1 : 0)));
+      g.rotX(-droop * 15.0F);
+      PetGeo.blob(g, tex, 0.0F, r * 0.55F, 0.0F, r, r, r * 0.55F, 7, 4);
+      if (inner != null) {
+         PetGeo.blob(g, inner, 0.0F, r * 0.5F, r * 0.26F, r * 0.62F, r * 0.62F, r * 0.33F, 5, 2);
       }
 
-      var0.pop();
+      g.pop();
    }
 
-   static void tail(G var0, Pets.P var1, String[] var2, float[] var3, float var4, float var5, float var6, float var7) {
-      var0.push();
-      var0.rotY(var1.tail * var7 + var1.tailSway);
-      var0.rotX(var6 + var1.tailLift);
+   static void tail(G g, Pets.P p, String[] tex, float[] r, float segLen, float curl, float lift, float wag) {
+      g.push();
+      g.rotY(p.tail * wag + p.tailSway);
+      g.rotX(lift + p.tailLift);
 
-      for (int var8 = 0; var8 < var3.length; var8++) {
-         var0.rotX(var5);
-         var0.rotY(var1.tail * 0.35F * var7);
-         PetGeo.blob(var0, var2[Math.min(var8, var2.length - 1)], 0.0F, 0.0F, -var4 * 0.5F, var3[var8], var3[var8], var4 * 0.62F + var3[var8] * 0.3F, 7, 4);
-         var0.translate(0.0F, 0.0F, -var4 * 0.82F);
+      for (int i = 0; i < r.length; i++) {
+         g.rotX(curl);
+         g.rotY(p.tail * 0.35F * wag);
+         PetGeo.blob(g, tex[Math.min(i, tex.length - 1)], 0.0F, 0.0F, -segLen * 0.5F, r[i], r[i], segLen * 0.62F + r[i] * 0.3F, 7, 4);
+         g.translate(0.0F, 0.0F, -segLen * 0.82F);
       }
 
-      var0.pop();
+      g.pop();
    }
 
-   static void leg(G var0, String var1, float var2, float var3, float var4, float var5, float var6, float var7) {
-      var0.push();
-      var0.translate(var2, var5 - var7, var3);
-      var0.rotX(var6);
-      PetGeo.blob(var0, var1, 0.0F, -var5 * 0.45F, 0.0F, var4, var5 * 0.56F, var4 * 1.05F, 6, 4);
-      var0.pop();
+   static void leg(G g, String tex, float x, float z, float r, float h, float swing, float drop) {
+      g.push();
+      g.translate(x, h - drop, z);
+      g.rotX(swing);
+      PetGeo.blob(g, tex, 0.0F, -h * 0.45F, 0.0F, r, h * 0.56F, r * 1.05F, 6, 4);
+      g.pop();
    }
 
-   static void legs4(G var0, Pets.P var1, String var2, float var3, float var4, float var5, float var6, float var7) {
-      float var8 = var1.lie * var7 * 0.72F;
+   static void legs4(G g, Pets.P p, String tex, float x, float zf, float zb, float r, float h) {
+      float drop = p.lie * h * 0.72F;
 
-      for (int var9 = -1; var9 <= 1; var9 += 2) {
-         leg(var0, var2, var9 * var3, var4, var6, var7, var9 * var1.walk - var1.lie * 72.0F, var8);
-         leg(var0, var2, var9 * var3, var5, var6, var7, -var9 * var1.walk + var1.lie * 72.0F, var8);
+      for (int s = -1; s <= 1; s += 2) {
+         leg(g, tex, s * x, zf, r, h, s * p.walk - p.lie * 72.0F, drop);
+         leg(g, tex, s * x, zb, r, h, -s * p.walk + p.lie * 72.0F, drop);
       }
    }
 
-   static void fx(G var0, Pets.P var1, float var2) {
-      if (var1.is("dizzy")) {
-         for (int var3 = 0; var3 < 3; var3++) {
-            double var4 = var1.t * 3.2 + var3 * Math.PI * 2.0 / 3.0;
-            PetGeo.sprite(var0, "pet_star", PetGeo.cos(var4) * 2.8F, var2 + 0.4F + PetGeo.sin(var4 * 2.0) * 0.2F, PetGeo.sin(var4) * 2.8F, 1.5F, -1);
+   static void fx(G g, Pets.P p, float top) {
+      if (p.is("dizzy")) {
+         for (int k = 0; k < 3; k++) {
+            double an = p.t * 3.2 + k * Math.PI * 2.0 / 3.0;
+            PetGeo.sprite(g, "pet_star", PetGeo.cos(an) * 2.8F, top + 0.4F + PetGeo.sin(an * 2.0) * 0.2F, PetGeo.sin(an) * 2.8F, 1.5F, -1);
          }
-      } else if (var1.is("love")) {
-         for (int var6 = 0; var6 < 2; var6++) {
-            float var7 = ((var1.t * 0.55F + var6 * 0.5F) % 1.0F + 1.0F) % 1.0F;
-            int var5 = (int)(255.0 * Math.sin(var7 * Math.PI));
+      } else if (p.is("love")) {
+         for (int k = 0; k < 2; k++) {
+            float ph = ((p.t * 0.55F + k * 0.5F) % 1.0F + 1.0F) % 1.0F;
+            int al = (int)(255.0 * Math.sin(ph * Math.PI));
             PetGeo.sprite(
-               var0,
-               "pet_heart",
-               (var6 == 0 ? 1.6F : -1.8F) + PetGeo.sin(var7 * 6.0F + var6) * 0.5F,
-               var2 + var7 * 3.2F,
-               0.5F,
-               1.2F + 0.5F * var7,
-               var5 << 24 | 16777215
+               g, "pet_heart", (k == 0 ? 1.6F : -1.8F) + PetGeo.sin(ph * 6.0F + k) * 0.5F, top + ph * 3.2F, 0.5F, 1.2F + 0.5F * ph, al << 24 | 16777215
             );
          }
       }
    }
 
-   static void quad4(G var0, Pets.P var1, Pets.Q4 var2) {
-      float var3 = var1.gr;
-      float var4 = var1.preview ? 0.9F : 0.88F + 0.46F * var3;
-      float var5 = 1.0F + 1.25F * var3;
-      float var6 = 1.0F + 0.4F * var3;
-      float var7 = 1.0F - 0.3F * var3;
-      float var8 = var2.legH * var5;
-      float var9 = var8 - var2.legH;
-      float var10 = var2.bodyRz * var6;
-      float var11 = var2.bodyY + var9;
-      float var12 = var2.bodyZ * var6;
-      float var13 = var2.legZf * var6;
-      float var14 = var2.legZb * var6;
-      float var15 = var2.headY + var9 - var2.headRy * (1.0F - var7) * 0.9F + 0.35F * var3;
-      float var16 = var2.headZ + var10 * 0.3F * var3;
-      float var17 = var11 - var2.bodyRy;
-      var1.stepBob = 0.0F;
-      var0.push();
-      var0.scale(var4);
-      root(var0, var1);
-      PetRig.Frame var18 = PetRig.frame(var1, var8, var13, var14, var8, var17);
-      float var19 = var2.legR * (1.0F - 0.12F * var3);
-      PetRig.LegStyle var20 = new PetRig.LegStyle(var3 > 0.3F ? var2.body : var2.leg, var2.leg, var2.leg, var19, var19 * 0.88F, var19 * 0.95F);
-      var20.pawLen = 1.15F;
-      PetRig.legs(var0, var1, var18, var20, var20, var2.legX, var13, var14, var8, var8, 0.52F, 0.5F);
-      var0.push();
-      var18.apply(var0);
-      var0.rotZ(var1.roll);
-      var0.push();
-      var0.translate(0.0F, var11, var12);
-      var0.scale(1.0F, 1.0F, var1.stretch);
-      PetGeo.blob(var0, var2.body, 0.0F, 0.0F, 0.0F, var2.bodyRx, var2.bodyRy, var10, 10, 5);
-      if (var2.bodyExtra != null) {
-         var2.bodyExtra.draw(var0, var1);
+   static void quad4(G g, Pets.P p, Pets.Q4 q) {
+      float k = p.gr;
+      float S = p.preview ? 0.9F : 0.88F + 0.46F * k;
+      float legF = 1.0F + 1.25F * k;
+      float lenF = 1.0F + 0.4F * k;
+      float headF = 1.0F - 0.3F * k;
+      float legH = q.legH * legF;
+      float lift = legH - q.legH;
+      float bodyRz = q.bodyRz * lenF;
+      float bodyY = q.bodyY + lift;
+      float bodyZ = q.bodyZ * lenF;
+      float zf = q.legZf * lenF;
+      float zb = q.legZb * lenF;
+      float headY = q.headY + lift - q.headRy * (1.0F - headF) * 0.9F + 0.35F * k;
+      float headZ = q.headZ + bodyRz * 0.3F * k;
+      float belly = bodyY - q.bodyRy;
+      p.stepBob = 0.0F;
+      g.push();
+      g.scale(S);
+      root(g, p);
+      PetRig.Frame f = PetRig.frame(p, legH, zf, zb, legH, belly);
+      float lr = q.legR * (1.0F - 0.12F * k);
+      PetRig.LegStyle ls = new PetRig.LegStyle(k > 0.3F ? q.body : q.leg, q.leg, q.leg, lr, lr * 0.88F, lr * 0.95F);
+      ls.pawLen = 1.15F;
+      PetRig.legs(g, p, f, ls, ls, q.legX, zf, zb, legH, legH, 0.52F, 0.5F);
+      g.push();
+      f.apply(g);
+      g.rotZ(p.roll);
+      g.push();
+      g.translate(0.0F, bodyY, bodyZ);
+      g.scale(1.0F, 1.0F, p.stretch);
+      PetGeo.blob(g, q.body, 0.0F, 0.0F, 0.0F, q.bodyRx, q.bodyRy, bodyRz, 10, 5);
+      if (q.bodyExtra != null) {
+         q.bodyExtra.draw(g, p);
       }
 
-      if (var3 > 0.3F) {
-         float var21 = Math.min(1.0F, (var3 - 0.3F) / 0.5F);
-         PetGeo.blob(
-            var0, var2.body, 0.0F, var2.bodyRy * 0.25F, var10 * 0.72F, var2.bodyRx * 0.62F * var21, var2.bodyRy * 0.62F * var21, var10 * 0.32F * var21, 7, 4
-         );
+      if (k > 0.3F) {
+         float cf = Math.min(1.0F, (k - 0.3F) / 0.5F);
+         PetGeo.blob(g, q.body, 0.0F, q.bodyRy * 0.25F, bodyRz * 0.72F, q.bodyRx * 0.62F * cf, q.bodyRy * 0.62F * cf, bodyRz * 0.32F * cf, 7, 4);
       }
 
-      if (var2.tail != null) {
-         var0.push();
-         var0.translate(0.0F, -var2.bodyRy * 0.1F + 0.2F * var3, -var10 * 0.88F);
-         var0.scale(1.0F + 0.35F * var3);
-         var2.tail.draw(var0, var1);
-         var0.pop();
+      if (q.tail != null) {
+         g.push();
+         g.translate(0.0F, -q.bodyRy * 0.1F + 0.2F * k, -bodyRz * 0.88F);
+         g.scale(1.0F + 0.35F * k);
+         q.tail.draw(g, p);
+         g.pop();
       }
 
-      var0.pop();
-      if (var3 > 0.15F) {
-         float var24 = (var11 + var15) * 0.5F;
-         float var22 = (var12 + var10 * 0.55F + var16) * 0.5F;
-         PetGeo.blob(var0, var2.body, 0.0F, var24, var22, var2.bodyRx * 0.6F, (var15 - var11) * 0.42F, var2.bodyRx * 0.62F, 8, 4);
+      g.pop();
+      if (k > 0.15F) {
+         float ny = (bodyY + headY) * 0.5F;
+         float nz = (bodyZ + bodyRz * 0.55F + headZ) * 0.5F;
+         PetGeo.blob(g, q.body, 0.0F, ny, nz, q.bodyRx * 0.6F, (headY - bodyY) * 0.42F, q.bodyRx * 0.62F, 8, 4);
       }
 
-      var0.push();
-      var0.translate(0.0F, var11 + var2.bodyRy * 0.62F + 0.2F * var3, var12 + var10 * 0.5F + 0.2F * var3);
-      var0.rotX(28.0F);
-      PetRig.collar(var0, var1, var2.bodyRx * (0.66F + 0.05F * var3), 0.24F);
-      var0.pop();
-      var0.push();
-      var0.translate(0.0F, var15 - var1.lie * 0.35F - var1.bob * var8 * 0.5F, var16);
-      headTurn(var0, var1);
-      var0.rotX(var1.nod - var1.sit * 6.0F);
-      var0.scale(var7);
-      String var25 = PetRig.style(var2.style, var3);
-      PetGeo.blob(var0, var2.head, 0.0F, 0.0F, 0.0F, var2.headRx, var2.headRy, var2.headRz, 14, 9);
-      face(var0, var1, var25, 0.0F, 0.0F, 0.0F, var2.headRx, var2.headRy, var2.headRz, var2.span, var2.faceEl);
-      if (var2.nose >= 0) {
-         nose(var0, var2.nose, var2.headRx, var2.headRy, var2.headRz, var2.noseEl, var2.noseR * (1.0F + 0.4F * var3));
+      g.push();
+      g.translate(0.0F, bodyY + q.bodyRy * 0.62F + 0.2F * k, bodyZ + bodyRz * 0.5F + 0.2F * k);
+      g.rotX(28.0F);
+      PetRig.collar(g, p, q.bodyRx * (0.66F + 0.05F * k), 0.24F);
+      g.pop();
+      g.push();
+      g.translate(0.0F, headY - p.lie * 0.35F - p.bob * legH * 0.5F, headZ);
+      headTurn(g, p);
+      g.rotX(p.nod - p.sit * 6.0F);
+      g.scale(headF);
+      String style = PetRig.style(q.style, k);
+      PetGeo.blob(g, q.head, 0.0F, 0.0F, 0.0F, q.headRx, q.headRy, q.headRz, 14, 9);
+      face(g, p, style, 0.0F, 0.0F, 0.0F, q.headRx, q.headRy, q.headRz, q.span, q.faceEl);
+      if (q.nose >= 0) {
+         nose(g, q.nose, q.headRx, q.headRy, q.headRz, q.noseEl, q.noseR * (1.0F + 0.4F * k));
       }
 
-      if (var3 > 0.4F) {
-         float var26 = Math.min(1.0F, (var3 - 0.4F) / 0.4F);
+      if (k > 0.4F) {
+         float tf = Math.min(1.0F, (k - 0.4F) / 0.4F);
 
-         for (int var23 = -1; var23 <= 1; var23 += 2) {
-            var0.push();
-            var0.translate(var23 * var2.headRx * 0.9F, -var2.headRy * 0.35F, -0.2F);
-            var0.rotZ(-var23 * 115);
-            var0.scale(1.0F, 1.0F, 0.5F);
-            PetGeo.cone(var0, var2.head, 0.7F * var26, 1.3F * var26, 5, false);
-            var0.pop();
+         for (int s = -1; s <= 1; s += 2) {
+            g.push();
+            g.translate(s * q.headRx * 0.9F, -q.headRy * 0.35F, -0.2F);
+            g.rotZ(-s * 115);
+            g.scale(1.0F, 1.0F, 0.5F);
+            PetGeo.cone(g, q.head, 0.7F * tf, 1.3F * tf, 5, false);
+            g.pop();
          }
       }
 
-      if (var2.ears != null) {
-         var0.push();
-         var0.scale(1.0F + 0.12F * var3);
-         var2.ears.draw(var0, var1);
-         var0.pop();
+      if (q.ears != null) {
+         g.push();
+         g.scale(1.0F + 0.12F * k);
+         q.ears.draw(g, p);
+         g.pop();
       }
 
-      if (var2.headExtra != null) {
-         var2.headExtra.draw(var0, var1);
+      if (q.headExtra != null) {
+         q.headExtra.draw(g, p);
       }
 
-      var0.pop();
-      fx(var0, var1, var15 + var2.headRy * var7 + 1.2F);
-      var0.pop();
-      PetRig.sparkles(var0, var1, Math.max(var2.bodyRx, var10) + 1.2F);
-      var0.pop();
+      g.pop();
+      fx(g, p, headY + q.headRy * headF + 1.2F);
+      g.pop();
+      PetRig.sparkles(g, p, Math.max(q.bodyRx, bodyRz) + 1.2F);
+      g.pop();
    }
 
    static final class P {
@@ -553,8 +541,8 @@ public final class Pets {
       float crouch;
       float stepBob;
 
-      boolean is(String var1) {
-         return this.emo.equals(var1);
+      boolean is(String e) {
+         return this.emo.equals(e);
       }
    }
 

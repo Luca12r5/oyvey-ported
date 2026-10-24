@@ -26,49 +26,49 @@ public final class Tx {
       return Minecraft.getInstance().getTextureManager();
    }
 
-   public static DynamicTexture register(Identifier var0, int[] var1, int var2, int var3, boolean var4) {
-      NativeImage var5 = new NativeImage(var2, var3, true);
-      fill(var5, var1, var2, var3);
-      DynamicTexture var6 = new DynamicTexture(() -> "legoclient/" + var0.getPath(), var5);
-      tm().register(var0, var6);
-      var6.upload();
-      if (var4) {
-         linear(var6);
+   public static DynamicTexture register(Identifier id, int[] argb, int w, int h, boolean linear) {
+      NativeImage img = new NativeImage(w, h, true);
+      fill(img, argb, w, h);
+      DynamicTexture tex = new DynamicTexture(() -> "legoclient/" + id.getPath(), img);
+      tm().register(id, tex);
+      tex.upload();
+      if (linear) {
+         linear(tex);
       }
 
-      return var6;
+      return tex;
    }
 
-   public static void update(DynamicTexture var0, int[] var1, int var2, int var3) {
-      fill(var0.getPixels(), var1, var2, var3);
-      var0.upload();
+   public static void update(DynamicTexture tex, int[] argb, int w, int h) {
+      fill(tex.getPixels(), argb, w, h);
+      tex.upload();
    }
 
-   public static void destroy(Identifier var0) {
+   public static void destroy(Identifier id) {
       try {
-         tm().release(var0);
+         tm().release(id);
       } catch (Throwable var2) {
       }
    }
 
-   private static void fill(NativeImage var0, int[] var1, int var2, int var3) {
-      int var4 = var2 * var3;
+   private static void fill(NativeImage img, int[] argb, int w, int h) {
+      int n = w * h;
       if (fast) {
          try {
-            long var5 = var0.getPointer();
-            if (var5 != 0L) {
-               IntBuffer var7 = MemoryUtil.memIntBuffer(var5, var4);
-               int[] var8 = new int[var2];
+            long ptr = img.getPointer();
+            if (ptr != 0L) {
+               IntBuffer buf = MemoryUtil.memIntBuffer(ptr, n);
+               int[] row = new int[w];
 
-               for (int var9 = 0; var9 < var3; var9++) {
-                  int var10 = var9 * var2;
+               for (int y = 0; y < h; y++) {
+                  int o = y * w;
 
-                  for (int var11 = 0; var11 < var2; var11++) {
-                     int var12 = var1[var10 + var11];
-                     var8[var11] = var12 & -16711936 | (var12 & 0xFF) << 16 | var12 >> 16 & 0xFF;
+                  for (int x = 0; x < w; x++) {
+                     int c = argb[o + x];
+                     row[x] = c & -16711936 | (c & 0xFF) << 16 | c >> 16 & 0xFF;
                   }
 
-                  var7.put(var8, 0, var2);
+                  buf.put(row, 0, w);
                }
 
                return;
@@ -78,49 +78,47 @@ public final class Tx {
          }
       }
 
-      for (int var14 = 0; var14 < var3; var14++) {
-         for (int var6 = 0; var6 < var2; var6++) {
-            var0.setPixel(var6, var14, var1[var14 * var2 + var6]);
+      for (int y = 0; y < h; y++) {
+         for (int x = 0; x < w; x++) {
+            img.setPixel(x, y, argb[y * w + x]);
          }
       }
    }
 
-   public static void linear(AbstractTexture var0) {
-      if (!linearBroken && var0 != null) {
+   public static void linear(AbstractTexture tex) {
+      if (!linearBroken && tex != null) {
          try {
             if (linearSampler == null) {
-               Class var1 = Class.forName("com.mojang.blaze3d.systems.RenderSystem");
-               Object var2 = null;
+               Class<?> rs = Class.forName("com.mojang.blaze3d.systems.RenderSystem");
+               Object cache = null;
 
-               for (Method var6 : var1.getMethods()) {
-                  if (var6.getParameterCount() == 0
-                     && Modifier.isStatic(var6.getModifiers())
-                     && var6.getReturnType().getName().equals(dev.lego.util.Remap.clazz("net.minecraft.class_12136"))) {
-                     var2 = var6.invoke(null);
+               for (Method m : rs.getMethods()) {
+                  if (m.getParameterCount() == 0 && Modifier.isStatic(m.getModifiers()) && m.getReturnType().getName().equals(dev.lego.util.Remap.clazz("net.minecraft.class_12136"))) {
+                     cache = m.invoke(null);
                      break;
                   }
                }
 
-               if (var2 == null) {
+               if (cache == null) {
                   throw new IllegalStateException("no sampler cache");
                }
 
-               Class var10 = Class.forName("com.mojang.blaze3d.textures.FilterMode");
-               Object var11 = null;
+               Class<?> fm = Class.forName("com.mojang.blaze3d.textures.FilterMode");
+               Object lin = null;
 
-               for (Object var8 : var10.getEnumConstants()) {
-                  if (((Enum)var8).name().equals("LINEAR")) {
-                     var11 = var8;
+               for (Object c : fm.getEnumConstants()) {
+                  if (((Enum)c).name().equals("LINEAR")) {
+                     lin = c;
                   }
                }
 
-               Method var13 = var2.getClass().getMethod(dev.lego.util.Remap.method("net.minecraft.class_12136", "method_75294", "(Lcom/mojang/blaze3d/textures/FilterMode;)Lnet/minecraft/class_12137;"), var10);
-               linearSampler = var13.invoke(var2, var11);
+               Method get = cache.getClass().getMethod(dev.lego.util.Remap.method("net.minecraft.class_12136", "method_75294", "(Lcom/mojang/blaze3d/textures/FilterMode;)Lnet/minecraft/class_12137;"), fm);
+               linearSampler = get.invoke(cache, lin);
                samplerField = AbstractTexture.class.getDeclaredField(dev.lego.util.Remap.field("net.minecraft.class_1044", "field_63613", "Lnet/minecraft/class_12137;"));
                samplerField.setAccessible(true);
             }
 
-            samplerField.set(var0, linearSampler);
+            samplerField.set(tex, linearSampler);
          } catch (Throwable var9) {
             linearBroken = true;
             LegoClient.LOG("Linearer Filter nicht verfügbar: " + var9);
@@ -128,9 +126,9 @@ public final class Tx {
       }
    }
 
-   public static void linear(Identifier var0) {
+   public static void linear(Identifier id) {
       try {
-         linear(tm().getTexture(var0));
+         linear(tm().getTexture(id));
       } catch (Throwable var2) {
       }
    }
