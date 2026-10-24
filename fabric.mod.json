@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "legoclient",
+  "version": "3.4.x-upstream",
+  "name": "LEGO Client (upstream source)",
+  "environment": "client",
+  "depends": {
+    "minecraft": "~1.21.11"
+  }
+}
