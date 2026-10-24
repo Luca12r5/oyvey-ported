@@ -1,5 +1,8 @@
 # API explorer for the 26.3 port (see mc-api.yml).
 # SDL3 text input: how 26.3 turns on character events for text fields
-grep (?i)textinput|startText|stopText|TextInput
-classgrep net.minecraft.client.gui.components.EditBox (?i)focus|text|input
-classgrep net.minecraft.client.gui.screens.Screen (?i)charTyped|character|textInput
+classgrep com.mojang.blaze3d.platform.Window (?i)text|handle|sdl
+classgrep net.minecraft.client.KeyboardHandler (?i)text|char
+classgrep net.minecraft.client.gui.components.EditBox (?i)focus|textinput
+classgrep net.minecraft.client.gui.components.events.ContainerEventHandler (?i)focus
+classgrep net.minecraft.client.gui.screens.Screen (?i)charTyped|textinput|focus
+code net.minecraft.client.gui.components.EditBox void setFocused
