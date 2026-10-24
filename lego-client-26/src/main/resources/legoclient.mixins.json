@@ -23,7 +23,8 @@
     "FovRangeMixin",
     "FireOverlayMixin",
     "FirstPersonKnifeMixin",
-    "ItemInHandKnifeMixin"
+    "ItemInHandKnifeMixin",
+    "KeyStateGuardMixin"
   ],
   "injectors": {
     "defaultRequire": 0
