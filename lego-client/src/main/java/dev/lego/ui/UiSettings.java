@@ -32,6 +32,8 @@ public final class UiSettings {
    public static int guiStyle = 0;
    public static final String[] GUI_STYLES = new String[]{"Standard", "Modern", "Glass"};
    public static int language = 0;
+   /** The LEGO menu key opens the Visor (VR) instead of the classic click GUI; Shift + key always opens the classic one. */
+   public static boolean visorGui = true;
 
    private UiSettings() {
    }
@@ -66,6 +68,7 @@ public final class UiSettings {
             m.put("bgImage", UiSettings.bgImage);
             m.put("guiStyle", (long)UiSettings.guiStyle);
             m.put("language", (long)UiSettings.language);
+            m.put("visorGui", UiSettings.visorGui);
             return m;
          }
 
@@ -91,6 +94,7 @@ public final class UiSettings {
             UiSettings.guiLine = Json.bool(o, "guiLine", UiSettings.guiLine);
             UiSettings.glass = Math.max(0.15, Math.min(1.0, Json.dbl(o, "glass", UiSettings.glass)));
             UiSettings.bgImage = Json.str(o, "bgImage", UiSettings.bgImage);
+            UiSettings.visorGui = Json.bool(o, "visorGui", UiSettings.visorGui);
             UiSettings.guiStyle = (int)Math.max(0L, Math.min((long)(UiSettings.GUI_STYLES.length - 1), Json.num(o, "guiStyle", UiSettings.guiStyle)));
             UiSettings.language = (int)Math.max(0L, Math.min((long)(Lang.LANGUAGES.length - 1), Json.num(o, "language", UiSettings.language)));
             Lang.setLanguage(UiSettings.language);

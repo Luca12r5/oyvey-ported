@@ -401,7 +401,12 @@ public final class LegoClient implements ClientModInitializer {
 
          while (guiKey.consumeClick()) {
             if (client.screen == null) {
-               LegoScreen.show(new MenuView());
+               boolean classic = Mc.keyDown(340) || !UiSettings.visorGui || !dev.lego.compat.VisorBridge.available() || !Mc.inGame();
+               if (classic) {
+                  LegoScreen.show(new MenuView());
+               } else {
+                  dev.lego.compat.VisorBridge.openMenu();
+               }
             }
          }
 

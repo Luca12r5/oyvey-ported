@@ -327,6 +327,20 @@ public final class DesignPart implements HubView.Part {
             v, Lang.get("ui.d.anims", "Animationen"), "anims", UiSettings.animations, () -> UiSettings.animations = !UiSettings.animations, x + pad, cy, cw, rh
          )
          + rg;
+      if (dev.lego.compat.VisorBridge.available()) {
+         cy = this.toggleRow(
+               v,
+               Lang.get("ui.d.visorgui", "Menü-Taste öffnet den Visor (VR) - Shift + Taste: klassisch"),
+               "visorgui",
+               UiSettings.visorGui,
+               () -> UiSettings.visorGui = !UiSettings.visorGui,
+               x + pad,
+               cy,
+               cw,
+               rh
+            )
+            + rg;
+      }
       cy = this.toggleRow(
             v,
             Lang.get("ui.d.intro", "Start-Animation (Lego-Steine)"),

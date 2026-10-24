@@ -504,6 +504,7 @@ public final class Lang {
       put("ui.d.animspeed", "Animations-Tempo", "Animation Speed");
       put("ui.d.anims", "Animationen", "Animations");
       put("ui.d.intro", "Start-Animation (Lego-Steine)", "Startup animation (Lego bricks)");
+      put("ui.d.visorgui", "Menü-Taste öffnet den Visor (VR) - Shift + Taste: klassisch", "Menu key opens the Visor (VR) - Shift + key: classic");
       put("ui.d.xmas", "Weihnachts-Deko (Schnee, Lichter, Mützen)", "Christmas deco (snow, lights, hats)");
       put("s.Farbe", "Farbe", "Color");
       put("s.Stärke", "Stärke", "Strength");

@@ -9,6 +9,13 @@ public final class VisorBridge {
       return false;
    }
 
+   public static boolean available() {
+      return false;
+   }
+
+   public static void openMenu() {
+   }
+
    public static void toggle() {
    }
 }
