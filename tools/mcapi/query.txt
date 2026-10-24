@@ -1,6 +1,5 @@
 # API explorer for the 26.3 port (see mc-api.yml).
-# Why KeyMapping.setAll still crashes with SDL3 key codes
-code com.mojang.blaze3d.platform.InputConstants boolean isKeyDown
-code net.minecraft.client.KeyMapping void setAll
-code net.minecraft.client.KeyMapping KeyMapping.java.lang.String, com.mojang.blaze3d.platform.InputConstants.Type, int, net.minecraft.client.KeyMapping.Category, int
-code com.mojang.blaze3d.platform.InputConstants\$Type Key getOrCreate
+# Visor port: where the old blaze3d/minecraft render classes live in 26.3
+pkg /(GpuBuffer|GpuBufferSlice|BlendFunction|RenderPipeline|DepthTestFunction|UniformType|CommandEncoder|GpuDevice|RenderPass|AddressMode|FilterMode|GpuSampler|GpuTexture|GpuTextureView|TextureFormat|VertexFormat|VertexFormatElement|CachedOrthoProjectionMatrixBuffer|DynamicUniformStorage|ItemInHandRenderer|LightTexture|PerspectiveProjectionMatrixBuffer|ProjectionMatrixBuffer|LightmapTextureManager|Lightmap\w*|DynamicUniforms|Std140Builder|RenderPipelines|ShaderDefines|BlendFunction|ColorTargetState|DepthStencilState)\.class$
+pkg fabric.*(keymapping|KeyMapping|LivingEntityRenderLayer|LevelRenderEvents)
+class com.mojang.blaze3d.systems.RenderSystem
