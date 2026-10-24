@@ -1,16 +1,5 @@
 # API explorer for the 26.3 port (see mc-api.yml).
-# Visor port: renderpearl API shapes
-pkg com/mojang/renderpearl/api/(textures|pipeline|vertex|commands|device|buffers)/[A-Za-z]+\.class$
-class com.mojang.renderpearl.api.pipeline.RenderPipeline
-class com.mojang.renderpearl.api.pipeline.RenderPipeline$Builder
-class com.mojang.renderpearl.api.commands.RenderPass
-class com.mojang.renderpearl.api.commands.CommandEncoder
-class com.mojang.renderpearl.api.device.GpuDevice
-class com.mojang.renderpearl.api.textures.GpuTexture
-class net.minecraft.client.renderer.DynamicGpuData
-class net.minecraft.client.renderer.ProjectionMatrixBuffer
-class net.minecraft.client.renderer.Lightmap
-class net.minecraft.client.renderer.RenderPipelines
-class com.mojang.blaze3d.systems.RenderSystem$AutoStorageIndexBuffer
-class com.mojang.renderpearl.api.vertex.VertexFormat
-classgrep com.mojang.blaze3d.vertex.DefaultVertexFormat (?i)static|upload
+# SDL3 text input: how 26.3 turns on character events for text fields
+grep (?i)textinput|startText|stopText|TextInput
+classgrep net.minecraft.client.gui.components.EditBox (?i)focus|text|input
+classgrep net.minecraft.client.gui.screens.Screen (?i)charTyped|character|textInput
