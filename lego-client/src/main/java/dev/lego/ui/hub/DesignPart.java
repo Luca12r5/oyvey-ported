@@ -16,11 +16,17 @@ public final class DesignPart implements HubView.Part {
    private float scroll = 0.0F;
    private float target = 0.0F;
    private float max = 0.0F;
+   private final HubSearch search = new HubSearch();
+   private HubView view;
 
    @Override
    public void draw(HubView var1, int var2, int var3, int var4, int var5) {
       int var6 = var1.p(24.0);
       int var7 = var1.header(var2 + var6, var3 + var1.p(20.0), "Design & Client", "Thema, Farbe, HUD, UI-Größe und Animations-Tempo");
+      this.view = var1;
+      // Design has no list of its own: its search looks through every module (opens Mods).
+      int sw = var1.p(170.0), sh = var1.p(24.0);
+      this.search.draw(var1, "design", var2 + var4 - var6 - sw, var3 + var1.p(22.0), sw, sh, true);
       int var8 = var7 + var1.p(4.0);
       int var9 = var3 + var5 - var1.p(14.0) - var8;
       this.max = Math.max(0, this.contentH(var1) - var9);
@@ -324,5 +330,17 @@ public final class DesignPart implements HubView.Part {
          Modules.theme = var7;
          Modules.scheduleSave();
       });
+   }
+
+   @Override
+   public boolean key(int var1, int var2) {
+      return this.search.key(var1, var2);
+   }
+
+   @Override
+   public boolean chr(String var1) {
+      if (!this.search.chr(var1)) return false;
+      if (this.view != null) this.view.searchModules(this.search.text);
+      return true;
    }
 }

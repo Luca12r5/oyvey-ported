@@ -17,6 +17,7 @@ public final class EmotesPart implements HubView.Part {
    private float max = 0.0F;
    private String toast = null;
    private long toastAt = 0L;
+   private final HubSearch search = new HubSearch();
 
    @Override
    public void draw(HubView var1, int var2, int var3, int var4, int var5) {
@@ -25,13 +26,17 @@ public final class EmotesPart implements HubView.Part {
       int var8 = var1.p(176.0);
       int var9 = var2 + var6;
       int var10 = var4 - var6 * 2 - var8 - var1.p(16.0);
+      int sw = var1.p(150.0), sh = var1.p(24.0);
+      this.search.draw(var1, "emotes", var9 + var10 - sw, var3 + var1.p(22.0), sw, sh, true);
+      java.util.List<EmoteLib.Emote> shown = new java.util.ArrayList<>();
+      for (EmoteLib.Emote e : EmoteLib.ALL) if (this.search.matches(e.name, e.id)) shown.add(e);
       int var11 = var7 + var1.p(4.0);
       int var12 = var3 + var5 - var1.p(16.0) - var11;
       byte var13 = 4;
       int var14 = var1.p(10.0);
       int var15 = (var10 - var14 * (var13 - 1)) / var13;
       int var16 = var1.p(118.0);
-      int var17 = EmoteLib.ALL.size();
+      int var17 = shown.size();
       int var18 = (var17 + var13 - 1) / var13;
       this.max = Math.max(0, var18 * (var16 + var14) - var14 - var12 + var1.p(4.0));
       this.target = Math.max(0.0F, Math.min(this.max, this.target));
@@ -47,13 +52,14 @@ public final class EmotesPart implements HubView.Part {
          if (var22 + var16 >= var11 && var22 <= var11 + var12) {
             float var23 = Ease.outCubic(Ease.clamp((var19 * 600.0F - Math.min(var20, 10) * 18) / 250.0F));
             Gx.pushAlpha(var23);
-            this.card(var1, EmoteLib.ALL.get(var20), var21, var22, var15, var16);
+            this.card(var1, shown.get(var20), var21, var22, var15, var16);
             Gx.popAlpha();
          }
       }
 
       Kit.unclip();
       Gx.unclip();
+      if (shown.isEmpty()) var1.nothingFound(var1, var9 + var10 / 2.0F, var11 + var12 / 2.0F);
       if (this.max > 0.0F) {
          int var33 = var12 - var1.p(8.0);
          int var35 = Math.max(var1.p(24.0), Math.round(var33 * var12 / (var12 + this.max)));
@@ -177,5 +183,17 @@ public final class EmotesPart implements HubView.Part {
    static void shimmer(HubView var0, int var1, int var2, int var3, int var4) {
       float var5 = (float)(System.currentTimeMillis() % 1200L) / 1200.0F;
       Gx.rect(var1, var2, var3, var4, var0.p(8.0), Gx.withAlpha(Style.surface2, 0.6F + 0.4F * (float)Math.sin(var5 * Math.PI)));
+   }
+
+   @Override
+   public boolean key(int var1, int var2) {
+      return this.search.key(var1, var2);
+   }
+
+   @Override
+   public boolean chr(String var1) {
+      if (!this.search.chr(var1)) return false;
+      this.target = this.scroll = 0.0F;
+      return true;
    }
 }

@@ -40,6 +40,10 @@ public final class McCompat {
       };
    }
 
+   /** Character events for own text fields; filled in once the 26.3 text-input API is confirmed. */
+   public static void textInput(boolean on) {
+   }
+
    /** GLFW modifier bits of SDL3's (left/right pairs: shift 3, ctrl 192, alt 768, super 3072). */
    public static int glfwMods(int mods) {
       int r = 0;

@@ -33,6 +33,10 @@ public final class McCompat {
       return button;
    }
 
+   /** Character events for own text fields (1.21.11: GLFW always sends them). */
+   public static void textInput(boolean on) {
+   }
+
    /** GLFW modifier bits (1 shift, 2 ctrl, 4 alt, 8 super) of the game's (the same on 1.21.11). */
    public static int glfwMods(int mods) {
       return mods;

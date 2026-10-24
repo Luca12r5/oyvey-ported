@@ -26,6 +26,7 @@ public final class CosmeticsPart implements HubView.Part {
    private float lastMx;
    private Cos.Item selected;
    private long changedAt = System.currentTimeMillis();
+   private final HubSearch search = new HubSearch();
 
    @Override
    public void shown() {
@@ -33,7 +34,11 @@ public final class CosmeticsPart implements HubView.Part {
    }
 
    private List<Cos.Item> items() {
-      return filter == null ? Cos.ALL : Cos.of(filter);
+      List<Cos.Item> base = filter == null ? Cos.ALL : Cos.of(filter);
+      if (!this.search.active()) return base;
+      List<Cos.Item> out = new ArrayList<>();
+      for (Cos.Item i : base) if (this.search.matches(i.name, i.id, i.slot == null ? null : i.slot.title)) out.add(i);
+      return out;
    }
 
    @Override
@@ -172,9 +177,12 @@ public final class CosmeticsPart implements HubView.Part {
 
       int var62 = var8 + var7 + var1.p(16.0);
       int var63 = var53 - var1.p(14.0) - var62;
-      int var64 = var3 + var1.p(18.0);
-      int var65 = var5 - var1.p(36.0);
+      int sh = var1.p(24.0);
+      this.search.draw(var1, "cos", var62, var3 + var1.p(18.0), var63, sh, true);
+      int var64 = var3 + var1.p(18.0) + sh + var1.p(10.0);
+      int var65 = var5 - var1.p(36.0) - sh - var1.p(10.0);
       List var66 = this.items();
+      if (var66.isEmpty()) var1.nothingFound(var62 + var63 / 2.0F, var64 + var65 / 2.0F);
       byte var67 = 2;
       int var68 = var1.p(10.0);
       int var69 = (var63 - var68) / var67;
@@ -291,7 +299,15 @@ public final class CosmeticsPart implements HubView.Part {
          this.dragging = false;
       }
 
-      return false;
+      return this.search.key(var1, var2);
+   }
+
+   @Override
+   public boolean chr(String var1) {
+      if (!this.search.chr(var1)) return false;
+      this.target = this.scroll = 0.0F;
+      this.changedAt = System.currentTimeMillis();
+      return true;
    }
 
    @Override

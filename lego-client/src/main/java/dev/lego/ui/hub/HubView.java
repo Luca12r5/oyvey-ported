@@ -203,6 +203,18 @@ public final class HubView extends View {
       }
    }
 
+   /** Empty search result: magnifier and "Nichts gefunden". */
+   public void nothingFound(float cx, float cy) {
+      Gx.icon("search", cx, cy - this.pf(14.0), this.pf(26.0), Style.muted);
+      Gx.textCenter("Nichts gefunden", cx, cy + this.pf(12.0), this.pf(9.0), 2, Style.sub);
+   }
+
+   /** Opens Mods with this text in its search (Design has no list of its own: it searches every module). */
+   public void searchModules(String text) {
+      this.select(HubView.Section.MODS);
+      if (this.part instanceof ModsPart m) m.searchFor(text);
+   }
+
    public void tabs(String var1, int var2, int var3, String[] var4, int var5, IntConsumer var6) {
       float var7 = this.pf(7.8F);
       float var8 = this.pf(1.1F);

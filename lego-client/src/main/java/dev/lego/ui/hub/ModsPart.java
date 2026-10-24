@@ -773,6 +773,15 @@ public final class ModsPart implements HubView.Part {
       }
    }
 
+   /** Starts this list's search with the given text (from another section's search field). */
+   void searchFor(String text) {
+      this.open = null;
+      this.search = text;
+      this.searchFocus = true;
+      this.scrollTarget = 0.0F;
+      this.listChangedAt = System.currentTimeMillis();
+   }
+
    public boolean bindMouse(int var1) {
       if (this.binding != null && var1 >= 2) {
          this.binding.key = var1;

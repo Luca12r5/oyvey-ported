@@ -13,6 +13,7 @@ public final class GamesPart implements HubView.Part {
    private float scroll = 0.0F;
    private float target = 0.0F;
    private float max = 0.0F;
+   private final HubSearch search = new HubSearch();
 
    @Override
    public void shown() {
@@ -29,13 +30,17 @@ public final class GamesPart implements HubView.Part {
       boolean dhov = var1.mx >= dx && var1.mx <= dx + dw && var1.my >= dy && var1.my <= dy + dh;
       Kit.button("duels", inv > 0 ? "Duelle (" + inv + ")" : "Duelle", "gamepad", dx, dy, dw, dh, var1.P, inv > 0, dhov);
       Kit.hit(dx, dy, dw, dh).click(() -> { if (var1.host != null) var1.host.open(new dev.lego.games.DuelView()); });
+      int sw = var1.p(150.0), sh = var1.p(24.0);
+      this.search.draw(var1, "games", dx - var1.p(10.0) - sw, dy + (dh - sh) / 2, sw, sh, true);
+      java.util.List<GameInfo> shown = new java.util.ArrayList<>();
+      for (GameInfo g : GameInfo.ALL) if (this.search.matches(g.name, g.tagline, g.id)) shown.add(g);
       int var8 = var7 + var1.p(4.0);
       int var9 = var3 + var5 - var1.p(16.0) - var8;
       byte var10 = 3;
       int var11 = var1.p(12.0);
       int var12 = (var4 - var6 * 2 - var11 * (var10 - 1)) / var10;
       int var13 = var1.p(132.0);
-      int var14 = GameInfo.ALL.size();
+      int var14 = shown.size();
       int var15 = (var14 + var10 - 1) / var10;
       this.max = Math.max(0, var15 * (var13 + var11) - var11 - var9 + var1.p(4.0));
       this.target = Math.max(0.0F, Math.min(this.max, this.target));
@@ -53,7 +58,7 @@ public final class GamesPart implements HubView.Part {
             Gx.pushAlpha(var20);
             Gx.push();
             Gx.translate(0.0F, var1.pf(10.0) * (1.0F - var20));
-            this.card(var1, GameInfo.ALL.get(var17), var18, var19, var12, var13);
+            this.card(var1, shown.get(var17), var18, var19, var12, var13);
             Gx.pop();
             Gx.popAlpha();
          }
@@ -61,6 +66,7 @@ public final class GamesPart implements HubView.Part {
 
       Kit.unclip();
       Gx.unclip();
+      if (shown.isEmpty()) var1.nothingFound(var2 + var4 / 2.0F, var8 + var9 / 2.0F);
       if (this.max > 0.0F) {
          int var21 = var9 - var1.p(8.0);
          int var22 = Math.max(var1.p(24.0), Math.round(var21 * var9 / (var9 + this.max)));
@@ -107,6 +113,18 @@ public final class GamesPart implements HubView.Part {
       Gx.circle(var17 + var16 / 2, var14 + var16 / 2, var16 / 2, Gx.mix(Style.surface2, var2.color, 0.35F + 0.65F * var8));
       Gx.icon("play", var17 + var16 / 2.0F + var1.pf(1.0), var14 + var16 / 2.0F, var1.pf(10.0), var8 > 0.5F ? -15724528 : Style.text);
       Kit.hit(var3, var4, var5, var6).click(() -> var1.host.open(var2.factory.get()));
+   }
+
+   @Override
+   public boolean key(int var1, int var2) {
+      return this.search.key(var1, var2);
+   }
+
+   @Override
+   public boolean chr(String var1) {
+      if (!this.search.chr(var1)) return false;
+      this.target = this.scroll = 0.0F;
+      return true;
    }
 
    static String format(GameInfo var0, long var1) {
