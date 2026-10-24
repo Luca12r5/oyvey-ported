@@ -38,7 +38,9 @@ jobs:
           # Loom's dev jar: compiled against intermediary names, which is the runtime namespace.
           JAR=$(find tools/lego-upstream/build -name '*.jar' ! -name '*sources*' | head -1)
           echo "jar: $JAR"
-          ./gradlew -p tools/restore-lego remapLego -PlegoJar="$PWD/$JAR" --no-daemon --console=plain
+          # restore-lego finds the remapped mod jar by "legoclient" in its file name.
+          cp "$JAR" "$RUNNER_TEMP/legoclient-upstream.jar"
+          ./gradlew -p tools/restore-lego remapLego -PlegoJar="$RUNNER_TEMP/legoclient-upstream.jar" --no-daemon --console=plain
       - name: Decompile
         run: tools/restore-lego/decompile.sh
       - name: Publish to ci/lego-upstream-decompiled
