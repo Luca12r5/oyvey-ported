@@ -1,15 +1,13 @@
 # API explorer for the 26.3 port (see mc-api.yml).
-# Post effects (color filters)
-classgrep net.minecraft.client.renderer.GameRenderer (?i)post|effect
-classgrep net.minecraft.client.renderer.state.GameRenderState (?i)post|effect
-pkg (?i)PostChain|PostEffect
-mcfile ^assets/minecraft/post_effect/(invert|blur)\.json$
-mcfile ^assets/minecraft/shaders/post/(invert|blur)\.(fsh|vsh|json)$
-# Sky
-classgrep net.minecraft.client.renderer.SkyRenderer (?i)void|boolean
-pkg (?i)Sky
-# First-person hand (knife)
-classgrep net.minecraft.client.renderer.FirstPersonHandsAndItemsRenderer (?i)void|boolean
-classgrep net.minecraft.client.renderer.entity.player.AvatarRenderer (?i)hand|arm
-# Fire overlay
-classgrep net.minecraft.client.renderer.ScreenEffectRenderer submitFire
+# Knife instead of a sword (first person)
+class net.minecraft.client.renderer.FirstPersonHandsAndItemsRenderer
+class net.minecraft.client.renderer.state.level.PlayerRenderState
+class net.minecraft.client.renderer.state.level.FirstPersonHandsAndItemsRenderState
+# Linear texture filtering for LEGO UI textures (Tx)
+classgrep net.minecraft.client.renderer.texture.AbstractTexture (?i)sampler|filter
+pkg (?i)SamplerCache|GpuSampler|FilterMode
+classgrep net.minecraft.client.renderer.texture.SamplerCache (?i)public|static
+classgrep com.mojang.renderpearl.api.textures.FilterMode (?i)public
+# Sky: where custom sky geometry could go
+class net.minecraft.client.renderer.state.level.SkyRenderState
+classgrep net.minecraft.client.renderer.LevelRenderer (?i)sky
