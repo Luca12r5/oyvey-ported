@@ -1,51 +1,40 @@
 # API explorer for the 26.3 port (see mc-api.yml).
-# Visor GPU layer on 26.3 (renderpearl): pipelines, bind groups, vertex formats, buffers, textures
-class com.mojang.renderpearl.api.pipeline.BindGroupLayout
-class com.mojang.renderpearl.api.pipeline.BindGroupLayout$Builder
-class com.mojang.renderpearl.api.pipeline.UniformType
-class com.mojang.renderpearl.api.pipeline.DepthStencilState
-class com.mojang.renderpearl.api.pipeline.CompareOp
-class com.mojang.renderpearl.api.pipeline.ColorTargetState
-class com.mojang.renderpearl.api.pipeline.BlendFunction
-class com.mojang.renderpearl.api.pipeline.BlendEquation
-class com.mojang.renderpearl.api.pipeline.BlendFactor
-class com.mojang.renderpearl.api.pipeline.PrimitiveTopology
-class com.mojang.renderpearl.api.pipeline.IndexType
-class com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline
-class com.mojang.renderpearl.api.pipeline.RenderPipeline$Snippet
-class com.mojang.renderpearl.api.vertex.VertexFormat$Builder
-class com.mojang.renderpearl.api.vertex.VertexFormatElement
-class com.mojang.renderpearl.api.GpuFormat
-class com.mojang.renderpearl.api.buffers.GpuBuffer
-class com.mojang.renderpearl.api.buffers.GpuBufferSlice
-class com.mojang.renderpearl.api.buffers.TransientMemory
-class com.mojang.renderpearl.api.textures.GpuTextureView
-class com.mojang.renderpearl.api.textures.GpuSampler
-class com.mojang.renderpearl.api.textures.FilterMode
-class com.mojang.renderpearl.api.textures.AddressMode
-class com.mojang.blaze3d.systems.SamplerCache
-class com.mojang.renderpearl.api.commands.RenderPass$RenderArea
-class com.mojang.renderpearl.api.commands.RenderPassDescriptor
-class com.mojang.blaze3d.vertex.MeshData
-class com.mojang.blaze3d.vertex.MeshData$DrawState
-class com.mojang.blaze3d.vertex.BufferBuilder
-class com.mojang.blaze3d.vertex.Tesselator
-class com.mojang.blaze3d.vertex.ByteBufferBuilder
-class com.mojang.blaze3d.pipeline.RenderTarget
-class com.mojang.blaze3d.platform.NativeImage
-class net.minecraft.client.renderer.Projection
-class net.minecraft.client.renderer.CachedOrthoProjectionMatrixBuffer
-class net.minecraft.client.renderer.CachedPerspectiveProjectionMatrixBuffer
-class net.minecraft.client.renderer.DynamicGpuData$Transform
-classgrep net.minecraft.client.Minecraft (?i)rendertarget|getMainRenderTarget|window|gameRenderer
-classgrep net.minecraft.client.renderer.GameRenderer (?i)featureRender|getFeature|renderBuffers|projection|fov|getMainCamera
-classgrep net.minecraft.client.renderer.RenderBuffers (?i)public
-classgrep net.minecraft.client.renderer.entity.EntityRenderDispatcher (?i)player|avatar|renderer
-# vanilla code that draws its own mesh with a render pass (reference for the Visor port)
-code net.minecraft.client.renderer.CubeMap render
-code net.minecraft.client.renderer.CubeMap <init>
-pkg (?i)CubeMap|PanoramaRenderer|GuiRenderer|ProjectionType
-mcfile ^assets/minecraft/shaders/core/panorama\.(vsh|fsh)$
-mcfile ^assets/minecraft/shaders/core/position_tex_color\.(vsh|fsh)$
-mcfile ^assets/minecraft/shaders/include/(dynamictransforms|projection|globals)\.glsl$
-mcfile ^assets/minecraft/shaders/core/gui\.(vsh|fsh)$
+# Visor port, round 2: input, render hooks, sound, textures, resources, pipeline registration
+classgrep net.minecraft.client.KeyboardHandler (?i)key|char|press|minecraft
+classgrep net.minecraft.client.MouseHandler (?i)button|scroll|grab|minecraft|xpos|ypos
+classgrep net.minecraft.client.renderer.GameRenderer (?i)void |extract|submit|render
+classgrep net.minecraft.client.renderer.LevelRenderer (?i)renderLevel|void render|extract|submit
+classgrep net.minecraft.client.gui.Gui (?i)render|extract|void 
+classgrep net.minecraft.client.player.KeyboardInput (?i)tick
+classgrep net.minecraft.client.Minecraft (?i)startAttack|continueAttack|startUseItem|pickBlock|pauseGame|getOverlay|getEntityRenderDispatcher|getTextureManager
+classgrep com.mojang.blaze3d.audio.Channel (?i)source|int 
+classgrep net.minecraft.client.sounds.SoundEngine (?i)channel|instanceTo
+classgrep net.minecraft.client.sounds.SoundManager (?i)soundEngine
+class net.minecraft.client.input.KeyEvent
+class net.minecraft.client.input.CharacterEvent
+class net.minecraft.client.input.MouseButtonInfo
+class net.minecraft.client.input.MouseButtonEvent
+classgrep net.minecraft.client.renderer.FirstPersonHandsAndItemsRenderer (?i)render|submit|hand|minecraft
+class net.minecraft.client.renderer.feature.FeatureRenderDispatcher
+classgrep com.mojang.blaze3d.platform.InputConstants (?i)isKeyDown|getOrCreate|KEYBOARD|Type|getDisplayName
+code com.mojang.blaze3d.systems.RenderSystem getCompiledPipeline
+class com.mojang.blaze3d.pipeline.PipelineCache
+code com.mojang.blaze3d.vertex.DefaultVertexFormat static {}
+consts com.mojang.renderpearl.api.buffers.GpuBuffer
+consts com.mojang.renderpearl.api.textures.GpuTexture
+classgrep net.minecraft.client.renderer.texture.TextureManager (?i)register|getTexture|release
+class net.minecraft.client.renderer.texture.AbstractTexture
+class com.mojang.renderpearl.api.device.DeviceLimits
+class com.mojang.renderpearl.api.device.DeviceInfo
+class net.minecraft.util.LightCoordsUtil
+classgrep net.minecraft.client.renderer.entity.player.AvatarRenderer (?i)public|render|submit
+class net.fabricmc.fabric.api.resource.v1.ResourceLoader
+pkg (?i)rendertype/RenderSetup|rendertype/RenderType\.|LayeringTransform|OutputTarget
+class net.minecraft.client.renderer.rendertype.RenderSetup
+class net.minecraft.client.renderer.rendertype.RenderSetup$RenderSetupBuilder
+classgrep net.minecraft.client.renderer.rendertype.RenderType (?i)static|create
+class net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext
+class net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
+classgrep net.minecraft.client.renderer.state.level.CameraRenderState (?i)public
+classgrep net.minecraft.client.Camera (?i)public
+classgrep com.mojang.blaze3d.vertex.PoseStack (?i)public
