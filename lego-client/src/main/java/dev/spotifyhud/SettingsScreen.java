@@ -437,7 +437,7 @@ public final class SettingsScreen extends Screen {
       if (this.ui.focused == null) {
          return super.keyPressed(var1);
       } else {
-         int var2 = var1.key();
+         int var2 = dev.lego.compat.McCompat.glfwKey(var1.key());
          boolean var3 = (var1.modifiers() & 2) != 0;
          String var4 = String.valueOf(this.text());
          if (var2 == 256 || var2 == 257 || var2 == 335 || var2 == 258) {

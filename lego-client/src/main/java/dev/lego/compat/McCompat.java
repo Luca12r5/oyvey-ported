@@ -23,6 +23,16 @@ public final class McCompat {
       return KeyBindingHelper.registerKeyBinding(key);
    }
 
+   /** Key mapping with a GLFW default key (shared code always speaks GLFW codes). */
+   public static KeyMapping keyMapping(String name, int glfw, KeyMapping.Category category) {
+      return new KeyMapping(name, glfw, category);
+   }
+
+   /** GLFW code of a game key code (the same on 1.21.11). */
+   public static int glfwKey(int code) {
+      return code;
+   }
+
    public static InputConstants.Key boundKey(KeyMapping key) {
       return KeyBindingHelper.getBoundKeyOf(key);
    }

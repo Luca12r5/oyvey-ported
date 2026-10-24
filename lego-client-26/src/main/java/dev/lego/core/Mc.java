@@ -446,7 +446,10 @@ public final class Mc {
          return false;
       } else {
          try {
-            return var0 <= 7 ? mouseDown(var0) : InputConstants.isKeyDown(var0);
+            if (var0 <= 7) return mouseDown(var0);
+            // Callers pass GLFW codes (module keys, defaults); 26.3 has SDL3 codes.
+            int game = dev.lego.compat.Keys.toGame(var0);
+            return game >= 0 && InputConstants.isKeyDown(game);
          } catch (Throwable var2) {
             return false;
          }

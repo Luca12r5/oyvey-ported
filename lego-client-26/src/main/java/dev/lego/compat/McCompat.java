@@ -19,6 +19,19 @@ public final class McCompat {
       return KeyMappingHelper.registerKeyMapping(key);
    }
 
+   /**
+    * Key mapping with a GLFW default key. 26.3 reads keys through SDL3 with its own codes; a raw
+    * GLFW number there is out of range and crashes KeyMapping.setAll when a world opens.
+    */
+   public static KeyMapping keyMapping(String name, int glfw, KeyMapping.Category category) {
+      return new KeyMapping(name, InputConstants.Type.KEYBOARD, Keys.toGame(glfw), category);
+   }
+
+   /** GLFW code of a 26.3 key code (-1 when it has none). */
+   public static int glfwKey(int code) {
+      return Keys.toGlfw(code);
+   }
+
    public static InputConstants.Key boundKey(KeyMapping key) {
       return KeyMappingHelper.getBoundKeyOf(key);
    }

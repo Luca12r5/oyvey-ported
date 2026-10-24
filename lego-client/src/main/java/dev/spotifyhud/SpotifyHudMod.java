@@ -64,12 +64,12 @@ public final class SpotifyHudMod implements ClientModInitializer {
       chatInteraction = new HudInteraction(config, hud);
       smtc.start();
       Category var1 = Category.register(Identifier.fromNamespaceAndPath("spotifyhud", "main"));
-      openKey = dev.lego.compat.McCompat.registerKey(new KeyMapping("key.spotifyhud.open", 72, var1));
-      lyricsKey = dev.lego.compat.McCompat.registerKey(new KeyMapping("key.spotifyhud.lyrics", 75, var1));
-      playKey = dev.lego.compat.McCompat.registerKey(new KeyMapping("key.spotifyhud.playpause", -1, var1));
-      nextKey = dev.lego.compat.McCompat.registerKey(new KeyMapping("key.spotifyhud.next", -1, var1));
-      prevKey = dev.lego.compat.McCompat.registerKey(new KeyMapping("key.spotifyhud.previous", -1, var1));
-      likeKey = dev.lego.compat.McCompat.registerKey(new KeyMapping("key.spotifyhud.like", -1, var1));
+      openKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.spotifyhud.open", 72, var1));
+      lyricsKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.spotifyhud.lyrics", 75, var1));
+      playKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.spotifyhud.playpause", -1, var1));
+      nextKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.spotifyhud.next", -1, var1));
+      prevKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.spotifyhud.previous", -1, var1));
+      likeKey = dev.lego.compat.McCompat.registerKey(dev.lego.compat.McCompat.keyMapping("key.spotifyhud.like", -1, var1));
       ClientTickEvents.END_CLIENT_TICK.register(SpotifyHudMod::onTick);
       HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("spotifyhud", "hud"), (var0, var1x) -> renderHud(var0));
       ScreenEvents.AFTER_INIT

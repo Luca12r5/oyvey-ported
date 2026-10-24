@@ -12,12 +12,13 @@ public final class CiFilter {
    private static final boolean ON = System.getProperty("legoclient.ci.filter") != null;
    private static long start;
    private static int step;
+   private static long worldAt;
 
    private CiFilter() {
    }
 
    public static void tick(Minecraft mc) {
-      if (!ON || step >= 2 || Visuals.filter == null) return;
+      if (!ON || step >= 3 || Visuals.filter == null) return;
       long now = System.currentTimeMillis();
       if (start == 0L) start = now;
       if (step == 0 && now - start > 5000L) {
@@ -27,6 +28,13 @@ public final class CiFilter {
       } else if (step == 1 && now - start > 15000L) {
          step = 2;
          LegoClient.LOG("CI filter: enabled=" + Visuals.filter.enabled + " effect=" + dev.lego.compat.McCompat.currentPostEffect(mc.gameRenderer));
+      } else if (step == 2 && dev.lego.core.Mc.inGame()) {
+         // The post effect only runs with a level; report again once in a world.
+         if (worldAt == 0L) worldAt = now;
+         if (now - worldAt > 10000L) {
+            step = 3;
+            LegoClient.LOG("CI filter in world: enabled=" + Visuals.filter.enabled + " effect=" + dev.lego.compat.McCompat.currentPostEffect(mc.gameRenderer));
+         }
       }
    }
 }

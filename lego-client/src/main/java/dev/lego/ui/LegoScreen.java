@@ -224,8 +224,8 @@ public class LegoScreen extends Screen implements View.Host {
 
    @Override
    public boolean keyPressed(KeyEvent var1) {
-      int var2 = var1.key();
-      if (this.closing) {
+      int var2 = dev.lego.compat.McCompat.glfwKey(var1.key());
+      if (this.closing || var2 < 0) {
          return true;
       } else {
          try {
@@ -248,7 +248,8 @@ public class LegoScreen extends Screen implements View.Host {
    @Override
    public boolean keyReleased(KeyEvent var1) {
       try {
-         return this.view.key(-1 - var1.key(), var1.modifiers());
+         int var2 = dev.lego.compat.McCompat.glfwKey(var1.key());
+         return var2 >= 0 && this.view.key(-1 - var2, var1.modifiers());
       } catch (Throwable var3) {
          return false;
       }

@@ -58,7 +58,7 @@ jobs:
           - name: 26.3 Fabric + LEGO Client
             args: --version 26.3 --loader fabric --lego legoclient.jar --session-test --filter-test
           - name: 26.3 LEGO Client in-game screenshots
-            args: --version 26.3 --loader fabric --lego legoclient.jar --shots --timeout 900
+            args: --version 26.3 --loader fabric --lego legoclient.jar --shots --filter-test --timeout 900
           - name: 26.3 Fabric + LEGO Client + Vivecraft
             args: --version 26.3 --loader fabric --lego legoclient.jar --mods vivecraft --vr-null --filter-test --timeout 600
     name: ${{ matrix.name }}
