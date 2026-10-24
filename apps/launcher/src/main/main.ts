@@ -932,10 +932,13 @@ function registerIpc(): void {
   // Real VR inside Minecraft needs the Vivecraft mod: look it up for a version, create a profile with it.
   ipcMain.handle('vr:vivecraft', async (_e, gameVersion: unknown) => {
     const gv = typeof gameVersion === 'string' && /^[\w.\-]{1,20}$/.test(gameVersion) ? gameVersion : '1.21.11';
+    let failed = 0;
     for (const loader of ['fabric', 'neoforge', 'forge'] as const) {
-      const v = await projectVersions(fetch, 'vivecraft', gv, loader).catch(() => []);
+      const v = await projectVersions(fetch, 'vivecraft', gv, loader).catch(() => { failed++; return []; });
       if (v.length) return { available: true, gameVersion: gv, loader };
     }
+    // Modrinth not reachable: say so instead of "no Vivecraft for this version".
+    if (failed === 3) throw new Error('Modrinth ist nicht erreichbar (offline?) – Vivecraft konnte nicht geprüft werden.');
     // Newest version that has a Fabric build, as a suggestion.
     const all = await projectVersions(fetch, 'vivecraft', null, 'fabric').catch(() => []);
     const newest = all.flatMap((x) => x.game_versions).find((x) => /^\d+\.\d+(\.\d+)?$/.test(x)) ?? null;
@@ -961,8 +964,8 @@ function registerIpc(): void {
     const p = profileById(profileId);
     // A vanilla profile gets Fabric (Vivecraft is a mod); checked before anything is changed.
     const lt = p.loaderType ?? 'fabric';
-    const v = await projectVersions(fetch, 'vivecraft', p.gameVersion, lt).catch(() => []);
-    if (!v.length) throw new Error(`Vivecraft gibt es (noch) nicht für Minecraft ${p.gameVersion} mit ${lt}. Für 26.3 gibt es Vivecraft: lege dafür ein 26.3-Profil an.`);
+    const v = await projectVersions(fetch, 'vivecraft', p.gameVersion, lt).catch(() => { throw new Error('Modrinth ist nicht erreichbar (offline?) – Vivecraft konnte nicht installiert werden.'); });
+    if (!v.length) throw new Error(`Vivecraft gibt es (noch) nicht für Minecraft ${p.gameVersion} mit ${lt}. Stell im Profil die Version auf 26.3, dort gibt es VR.`);
     if (!p.loaderType) {
       p.loaderType = lt;
       p.loader = null;

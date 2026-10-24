@@ -101,7 +101,7 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
       </section>
       <section class="glass">
         <div class="setting"><div><b>${pixel('brick', 'xs')} ${t('prof.lego')}</b><small>${t('prof.lego.d')}</small></div><label class="switch"><input type="checkbox" name="legoClient" ${draft.legoClient ? 'checked' : ''}><i></i></label></div>
-        ${html`<div class="setting"><div><b>${icon('vr', 'xs')} VR (Vivecraft)</b><small>Echtes VR mit Brille: installiert Vivecraft, nimmt nur VR-sichere FPS-Mods und mindestens 4 GB RAM. Der LEGO Client läuft im VR-Modus mit.</small></div><label class="switch"><input type="checkbox" name="vr"><i></i></label></div>`}
+        ${html`<div class="setting"><div><b>${icon('vr', 'xs')} VR (Vivecraft)</b><small>Echtes VR mit Brille: installiert Vivecraft, nimmt nur VR-sichere FPS-Mods und mindestens 4 GB RAM. Der LEGO Client läuft im VR-Modus mit.</small></div><label class="switch"><input type="checkbox" name="vr"><i></i></label></div><div id="vrNote" class="tiny muted"></div>`}
         <div class="setting"><div><b>${pixel('flame', 'xs')} ${t('prof.fps')}</b><small>${t('prof.fps.d')}</small></div><label class="switch"><input type="checkbox" name="performancePack" ${draft.performancePack ? 'checked' : ''}><i></i></label></div>
         <label>Konto</label>
         <select name="account">
@@ -148,9 +148,8 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
     // Back on Fabric 1.21.11: the LEGO Client is on again unless the player switched it off.
     else if (lego.dataset.userOff !== '1') lego.checked = true;
     lego.disabled = !legoClientVersions().includes(draft.gameVersion);
-    fps.disabled = !draft.loaderType;
-    if (!draft.loaderType) fps.checked = false;
-    if (vr) { vr.disabled = !draft.loaderType; if (!draft.loaderType) vr.checked = false; }
+    // Vanilla: FPS pack and VR stay clickable; switching one on picks Fabric (both are mods).
+    if (!draft.loaderType) { fps.checked = false; if (vr) vr.checked = false; }
     lv.length = 1;
     if (!draft.loaderType) return;
     const req = ++loaderReq;
@@ -171,7 +170,7 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
 
   el.querySelector('#snap')!.addEventListener('change', fillVersions);
   el.querySelector('#hist')!.addEventListener('change', fillVersions);
-  gv.addEventListener('change', () => { draft.gameVersion = gv.value; draft.loader = null; void fillLoader(); });
+  gv.addEventListener('change', () => { draft.gameVersion = gv.value; draft.loader = null; void fillLoader(); void checkVr(); });
   lv.addEventListener('change', () => { draft.loader = lv.value || null; });
   el.querySelector('#loaders')!.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-loader]');
@@ -180,12 +179,60 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
     draft.loader = null;
     void fillLoader();
   });
+  const vrNote = el.querySelector<HTMLElement>('#vrNote');
+  // Vivecraft only exists for some versions: checked live; without it the profile moves to the
+  // newest version the LEGO Client runs on (26.3, which has Vivecraft), and the note says so.
+  let vrReq = 0;
+  const checkVr = async () => {
+    if (!vr?.checked || !vrNote) { if (vrNote) vrNote.textContent = ''; return; }
+    const req = ++vrReq;
+    vrNote.textContent = `Prüfe Vivecraft für ${draft.gameVersion} …`;
+    try {
+      const r = await api.vivecraft(draft.gameVersion);
+      if (req !== vrReq || !vr.checked) return;
+      if (r.available) { vrNote.textContent = `Vivecraft gibt es für ${draft.gameVersion}: wird beim Speichern installiert.`; return; }
+      // Prefer a version the LEGO Client runs on (newest first), else Vivecraft's newest.
+      let target: string | null = null;
+      for (const v of legoClientVersions().reverse()) {
+        if (v !== draft.gameVersion && (await api.vivecraft(v).catch(() => null))?.available) { target = v; break; }
+      }
+      target ??= r.suggestion ?? null;
+      if (req !== vrReq || !vr.checked) return;
+      if (target) {
+        const old = draft.gameVersion;
+        draft.gameVersion = target;
+        draft.loader = null;
+        if (!versions.some((v) => v.id === target)) versions.unshift({ id: target, type: 'release', releaseTime: '' });
+        fillVersions();
+        void fillLoader();
+        vrNote.textContent = `Vivecraft gibt es nicht für ${old} – Version auf ${target} gestellt${legoClientVersions().includes(target) ? ' (mit LEGO Client)' : ''}. Beim Speichern wird VR installiert.`;
+      } else {
+        vr.checked = false;
+        vrNote.textContent = `Vivecraft gibt es (noch) nicht für ${draft.gameVersion}.${r.suggestion ? ` Neueste Version mit VR: ${r.suggestion}.` : ''}`;
+      }
+    } catch {
+      if (req === vrReq) vrNote.textContent = 'Vivecraft-Prüfung ging nicht (offline?) – wird beim Speichern erneut geprüft.';
+    }
+  };
   vr?.addEventListener('change', () => {
-    if (!vr.checked) return;
-    if (!draft.loaderType) { draft.loaderType = 'fabric'; void fillLoader(); }
-    const mem = f.elements.namedItem('memoryMb') as HTMLInputElement;
-    if (Number(mem.value) < 4096 && Number(mem.max) >= 4096) { mem.value = '4096'; el.querySelector('#memv')!.textContent = '4096'; }
+    if (vr.checked) {
+      if (!draft.loaderType) { draft.loaderType = 'fabric'; void fillLoader(); }
+      const mem = f.elements.namedItem('memoryMb') as HTMLInputElement;
+      if (Number(mem.value) < 4096 && Number(mem.max) >= 4096) { mem.value = '4096'; el.querySelector('#memv')!.textContent = '4096'; }
+    }
+    void checkVr();
   });
+  fps.addEventListener('change', () => {
+    if (fps.checked && !draft.loaderType) { draft.loaderType = 'fabric'; void fillLoader(); }
+  });
+  // Existing profile: the VR switch shows whether Vivecraft is already in it.
+  let hadVr = false;
+  if (p && vr) {
+    void api.mods(p.id).then((mods) => {
+      hadVr = mods.some((m) => /vivecraft/i.test(m.title ?? '') || /vivecraft/i.test(m.filename));
+      if (hadVr) { vr.checked = true; if (vrNote) vrNote.textContent = 'Vivecraft ist in diesem Profil installiert.'; }
+    }).catch(() => {});
+  }
   lego.addEventListener('change', () => {
     lego.dataset.userOff = lego.checked ? '' : '1';
     if (lego.checked) { draft.loaderType = 'fabric'; void fillLoader(); }
@@ -212,9 +259,14 @@ async function editor(el: HTMLElement, p: GameProfile | null): Promise<void> {
       const r = await api.saveProfile(profile);
       if (!r.ok) return errorToast(new Error(r.errors.join(' · ')));
       state.settings = r.settings;
-      if (vr?.checked) {
+      if (vr?.checked && !hadVr) {
         toast('Installiere Vivecraft …', 'info');
         try { state.settings = (await api.addVivecraft(profile.id)).settings; toast('VR-Profil fertig: Vivecraft installiert', 'ok'); } catch (err) { errorToast(err); }
+      } else if (vr && !vr.checked && hadVr) {
+        // Switched off: Vivecraft comes out of the profile again.
+        const mods = await api.mods(profile.id).catch(() => []);
+        for (const m of mods) if (/vivecraft/i.test(m.title ?? '') || /vivecraft/i.test(m.filename)) await api.removeMod(profile.id, m.filename).catch(() => {});
+        toast('VR (Vivecraft) aus dem Profil entfernt', 'ok');
       } else toast(t('prof.saved'), 'ok');
       void profilesPage(el);
     } catch (err) { errorToast(err); }
