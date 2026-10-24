@@ -23,6 +23,13 @@ jobs:
           gradle-version: '9.7.1'
       - name: Classpath
         run: gradle -p lego-client-26 printClasspath --no-daemon --console=plain -q | grep '^CP ' | sed 's/^CP //' > cp.txt && wc -l cp.txt && grep -iE 'minecraft|fabric-api|blaze|renderpearl|lwjgl|sdl' cp.txt | head -40
+      - name: Vivecraft jar (for VR test settings)
+        run: |
+          url=$(curl -fsSL 'https://api.modrinth.com/v2/project/vivecraft/version?game_versions=%5B%2226.3%22%5D&loaders=%5B%22fabric%22%5D' | jq -r '.[0].files[0].url')
+          echo "vivecraft: $url"
+          curl -fsSL -o vivecraft.jar "$url" && ls -la vivecraft.jar
+          mkdir -p vive && (cd vive && unzip -q ../vivecraft.jar) || true
+          echo "$PWD/vivecraft.jar" >> cp.txt
       - name: Queries
         run: |
           while read -r jar; do [ -f "$jar" ] && unzip -Z1 "$jar" 2>/dev/null | grep '\.class$' | sed "s#^#$jar|#"; done < cp.txt > classes.txt
@@ -34,6 +41,8 @@ jobs:
               pkg) cut -d'|' -f2 classes.txt | grep -iE "${arg#(?i)}" | grep -v '\$[0-9]' | sed 's/\.class$//' | sort -u | head -400 ;;
               class) javap -public -cp "$CP" "$arg" 2>&1 | head -400 ;;
               classgrep) c=${arg%% *}; re=${arg#* }; javap -p -cp "$CP" "$c" 2>&1 | grep -iE -- "${re#(?i)}" | head -200 ;;
+              vivestr) grep -rlaE -- "$arg" vive | head -40; grep -rhaoE -- "[A-Za-z0-9_.:-]{0,40}($arg)[A-Za-z0-9_.:-]{0,40}" vive | sort -u | head -80 ;;
+              vivefile) find vive -iname "$arg" | head -20 | while read -r f; do echo "--- $f"; head -c 4000 "$f"; echo; done ;;
               grep) cut -d'|' -f2 classes.txt | grep -E '^(net/minecraft|com/mojang)/' | grep -v '\$' | sed 's/\.class$//;s#/#.#g' | while read -r c; do javap -p -cp "$CP" "$c" 2>/dev/null | grep -E "$arg" | sed "s#^#$c: #"; done | head -200 ;;
             esac
           done

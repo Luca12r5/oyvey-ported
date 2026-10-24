@@ -1,12 +1,11 @@
 # API explorer for the 26.3 port (see mc-api.yml).
-class net.fabricmc.fabric.api.client.rendering.v1.level.LevelTerrainRenderContext
-class net.fabricmc.fabric.api.client.rendering.v1.level.AbstractLevelRenderContext
-class net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents$AfterTranslucentFeatures
-class net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents$BeforeBlockOutline
-class net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents$CollectSubmits
-class net.fabricmc.fabric.api.client.rendering.v1.LivingEntityRenderLayerRegistrationCallback$RegistrationHelper
-class net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement
-classgrep net.minecraft.client.Camera public
-class net.minecraft.client.renderer.OrderedSubmitNodeCollector
-class net.minecraft.util.Util$OS
-classgrep net.minecraft.client.renderer.FirstPersonHandsAndItemsRenderer public|private
+# Vivecraft: how to switch VR on at start with the headset-less NullVR provider (CI VR test).
+pkg (?i)org/vivecraft/client_vr/provider/(nullvr|MCVR)
+pkg (?i)org/vivecraft/client_vr/settings/VRSettings
+vivestr (?i)nullvr
+vivestr (?i)stereoProvider
+vivestr optionsviveprofiles|vivecraft-client-config|vrEnabled|vrStartup|VR_ON_STARTUP|vrOnStartup
+classgrep org.vivecraft.client_vr.settings.VRSettings (?i)stereo|plugin|enable|startup|hotswitch
+class org.vivecraft.client_vr.settings.VRSettings$VRProvider
+class org.vivecraft.client_vr.VRState
+vivefile *.mixins.json
