@@ -132,6 +132,7 @@ public final class EmoteWheelView extends View {
 
       for (int i = 0; i < n; i++) {
          float h = Ease.to("wheel:h" + i, i == this.sel ? 1.0F : 0.0F, 16.0F);
+         int fi = i;
          if (!(h < 0.01F)) {
             Gx.Img wedge = Gx.painted(
                "wheel:w" + nn + ":" + i + ":" + size,
@@ -139,7 +140,7 @@ public final class EmoteWheelView extends View {
                size,
                g -> {
                   double c = size / 2.0;
-                  double start = 90.0 - 360.0 * (i - 0.5) / nn;
+                  double start = 90.0 - 360.0 * (fi - 0.5) / nn;
                   Area a = new Area(
                      new java.awt.geom.Arc2D.Double(c - R - pad * 0.4, c - R - pad * 0.4, (R + pad * 0.4) * 2.0, (R + pad * 0.4) * 2.0, start, -360.0 / nn, 2)
                   );

@@ -84,10 +84,11 @@ public final class SpotifyView extends View {
          boolean sel = i == this.tab;
          Gx.rect(tx, y + this.p(48.0), tw, th, th / 2, sel ? -1 : 452984831);
          Gx.textCenter(tabs[i], tx + tw / 2.0F, y + this.p(48.0) + th / 2.0F, this.pf(8.0), 3, sel ? -16777216 : -570425345);
+         int ti = i;
          Kit.hit(tx, y + this.p(48.0), tw, th).click(() -> {
-            this.tab = i;
+            this.tab = ti;
             this.scroll = this.scrollT = 0.0F;
-            if (i == 1 && !this.busy && api() != null) {
+            if (ti == 1 && !this.busy && api() != null) {
                this.lists = null;
                this.load(() -> {
                   SpotifyApi sa = api();

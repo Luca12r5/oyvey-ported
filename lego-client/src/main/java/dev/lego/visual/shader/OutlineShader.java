@@ -244,8 +244,9 @@ public class OutlineShader {
             GpuBufferSlice tr = RenderSystem.getDynamicUniforms()
                .writeTransform(RenderSystem.getModelViewMatrix(), COLOR_MODULATOR, MODEL_OFFSET, TEXTURE_MATRIX);
             GpuTextureView s = src;
+            int level = i;
 
-            try (RenderPass pass = enc.createRenderPass(() -> "legoclient:outline_down_" + i, this.mipViews[i], OptionalInt.of(0))) {
+            try (RenderPass pass = enc.createRenderPass(() -> "legoclient:outline_down_" + level, this.mipViews[i], OptionalInt.of(0))) {
                pass.setPipeline(this.downPipeline);
                pass.setVertexBuffer(0, this.vertexBuffer);
                pass.bindTexture("Sampler0", s, linear);
