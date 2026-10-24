@@ -40,6 +40,8 @@ const fps = process.argv.includes('--fps');
 const shots = process.argv.includes('--shots');
 // Real VR with Vivecraft's headset-less NullVR provider, in the flat world (needs --mods vivecraft).
 const vrNull = process.argv.includes('--vr-null');
+// Switches the LEGO color filter on in game (post effect shaders) and logs the result.
+const filterTest = process.argv.includes('--filter-test');
 // In-game session renewal through the launcher's bridge (LEGO Client SessionRefresher).
 const sessionTest = process.argv.includes('--session-test');
 // Extra Modrinth projects for this loader/version, e.g. --mods vivecraft,lithium
@@ -136,7 +138,7 @@ const args = buildArguments({
   version: merged, env, javaPath, gameDir, assetsDir: l.assets, gameAssetsDir: installed.virtualAssets ?? undefined,
   librariesDir: l.libraries, nativesDir: installed.nativesDir, clientJar: installed.clientJar, classpathSeparator: process.platform === 'win32' ? ';' : ':',
   player: { name: 'LegoCI', uuid: playerUuid, accessToken: token, xuid: null, userType: 'msa' },
-  launcherName: 'lego-launcher', launcherVersion: 'ci', memoryMb: { min: 1024, max: 3072 }, extraJvmArgs: [...(shots ? ['-Dlegoclient.ci.shots=1'] : []), ...(sessionTest ? ['-Dlegoclient.ci.session=1'] : []), ...(vrNull ? ['-Dlegoclient.ci.vr=1'] : [])],
+  launcherName: 'lego-launcher', launcherVersion: 'ci', memoryMb: { min: 1024, max: 3072 }, extraJvmArgs: [...(shots ? ['-Dlegoclient.ci.shots=1'] : []), ...(sessionTest ? ['-Dlegoclient.ci.session=1'] : []), ...(vrNull ? ['-Dlegoclient.ci.vr=1'] : []), ...(filterTest ? ['-Dlegoclient.ci.filter=1'] : [])],
   resolution: { width: 854, height: 480 }, loggingConfigPath: installed.loggingConfig ?? undefined,
 });
 if (shots || vrNull) args.push('--quickPlaySingleplayer', 'ci');
@@ -163,6 +165,8 @@ const game = await startGame(javaPath, args, gameDir, join(root, 'logs'), (raw) 
   if (/\[LegoClient\] CI (in world|shots done|waiting)/.test(line)) step(line.trim());
   if (/\[LegoClient\] CI shots done/.test(line)) shotsDone = true;
   if (/\[LegoClient\] CI VR/.test(line)) step(line.trim());
+  if (/\[LegoClient\] CI filter/.test(line)) step(line.trim());
+  if (filterTest && /post|shader|PostChain/i.test(line) && /error|fail|exception/i.test(line)) console.log(`  ! filter: ${line.slice(0, 300)}`);
   if (/\[LegoClient\] CI VR running/.test(line)) vrRunning = true;
   if (/\[LegoClient\] CI VR world ok/.test(line)) vrWorld = true;
   const m = /Loading (\d+) mods/.exec(line);
