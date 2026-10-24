@@ -86,10 +86,9 @@ public final class LegoClient implements ClientModInitializer {
    private static final int[] MACRO_KEYS = new int[]{295, 296, 297, 298, 321, 322, 323, 324, 325, 326, 327, 328, 329};
    private static final boolean[] macroDown = new boolean[MACRO_KEYS.length];
 
+   // Always logged: the launcher console, the crash doctor and the CI checks read these lines.
    public static void LOG(String msg) {
-      if (DEBUG) {
-         System.out.println("[LegoClient] " + msg);
-      }
+      System.out.println("[LegoClient] " + msg);
    }
 
    public static long sessionSeconds() {
