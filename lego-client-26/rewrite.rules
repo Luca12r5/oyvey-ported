@@ -30,3 +30,14 @@ import net\.fabricmc\.fabric\.api\.client\.rendering\.v1\.world\.WorldRenderCont
 \bLevelRenderer\.getLightColor\( ==> net.minecraft.util.LightCoordsUtil.getLightCoords(
 \.submitEntityRenderState\( ==> .entity(
 Util\.getPlatform\(\)\.openUri\( ==> dev.lego.compat.McCompat.openUri(
+# Visor port: render classes that moved to renderpearl in 26.3.
+if package dev\.visor :: \bcom\.mojang\.blaze3d\.buffers\.(GpuBuffer|GpuBufferSlice)\b ==> com.mojang.renderpearl.api.buffers.$1
+if package dev\.visor :: \bcom\.mojang\.blaze3d\.pipeline\.(BlendFunction|RenderPipeline)\b ==> com.mojang.renderpearl.api.pipeline.$1
+if package dev\.visor :: \bcom\.mojang\.blaze3d\.shaders\.UniformType\b ==> com.mojang.renderpearl.api.pipeline.UniformType
+if package dev\.visor :: \bcom\.mojang\.blaze3d\.systems\.(CommandEncoder|RenderPass)\b ==> com.mojang.renderpearl.api.commands.$1
+if package dev\.visor :: \bcom\.mojang\.blaze3d\.systems\.GpuDevice\b ==> com.mojang.renderpearl.api.device.GpuDevice
+if package dev\.visor :: \bcom\.mojang\.blaze3d\.textures\.(AddressMode|FilterMode|GpuSampler|GpuTexture|GpuTextureView)\b ==> com.mojang.renderpearl.api.textures.$1
+if package dev\.visor :: \bcom\.mojang\.blaze3d\.vertex\.(VertexFormat|VertexFormatElement)\b ==> com.mojang.renderpearl.api.vertex.$1
+if package dev\.visor :: net\.fabricmc\.fabric\.api\.client\.keybinding\.v1\.KeyBindingHelper ==> net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
+if package dev\.visor :: \bKeyBindingHelper\.registerKeyBinding\( ==> KeyMappingHelper.registerKeyMapping(
+if package dev\.visor :: \bLivingEntityFeatureRendererRegistrationCallback\b ==> LivingEntityRenderLayerRegistrationCallback
