@@ -21,7 +21,8 @@
     "BlockEntityCullMixin",
     "WindowTitleMixin",
     "FovRangeMixin",
-    "FireOverlayMixin"
+    "FireOverlayMixin",
+    "FirstPersonKnifeMixin"
   ],
   "injectors": {
     "defaultRequire": 0

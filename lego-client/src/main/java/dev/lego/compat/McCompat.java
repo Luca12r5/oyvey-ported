@@ -36,6 +36,17 @@ public final class McCompat {
       gr.clearPostEffect();
    }
 
+   private static java.lang.reflect.Method setPost;
+
+   /** Puts one of the client's full-screen post effects (color filters) on. */
+   public static void setPostEffect(net.minecraft.client.renderer.GameRenderer gr, net.minecraft.resources.Identifier id) throws ReflectiveOperationException {
+      if (setPost == null) {
+         setPost = net.minecraft.client.renderer.GameRenderer.class.getDeclaredMethod(dev.lego.util.Remap.method("net.minecraft.class_757", "method_62904", "(Lnet/minecraft/class_2960;)V"), net.minecraft.resources.Identifier.class);
+         setPost.setAccessible(true);
+      }
+      setPost.invoke(gr, id);
+   }
+
    /** Far plane of the world camera in blocks. */
    public static float depthFar(net.minecraft.client.renderer.GameRenderer gr) {
       return gr.getDepthFar();

@@ -23,12 +23,23 @@ public final class McCompat {
       return KeyMappingHelper.getBoundKeyOf(key);
    }
 
-   /** 26.3: post effects are requested per frame through the render state; the LEGO filters are off for now. */
+   /**
+    * 26.3 keeps a list of requested full-screen post effects (spectator view, server effects…). The
+    * client's color filter is one entry in that list, recognised by its "legoclient" namespace.
+    */
    public static net.minecraft.resources.Identifier currentPostEffect(net.minecraft.client.renderer.GameRenderer gr) {
+      for (net.minecraft.resources.Identifier id : gr.getRequestedPostEffects()) if ("legoclient".equals(id.getNamespace())) return id;
       return null;
    }
 
    public static void clearPostEffect(net.minecraft.client.renderer.GameRenderer gr) {
+      gr.getRequestedPostEffects().removeIf(id -> "legoclient".equals(id.getNamespace()));
+   }
+
+   public static void setPostEffect(net.minecraft.client.renderer.GameRenderer gr, net.minecraft.resources.Identifier id) {
+      java.util.List<net.minecraft.resources.Identifier> list = gr.getRequestedPostEffects();
+      list.removeIf(x -> "legoclient".equals(x.getNamespace()));
+      list.add(id);
    }
 
    /** Render distance in blocks times four, like the old far plane. */

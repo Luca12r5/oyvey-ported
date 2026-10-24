@@ -299,7 +299,6 @@ public final class Visuals {
       final Setting.Mode mode = this.add(new Setting.Mode("Filter", 0, MODES));
       /** Used by "Eigene Sättigung": 0 % grey … 100 % normal … 200 % very colourful, in 10 % steps. */
       final Setting.Num saturation = this.add(new Setting.Num("Sättigung", 0.0, 200.0, 10.0, 130.0, "%"));
-      private static Method setPost;
 
       ColorFilter() {
          super("colorfilter", "Farbsättigung & Filter", "Mehr Farbe, Kino-Look, Schwarz-Weiß, Warm, Kalt, Vintage ...", Category.VISUALS);
@@ -325,21 +324,12 @@ public final class Visuals {
             GameRenderer var2 = Mc.mc().gameRenderer;
             Identifier var3 = dev.lego.compat.McCompat.currentPostEffect(var2);
             if (!var1.equals(var3)) {
-               setPost(var2, var1);
+               dev.lego.compat.McCompat.setPostEffect(var2, var1);
             }
          } catch (Throwable var4) {
             LegoClient.LOG("Filter-Fehler: " + var4);
             this.setEnabled(false);
          }
-      }
-
-      private static void setPost(GameRenderer var0, Identifier var1) throws Exception {
-         if (setPost == null) {
-            setPost = GameRenderer.class.getDeclaredMethod(dev.lego.util.Remap.method("net.minecraft.class_757", "method_62904", "(Lnet/minecraft/class_2960;)V"), Identifier.class);
-            setPost.setAccessible(true);
-         }
-
-         setPost.invoke(var0, var1);
       }
 
       @Override
