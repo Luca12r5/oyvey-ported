@@ -41,8 +41,6 @@ def mergeSources = tasks.register('mergeSources', Sync) {
             exclude { FileTreeElement e -> !e.directory && new File(overlay, "$kind/${e.relativePath.pathString}").exists() }
             // Not ported to 26.3 yet: the Visor headset (own GPU pipelines and shaders).
             exclude 'dev/visor/**', 'visor.mixins.json', 'assets/visor/**'
-            // ItemInHandRenderer is FirstPersonHandsAndItemsRenderer in 26.3 (knife instead of a sword: own 26.3 version follows).
-            exclude 'dev/lego/mixin/ItemInHandKnifeMixin.java'
         }
         from(new File(overlay, kind)) { into kind }
     }

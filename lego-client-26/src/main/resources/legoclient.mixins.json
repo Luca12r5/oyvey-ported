@@ -22,7 +22,8 @@
     "WindowTitleMixin",
     "FovRangeMixin",
     "FireOverlayMixin",
-    "FirstPersonKnifeMixin"
+    "FirstPersonKnifeMixin",
+    "ItemInHandKnifeMixin"
   ],
   "injectors": {
     "defaultRequire": 0
