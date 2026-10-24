@@ -61,7 +61,7 @@ public class LegoScreen extends Screen implements View.Host {
       if (this.openedAt == 0L) {
          this.openedAt = var5;
          // LEGO text fields (search, console, chat) need character events while the screen is open.
-         dev.lego.compat.McCompat.textInput(true);
+         dev.lego.compat.McCompat.textInput(this, true);
       }
 
       if (this.closing) {
@@ -124,7 +124,7 @@ public class LegoScreen extends Screen implements View.Host {
 
    @Override
    public void removed() {
-      dev.lego.compat.McCompat.textInput(false);
+      dev.lego.compat.McCompat.textInput(this, false);
       try {
          this.view.removed();
       } catch (Throwable var2) {

@@ -17,6 +17,7 @@ import net.minecraft.client.server.IntegratedServer;
  * quits. The test prints the pictures into the CI log so they can be checked.
  */
 public final class CiShots {
+   private static dev.lego.ui.hub.HubView hub;
    private static final boolean ON = System.getProperty("legoclient.ci.shots") != null;
    private static long joined;
    private static int step;
@@ -113,8 +114,17 @@ public final class CiShots {
          case 17 -> { if (t < 43.4F) return; shot(mc, "emote-car"); }
          case 18 -> { if (t < 48.0F) return; dev.lego.emote.Emotes.play(dev.lego.emote.EmoteLib.index("lx_chair")); }
          case 19 -> { if (t < 50.4F) return; shot(mc, "emote-chair"); }
+         // Hub search: typing filters the cosmetics (the shot shows the search field and the result).
          case 20 -> {
-            if (t < 54.0F) return;
+            if (t < 52.0F) return;
+            mc.options.setCameraType(CameraType.FIRST_PERSON);
+            hub = new dev.lego.ui.hub.HubView(dev.lego.ui.hub.HubView.Section.COSMETICS);
+            LegoScreen.show(hub);
+         }
+         case 21 -> { if (t < 54.0F) return; hub.chr("k"); hub.chr("r"); hub.chr("o"); }
+         case 22 -> { if (t < 56.0F) return; shot(mc, "hub-search"); }
+         case 23 -> {
+            if (t < 58.0F) return;
             LegoClient.LOG("CI shots done");
             mc.stop();
          }

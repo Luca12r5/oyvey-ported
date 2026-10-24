@@ -40,8 +40,16 @@ public final class McCompat {
       };
    }
 
-   /** Character events for own text fields; filled in once the 26.3 text-input API is confirmed. */
-   public static void textInput(boolean on) {
+   /**
+    * SDL3 only sends character events while text input is on; 26.3 turns it on for its own
+    * EditBox through Minecraft.onTextInputFocusChange. LEGO screens draw their own text fields,
+    * so they report themselves as the focused text field while open.
+    */
+   public static void textInput(net.minecraft.client.gui.components.events.GuiEventListener field, boolean on) {
+      try {
+         net.minecraft.client.Minecraft.getInstance().onTextInputFocusChange(field, on);
+      } catch (Throwable ignored) {
+      }
    }
 
    /** GLFW modifier bits of SDL3's (left/right pairs: shift 3, ctrl 192, alt 768, super 3072). */

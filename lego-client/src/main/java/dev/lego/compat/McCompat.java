@@ -34,7 +34,7 @@ public final class McCompat {
    }
 
    /** Character events for own text fields (1.21.11: GLFW always sends them). */
-   public static void textInput(boolean on) {
+   public static void textInput(net.minecraft.client.gui.components.events.GuiEventListener field, boolean on) {
    }
 
    /** GLFW modifier bits (1 shift, 2 ctrl, 4 alt, 8 super) of the game's (the same on 1.21.11). */
