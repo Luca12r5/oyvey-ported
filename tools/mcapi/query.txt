@@ -1,11 +1,15 @@
 # API explorer for the 26.3 port (see mc-api.yml).
-# Vivecraft: how to switch VR on at start with the headset-less NullVR provider (CI VR test).
-pkg (?i)org/vivecraft/client_vr/provider/(nullvr|MCVR)
-pkg (?i)org/vivecraft/client_vr/settings/VRSettings
-vivestr (?i)nullvr
-vivestr (?i)stereoProvider
-vivestr optionsviveprofiles|vivecraft-client-config|vrEnabled|vrStartup|VR_ON_STARTUP|vrOnStartup
-classgrep org.vivecraft.client_vr.settings.VRSettings (?i)stereo|plugin|enable|startup|hotswitch
-class org.vivecraft.client_vr.settings.VRSettings$VRProvider
-class org.vivecraft.client_vr.VRState
-vivefile *.mixins.json
+# Post effects (color filters)
+classgrep net.minecraft.client.renderer.GameRenderer (?i)post|effect
+classgrep net.minecraft.client.renderer.state.GameRenderState (?i)post|effect
+pkg (?i)PostChain|PostEffect
+mcfile ^assets/minecraft/post_effect/(invert|blur)\.json$
+mcfile ^assets/minecraft/shaders/post/(invert|blur)\.(fsh|vsh|json)$
+# Sky
+classgrep net.minecraft.client.renderer.SkyRenderer (?i)void|boolean
+pkg (?i)Sky
+# First-person hand (knife)
+classgrep net.minecraft.client.renderer.FirstPersonHandsAndItemsRenderer (?i)void|boolean
+classgrep net.minecraft.client.renderer.entity.player.AvatarRenderer (?i)hand|arm
+# Fire overlay
+classgrep net.minecraft.client.renderer.ScreenEffectRenderer submitFire
