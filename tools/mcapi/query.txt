@@ -1,5 +1,16 @@
 # API explorer for the 26.3 port (see mc-api.yml).
-# Visor port: where the old blaze3d/minecraft render classes live in 26.3
-pkg /(GpuBuffer|GpuBufferSlice|BlendFunction|RenderPipeline|DepthTestFunction|UniformType|CommandEncoder|GpuDevice|RenderPass|AddressMode|FilterMode|GpuSampler|GpuTexture|GpuTextureView|TextureFormat|VertexFormat|VertexFormatElement|CachedOrthoProjectionMatrixBuffer|DynamicUniformStorage|ItemInHandRenderer|LightTexture|PerspectiveProjectionMatrixBuffer|ProjectionMatrixBuffer|LightmapTextureManager|Lightmap\w*|DynamicUniforms|Std140Builder|RenderPipelines|ShaderDefines|BlendFunction|ColorTargetState|DepthStencilState)\.class$
-pkg fabric.*(keymapping|KeyMapping|LivingEntityRenderLayer|LevelRenderEvents)
-class com.mojang.blaze3d.systems.RenderSystem
+# Visor port: renderpearl API shapes
+pkg com/mojang/renderpearl/api/(textures|pipeline|vertex|commands|device|buffers)/[A-Za-z]+\.class$
+class com.mojang.renderpearl.api.pipeline.RenderPipeline
+class com.mojang.renderpearl.api.pipeline.RenderPipeline$Builder
+class com.mojang.renderpearl.api.commands.RenderPass
+class com.mojang.renderpearl.api.commands.CommandEncoder
+class com.mojang.renderpearl.api.device.GpuDevice
+class com.mojang.renderpearl.api.textures.GpuTexture
+class net.minecraft.client.renderer.DynamicGpuData
+class net.minecraft.client.renderer.ProjectionMatrixBuffer
+class net.minecraft.client.renderer.Lightmap
+class net.minecraft.client.renderer.RenderPipelines
+class com.mojang.blaze3d.systems.RenderSystem$AutoStorageIndexBuffer
+class com.mojang.renderpearl.api.vertex.VertexFormat
+classgrep com.mojang.blaze3d.vertex.DefaultVertexFormat (?i)static|upload
