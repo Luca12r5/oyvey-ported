@@ -57,6 +57,8 @@ jobs:
         include:
           - name: 26.3 Fabric + LEGO Client
             args: --version 26.3 --loader fabric --lego legoclient.jar --session-test --filter-test
+          - name: 26.3 LEGO Client in-game screenshots
+            args: --version 26.3 --loader fabric --lego legoclient.jar --shots --timeout 900
           - name: 26.3 Fabric + LEGO Client + Vivecraft
             args: --version 26.3 --loader fabric --lego legoclient.jar --mods vivecraft --vr-null --filter-test --timeout 600
     name: ${{ matrix.name }}
@@ -81,6 +83,6 @@ jobs:
           done
           exit 1
       - name: Install and start Minecraft
-        timeout-minutes: 15
+        timeout-minutes: 20
         working-directory: apps/launcher
         run: xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX +render -noreset" node --disable-warning=ExperimentalWarning test/real-launch.ts ${{ matrix.args }}
