@@ -32,10 +32,12 @@ jobs:
             grep -E '\.java:[0-9]+: error:' build.log | sed -E 's#.*/src/main/java/##' | head -300
             exit 1
           }
-          ls -la tools/lego-upstream/build/libs/
+          find tools/lego-upstream/build -name '*.jar' -ls
       - name: Remap to Mojang names
         run: |
-          JAR=$(ls tools/lego-upstream/build/libs/*.jar | grep -v sources | head -1)
+          # Loom's dev jar: compiled against intermediary names, which is the runtime namespace.
+          JAR=$(find tools/lego-upstream/build -name '*.jar' ! -name '*sources*' | head -1)
+          echo "jar: $JAR"
           ./gradlew -p tools/restore-lego remapLego -PlegoJar="$PWD/$JAR" --no-daemon --console=plain
       - name: Decompile
         run: tools/restore-lego/decompile.sh
