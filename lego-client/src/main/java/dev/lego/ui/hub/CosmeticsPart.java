@@ -116,7 +116,7 @@ public final class CosmeticsPart implements HubView.Part {
          if (it != null) {
             int sx = Math.min(pw, areaH);
             float fy = Math.round(this.yaw / 15.0F) * 15.0F;
-            Gx.Img img = Thumbs.get("cosbig:" + it.id + ":" + (int)fy, sx, sx, () -> Raster.render(it, s, s, fy, 10.0F, 1.2F, true, 0));
+            Gx.Img img = Thumbs.get("cosbig:" + it.id + ":" + (int)fy, sx, sx, () -> Raster.render(it, sx, sx, fy, 10.0F, 1.2F, true, 0));
             if (img != null) {
                Gx.image(img, px + (pw - sx) / 2, areaY + (areaH - sx) / 2, sx, sx, -1);
             }

@@ -56,8 +56,9 @@ public final class DesignPart implements HubView.Part {
          Gx.rect(bx, by, bw, bh, bh / 2, Gx.mix(Gx.withAlpha(-1, 0.05F), Style.accent, hf * (sel ? 1.0F : 0.35F)));
          Gx.outline(bx, by, bw, bh, bh / 2, Math.max(1, v.p(0.6)), sel ? Style.accent : Gx.withAlpha(-1, 0.1F));
          Gx.textCenter(names[i], bx + bw / 2.0F, by + bh / 2.0F, v.pf(8.0), 3, sel ? Style.accentText : Gx.mix(Style.sub, Style.text, hf));
+         int idx = i;
          Kit.hit(bx, by, bw, bh).click(() -> {
-            UiSettings.bgStyle = i;
+            UiSettings.bgStyle = idx;
             Modules.scheduleSave();
          });
       }
@@ -115,8 +116,9 @@ public final class DesignPart implements HubView.Part {
          Gx.rect(bx, cy, bw, bh, bh / 2, Gx.mix(Gx.withAlpha(-1, 0.05F), Style.accent, hf * (sel ? 1.0F : 0.35F)));
          Gx.outline(bx, cy, bw, bh, bh / 2, Math.max(1, v.p(0.6)), sel ? Style.accent : Gx.withAlpha(-1, 0.1F));
          Gx.textCenter(names[i], bx + bw / 2.0F, cy + bh / 2.0F, v.pf(8.0), 3, sel ? Style.accentText : Gx.mix(Style.sub, Style.text, hf));
+         int idx = i;
          Kit.hit(bx, cy, bw, bh).click(() -> {
-            UiSettings.guiStyle = i;
+            UiSettings.guiStyle = idx;
             Modules.scheduleSave();
          });
       }
@@ -139,9 +141,10 @@ public final class DesignPart implements HubView.Part {
          Gx.rect(bx, cy, bw, bh, bh / 2, Gx.mix(Gx.withAlpha(-1, 0.05F), Style.accent, hf * (sel ? 1.0F : 0.35F)));
          Gx.outline(bx, cy, bw, bh, bh / 2, Math.max(1, v.p(0.6)), sel ? Style.accent : Gx.withAlpha(-1, 0.1F));
          Gx.textCenter(names[i], bx + bw / 2.0F, cy + bh / 2.0F, v.pf(8.0), 3, sel ? Style.accentText : Gx.mix(Style.sub, Style.text, hf));
+         int idx = i;
          Kit.hit(bx, cy, bw, bh).click(() -> {
-            UiSettings.language = i;
-            Lang.setLanguage(i);
+            UiSettings.language = idx;
+            Lang.setLanguage(idx);
             BgFx.updateNames();
             Style.updateThemeNames();
             Setting.Color.updateNames();
