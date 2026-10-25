@@ -7,7 +7,9 @@ import dev.lego.core.Module;
 import dev.lego.core.Modules;
 import dev.lego.core.Setting;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import net.minecraft.client.Minecraft;
 
@@ -37,23 +39,31 @@ public final class TxtModules {
       if (Minecraft.getInstance().getOverlay() != null) {
          return; // a resource reload is running
       }
+      // Every group whose wanted style changed goes into one reload (several picks applied at once).
+      Map<Tab, String> batch = new LinkedHashMap<>();
       for (StyleModule m : STYLES) {
-         m.sync();
+         m.sync(batch);
+      }
+      if (!batch.isEmpty()) {
+         CustomTxt.selectAll(batch);
+         for (StyleModule m : STYLES) {
+            if (batch.containsKey(m.tab)) m.mirror();
+         }
       }
    }
 
    /** CI: a crystal and a fire style. */
    public static void ciDemo() {
       for (StyleModule m : STYLES) {
-         if (m.tab == Tab.CRYSTAL) m.pick("crystal_aqua");
-         if (m.tab == Tab.FIRE) m.pick("fire_ultralow");
+         if (m.tab == Tab.CRYSTAL) m.want("crystal_aqua");
+         if (m.tab == Tab.FIRE) m.want("fire_ultralow");
       }
    }
 
    /** CI: back to vanilla. */
    public static void ciReset() {
       for (StyleModule m : STYLES) {
-         if (m.enabled) m.pick(null);
+         if (m.enabled) m.want(null);
       }
    }
 
@@ -86,7 +96,7 @@ public final class TxtModules {
          return this.enabled ? this.folders[Math.max(0, Math.min(this.folders.length - 1, this.style.index))] : null;
       }
 
-      void sync() {
+      void sync(Map<Tab, String> batch) {
          String current = CustomTxt.current(this.tab);
          if (!Objects.equals(current, this.applied)) {
             // First look, or picked somewhere else: take it over without reloading again.
@@ -103,8 +113,7 @@ public final class TxtModules {
          String wanted = this.wanted();
          if (!Objects.equals(wanted, this.applied)) {
             this.applied = wanted;
-            CustomTxt.select(this.tab, wanted);
-            this.mirror();
+            batch.put(this.tab, wanted);
          }
       }
 
@@ -116,6 +125,26 @@ public final class TxtModules {
             }
          } catch (Throwable ignored) {
          }
+      }
+
+      /** Index of a style folder in the Style setting, -1 when this group has no such style. */
+      public int indexOf(String folder) {
+         for (int i = 0; i < this.folders.length; i++) {
+            if (this.folders[i].equals(folder)) {
+               return i;
+            }
+         }
+         return -1;
+      }
+
+      /** Wants a style (null = vanilla); the next sync loads every wanted style with one reload. */
+      public void want(String folder) {
+         for (int i = 0; i < this.folders.length; i++) {
+            if (this.folders[i].equals(folder)) {
+               this.style.index = i;
+            }
+         }
+         this.enabled = folder != null;
       }
 
       /** Picks a style right away (CI and other callers). */

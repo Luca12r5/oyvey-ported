@@ -187,7 +187,7 @@ public final class MenuView extends View {
 
       Gx.pop();
       Gx.popAlpha();
-      Kit.hit(bx, by, bw, bh).click(() -> this.host.open(new HubView(HubView.Section.MODS)));
+      Kit.hit(bx, by, bw, bh).click(() -> this.host.open(dev.lego.ui.bench.BenchView.at(null)));
       int qs = this.p(46.0);
       int qg = this.p(12.0);
       int qx = cx - (QUICK.length * qs + (QUICK.length - 1) * qg) / 2;
@@ -278,7 +278,7 @@ public final class MenuView extends View {
       } else if ("SPOTIFY".equals(sec)) {
          this.host.open(new SpotifyView());
       } else {
-         this.host.open(new HubView(HubView.Section.valueOf(sec)));
+         this.host.open(dev.lego.ui.bench.BenchView.at(sec));
       }
    }
 

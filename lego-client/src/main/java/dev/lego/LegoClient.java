@@ -402,12 +402,9 @@ public final class LegoClient implements ClientModInitializer {
 
          while (guiKey.consumeClick()) {
             if (client.screen == null) {
-               boolean classic = Mc.keyDown(340) || !UiSettings.visorGui || !dev.lego.compat.VisorBridge.available() || !Mc.inGame();
-               if (classic) {
-                  LegoScreen.show(new MenuView());
-               } else {
-                  dev.lego.compat.VisorBridge.openMenu();
-               }
+               // Right Ctrl: the click GUI (LEGO Werkbank), always; Shift+Right Ctrl: the LEGO main menu.
+               // The Visor has its own key (Right Shift) and a button in the bench.
+               LegoScreen.show(Mc.keyDown(340) ? new MenuView() : dev.lego.ui.bench.BenchView.at(null));
             }
          }
 

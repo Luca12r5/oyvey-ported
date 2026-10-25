@@ -6,6 +6,7 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "GameRendererMixin",
+    "PauseScreenMixin",
     "NetworkHandlerMixin",
     "PlayerModelMixin",
     "PlayerRendererMixin",

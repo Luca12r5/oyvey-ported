@@ -67,6 +67,22 @@ public final class HubView extends View {
       }
    }
 
+   /** Takes size, scale, mouse and host from the view it is drawn inside (the work bench). */
+   public void embed(View outer) {
+      this.host = outer.host;
+      this.W = outer.W;
+      this.H = outer.H;
+      this.P = outer.P;
+      this.mx = outer.mx;
+      this.my = outer.my;
+      this.open = outer.open;
+   }
+
+   /** Draws only the current part into this rectangle (no frame, no side bar). */
+   public void drawPart(int x, int y, int w, int h) {
+      this.part.draw(this, x, y, w, h);
+   }
+
    public float sectionT(float ms) {
       return Math.min(1.0F, (float)(System.currentTimeMillis() - this.switchedAt) * UiSettings.anim() / ms);
    }

@@ -133,7 +133,7 @@ public final class HudEditorView extends View {
       Gx.icon("mods", bx2 + bs / 2.0F, by + bs / 2.0F, this.pf(13.0), -1);
       Kit.hit(bx2, by, bs, bs).click(() -> {
          this.save();
-         this.host.open(new HubView());
+         this.host.open(dev.lego.ui.bench.BenchView.at(null));
       });
       Gx.popAlpha();
       float po = Ease.to("hudedit:panel", this.panelOpen ? 1.0F : 0.0F, 14.0F);

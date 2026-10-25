@@ -363,7 +363,7 @@ public abstract class GameView extends View {
     }
 
     protected void back() {
-        if (host != null) host.open(new HubView(HubView.Section.GAMES));
+        if (host != null) host.open(dev.lego.ui.bench.BenchView.at("GAMES"));
     }
 
     // ------------------------------------------------------------------ input

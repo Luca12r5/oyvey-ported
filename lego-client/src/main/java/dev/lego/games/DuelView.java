@@ -149,7 +149,7 @@ public final class DuelView extends View {
         Gx.popAlpha();
     }
 
-    private void back() { if (host != null) host.open(new HubView(HubView.Section.GAMES)); }
+    private void back() { if (host != null) host.open(dev.lego.ui.bench.BenchView.at("GAMES")); }
 
     @Override public boolean key(int key, int mods) {
         if (key == 256) { back(); return true; }

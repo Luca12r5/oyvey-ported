@@ -248,7 +248,7 @@ public final class SolarSmash extends View {
         int bx = p(16), by = p(14);
         button("back", zoom > 0.5f ? "System" : "Zurück", bx, by, () -> {
             if (zoomTarget > 0.5f) { zoomTarget = 0; fx.release(); }
-            else host.open(new HubView(HubView.Section.GAMES));
+            else host.open(dev.lego.ui.bench.BenchView.at("GAMES"));
         });
         if (zoom > 0.5f && focus != null) {
             button("reset", "Reparieren", bx + p(96), by, () -> { focus.repair(); fx.clear(); Sound.play("minecraft:block.beacon.activate", 1.2f, 0.5f); });
@@ -436,7 +436,7 @@ public final class SolarSmash extends View {
         if (key == 82 && focus != null) { focus.repair(); fx.clear(); return true; }
         if (key == 256) {
             if (zoomTarget > 0.5f) { zoomTarget = 0; if (fx != null) fx.release(); }
-            else host.open(new HubView(HubView.Section.GAMES));
+            else host.open(dev.lego.ui.bench.BenchView.at("GAMES"));
             return true;
         }
         return false;

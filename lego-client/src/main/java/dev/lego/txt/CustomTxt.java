@@ -4,7 +4,9 @@ import de.bauloo.styles.BaulooStylesClient;
 import de.bauloo.styles.BaulooStylesClient.Tab;
 import dev.lego.LegoClient;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.repository.PackRepository;
 
@@ -49,23 +51,41 @@ public final class CustomTxt {
 
    /** Picks a style for this group (null = vanilla) and reloads the resource packs. */
    public static void select(Tab tab, String folder) {
+      Map<Tab, String> one = new LinkedHashMap<>();
+      one.put(tab, folder);
+      selectAll(one);
+   }
+
+   /**
+    * Picks the styles of several groups (null = vanilla) and loads them all with a single resource
+    * reload, like APPLY in the Bauloo menu (BaulooStylesConfigScreen.applyPending).
+    */
+   public static void selectAll(Map<Tab, String> picks) {
+      if (picks.isEmpty()) {
+         return;
+      }
       Minecraft mc = Minecraft.getInstance();
       PackRepository packs = mc.getResourcePackRepository();
       packs.reload();
       List<String> enabled = new ArrayList<>(packs.getSelectedIds());
-      enabled.removeIf(id -> isPackOf(tab, id));
-      if (folder != null) {
-         String id = packId(folder);
-         if (packs.getAvailableIds().contains(id)) {
-            enabled.add(id);
-         } else {
-            LegoClient.LOG("Custom TxT: Paket " + id + " nicht gefunden");
+      for (Map.Entry<Tab, String> e : picks.entrySet()) {
+         Tab tab = e.getKey();
+         String folder = e.getValue();
+         enabled.removeIf(id -> isPackOf(tab, id));
+         if (folder != null) {
+            String id = packId(folder);
+            if (packs.getAvailableIds().contains(id)) {
+               enabled.add(id);
+            } else {
+               LegoClient.LOG("Custom TxT: Paket " + id + " nicht gefunden");
+            }
          }
+         LegoClient.LOG("Custom TxT: " + tab.title + " = " + (folder == null ? "Vanilla" : folder));
       }
       packs.setSelected(enabled);
       mc.options.updateResourcePacks(packs);
       mc.reloadResourcePacks();
-      LegoClient.LOG("Custom TxT: " + tab.title + " = " + (folder == null ? "Vanilla" : folder));
+      LegoClient.LOG("Custom TxT: " + picks.size() + " Gruppe(n), ein Reload");
    }
 
    /** The built-in styles of a group: {folder, name}. */
