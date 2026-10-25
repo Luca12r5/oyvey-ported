@@ -47,7 +47,7 @@ public final class LocalCapes {
       Path root = dir();
       if (Files.isDirectory(root)) {
          try (Stream<Path> folders = Files.list(root).sorted()) {
-            for (Path folder : folders::iterator) {
+            for (Path folder : (Iterable<Path>) folders::iterator) {
                if (Files.isDirectory(folder)) {
                   List<Path> frames;
                   try (Stream<Path> files = Files.list(folder)) {

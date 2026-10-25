@@ -18,7 +18,7 @@ public class CapeSkinMixin {
    )
    private void baulooStyles$capeInSkin(CallbackInfoReturnable<PlayerSkin> cir) {
       PlayerSkin old = cir.getReturnValue();
-      PlayerSkin swapped = Cosmetics.withCape((Avatar)this, old);
+      PlayerSkin swapped = Cosmetics.withCape((Avatar)(Object)this, old);
       if (swapped != old) {
          cir.setReturnValue(swapped);
       }

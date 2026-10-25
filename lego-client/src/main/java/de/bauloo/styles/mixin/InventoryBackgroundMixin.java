@@ -19,7 +19,7 @@ public class InventoryBackgroundMixin {
    )
    private void baulooStyles$clear(GuiGraphics context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
       Minecraft client = Minecraft.getInstance();
-      if (StylesUiConfig.invClearBackground && client.level != null && this instanceof AbstractContainerScreen) {
+      if (StylesUiConfig.invClearBackground && client.level != null && (Object)this instanceof AbstractContainerScreen) {
          client.gui.renderDeferredSubtitles();
          ci.cancel();
       }

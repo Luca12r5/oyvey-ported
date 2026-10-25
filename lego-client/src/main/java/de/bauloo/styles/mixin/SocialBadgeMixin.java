@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class SocialBadgeMixin {
    @Shadow
    @Final
-   protected WidgetSprites field_45356;
+   protected WidgetSprites sprites;
 
    @Inject(
       method = {"renderContents"},
@@ -23,7 +23,7 @@ public abstract class SocialBadgeMixin {
       cancellable = true
    )
    private void baulooStyles$badge(GuiGraphics ctx, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-      if (this.field_45356.enabled().getPath().contains("recipe_book") && Watermark.drawBadge(ctx, (ImageButton)this)) {
+      if (this.sprites.enabled().getPath().contains("recipe_book") && Watermark.drawBadge(ctx, (ImageButton)(Object)this)) {
          ci.cancel();
       }
    }

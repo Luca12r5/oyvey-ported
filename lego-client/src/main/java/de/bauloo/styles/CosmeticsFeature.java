@@ -22,7 +22,7 @@ public class CosmeticsFeature extends RenderLayer<AvatarRenderState, PlayerModel
       super(context);
    }
 
-   public void method_4199(PoseStack matrices, SubmitNodeCollector queue, int light, AvatarRenderState state, float limbAngle, float limbDistance) {
+   public void submit(PoseStack matrices, SubmitNodeCollector queue, int light, AvatarRenderState state, float limbAngle, float limbDistance) {
       Minecraft mc = Minecraft.getInstance();
       if (mc.player != null && state.id == mc.player.getId() && !state.isInvisible) {
          try {

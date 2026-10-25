@@ -19,18 +19,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class AnchorAtlasMixin {
    @Shadow
    @Final
-   private Identifier field_21749;
+   private Identifier location;
 
    @Inject(
       method = {"upload"},
       at = {@At("TAIL")}
    )
    private void baulooStyles$anchorGlow(Preparations result, CallbackInfo ci) {
-      if (TextureAtlas.LOCATION_BLOCKS.equals(this.field_21749)) {
+      if (TextureAtlas.LOCATION_BLOCKS.equals(this.location)) {
          AnchorGlow.applyLive();
          AnchorPixelGlow.applyLive();
          FireColor.atlasRebuilt();
-      } else if (Sheets.SHIELD_SHEET.equals(this.field_21749)) {
+      } else if (Sheets.SHIELD_SHEET.equals(this.location)) {
          ShieldColor.atlasRebuilt();
       }
    }

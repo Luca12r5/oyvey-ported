@@ -15,21 +15,21 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin({TextureAtlas.class})
 public class ItemAnimationMixin {
    @Shadow
-   private List<AnimationState> field_64243;
+   private List<AnimationState> animatedTexturesStates;
    @Shadow
    @Final
-   private Identifier field_21749;
+   private Identifier location;
 
    @Inject(
       method = {"cycleAnimationFrames"},
       at = {@At("HEAD")}
    )
    private void baulooStyles$tickItems(CallbackInfo ci) {
-      if (this.field_64243 != null
-         && !this.field_64243.isEmpty()
-         && TextureAtlas.LOCATION_ITEMS.equals(this.field_21749)
+      if (this.animatedTexturesStates != null
+         && !this.animatedTexturesStates.isEmpty()
+         && TextureAtlas.LOCATION_ITEMS.equals(this.location)
          && ItemAnimations.sodiumExtraBlocksThem()) {
-         for (AnimationState animator : this.field_64243) {
+         for (AnimationState animator : this.animatedTexturesStates) {
             animator.tick();
          }
       }

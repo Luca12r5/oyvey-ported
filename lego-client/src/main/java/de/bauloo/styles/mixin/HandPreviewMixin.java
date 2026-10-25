@@ -16,11 +16,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin({ItemInHandRenderer.class})
 public class HandPreviewMixin {
    @Shadow
-   private ItemStack field_4047;
+   private ItemStack mainHandItem;
    @Shadow
-   private float field_4043;
+   private float mainHandHeight;
    @Shadow
-   private float field_4053;
+   private float oMainHandHeight;
    @Unique
    private ItemStack baulooStyles$realMainHand;
    @Unique
@@ -35,12 +35,12 @@ public class HandPreviewMixin {
    private void baulooStyles$showPreview(float tickProgress, PoseStack matrices, SubmitNodeCollector queue, LocalPlayer player, int light, CallbackInfo ci) {
       ItemStack preview = HandPreview.stack();
       if (preview != null) {
-         this.baulooStyles$realMainHand = this.field_4047;
-         this.baulooStyles$realProgress = this.field_4043;
-         this.baulooStyles$realLastProgress = this.field_4053;
-         this.field_4047 = preview;
-         this.field_4043 = 1.0F;
-         this.field_4053 = 1.0F;
+         this.baulooStyles$realMainHand = this.mainHandItem;
+         this.baulooStyles$realProgress = this.mainHandHeight;
+         this.baulooStyles$realLastProgress = this.oMainHandHeight;
+         this.mainHandItem = preview;
+         this.mainHandHeight = 1.0F;
+         this.oMainHandHeight = 1.0F;
       }
    }
 
@@ -50,9 +50,9 @@ public class HandPreviewMixin {
    )
    private void baulooStyles$restore(float tickProgress, PoseStack matrices, SubmitNodeCollector queue, LocalPlayer player, int light, CallbackInfo ci) {
       if (this.baulooStyles$realMainHand != null) {
-         this.field_4047 = this.baulooStyles$realMainHand;
-         this.field_4043 = this.baulooStyles$realProgress;
-         this.field_4053 = this.baulooStyles$realLastProgress;
+         this.mainHandItem = this.baulooStyles$realMainHand;
+         this.mainHandHeight = this.baulooStyles$realProgress;
+         this.oMainHandHeight = this.baulooStyles$realLastProgress;
          this.baulooStyles$realMainHand = null;
       }
    }

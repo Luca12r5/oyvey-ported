@@ -503,9 +503,9 @@ public final class StylesUploadServer {
 
                GitHubPublisher.Result check = GitHubPublisher.check(gh);
                if (check.ok()) {
-                  Path filex = GitHubPublisher.tokenFile(keyFile());
-                  Files.createDirectories(filex.getParent());
-                  Files.writeString(filex, gh);
+                  Path tokenFilex = GitHubPublisher.tokenFile(keyFile());
+                  Files.createDirectories(tokenFilex.getParent());
+                  Files.writeString(tokenFilex, gh);
                }
 
                json(out, check.ok() ? 200 : 400, message(check.ok(), check.message()));

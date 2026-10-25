@@ -17,7 +17,7 @@ public class TimeChangerMixin {
    )
    private void baulooStyles$time(CallbackInfoReturnable<Long> cir) {
       int time = StylesUiConfig.timeOverride;
-      if (time >= 0 && this instanceof ClientLevel) {
+      if (time >= 0 && (Object)this instanceof ClientLevel) {
          cir.setReturnValue((long)time);
       }
    }

@@ -15,7 +15,7 @@ public class KillEffectMixin {
    )
    private void baulooStyles$died(byte status, CallbackInfo ci) {
       if (status == 3) {
-         KillEffect.onDeath((LivingEntity)this);
+         KillEffect.onDeath((LivingEntity)(Object)this);
       }
    }
 }
