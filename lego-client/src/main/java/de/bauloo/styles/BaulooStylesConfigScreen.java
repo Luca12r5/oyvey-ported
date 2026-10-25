@@ -2869,12 +2869,14 @@ public class BaulooStylesConfigScreen extends Screen {
             ctx.fill(knobX - 1, y - 1, knobX + 1, y + hueH + 1, -1);
          }
 
+         int hpx = px;
+         int hpw = pw;
          this.hit(px, y - 4, pw, hueH + 8, (b, x2, y2) -> {
             this.drag = BaulooStylesConfigScreen.Drag.OUTLINE_HUE;
             this.dragW = Math.min(260, this.width - 80);
             this.dragX = (this.width - this.dragW) / 2;
             this.dragY = this.height - 90;
-            float start = (float)((x2 - px) / Math.max(1, pw - 1));
+            float start = (float)((x2 - hpx) / Math.max(1, hpw - 1));
             StylesUiConfig.outlineColor = PlayerOutline.sliderColor(Math.max(0.0F, Math.min(1.0F, start)));
             StylesUiConfig.outlineRainbow = false;
             this.dragStartMouse = this.dragX + start * (this.dragW - 1);
@@ -3900,11 +3902,12 @@ public class BaulooStylesConfigScreen extends Screen {
       soft(ctx, px, y + 1, pw, 4, this.c.base);
       soft(ctx, px, y + 1, Math.max(3, fill - px), 4, this.c.accentDark);
       soft(ctx, fill - 2, y - 2, 5, 10, this.c.accent);
+      int rowY = y;
       this.hit(px, y - 4, pw, 14, (b, x2, y2) -> {
          this.drag = kind;
          this.dragX = px;
          this.dragW = pw;
-         this.dragY = y;
+         this.dragY = rowY;
          this.dragStartMouse = x2;
          this.dragStartT = clamped;
          if (!this.liveDrag()) {
