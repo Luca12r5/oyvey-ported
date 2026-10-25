@@ -18,7 +18,9 @@ public final class VrMixinPlugin implements IMixinConfigPlugin {
    private static final Set<String> KEEP_IN_VR = Set.of(
       "dev.lego.mixin.NetworkHandlerMixin", "dev.lego.mixin.PlayerModelMixin", "dev.lego.mixin.PlayerRendererMixin",
       "dev.lego.mixin.EntityMixin", "dev.lego.mixin.WindowTitleMixin", "dev.lego.mixin.FovRangeMixin", "dev.lego.mixin.KeyStateGuardMixin",
-      "dev.visor.mixin.ChannelAccessor", "dev.visor.mixin.SoundEngineAccessor", "dev.visor.mixin.SoundManagerAccessor"
+      "dev.visor.mixin.ChannelAccessor", "dev.visor.mixin.SoundEngineAccessor", "dev.visor.mixin.SoundManagerAccessor",
+      // Bauloo capes only swap the cape texture in the skin (no render code of their own).
+      "de.bauloo.styles.mixin.CosmeticCapeMixin", "de.bauloo.styles.mixin.CapeSkinMixin"
    );
    private static boolean vr;
 

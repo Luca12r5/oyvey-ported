@@ -23,6 +23,8 @@ public final class CiShots {
    private static int step;
    private static int visorSub;
    private static int keySub;
+   /** Cape texture the Bauloo cape mixin last put on the local player (CI check). */
+   public static volatile String baulooCape;
    private static boolean knifeKey;
    private static long waitingSince;
    private static long lastReport;
@@ -159,18 +161,31 @@ public final class CiShots {
          case 17 -> { if (t < 46.4F) return; shot(mc, "emote-car"); }
          case 18 -> { if (t < 51F) return; dev.lego.emote.Emotes.play(dev.lego.emote.EmoteLib.index("lx_chair")); }
          case 19 -> { if (t < 53.4F) return; shot(mc, "emote-chair"); }
-         // Hub search: typing filters the cosmetics (the shot shows the search field and the result).
+         // Bauloo cape (Custom TxT cosmetics), seen from behind.
          case 20 -> {
             if (t < 55F) return;
+            mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+            baulooCape = null;
+            de.bauloo.styles.Cosmetics.save(de.bauloo.styles.Cosmetics.Slot.CAPE, "tornado_night");
+         }
+         case 21 -> {
+            if (t < 60F) return;
+            LegoClient.LOG("CI bauloo cape: picked=" + de.bauloo.styles.Cosmetics.capeFor(mc.player) + " drawn=" + baulooCape);
+            shot(mc, "bauloo-cape");
+            de.bauloo.styles.Cosmetics.save(de.bauloo.styles.Cosmetics.Slot.CAPE, "none");
+         }
+         // Hub search: typing filters the cosmetics (the shot shows the search field and the result).
+         case 22 -> {
+            if (t < 61F) return;
             mc.options.setCameraType(CameraType.FIRST_PERSON);
             hub = new dev.lego.ui.hub.HubView(dev.lego.ui.hub.HubView.Section.COSMETICS);
             LegoScreen.show(hub);
          }
-         case 21 -> { if (t < 57F) return; hub.chr("k"); hub.chr("r"); hub.chr("o"); }
-         case 22 -> { if (t < 59F) return; shot(mc, "hub-search"); }
+         case 23 -> { if (t < 63F) return; hub.chr("k"); hub.chr("r"); hub.chr("o"); }
+         case 24 -> { if (t < 65F) return; shot(mc, "hub-search"); }
          // Custom TxT (Bauloo Styles): the category, a crystal and fire style, the Bauloo menu.
-         case 23 -> {
-            if (t < 61F) return;
+         case 25 -> {
+            if (t < 67F) return;
             try {
                org.spongepowered.asm.mixin.MixinEnvironment.getCurrentEnvironment().audit();
                LegoClient.LOG("CI bauloo mixins audited");
@@ -180,31 +195,31 @@ public final class CiShots {
             dev.lego.ui.hub.ModsPart.showCategory(dev.lego.core.Category.CUSTOM_TXT);
             LegoScreen.show(new dev.lego.ui.hub.HubView(dev.lego.ui.hub.HubView.Section.MODS));
          }
-         case 24 -> { if (t < 64F) return; shot(mc, "custom-txt"); }
-         case 25 -> {
-            if (t < 65F) return;
+         case 26 -> { if (t < 70F) return; shot(mc, "custom-txt"); }
+         case 27 -> {
+            if (t < 71F) return;
             mc.setScreen(null);
             command(mc, "execute as " + player + " at " + player + " rotated as " + player + " run summon minecraft:end_crystal ^ ^ ^4");
             dev.lego.txt.TxtModules.ciDemo();
          }
-         case 26 -> {
-            if (t < 73F || mc.getOverlay() != null) return;
+         case 28 -> {
+            if (t < 79F || mc.getOverlay() != null) return;
             LegoClient.LOG("CI custom txt packs: " + mc.getResourcePackRepository().getSelectedIds());
             shot(mc, "txt-crystal");
          }
-         case 27 -> { if (t < 74F) return; dev.lego.txt.TxtModules.openMenu(); }
-         case 28 -> {
-            if (t < 78F) return;
+         case 29 -> { if (t < 80F) return; dev.lego.txt.TxtModules.openMenu(); }
+         case 30 -> {
+            if (t < 84F) return;
             LegoClient.LOG("CI bauloo menu: " + (mc.screen == null ? "none" : mc.screen.getClass().getSimpleName()));
             shot(mc, "bauloo-menu");
          }
-         case 29 -> {
-            if (t < 79F) return;
+         case 31 -> {
+            if (t < 85F) return;
             mc.setScreen(null);
             dev.lego.txt.TxtModules.ciReset();
          }
-         case 30 -> {
-            if (t < 83F || mc.getOverlay() != null) return;
+         case 32 -> {
+            if (t < 89F || mc.getOverlay() != null) return;
             LegoClient.LOG("CI shots done");
             mc.stop();
          }

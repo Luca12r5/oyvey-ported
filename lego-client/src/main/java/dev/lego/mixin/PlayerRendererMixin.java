@@ -40,7 +40,8 @@ public abstract class PlayerRendererMixin {
             String cape = dev.lego.net.LegoNet.cosmeticsEnabled() && e.items().get(dev.lego.cosmetic.Cos.Slot.CAPE) != null
                ? dev.lego.cosmetic.Cos.get(e.items().get(dev.lego.cosmetic.Cos.Slot.CAPE)).cape : null;
             if (dev.lego.net.LegoNet.cosmeticsEnabled() && e.customCape() != null) cape = e.customCape();
-            Identifier tex = CosRender.capeTextureFor(cape);
+            // A Bauloo cape picked for this player wins over the LEGO one.
+            Identifier tex = de.bauloo.styles.Cosmetics.capeFor(var1) != null ? null : CosRender.capeTextureFor(cape);
             if (tex != null) {
                ResourceTexture rt = new ResourceTexture(tex, tex);
                var2.skin = var2.skin.with(Patch.create(Optional.empty(), Optional.of(rt), Optional.of(rt), Optional.empty()));
@@ -56,7 +57,7 @@ public abstract class PlayerRendererMixin {
 
          String own = dev.lego.net.LegoNet.ownCustomCape();
          Identifier var5 = own != null ? CosRender.capeTextureFor(own) : CosRender.capeTexture();
-         if (var5 == null) {
+         if (var5 == null || de.bauloo.styles.Cosmetics.capeFor(var1) != null) {
             return;
          }
 
