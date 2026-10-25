@@ -22,6 +22,7 @@ public final class CiShots {
    private static long joined;
    private static int step;
    private static int visorSub;
+   private static int keySub;
    private static boolean knifeKey;
    private static long waitingSince;
    private static long lastReport;
@@ -106,7 +107,23 @@ public final class CiShots {
          case 7 -> { if (t < 19.1F) return; knifeKey = false; }
          case 8 -> { if (t < 19.9F) return; shot(mc, "knife-inspect"); }
          // The LEGO menu key path (Right Ctrl in a world): headset with the home panel, or the click GUI.
-         case 9 -> { if (t < 22.0F) return; dev.lego.compat.VisorBridge.openMenu(); }
+         // Pressed as a real key (X11 test event from the CI script), like a player would.
+         case 9 -> {
+            if (t < 22.0F) return;
+            if (keySub == 0) {
+               LegoClient.LOG("CI press Control_R");
+               keySub = 1;
+               return;
+            }
+            if (t < 25.0F) return;
+            dev.visor.VisorController v = dev.visor.VisorController.get();
+            LegoClient.LOG("CI key gui: screen=" + (mc.screen == null ? "none" : mc.screen.getClass().getName()) + " visor=" + v.state());
+            if (v.state() == dev.visor.VisorController.State.OFF) {
+               // The key did not put the headset on: open it directly so the remaining shots still run.
+               mc.setScreen(null);
+               dev.lego.compat.VisorBridge.openMenu();
+            }
+         }
          case 10 -> {
             if (t < 28.0F) return;
             dev.visor.VisorController v = dev.visor.VisorController.get();
@@ -126,9 +143,14 @@ public final class CiShots {
             if (t < 31.0F) return;
             dev.lego.LegoClient.LOG("CI visor lego modules: " + dev.visor.module.ModuleManager.of(dev.visor.module.Category.HUD).size());
             shot(mc, "visor-lego");
-            dev.lego.compat.VisorBridge.toggle();
+            LegoClient.LOG("CI press Shift_R");
          }
-         case 12 -> { if (t < 35F) return; LegoScreen.show(new MenuView()); }
+         case 12 -> {
+            if (t < 35F) return;
+            LegoClient.LOG("CI key visor: state=" + dev.visor.VisorController.get().state());
+            if (dev.lego.compat.VisorBridge.active()) dev.lego.compat.VisorBridge.toggle();
+            LegoScreen.show(new MenuView());
+         }
          case 13 -> { if (t < 38F) return; shot(mc, "menu"); }
          case 14 -> { if (t < 39F) return; mc.setScreen(null); mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); }
          case 15 -> { if (t < 43F) return; shot(mc, "third-person"); }

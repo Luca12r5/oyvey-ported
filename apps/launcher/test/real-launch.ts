@@ -162,7 +162,21 @@ const game = await startGame(javaPath, args, gameDir, join(root, 'logs'), (raw) 
   if (/Sitzung erneuert \(uuid gleich\)/.test(line)) sessionRenewed = true;
   const shot = /\[LegoClient\] CI shot ([a-z0-9-]+)$/.exec(line.trim());
   if (shot) { shotNames.push(shot[1]!); step(`shot ${shot[1]}`); }
-  if (/\[LegoClient\] CI (in world|shots done|waiting)/.test(line)) step(line.trim());
+  // The client asks for a real key press (X11 test events into the game window, like a keyboard).
+  const press = /\[LegoClient\] CI press ([A-Za-z0-9_]+)$/.exec(line.trim());
+  if (press) {
+    const key = press[1]!;
+    try {
+      const win = execFileSync('xdotool', ['search', '--onlyvisible', '--name', 'Minecraft'], { encoding: 'utf8' }).trim().split('\n').pop();
+      if (win) execFileSync('xdotool', ['windowactivate', '--sync', win], { stdio: 'ignore', timeout: 3000 });
+    } catch { /* no window manager: the game window has the focus anyway */ }
+    try {
+      execFileSync('xdotool', ['keydown', key], { timeout: 3000 });
+      setTimeout(() => { try { execFileSync('xdotool', ['keyup', key], { timeout: 3000 }); } catch (e) { console.log(`  ! xdotool keyup ${key}: ${e}`); } }, 150);
+      step(`pressed ${key}`);
+    } catch (e) { console.log(`  ! xdotool ${key}: ${e}`); }
+  }
+  if (/\[LegoClient\] CI (in world|shots done|waiting|key)/.test(line)) step(line.trim());
   if (/\[LegoClient\] CI shots done/.test(line)) shotsDone = true;
   if (/\[LegoClient\] CI VR/.test(line)) step(line.trim());
   if (/\[LegoClient\] CI filter/.test(line)) step(line.trim());
