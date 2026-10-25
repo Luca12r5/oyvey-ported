@@ -83,7 +83,7 @@ jobs:
         timeout-minutes: 13
         run: |
           for i in 1 2 3; do
-            timeout 240 sh -c 'sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-vulkan-drivers libvulkan1 x11-xserver-utils libxxf86vm1 libxrandr2 libxcursor1 libxi6 libxtst6 imagemagick > /dev/null' && exit 0
+            timeout 240 sh -c 'sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libegl-mesa0 libegl1 libgl1 libgles2 mesa-vulkan-drivers libvulkan1 x11-xserver-utils libxxf86vm1 libxrandr2 libxcursor1 libxi6 libxtst6 imagemagick > /dev/null' && exit 0
             echo "apt try $i failed, retrying"; sleep 5
           done
           exit 1
