@@ -225,11 +225,15 @@ public final class CiShots {
             if (t < 74F) return;
             LegoClient.LOG("CI bauloo cape: picked=" + de.bauloo.styles.Cosmetics.capeFor(mc.player) + " drawn=" + baulooCape);
             shot(mc, "bauloo-cape");
-            de.bauloo.styles.Cosmetics.save(de.bauloo.styles.Cosmetics.Slot.CAPE, "none");
+            // a moving LEGO cape (drawn in code) next
+            de.bauloo.styles.Cosmetics.save(de.bauloo.styles.Cosmetics.Slot.CAPE, "lx_galaxy");
          }
          // Work bench search: typing filters the modules (the shot shows the search field and the result).
          case 22 -> {
             if (t < 75F) return;
+            LegoClient.LOG("CI motion cape: " + de.bauloo.styles.Cosmetics.capeFor(mc.player) + " drawn=" + baulooCape);
+            shot(mc, "motion-cape");
+            de.bauloo.styles.Cosmetics.save(de.bauloo.styles.Cosmetics.Slot.CAPE, "none");
             mc.options.setCameraType(CameraType.FIRST_PERSON);
             bench = dev.lego.ui.bench.BenchView.on(dev.lego.core.Category.HUD);
             LegoScreen.show(bench);

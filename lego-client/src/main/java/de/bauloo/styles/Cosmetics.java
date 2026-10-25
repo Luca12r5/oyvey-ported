@@ -64,7 +64,7 @@ public final class Cosmetics {
    public static final String[][] AURAS = new String[][]{{"sparkles", "Sparkles"}, {"bats", "Bats"}, {"souls", "Souls"}};
    private static final Map<Cosmetics.Slot, String> TRY_ON = new HashMap<>();
    private static String[][] merged = CAPES;
-   private static String[][] mergedLocal;
+   private static String[][] mergedLocal = new String[][]{{"\u0000"}};
    public static final Identifier WHITE = Identifier.fromNamespaceAndPath("bauloo_styles", "textures/cosmetics/white.png");
    private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10L)).followRedirects(Redirect.NORMAL).build();
    private static final Map<String, Identifier> MC_READY = new ConcurrentHashMap<>();
@@ -80,9 +80,11 @@ public final class Cosmetics {
       String[][] local = LocalCapes.list();
       if (local != mergedLocal) {
          mergedLocal = local;
-         String[][] all = new String[local.length + CAPES.length][];
+         String[][] motion = dev.lego.cosmetic.MotionCapes.LIST;
+         String[][] all = new String[local.length + CAPES.length + motion.length][];
          System.arraycopy(local, 0, all, 0, local.length);
          System.arraycopy(CAPES, 0, all, local.length, CAPES.length);
+         System.arraycopy(motion, 0, all, local.length + CAPES.length, motion.length);
          merged = all;
       }
 
@@ -230,6 +232,9 @@ public final class Cosmetics {
          } else if (slot == Cosmetics.Slot.CAPE && BuiltInCapes.has(key)) {
             Identifier anim = BuiltInCapes.icon(key);
             return anim != null ? anim : WHITE;
+         } else if (slot == Cosmetics.Slot.CAPE && dev.lego.cosmetic.MotionCapes.has(key)) {
+            Identifier motion = dev.lego.cosmetic.MotionCapes.current(key);
+            return motion != null ? motion : WHITE;
          } else if (slot == Cosmetics.Slot.CAPE && key.startsWith("local_")) {
             Identifier local = LocalCapes.icon(key);
             return local != null ? local : WHITE;
@@ -255,6 +260,9 @@ public final class Cosmetics {
          }
 
          return Identifier.fromNamespaceAndPath("bauloo_styles", "textures/cosmetics/cape/bauloo.png");
+      } else if (dev.lego.cosmetic.MotionCapes.has(key)) {
+         Identifier motion = dev.lego.cosmetic.MotionCapes.current(key);
+         return motion != null ? motion : Identifier.fromNamespaceAndPath("bauloo_styles", "textures/cosmetics/cape/bauloo.png");
       } else if (key.startsWith("local_")) {
          try {
             Identifier local = LocalCapes.current(key);
