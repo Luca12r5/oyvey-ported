@@ -2680,8 +2680,9 @@ public class BaulooStylesConfigScreen extends Screen {
             soft(ctx, chipX, chipY, cw, 14, on ? this.c.text : (hover ? this.c.surfaceHover : this.c.surface));
             ctx.drawString(this.font, group, chipX + 7, chipY + 3, on ? this.c.base : (hover ? this.c.text : this.c.textSoft), false);
             ctx.drawString(this.font, count, chipX + 11 + this.textWidth(group), chipY + 3, on ? this.c.textDim : this.c.textDim, false);
+            int groupIndex = i;
             this.hit(chipX, chipY, cw, 14, (b, px, py) -> {
-               extraGroup = i;
+               extraGroup = groupIndex;
                this.tileScroll = 0.0;
             });
             chipX += cw + 5;
