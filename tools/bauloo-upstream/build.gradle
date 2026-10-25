@@ -1,0 +1,25 @@
+plugins {
+    id 'fabric-loom' version '1.14-SNAPSHOT'
+}
+
+repositories {
+    mavenCentral()
+}
+
+// The recovered source uses intermediary names (net.minecraft.class_1234), so it is
+// compiled against intermediary-named Minecraft.
+dependencies {
+    minecraft 'com.mojang:minecraft:1.21.11'
+    mappings 'net.fabricmc:intermediary:1.21.11:v2'
+    modImplementation 'net.fabricmc:fabric-loader:0.18.4'
+    modImplementation 'net.fabricmc.fabric-api:fabric-api:0.141.1+1.21.11'
+}
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(21) }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-Xmaxerrs', '5000']
+}

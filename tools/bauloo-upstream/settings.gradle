@@ -1,0 +1,9 @@
+// Compiles the recovered Bauloo Styles source (intermediary names, as decompiled from the
+// release jar) so tools/restore-lego can remap and decompile it in the style of lego-client/.
+pluginManagement {
+    repositories {
+        maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+        gradlePluginPortal()
+    }
+}
+rootProject.name = 'bauloo-upstream'
