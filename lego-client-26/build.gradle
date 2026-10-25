@@ -41,6 +41,8 @@ def mergeSources = tasks.register('mergeSources', Sync) {
             exclude { FileTreeElement e -> !e.directory && new File(overlay, "$kind/${e.relativePath.pathString}").exists() }
             // Written against the 1.21.11 blaze3d/item renderer API; HandEffect has a 26.3 stand-in in the overlay.
             exclude 'dev/lego/visual/shader/**', 'dev/lego/mixin/GlintMixin.java', 'dev/lego/mixin/HeldItemRendererMixin.java'
+            // Bauloo Styles (Custom TxT) is written against the 1.21.11 render API; 26.3 gets a placeholder for now.
+            exclude 'de/bauloo/**', 'dev/visor/module/TxtModule.java', 'dev/lego/txt/CustomTxt.java', 'bauloo_styles.mixins.json', 'assets/bauloo_styles/**', 'resourcepacks/**', 'assets/minecraft/models/block/respawn_anchor_*.json'
         }
         from(new File(overlay, kind)) { into kind }
     }

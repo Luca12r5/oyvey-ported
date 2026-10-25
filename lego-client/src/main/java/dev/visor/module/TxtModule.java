@@ -68,11 +68,13 @@ public final class TxtModule extends Module {
 	}
 
 	/** The groups that ship styles, like the LEGO category. */
-	static void registerAll() {
+	public static java.util.List<Module> all() {
+		java.util.List<Module> list = new java.util.ArrayList<>();
 		for (Tab tab : CustomTxt.TABS) {
 			if (CustomTxt.styles(tab).length > 0) {
-				ModuleManager.addTxt(new TxtModule(tab));
+				list.add(new TxtModule(tab));
 			}
 		}
+		return list;
 	}
 }

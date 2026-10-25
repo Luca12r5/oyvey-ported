@@ -149,10 +149,7 @@ public final class CiShots {
             if (t < 62.0F) return;
             mc.setScreen(null);
             command(mc, "execute as " + player + " at " + player + " rotated as " + player + " run summon minecraft:end_crystal ^ ^ ^4");
-            for (dev.lego.txt.TxtModules.StyleModule m : dev.lego.txt.TxtModules.STYLES) {
-               if (m.tab == de.bauloo.styles.BaulooStylesClient.Tab.CRYSTAL) m.pick("crystal_aqua");
-               if (m.tab == de.bauloo.styles.BaulooStylesClient.Tab.FIRE) m.pick("fire_ultralow");
-            }
+            dev.lego.txt.TxtModules.ciDemo();
          }
          case 26 -> {
             if (t < 70.0F || mc.getOverlay() != null) return;
@@ -168,9 +165,7 @@ public final class CiShots {
          case 29 -> {
             if (t < 76.0F) return;
             mc.setScreen(null);
-            for (dev.lego.txt.TxtModules.StyleModule m : dev.lego.txt.TxtModules.STYLES) {
-               if (m.enabled) m.pick(null);
-            }
+            dev.lego.txt.TxtModules.ciReset();
          }
          case 30 -> {
             if (t < 80.0F || mc.getOverlay() != null) return;

@@ -39,7 +39,9 @@ public final class ModuleManager {
 		registerPlayer();
 		registerWorld();
 		registerMisc();
-		TxtModule.registerAll();
+		for (Module m : dev.lego.txt.TxtModules.visorModules()) {
+			add(m);
+		}
 		SettingsStore.register("modules.json", ModuleManager::write, ModuleManager::read);
 	}
 
@@ -93,10 +95,6 @@ public final class ModuleManager {
 			}
 			KEY_STATE.put(module, down);
 		}
-	}
-
-	static void addTxt(TxtModule module) {
-		add(module);
 	}
 
 	private static Module add(Module module) {

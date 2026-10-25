@@ -42,6 +42,26 @@ public final class TxtModules {
       }
    }
 
+   /** The same groups for the headset menu. */
+   public static List<dev.visor.module.Module> visorModules() {
+      return dev.visor.module.TxtModule.all();
+   }
+
+   /** CI: a crystal and a fire style. */
+   public static void ciDemo() {
+      for (StyleModule m : STYLES) {
+         if (m.tab == Tab.CRYSTAL) m.pick("crystal_aqua");
+         if (m.tab == Tab.FIRE) m.pick("fire_ultralow");
+      }
+   }
+
+   /** CI: back to vanilla. */
+   public static void ciReset() {
+      for (StyleModule m : STYLES) {
+         if (m.enabled) m.pick(null);
+      }
+   }
+
    public static void openMenu() {
       Minecraft mc = Minecraft.getInstance();
       mc.setScreen(new BaulooStylesConfigScreen(mc.screen));

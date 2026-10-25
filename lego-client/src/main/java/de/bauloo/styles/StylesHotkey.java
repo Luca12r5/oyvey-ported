@@ -57,7 +57,8 @@ public final class StylesHotkey {
          if (Files.exists(f)) {
             key = decode(Files.readString(f).trim());
          } else {
-            key = Type.KEYSYM.getOrCreate(344);
+            // Right Shift is the Visor key in the LEGO Client; the menu opens from Custom TxT instead.
+            key = InputConstants.UNKNOWN;
          }
       } catch (IOException var1) {
          key = InputConstants.UNKNOWN;
