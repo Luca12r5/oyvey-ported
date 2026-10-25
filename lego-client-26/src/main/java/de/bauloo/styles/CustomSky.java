@@ -321,10 +321,10 @@ public final class CustomSky {
                      .createRenderPass(() -> "Bauloo custom sky", color, Optional.empty(), depth, OptionalDouble.empty());
 
                   try {
-                     pass.setPipeline(pipeline(layer.blend()));
+                     pass.setPipeline(RenderSystem.getCompiledPipeline(pipeline(layer.blend())));
                      RenderSystem.bindDefaultUniforms(pass);
                      pass.setUniform("DynamicTransforms", transforms);
-                     pass.bindTexture("Sampler0", texture.view, texture.sampler);
+                     pass.setUniform("Sampler0", texture.view, texture.sampler);
                      pass.setVertexBuffer(0, vertices.slice());
                      pass.setIndexBuffer(indices, quads.type());
                      pass.drawIndexed(36, 1, 0, 0, 0);
@@ -507,7 +507,8 @@ public final class CustomSky {
          return p;
       } else {
          Builder builder = RenderPipeline.builder(new Snippet[]{RenderPipelines.GLOBALS_SNIPPET})
-            .withBindGroupLayout(BindGroupLayouts.MATRICES_PROJECTION)
+            .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
+            .withBindGroupLayout(BindGroupLayouts.PROJECTION)
             .withLocation(Identifier.fromNamespaceAndPath("bauloo_styles", "pipeline/custom_sky_" + blend.name().toLowerCase(Locale.ROOT)))
             .withVertexShader("core/position_tex_color")
             .withFragmentShader("core/position_tex_color")

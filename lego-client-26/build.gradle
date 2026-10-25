@@ -104,7 +104,7 @@ tasks.matching { it.name == 'sourcesJar' }.configureEach { dependsOn mergeSource
 tasks.withType(JavaCompile).configureEach {
     it.options.encoding = 'UTF-8'
     it.options.release = 25
-    it.options.compilerArgs += ['-Xmaxerrs', '5000']
+    it.options.compilerArgs += ['-Xmaxerrs', '5000', '-XDshould-stop.ifError=FLOW']
 }
 
 java {
