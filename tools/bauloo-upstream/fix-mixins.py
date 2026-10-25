@@ -23,7 +23,7 @@ for path in tinies:
                 inter, named = p[3 + ii], p[3 + ni]
                 if re.fullmatch(r'(method|field)_\d+', inter):
                     members[inter] = named
-print(f'{len(classes)} classes, {len(members)} members from {len(tinies)} tiny file(s)')
+print(f'MAPPINGS: {len(classes)} classes, {len(members)} members from {len(tinies)} tiny file(s)')
 
 def cls(m):
     name = m.group(0)
@@ -48,4 +48,4 @@ for dirpath, _, files in os.walk(root):
         for m in re.finditer(r'"[^"\n]*\b(?:class|method|field)_\d+[^"\n]*"', out):
             left += 1
             print(f'unmapped: {name}: {m.group(0)}')
-print(f'{left} strings still contain intermediary names')
+print(f'LEFT: {left} strings still contain intermediary names')

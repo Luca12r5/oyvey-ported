@@ -45,7 +45,8 @@ jobs:
         run: tools/restore-lego/decompile.sh
       - name: Mojang names in mixin strings
         run: |
-          TINY=$(find "$HOME/.gradle/caches/fabric-loom" tools/restore-lego/.gradle -name '*.tiny' 2>/dev/null | sort -u)
+          TINY=$(find "$HOME/.gradle" tools/restore-lego/.gradle tools/restore-lego/build -name '*.tiny' 2>/dev/null | sort -u)
+          for f in $TINY; do echo "tiny: $f :: $(head -c 120 "$f" | head -1)"; done
           python3 tools/bauloo-upstream/fix-mixins.py tools/restore-lego/build/decompiled $TINY
       - name: Publish to ci/bauloo-decompiled
         run: |
