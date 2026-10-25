@@ -129,6 +129,7 @@ public final class LegoClient implements ClientModInitializer {
       Arcade.registerAll();
       GameInfo.registerPersist();
       Modules.register(new DiscordControl());
+      dev.lego.txt.TxtModules.registerAll();
       Modules.load();
       // Nothing is lost when the game closes right after a change.
       net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING.register(c -> Modules.save());
@@ -510,6 +511,12 @@ public final class LegoClient implements ClientModInitializer {
 
                macroDown[i] = down;
             }
+         }
+
+         try {
+            dev.lego.txt.TxtModules.sync();
+         } catch (Throwable e) {
+            LOG("Custom TxT: " + e);
          }
 
          if (!Mc.inGame()) {

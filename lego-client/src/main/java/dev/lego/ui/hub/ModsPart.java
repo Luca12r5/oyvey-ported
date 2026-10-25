@@ -22,8 +22,17 @@ import java.util.List;
 import java.util.Locale;
 
 public final class ModsPart implements HubView.Part {
-   private static final Category[] TAB_CATS = new Category[]{null, Category.HUD, Category.VISUALS, Category.UTILITY, Category.PERFORMANCE, Category.SPOTIFY};
+   private static final Category[] TAB_CATS = new Category[]{null, Category.HUD, Category.VISUALS, Category.UTILITY, Category.PERFORMANCE, Category.SPOTIFY, Category.CUSTOM_TXT};
    private static int tab = 0;
+
+   /** Opens the mods part on a category tab (CI screenshots). */
+   public static void showCategory(Category c) {
+      for (int i = 0; i < TAB_CATS.length; i++) {
+         if (TAB_CATS[i] == c) {
+            tab = i;
+         }
+      }
+   }
    private String search = "";
    private boolean searchFocus = false;
    private float scroll = 0.0F;
@@ -42,7 +51,7 @@ public final class ModsPart implements HubView.Part {
    private static boolean showHidden;
 
    private static String[] tabs() {
-      return new String[]{Lang.get("ui.all", "ALLE"), "HUD", "VISUALS", "UTILITY", Lang.get("ui.perf", "LEISTUNG"), "SPOTIFY"};
+      return new String[]{Lang.get("ui.all", "ALLE"), "HUD", "VISUALS", "UTILITY", Lang.get("ui.perf", "LEISTUNG"), "SPOTIFY", "CUSTOM TXT"};
    }
 
    private List<Module> list() {

@@ -132,8 +132,48 @@ public final class CiShots {
          }
          case 21 -> { if (t < 54.0F) return; hub.chr("k"); hub.chr("r"); hub.chr("o"); }
          case 22 -> { if (t < 56.0F) return; shot(mc, "hub-search"); }
+         // Custom TxT (Bauloo Styles): the category, a crystal and fire style, the Bauloo menu.
          case 23 -> {
             if (t < 58.0F) return;
+            try {
+               org.spongepowered.asm.mixin.MixinEnvironment.getCurrentEnvironment().audit();
+               LegoClient.LOG("CI bauloo mixins audited");
+            } catch (Throwable e) {
+               LegoClient.LOG("CI bauloo mixin audit: " + e);
+            }
+            dev.lego.ui.hub.ModsPart.showCategory(dev.lego.core.Category.CUSTOM_TXT);
+            LegoScreen.show(new dev.lego.ui.hub.HubView(dev.lego.ui.hub.HubView.Section.MODS));
+         }
+         case 24 -> { if (t < 61.0F) return; shot(mc, "custom-txt"); }
+         case 25 -> {
+            if (t < 62.0F) return;
+            mc.setScreen(null);
+            command(mc, "execute as " + player + " at " + player + " rotated as " + player + " run summon minecraft:end_crystal ^ ^ ^4");
+            for (dev.lego.txt.TxtModules.StyleModule m : dev.lego.txt.TxtModules.STYLES) {
+               if (m.tab == de.bauloo.styles.BaulooStylesClient.Tab.CRYSTAL) m.pick("crystal_aqua");
+               if (m.tab == de.bauloo.styles.BaulooStylesClient.Tab.FIRE) m.pick("fire_ultralow");
+            }
+         }
+         case 26 -> {
+            if (t < 70.0F || mc.getOverlay() != null) return;
+            LegoClient.LOG("CI custom txt packs: " + mc.getResourcePackRepository().getSelectedIds());
+            shot(mc, "txt-crystal");
+         }
+         case 27 -> { if (t < 71.0F) return; dev.lego.txt.TxtModules.openMenu(); }
+         case 28 -> {
+            if (t < 75.0F) return;
+            LegoClient.LOG("CI bauloo menu: " + (mc.screen == null ? "none" : mc.screen.getClass().getSimpleName()));
+            shot(mc, "bauloo-menu");
+         }
+         case 29 -> {
+            if (t < 76.0F) return;
+            mc.setScreen(null);
+            for (dev.lego.txt.TxtModules.StyleModule m : dev.lego.txt.TxtModules.STYLES) {
+               if (m.enabled) m.pick(null);
+            }
+         }
+         case 30 -> {
+            if (t < 80.0F || mc.getOverlay() != null) return;
             LegoClient.LOG("CI shots done");
             mc.stop();
          }

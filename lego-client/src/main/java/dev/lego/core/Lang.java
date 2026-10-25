@@ -43,6 +43,8 @@ public final class Lang {
       put("cat.hud.sub", "Saubere Anzeigen auf dem Bildschirm", "Clean displays on screen");
       put("cat.visuals", "Visuals", "Visuals");
       put("cat.visuals.sub", "Himmel, Effekte, Filter, Partikel", "Sky, effects, filters, particles");
+      put("cat.custom_txt", "Custom TxT", "Custom TxT");
+      put("cat.custom_txt.sub", "Texturen & Styles (Bauloo)", "Textures & styles (Bauloo)");
       put("cat.utility", "Utility", "Utility");
       put("cat.utility.sub", "Legit Helfer: Sprint, InvSee, Wegpunkte ...", "Legit helpers: sprint, InvSee, waypoints ...");
       put("cat.performance", "Leistung", "Performance");

@@ -7,7 +7,8 @@ public enum Category {
 	RENDER("Render", "eye", "How the world and its entities are drawn", 0xFF8B5CF6),
 	PLAYER("Player", "user", "Your character, cosmetics and nameplates", 0xFF0EA5E9),
 	WORLD("World", "globe-hemisphere-west", "Maps, coordinates and the environment", 0xFF14B8A6),
-	MISC("Misc", "dots-three-outline", "Everything else that makes life easier", 0xFFF59E0B);
+	MISC("Misc", "dots-three-outline", "Everything else that makes life easier", 0xFFF59E0B),
+	CUSTOM_TXT("Custom TxT", "palette", "Texture styles from Bauloo Styles", 0xFFE879F9);
 
 	private final String displayName;
 	private final String icon;

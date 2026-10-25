@@ -9,9 +9,9 @@
   "icon": "assets/legoclient/icon.png",
   "environment": "client",
   "entrypoints": {
-    "client": ["dev.lego.LegoClient", "dev.visor.VisorClient"]
+    "client": ["dev.lego.LegoClient", "dev.visor.VisorClient", "de.bauloo.styles.BaulooStylesClient"]
   },
-  "mixins": ["legoclient.mixins.json", "visor.mixins.json"],
+  "mixins": ["legoclient.mixins.json", "visor.mixins.json", "bauloo_styles.mixins.json"],
   "depends": {
     "fabricloader": ">=0.16.0",
     "minecraft": "1.21.11",

@@ -9,6 +9,7 @@ public enum Category {
    COSMETICS("Kosmetik", "Umhänge, Flügel, Hüte ...", "shirt", false),
    EMOTES("Emotes", "Animationen für deinen Spieler", "emote", false),
    GAMES("Minispiele", "Spiele für Zwischendurch", "gamepad", false),
+   CUSTOM_TXT("Custom TxT", "Texturen & Styles (Bauloo)", "palette", true),
    WORLD_FX("Welt-Effekte", "Partikel in der Welt", "sparkle", false);
 
    public final String title;
