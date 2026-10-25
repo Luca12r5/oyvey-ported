@@ -22,6 +22,7 @@ public final class CiShots {
    private static int step;
    private static int visorSub;
    private static int keySub;
+   private static long pressedAt;
    private static dev.lego.ui.bench.BenchView bench;
    /** Cape texture the Bauloo cape mixin last put on the local player (CI check). */
    public static volatile String baulooCape;
@@ -157,7 +158,8 @@ public final class CiShots {
                return;
             }
             if (keySub == 6) {
-               if (t < 30.6F) return;
+               // after the single resource reload of the applied Custom TxT styles
+               if (t < 31.5F || mc.getOverlay() != null) return;
                shot(mc, "bench-applied");
                keySub = 7;
                return;
@@ -166,9 +168,10 @@ public final class CiShots {
             mc.setScreen(null);
             // The Visor has its own key: Right Shift.
             LegoClient.LOG("CI press Shift_R");
+            pressedAt = now;
          }
          case 10 -> {
-            if (t < 42F) return;
+            if (t < 42F || now - pressedAt < 4000L) return;
             dev.visor.VisorController v = dev.visor.VisorController.get();
             LegoClient.LOG("CI key visor on: state=" + v.state());
             if (v.state() == dev.visor.VisorController.State.OFF) {
@@ -186,15 +189,17 @@ public final class CiShots {
             if (visorSub == 0) {
                dev.visor.VisorController.get().mainPanel.showCategory(dev.visor.module.Category.HUD);
                visorSub = 1;
+               pressedAt = now;
                return;
             }
-            if (t < 45F) return;
+            if (now - pressedAt < 2000L) return;
             dev.lego.LegoClient.LOG("CI visor lego modules: " + dev.visor.module.ModuleManager.of(dev.visor.module.Category.HUD).size());
             shot(mc, "visor-lego");
             LegoClient.LOG("CI press Shift_R");
+            pressedAt = now;
          }
          case 12 -> {
-            if (t < 49F) return;
+            if (t < 49F || now - pressedAt < 3000L) return;
             LegoClient.LOG("CI key visor: state=" + dev.visor.VisorController.get().state());
             if (dev.lego.compat.VisorBridge.active()) dev.lego.compat.VisorBridge.toggle();
             LegoScreen.show(new MenuView());
