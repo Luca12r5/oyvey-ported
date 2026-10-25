@@ -81,6 +81,8 @@ public final class CiShots {
             if (t < 3.0F) return;
             command(mc, "time set 6000");
             command(mc, "weather clear");
+            // No mobs: a slime killed the CI player once and the death screen blocked the Visor shot.
+            command(mc, "difficulty peaceful");
             command(mc, "clear " + player);
             Cos.Item knife = Cos.get("knife_karambit_sunset");
             if (knife != null && !Cos.isEquipped(knife)) Cos.toggle(knife);
