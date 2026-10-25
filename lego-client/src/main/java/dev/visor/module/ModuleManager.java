@@ -26,6 +26,7 @@ import org.jspecify.annotations.Nullable;
 public final class ModuleManager {
 	private static final Map<String, Module> MODULES = new LinkedHashMap<>();
 	private static final Map<Module, Boolean> KEY_STATE = new HashMap<>();
+	private static int mirrorTick;
 	private static final int[] REDS = {0xFFF43F5E, 0xFFEF4444, 0xFFF97316, 0xFFFFFFFF, 0xFF2F7BFF, 0xFFA855F7};
 	private static final int[] OUTLINES = {0xFFFFFFFF, 0xFF2F7BFF, 0xFF22C55E, 0xFFF59E0B, 0xFFEC4899, 0xFF000000};
 
@@ -39,7 +40,7 @@ public final class ModuleManager {
 		registerPlayer();
 		registerWorld();
 		registerMisc();
-		for (Module m : dev.lego.txt.TxtModules.visorModules()) {
+		for (Module m : LegoModule.all()) {
 			add(m);
 		}
 		SettingsStore.register("modules.json", ModuleManager::write, ModuleManager::read);
@@ -85,6 +86,14 @@ public final class ModuleManager {
 
 	/** Toggles modules whose keybind was just pressed (only while no screen is open). */
 	public static void tickKeybinds(Minecraft minecraft, boolean keyboardCaptured) {
+		// Show changes made in the click GUI (or by Custom TxT) in the headset menu as well.
+		if (++mirrorTick % 10 == 0) {
+			for (Module module : MODULES.values()) {
+				if (module instanceof LegoModule lego) {
+					lego.mirror();
+				}
+			}
+		}
 		boolean allowed = minecraft.screen == null && minecraft.player != null && !keyboardCaptured;
 		for (Module module : MODULES.values()) {
 			KeySetting key = module.keybind();
@@ -108,6 +117,9 @@ public final class ModuleManager {
 	private static JsonObject write() {
 		JsonObject root = SettingsStore.stamp(new JsonObject());
 		for (Module module : MODULES.values()) {
+			if (module instanceof LegoModule) {
+				continue; // saved by the LEGO client itself
+			}
 			JsonObject json = new JsonObject();
 			json.addProperty("enabled", module.enabled());
 			json.add("key", module.keybind().toJson());
@@ -121,7 +133,7 @@ public final class ModuleManager {
 		int version = SettingsStore.version(root);
 		for (Map.Entry<String, JsonElement> entry : root.entrySet()) {
 			Module module = MODULES.get(entry.getKey());
-			if (module == null || !entry.getValue().isJsonObject()) {
+			if (module == null || module instanceof LegoModule || !entry.getValue().isJsonObject()) {
 				continue;
 			}
 			JsonObject json = entry.getValue().getAsJsonObject();

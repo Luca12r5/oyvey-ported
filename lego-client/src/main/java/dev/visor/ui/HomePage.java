@@ -270,6 +270,11 @@ public final class HomePage {
 			case WORLD -> 0;
 			case MISC -> 4;
 			case CUSTOM_TXT -> 1;
+			case HUD -> 2;
+			case VISUALS -> 6;
+			case UTILITY -> 0;
+			case PERFORMANCE -> 4;
+			case SPOTIFY -> 3;
 		};
 		c.aurora(x, y, w, thumbH + 12, 10, (module.id().hashCode() & 0xFFFF) / 6553.6F, palette, Theme.mix(0xFF8C8C8C, 0xFFFFFFFF, 0.55F + on * 0.45F));
 		c.popClip();

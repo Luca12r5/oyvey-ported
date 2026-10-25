@@ -2,7 +2,13 @@ package dev.visor.module;
 
 /** Module categories, in the order they appear in the sidebar. */
 public enum Category {
-	COMBAT("Combat", "sword", "Fighting feedback, timing and target information", 0xFFF43F5E),
+	// The LEGO click GUI categories (their modules are the real LEGO modules, see LegoModule).
+	HUD("HUD", "monitor", "LEGO: clean displays on screen", 0xFF3B82F6),
+	VISUALS("Visuals", "sparkle", "LEGO: sky, effects, filters, particles", 0xFFA855F7),
+	UTILITY("Utility", "wrench", "LEGO: legit helpers", 0xFF22C55E),
+	PERFORMANCE("Leistung", "gauge", "LEGO: more FPS, less stutter", 0xFFF59E0B),
+	SPOTIFY("Spotify", "music-notes", "LEGO: Spotify HUD and lyrics", 0xFF1DB954),
+		COMBAT("Combat", "sword", "Fighting feedback, timing and target information", 0xFFF43F5E),
 	MOVEMENT("Movement", "sneaker-move", "Sprinting, sneaking and getting around", 0xFF22C55E),
 	RENDER("Render", "eye", "How the world and its entities are drawn", 0xFF8B5CF6),
 	PLAYER("Player", "user", "Your character, cosmetics and nameplates", 0xFF0EA5E9),

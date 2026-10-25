@@ -131,9 +131,14 @@ public final class MainPanel {
 
 		float itemX = 14;
 		float itemW = SIDEBAR_W - 28;
-		float itemH = 42;
 		float startY = 96;
-		float gap = 6;
+		// Rows share the room above the settings entry (LEGO and Visor categories: 13 rows).
+		int rows = Category.values().length + 1;
+		float room = HEIGHT - 62 - 16 - startY;
+		float gap = rows > 9 ? 3 : 6;
+		float itemH = Math.max(24, Math.min(42, room / rows - gap));
+		float textSize = itemH < 34 ? 13 : 16;
+		float iconSize = itemH < 34 ? 16 : 20;
 		int selectedRow = this.search.isEmpty() ? this.page + 1 : -10;
 		float targetY = startY + Math.max(0, selectedRow) * (itemH + gap);
 		float highlightY = this.anim.get("nav.highlight", targetY, 16.0F);
@@ -160,15 +165,16 @@ public final class MainPanel {
 			c.scale(1.0F - press * 0.03F, itemX + itemW * 0.5F, y + itemH * 0.5F);
 			float on = this.anim.get(id + ".on", active, 14.0F);
 			int color = Theme.mix(0xFFC4C7CC, Theme.TEXT, Math.max(on, hover * 0.6F));
-			c.icon(icon, active, itemX + 24, y + itemH * 0.5F, 20, color);
-			c.textMiddle(active ? f.semibold : f.medium, name, itemX + 46, y + itemH * 0.5F, 16, color);
+			c.icon(icon, active, itemX + 24, y + itemH * 0.5F, iconSize, color);
+			c.textMiddle(active ? f.semibold : f.medium, name, itemX + 46, y + itemH * 0.5F, textSize, color);
 			if (category != null) {
 				int count = ModuleManager.enabledCount(category);
 				if (count > 0) {
 					String badge = Integer.toString(count);
 					float bw = f.semibold.width(badge, 12) + 14;
-					c.roundRect(itemX + itemW - bw - 10, y + 12, bw, 18, 9, Theme.alpha(Theme.TEXT, 0.12F + on * 0.08F));
-					c.textCentered(f.semibold, badge, itemX + itemW - bw * 0.5F - 10, y + 21, 12, color);
+					float by = y + itemH * 0.5F;
+					c.roundRect(itemX + itemW - bw - 10, by - 9, bw, 18, 9, Theme.alpha(Theme.TEXT, 0.12F + on * 0.08F));
+					c.textCentered(f.semibold, badge, itemX + itemW - bw * 0.5F - 10, by, 12, color);
 				}
 			}
 			c.pop();

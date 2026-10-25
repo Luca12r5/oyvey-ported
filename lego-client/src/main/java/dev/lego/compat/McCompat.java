@@ -14,6 +14,16 @@ public final class McCompat {
    private McCompat() {
    }
 
+   /** Graphics backend and card, for diagnostics (e.g. "OpenGL NVIDIA GeForce ..."). */
+   public static String gpuInfo() {
+      try {
+         com.mojang.blaze3d.systems.GpuDevice d = com.mojang.blaze3d.systems.RenderSystem.getDevice();
+         return d.getBackendName() + " " + d.getRenderer();
+      } catch (Throwable e) {
+         return "unbekannt";
+      }
+   }
+
    /** Rotates the pose (1.21.11: mulPose, 26.3: rotate). */
    public static void rotate(PoseStack pose, Quaternionf q) {
       pose.mulPose(q);

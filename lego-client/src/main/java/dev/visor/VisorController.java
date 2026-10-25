@@ -287,7 +287,14 @@ public final class VisorController {
 		// Real VR (Vivecraft) renders the world itself: the Visor glasses would fight it.
 		if (dev.lego.core.Compat.vivecraft) return;
 		switch (this.state) {
-			case OFF -> this.equip();
+			case OFF -> {
+				// Never put on an invisible headset: without its pipelines nothing would be drawn.
+				if (dev.lego.compat.VisorBridge.usable()) {
+					this.equip();
+				} else {
+					dev.lego.compat.VisorBridge.warnUnusable();
+				}
+			}
 			case ON -> this.remove();
 			default -> {
 			}

@@ -21,6 +21,7 @@ public final class CiShots {
    private static final boolean ON = System.getProperty("legoclient.ci.shots") != null;
    private static long joined;
    private static int step;
+   private static int visorSub;
    private static boolean knifeKey;
    private static long waitingSince;
    private static long lastReport;
@@ -104,7 +105,8 @@ public final class CiShots {
          case 6 -> { if (t < 19.0F) return; knifeKey = true; }
          case 7 -> { if (t < 19.1F) return; knifeKey = false; }
          case 8 -> { if (t < 19.9F) return; shot(mc, "knife-inspect"); }
-         case 9 -> { if (t < 22.0F) return; dev.lego.compat.VisorBridge.toggle(); }
+         // The LEGO menu key path (Right Ctrl in a world): headset with the home panel, or the click GUI.
+         case 9 -> { if (t < 22.0F) return; dev.lego.compat.VisorBridge.openMenu(); }
          case 10 -> {
             if (t < 28.0F) return;
             dev.visor.VisorController v = dev.visor.VisorController.get();
@@ -113,28 +115,40 @@ public final class CiShots {
                + " proj22=" + dev.visor.render.FrameCapture.PROJECTION.m22() + " proj32=" + dev.visor.render.FrameCapture.PROJECTION.m32());
             shot(mc, "visor");
          }
-         case 11 -> { if (t < 29.0F) return; dev.lego.compat.VisorBridge.toggle(); }
-         case 12 -> { if (t < 32.0F) return; LegoScreen.show(new MenuView()); }
-         case 13 -> { if (t < 35.0F) return; shot(mc, "menu"); }
-         case 14 -> { if (t < 36.0F) return; mc.setScreen(null); mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); }
-         case 15 -> { if (t < 40.0F) return; shot(mc, "third-person"); }
+         // The LEGO modules in the headset menu.
+         case 11 -> {
+            if (t < 29.0F) return;
+            if (visorSub == 0) {
+               dev.visor.VisorController.get().mainPanel.showCategory(dev.visor.module.Category.HUD);
+               visorSub = 1;
+               return;
+            }
+            if (t < 31.0F) return;
+            dev.lego.LegoClient.LOG("CI visor lego modules: " + dev.visor.module.ModuleManager.of(dev.visor.module.Category.HUD).size());
+            shot(mc, "visor-lego");
+            dev.lego.compat.VisorBridge.toggle();
+         }
+         case 12 -> { if (t < 35F) return; LegoScreen.show(new MenuView()); }
+         case 13 -> { if (t < 38F) return; shot(mc, "menu"); }
+         case 14 -> { if (t < 39F) return; mc.setScreen(null); mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); }
+         case 15 -> { if (t < 43F) return; shot(mc, "third-person"); }
          // Launcher emotes in the client: car and chair (third person, seen from the front).
-         case 16 -> { if (t < 41.0F) return; dev.lego.emote.Emotes.play(dev.lego.emote.EmoteLib.index("lx_car")); }
-         case 17 -> { if (t < 43.4F) return; shot(mc, "emote-car"); }
-         case 18 -> { if (t < 48.0F) return; dev.lego.emote.Emotes.play(dev.lego.emote.EmoteLib.index("lx_chair")); }
-         case 19 -> { if (t < 50.4F) return; shot(mc, "emote-chair"); }
+         case 16 -> { if (t < 44F) return; dev.lego.emote.Emotes.play(dev.lego.emote.EmoteLib.index("lx_car")); }
+         case 17 -> { if (t < 46.4F) return; shot(mc, "emote-car"); }
+         case 18 -> { if (t < 51F) return; dev.lego.emote.Emotes.play(dev.lego.emote.EmoteLib.index("lx_chair")); }
+         case 19 -> { if (t < 53.4F) return; shot(mc, "emote-chair"); }
          // Hub search: typing filters the cosmetics (the shot shows the search field and the result).
          case 20 -> {
-            if (t < 52.0F) return;
+            if (t < 55F) return;
             mc.options.setCameraType(CameraType.FIRST_PERSON);
             hub = new dev.lego.ui.hub.HubView(dev.lego.ui.hub.HubView.Section.COSMETICS);
             LegoScreen.show(hub);
          }
-         case 21 -> { if (t < 54.0F) return; hub.chr("k"); hub.chr("r"); hub.chr("o"); }
-         case 22 -> { if (t < 56.0F) return; shot(mc, "hub-search"); }
+         case 21 -> { if (t < 57F) return; hub.chr("k"); hub.chr("r"); hub.chr("o"); }
+         case 22 -> { if (t < 59F) return; shot(mc, "hub-search"); }
          // Custom TxT (Bauloo Styles): the category, a crystal and fire style, the Bauloo menu.
          case 23 -> {
-            if (t < 58.0F) return;
+            if (t < 61F) return;
             try {
                org.spongepowered.asm.mixin.MixinEnvironment.getCurrentEnvironment().audit();
                LegoClient.LOG("CI bauloo mixins audited");
@@ -144,31 +158,31 @@ public final class CiShots {
             dev.lego.ui.hub.ModsPart.showCategory(dev.lego.core.Category.CUSTOM_TXT);
             LegoScreen.show(new dev.lego.ui.hub.HubView(dev.lego.ui.hub.HubView.Section.MODS));
          }
-         case 24 -> { if (t < 61.0F) return; shot(mc, "custom-txt"); }
+         case 24 -> { if (t < 64F) return; shot(mc, "custom-txt"); }
          case 25 -> {
-            if (t < 62.0F) return;
+            if (t < 65F) return;
             mc.setScreen(null);
             command(mc, "execute as " + player + " at " + player + " rotated as " + player + " run summon minecraft:end_crystal ^ ^ ^4");
             dev.lego.txt.TxtModules.ciDemo();
          }
          case 26 -> {
-            if (t < 70.0F || mc.getOverlay() != null) return;
+            if (t < 73F || mc.getOverlay() != null) return;
             LegoClient.LOG("CI custom txt packs: " + mc.getResourcePackRepository().getSelectedIds());
             shot(mc, "txt-crystal");
          }
-         case 27 -> { if (t < 71.0F) return; dev.lego.txt.TxtModules.openMenu(); }
+         case 27 -> { if (t < 74F) return; dev.lego.txt.TxtModules.openMenu(); }
          case 28 -> {
-            if (t < 75.0F) return;
+            if (t < 78F) return;
             LegoClient.LOG("CI bauloo menu: " + (mc.screen == null ? "none" : mc.screen.getClass().getSimpleName()));
             shot(mc, "bauloo-menu");
          }
          case 29 -> {
-            if (t < 76.0F) return;
+            if (t < 79F) return;
             mc.setScreen(null);
             dev.lego.txt.TxtModules.ciReset();
          }
          case 30 -> {
-            if (t < 80.0F || mc.getOverlay() != null) return;
+            if (t < 83F || mc.getOverlay() != null) return;
             LegoClient.LOG("CI shots done");
             mc.stop();
          }

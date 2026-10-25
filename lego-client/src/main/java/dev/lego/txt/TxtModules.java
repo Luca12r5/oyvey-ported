@@ -42,11 +42,6 @@ public final class TxtModules {
       }
    }
 
-   /** The same groups for the headset menu. */
-   public static List<dev.visor.module.Module> visorModules() {
-      return dev.visor.module.TxtModule.all();
-   }
-
    /** CI: a crystal and a fire style. */
    public static void ciDemo() {
       for (StyleModule m : STYLES) {
@@ -116,8 +111,8 @@ public final class TxtModules {
       /** Shows the state in the headset menu as well. */
       void mirror() {
          try {
-            if (dev.visor.module.ModuleManager.get(this.id) instanceof dev.visor.module.TxtModule visor) {
-               visor.mirror(this.enabled, this.style.index);
+            if (dev.visor.module.ModuleManager.get(this.id) instanceof dev.visor.module.LegoModule visor) {
+               visor.mirror();
             }
          } catch (Throwable ignored) {
          }

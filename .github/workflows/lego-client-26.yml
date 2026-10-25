@@ -61,6 +61,11 @@ jobs:
             args: --version 26.3 --loader fabric --lego legoclient.jar --shots --filter-test --timeout 900
           - name: 26.3 Fabric + LEGO Client + Vivecraft
             args: --version 26.3 --loader fabric --lego legoclient.jar --mods vivecraft --vr-null --filter-test --timeout 600
+          # Most players run 26.3 on OpenGL; the jobs above only get Vulkan (no GLX visual under xvfb).
+          # SDL can create the GL context through EGL instead, with Mesa's software renderer.
+          - name: 26.3 OpenGL (llvmpipe) screenshots
+            args: --version 26.3 --loader fabric --lego legoclient.jar --shots --timeout 900
+            env: SDL_VIDEO_FORCE_EGL=1 SDL_VIDEO_X11_FORCE_EGL=1 LIBGL_ALWAYS_SOFTWARE=1 MESA_GL_VERSION_OVERRIDE=4.6 MESA_GLSL_VERSION_OVERRIDE=460 VK_ICD_FILENAMES=/nonexistent.json VK_DRIVER_FILES=/nonexistent.json
     name: ${{ matrix.name }}
     steps:
       - uses: actions/checkout@v4
@@ -85,4 +90,4 @@ jobs:
       - name: Install and start Minecraft
         timeout-minutes: 20
         working-directory: apps/launcher
-        run: xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX +render -noreset" node --disable-warning=ExperimentalWarning test/real-launch.ts ${{ matrix.args }}
+        run: env ${{ matrix.env }} xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX +render -noreset" node --disable-warning=ExperimentalWarning test/real-launch.ts ${{ matrix.args }}

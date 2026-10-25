@@ -166,7 +166,7 @@ const game = await startGame(javaPath, args, gameDir, join(root, 'logs'), (raw) 
   if (/\[LegoClient\] CI shots done/.test(line)) shotsDone = true;
   if (/\[LegoClient\] CI VR/.test(line)) step(line.trim());
   if (/\[LegoClient\] CI filter/.test(line)) step(line.trim());
-  if (/\[LegoClient\] (CI (visor|bauloo|custom txt)|Custom TxT)/.test(line)) step(line.trim().slice(0, 400));
+  if (/\[LegoClient\] (CI (visor|bauloo|custom txt)|Custom TxT|Visor:)/.test(line)) step(line.trim().slice(0, 400));
   if (/Bauloo Styles/.test(line) && /error|warn|fail/i.test(line)) console.log(`  ! bauloo: ${line.slice(0, 300)}`);
   if (filterTest && /post|shader|PostChain/i.test(line) && /error|fail|exception/i.test(line)) console.log(`  ! filter: ${line.slice(0, 300)}`);
   if (/\[LegoClient\] CI VR running/.test(line)) vrRunning = true;
