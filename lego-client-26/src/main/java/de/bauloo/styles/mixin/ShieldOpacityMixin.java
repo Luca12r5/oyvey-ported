@@ -5,7 +5,6 @@ import de.bauloo.styles.ShieldContext;
 import de.bauloo.styles.StylesUiConfig;
 import net.minecraft.client.model.Model;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverlay;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.special.ShieldSpecialRenderer;
 import net.minecraft.client.resources.model.sprite.SpriteGetter;
@@ -22,7 +21,7 @@ public class ShieldOpacityMixin {
       at = {@At(
          value = "INVOKE",
          ordinal = 0,
-         target = "Lnet/minecraft/client/renderer/SubmitNodeCollector;submitModel(Lnet/minecraft/client/model/Model;Ljava/lang/Object;Lcom/mojang/blaze3d/vertex/PoseStack;IIILnet/minecraft/client/resources/model/sprite/SpriteId;Lnet/minecraft/client/resources/model/sprite/SpriteGetter;ILnet/minecraft/client/renderer/feature/ModelFeatureRenderer$CrumblingOverlay;)V"
+         target = "Lnet/minecraft/client/renderer/SubmitNodeCollector;submitModel(Lnet/minecraft/client/model/Model;Ljava/lang/Object;Lcom/mojang/blaze3d/vertex/PoseStack;IIILnet/minecraft/client/resources/model/sprite/SpriteId;Lnet/minecraft/client/resources/model/sprite/SpriteGetter;I)V"
       )}
    )
    private void baulooStyles$base(
@@ -35,8 +34,7 @@ public class ShieldOpacityMixin {
       int tint,
       SpriteId sprite,
       SpriteGetter sprites,
-      int outline,
-      CrumblingOverlay crumbling
+      int outline
    ) {
       StylesUiConfig.load();
       if (StylesUiConfig.shieldCustom) {
@@ -50,20 +48,14 @@ public class ShieldOpacityMixin {
          || context == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
       if (inHand && StylesUiConfig.shieldOpacity < 100) {
          int alpha = Math.round(255 * Math.max(15, StylesUiConfig.shieldOpacity) / 100.0F);
-         collector.submitModel(
-            model,
-            state,
-            poseStack,
-            RenderTypes.entityTranslucent(sprite.atlasLocation()),
-            light,
-            overlay,
-            alpha << 24 | tint & 16777215,
-            sprites.get(sprite),
-            outline,
-            crumbling
-         );
+         // 26.3: the translucent pass takes the sprite as a UvMapping and has no crumbling overlay.
+         if ((Object)sprites.get(sprite) instanceof net.minecraft.client.renderer.texture.UvMapping uv) {
+            collector.submitModel(model, state, poseStack, RenderTypes.entityTranslucent(sprite.atlasLocation()), light, overlay, alpha << 24 | tint & 16777215, uv, outline);
+         } else {
+            collector.submitModel(model, state, poseStack, light, overlay, tint, sprite, sprites, outline);
+         }
       } else {
-         collector.submitModel(model, state, poseStack, light, overlay, tint, sprite, sprites, outline, crumbling);
+         collector.submitModel(model, state, poseStack, light, overlay, tint, sprite, sprites, outline);
       }
    }
 }

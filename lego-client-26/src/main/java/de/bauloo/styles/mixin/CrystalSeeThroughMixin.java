@@ -7,7 +7,6 @@ import de.bauloo.styles.CrystalSeeThrough;
 import net.minecraft.client.model.Model;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EndCrystalRenderer;
-import net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverlay;
 import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,7 +17,7 @@ public class CrystalSeeThroughMixin {
       method = {"submit"},
       at = {@At(
          value = "INVOKE",
-         target = "Lnet/minecraft/client/renderer/SubmitNodeCollector;submitModel(Lnet/minecraft/client/model/Model;Ljava/lang/Object;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/resources/Identifier;IIILnet/minecraft/client/renderer/feature/ModelFeatureRenderer$CrumblingOverlay;)V"
+         target = "Lnet/minecraft/client/renderer/SubmitNodeCollector;submitModel(Lnet/minecraft/client/model/Model;Ljava/lang/Object;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/resources/Identifier;III)V"
       )},
       require = 0
    )
@@ -31,19 +30,18 @@ public class CrystalSeeThroughMixin {
       int light,
       int overlay,
       int outline,
-      CrumblingOverlay crumbling,
       Operation<Void> original
    ) {
       if (CrystalSeeThrough.active()) {
-         submitTranslucent(collector, model, state, poseStack, light, overlay, outline, crumbling);
+         submitTranslucent(collector, model, state, poseStack, light, overlay, outline);
       } else {
-         original.call(new Object[]{collector, model, state, poseStack, texture, light, overlay, outline, crumbling});
+         original.call(new Object[]{collector, model, state, poseStack, texture, light, overlay, outline});
       }
    }
 
    private static <S> void submitTranslucent(
-      SubmitNodeCollector collector, Model<?> model, Object state, PoseStack poseStack, int light, int overlay, int outline, CrumblingOverlay crumbling
+      SubmitNodeCollector collector, Model<?> model, Object state, PoseStack poseStack, int light, int overlay, int outline
    ) {
-      collector.submitModel(model, state, poseStack, CrystalSeeThrough.layer(), light, overlay, outline, crumbling);
+      collector.submitModel((Model) model, state, poseStack, CrystalSeeThrough.layer(), light, overlay, outline);
    }
 }

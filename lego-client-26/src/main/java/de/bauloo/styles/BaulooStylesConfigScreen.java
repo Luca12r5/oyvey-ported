@@ -3130,7 +3130,7 @@ public class BaulooStylesConfigScreen extends Screen {
             Minecraft mc = Minecraft.getInstance();
             if (mc.level != null) {
                mc.gui.setScreen(null);
-               mc.gameRenderer.displayItemActivation(stackOf(Items.TOTEM_OF_UNDYING));
+               // 26.3 has no displayItemActivation any more: the test pop only closes the menu.
                reopenAtMs = System.currentTimeMillis() + 2200L;
             }
          });
