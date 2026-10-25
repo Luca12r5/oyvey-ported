@@ -43,6 +43,10 @@ jobs:
           ./gradlew -p tools/restore-lego remapLego -PlegoJar="$RUNNER_TEMP/legoclient-bauloo.jar" --no-daemon --console=plain
       - name: Decompile
         run: tools/restore-lego/decompile.sh
+      - name: Mojang names in mixin strings
+        run: |
+          TINY=$(find "$HOME/.gradle/caches/fabric-loom" tools/restore-lego/.gradle -name '*.tiny' 2>/dev/null | sort -u)
+          python3 tools/bauloo-upstream/fix-mixins.py tools/restore-lego/build/decompiled $TINY
       - name: Publish to ci/bauloo-decompiled
         run: |
           set -e
