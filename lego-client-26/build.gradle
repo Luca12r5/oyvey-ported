@@ -61,7 +61,7 @@ def mergeSources = tasks.register('mergeSources', Sync) {
         // outputs need explicit locations.
         def shaders = 0
         // The Visor shaders also include the vanilla blocks the 26.3 way (#include instead of #moj_import).
-        ['legoclient', 'visor'].each { ns ->
+        ['legoclient', 'visor', 'bauloo_styles'].each { ns ->
             def shaderDir = new File(merged, "resources/assets/${ns}/shaders")
             if (shaderDir.exists()) shaderDir.eachFileRecurse(groovy.io.FileType.FILES) { f ->
                 if (!(f.name.endsWith('.fsh') || f.name.endsWith('.vsh'))) return
@@ -70,7 +70,7 @@ def mergeSources = tasks.register('mergeSources', Sync) {
                 def n = t.replaceFirst(/(#version \d+[^\n]*\n)/, '$1#extension GL_ARB_separate_shader_objects : require\n')
                 def loc = ['in': 0, 'out': 0]
                 n = n.replaceAll(/(?m)^((?:flat\s+)?)(in|out)\s+(\w+\s+\w+\s*;)/) { all, q, dir, rest -> "layout(location = ${loc[dir]++}) ${q}${dir} ${rest}" }
-                if (ns == 'visor') n = n.replaceAll(/(?m)^#moj_import\s+/, '#include ')
+                if (ns != 'legoclient') n = n.replaceAll(/(?m)^#moj_import\s+/, '#include ')
                 if (n != t) { f.setText(n, 'UTF-8'); shaders++ }
             }
         }

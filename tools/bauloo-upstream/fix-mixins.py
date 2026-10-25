@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rewrites intermediary names left in mixin strings (method = "method_4965", target = "Lnet/minecraft/class_1;...")
+"""Rewrites intermediary names left in mixin strings and @Shadow members (method = "method_4965", target = "Lnet/minecraft/class_1;...")
 of the decompiled Bauloo source to Mojang names, using the tiny mappings Loom generated in this CI run.
 Usage: fix-mixins.py <decompiled dir> <tiny file>...  (the mappings themselves are not written anywhere)"""
 import os
@@ -44,7 +44,8 @@ for dirpath, _, files in os.walk(root):
             continue
         p = os.path.join(dirpath, name)
         src = open(p, encoding='utf-8').read()
-        out = re.sub(r'"(?:[^"\\]|\\.)*"', lambda m: fix(m.group(0)), src)
+        # Strings (mixin targets) and identifiers (@Shadow members keep their intermediary names).
+        out = fix(src)
         if out != src:
             open(p, 'w', encoding='utf-8').write(out)
         for m in re.finditer(r'"[^"\n]*\b(?:class|method|field)_\d+[^"\n]*"', out):
