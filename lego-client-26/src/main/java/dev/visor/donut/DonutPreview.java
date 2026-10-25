@@ -8,6 +8,7 @@ import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.api.GpuFormat;
 import dev.visor.render.UiCanvas;
+import net.minecraft.client.renderer.Projection;
 import net.minecraft.client.renderer.ProjectionMatrixBuffer;
 import org.joml.Matrix4f;
 import org.jspecify.annotations.Nullable;
@@ -21,7 +22,7 @@ public final class DonutPreview implements AutoCloseable {
 	private static final float FOV = 26.0F;
 
 	private final ProjectionMatrixBuffer projection = new ProjectionMatrixBuffer("Visor Doctor Donut preview");
-	private final Matrix4f projectionMatrix = new Matrix4f();
+	private final Projection projectionSetup = new Projection();
 	private final Matrix4f view = new Matrix4f();
 	private final DonutRenderer.Slot slot;
 	private @Nullable GpuTexture color;
@@ -57,10 +58,11 @@ public final class DonutPreview implements AutoCloseable {
 		this.ensureSize(Math.round(w * SUPERSAMPLE), Math.round(h * SUPERSAMPLE));
 		// Camera a few blocks in front of him at chest height, framing him from head to toe.
 		float distance = 1.05F / (float) Math.tan(Math.toRadians(FOV * 0.5F));
-		this.projectionMatrix.setPerspective((float) Math.toRadians(FOV), w / h, 0.1F, 50.0F);
+		// Minecraft's own (reverse Z) perspective, matching the pipeline's depth test.
+		this.projectionSetup.setupPerspective(0.1F, 50.0F, FOV, w, h);
 		this.view.setLookAt(0.0F, 1.0F, distance, 0.0F, 0.95F, 0.0F, 0.0F, 1.0F, 0.0F).rotateY((float) Math.toRadians(yaw));
 		renderer.draw(
-			this.slot, this.colorView, this.depthView, true, this.view, this.projection.getBuffer(this.projectionMatrix),
+			this.slot, this.colorView, this.depthView, true, this.view, this.projection.getBuffer(this.projectionSetup),
 			clip, time, -1, 0, 0, 0.0F
 		);
 		// Render targets are stored bottom row first: flip vertically.

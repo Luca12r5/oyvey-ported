@@ -103,7 +103,14 @@ public final class CiShots {
          case 7 -> { if (t < 19.1F) return; knifeKey = false; }
          case 8 -> { if (t < 19.9F) return; shot(mc, "knife-inspect"); }
          case 9 -> { if (t < 22.0F) return; dev.lego.compat.VisorBridge.toggle(); }
-         case 10 -> { if (t < 28.0F) return; shot(mc, "visor"); }
+         case 10 -> {
+            if (t < 28.0F) return;
+            dev.visor.VisorController v = dev.visor.VisorController.get();
+            dev.lego.LegoClient.LOG("CI visor: state=" + v.state() + " app=" + v.app() + " capture=" + dev.visor.render.FrameCapture.valid
+               + " cam=" + dev.visor.render.FrameCapture.cameraPosition + " proj00=" + dev.visor.render.FrameCapture.PROJECTION.m00()
+               + " proj22=" + dev.visor.render.FrameCapture.PROJECTION.m22() + " proj32=" + dev.visor.render.FrameCapture.PROJECTION.m32());
+            shot(mc, "visor");
+         }
          case 11 -> { if (t < 29.0F) return; dev.lego.compat.VisorBridge.toggle(); }
          case 12 -> { if (t < 32.0F) return; LegoScreen.show(new MenuView()); }
          case 13 -> { if (t < 35.0F) return; shot(mc, "menu"); }

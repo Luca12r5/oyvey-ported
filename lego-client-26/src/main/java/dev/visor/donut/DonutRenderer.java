@@ -68,7 +68,7 @@ public final class DonutRenderer implements AutoCloseable {
 			.withUniform("Sampler2", UniformType.COMBINED_IMAGE_SAMPLER)
 			.build())
 		.withColorTargetState(new ColorTargetState(java.util.Optional.empty(), GpuFormat.RGBA8_UNORM, ColorTargetState.WRITE_ALL))
-		.withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true))
+		.withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, true))
 		.withCull(false)
 		.withVertexBinding(0, FORMAT)
 		.withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
@@ -168,7 +168,7 @@ public final class DonutRenderer implements AutoCloseable {
 		GpuTextureView lightmap = Minecraft.getInstance().gameRenderer.lightmap();
 		try (RenderPass pass = encoder.createRenderPass(
 			() -> "Visor Doctor Donut", color, clear ? java.util.Optional.of(new org.joml.Vector4f(0.0F, 0.0F, 0.0F, 0.0F)) : java.util.Optional.empty(),
-			depth, clear ? OptionalDouble.of(1.0) : OptionalDouble.empty()
+			depth, clear ? OptionalDouble.of(0.0) : OptionalDouble.empty()
 		)) {
 			pass.setPipeline(RenderSystem.getCompiledPipeline(PIPELINE));
 			pass.setUniform("Projection", projection);

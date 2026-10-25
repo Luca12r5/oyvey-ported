@@ -43,7 +43,8 @@ public final class VisorPipelines {
 
 	/** Same as {@link #UI} but hidden behind closer world geometry; used in third person. */
 	public static final RenderPipeline UI_DEPTH = RenderPipelines.registerOptional(
-		ui("pipeline/ui_depth", Optional.of(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false)))
+		// 26.3 uses reverse Z (depth cleared to 0, nearer is greater).
+		ui("pipeline/ui_depth", Optional.of(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false)))
 	);
 
 	/** Hand-tracking style "ghost hands", evaluated per pixel from a list of capsules. */

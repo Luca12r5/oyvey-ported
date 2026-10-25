@@ -24,9 +24,10 @@ public final class HeadsetRenderer {
 		.withVertexShader(VisorClient.id("core/headset"))
 		.withFragmentShader(VisorClient.id("core/headset"))
 		.withBindGroupLayout(BindGroupLayout.builder().withUniform("Sampler2", UniformType.COMBINED_IMAGE_SAMPLER).build())
-		// The snippet brings no attachments; 26.3 checks them against the pass (one colour target, depth).
+		// The snippet brings no attachments; 26.3 checks them against the pass (one colour target, depth;
+		// 26.3 uses reverse Z: depth is cleared to 0 and nearer means greater).
 		.withColorTargetState(new ColorTargetState(java.util.Optional.empty(), GpuFormat.RGBA8_UNORM, ColorTargetState.WRITE_ALL))
-		.withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true))
+		.withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, true))
 		.withVertexBinding(0, DefaultVertexFormat.ENTITY)
 		.withPrimitiveTopology(PrimitiveTopology.QUADS)
 		.withCull(false)
