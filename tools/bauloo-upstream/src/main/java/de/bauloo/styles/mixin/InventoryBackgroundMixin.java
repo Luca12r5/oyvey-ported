@@ -15,7 +15,7 @@ public class InventoryBackgroundMixin {
    @Inject(method = "method_25420", at = @At("HEAD"), cancellable = true)
    private void baulooStyles$clear(class_332 context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
       class_310 client = class_310.method_1551();
-      if (StylesUiConfig.invClearBackground && client.field_1687 != null && this instanceof class_465) {
+      if (StylesUiConfig.invClearBackground && client.field_1687 != null && (Object)this instanceof class_465) {
          client.field_1705.method_72738();
          ci.cancel();
       }

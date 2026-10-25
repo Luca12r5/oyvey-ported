@@ -13,7 +13,7 @@ public class TimeChangerMixin {
    @Inject(method = "method_8532", at = @At("HEAD"), cancellable = true)
    private void baulooStyles$time(CallbackInfoReturnable<Long> cir) {
       int time = StylesUiConfig.timeOverride;
-      if (time >= 0 && this instanceof class_638) {
+      if (time >= 0 && (Object)this instanceof class_638) {
          cir.setReturnValue((long)time);
       }
    }

@@ -1387,16 +1387,16 @@ public class BaulooStylesConfigScreen extends class_437 {
          cosmeticsView = false;
       });
       String label = "EXTRAS";
-      hover = (boolean)this.textWidth(label);
-      int lx = x + w - 10 - hover;
+      int labelW = this.textWidth(label);
+      int lx = x + w - 10 - labelW;
       if (lx > x + 12 + this.textWidth("COLLECTIONS") + 6) {
-         boolean hoverx = inside(mx, my, lx - 3, y + 8, hover + 6, 16);
+         boolean hoverx = inside(mx, my, lx - 3, y + 8, labelW + 6, 16);
          this.text(ctx, label, lx, y + 12, extrasView ? this.c.accent : (hoverx ? this.c.text : this.c.textSoft));
          if (extrasView) {
-            soft(ctx, lx, y + 23, hover, 2, this.c.accent);
+            soft(ctx, lx, y + 23, labelW, 2, this.c.accent);
          }
 
-         this.hit(lx - 3, y + 8, hover + 6, 16, (b, px, py) -> {
+         this.hit(lx - 3, y + 8, labelW + 6, 16, (b, px, py) -> {
             extrasView = !extrasView;
             publicView = false;
             cosmeticsView = false;
@@ -1405,9 +1405,9 @@ public class BaulooStylesConfigScreen extends class_437 {
       }
 
       cw = y + 30;
-      hover = (boolean)(shownTabs().length + 2 + (MyPacks.shown() ? 1 : 0) + (VipPacks.shown() ? 1 : 0));
-      lx = (l.footerY - cw - 26) / hover < 17 ? 1 : 4;
-      int rowH = Math.max(12, Math.min(30, (l.footerY - cw - 26) / hover - lx));
+      int rows = (shownTabs().length + 2 + (MyPacks.shown() ? 1 : 0) + (VipPacks.shown() ? 1 : 0));
+      lx = (l.footerY - cw - 26) / rows < 17 ? 1 : 4;
+      int rowH = Math.max(12, Math.min(30, (l.footerY - cw - 26) / rows - lx));
 
       for (BaulooStylesClient.Tab t : shownTabs()) {
          int rx = x + 7;
@@ -1601,9 +1601,9 @@ public class BaulooStylesConfigScreen extends class_437 {
          soft(ctx, rx, cw, rw, rowH, this.c.surface);
       }
 
-      hoverx = (boolean)(rowH < 30 ? rowH - 6 : 20);
-      soft(ctx, rx + 7, cw + (rowH - hoverx) / 2, hoverx, hoverx, this.c.accentDark);
-      ctx.method_51427(new class_1799(class_1802.field_8674), rx + 7 + (hoverx - 16) / 2, cw + (rowH - 16) / 2);
+      int thumbD = rowH < 30 ? rowH - 6 : 20;
+      soft(ctx, rx + 7, cw + (rowH - thumbD) / 2, thumbD, thumbD, this.c.accentDark);
+      ctx.method_51427(new class_1799(class_1802.field_8674), rx + 7 + (thumbD - 16) / 2, cw + (rowH - 16) / 2);
       String count = String.valueOf(DrawScreen.count());
       this.textRight(ctx, count, rx + rw - 7, cw + (rowH - 8) / 2, this.c.textDim);
       this.text(ctx, this.fitText("My Drawings", rw - 34 - this.textWidth(count) - 14), rx + 34, cw + (rowH - 8) / 2, selected ? this.c.text : this.c.textSoft);
@@ -1617,14 +1617,14 @@ public class BaulooStylesConfigScreen extends class_437 {
             soft(ctx, x + 7, rx + 6, w - 14, 28, this.c.surface);
          }
 
-         selected = (boolean)0;
+         int uploads = 0;
 
          for (int n : this.uploadCounts.values()) {
-            selected += n;
+            uploads += n;
          }
 
          this.text(ctx, "PRIVATE UPLOADS", x + 12, rx + 10, hoverxx ? this.c.textSoft : this.c.textDim);
-         String line = hoverxx ? "Upload a texture pack" : selected + (selected == 1 ? " pack on this PC" : " packs on this PC");
+         String line = hoverxx ? "Upload a texture pack" : uploads + (uploads == 1 ? " pack on this PC" : " packs on this PC");
          this.text(ctx, this.fitText(line, w - 24), x + 12, rx + 22, hoverxx ? this.c.accent : this.c.textDim);
          this.hit(x + 7, rx + 6, w - 14, 28, (b, px, py) -> StylesUploadServer.open());
       }

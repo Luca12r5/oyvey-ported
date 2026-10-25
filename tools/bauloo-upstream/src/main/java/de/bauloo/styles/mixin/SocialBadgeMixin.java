@@ -19,7 +19,7 @@ public abstract class SocialBadgeMixin {
 
    @Inject(method = "method_75752", at = @At("HEAD"), cancellable = true)
    private void baulooStyles$badge(class_332 ctx, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-      if (this.field_45356.comp_1604().method_12832().contains("recipe_book") && Watermark.drawBadge(ctx, (class_344)this)) {
+      if (this.field_45356.comp_1604().method_12832().contains("recipe_book") && Watermark.drawBadge(ctx, (class_344)(Object)this)) {
          ci.cancel();
       }
    }

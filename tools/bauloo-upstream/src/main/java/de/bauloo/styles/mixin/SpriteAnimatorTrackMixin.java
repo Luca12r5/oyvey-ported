@@ -14,7 +14,7 @@ public class SpriteAnimatorTrackMixin {
    @Inject(method = "method_45818", at = @At("RETURN"))
    private void baulooStyles$track(GpuBufferSlice slice, int index, CallbackInfoReturnable<class_12298> cir) {
       if (cir.getReturnValue() != null) {
-         LiveRecolor.ANIMATORS.put((class_7764)this, (class_12298)cir.getReturnValue());
+         LiveRecolor.ANIMATORS.put((class_7764)(Object)this, (class_12298)cir.getReturnValue());
       }
    }
 }

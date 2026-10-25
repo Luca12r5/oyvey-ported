@@ -12,7 +12,7 @@ public class KillEffectMixin {
    @Inject(method = "method_5711", at = @At("HEAD"))
    private void baulooStyles$died(byte status, CallbackInfo ci) {
       if (status == 3) {
-         KillEffect.onDeath((class_1309)this);
+         KillEffect.onDeath((class_1309)(Object)this);
       }
    }
 }

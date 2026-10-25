@@ -22,7 +22,7 @@ public abstract class KillEffectHealthMixin {
    @Inject(method = "method_5674", at = @At("TAIL"))
    private void baulooStyles$health(class_2940<?> data, CallbackInfo ci) {
       if (field_6247.equals(data) && this.method_6032() <= 0.0F) {
-         KillEffect.onDeath((class_1309)this);
+         KillEffect.onDeath((class_1309)(Object)this);
       }
    }
 }

@@ -22,7 +22,7 @@ public class CosmeticsFeature extends class_3887<class_10055, class_591> {
       super(context);
    }
 
-   public void render(class_4587 matrices, class_11659 queue, int light, class_10055 state, float limbAngle, float limbDistance) {
+   public void method_4199(class_4587 matrices, class_11659 queue, int light, class_10055 state, float limbAngle, float limbDistance) {
       class_310 mc = class_310.method_1551();
       if (mc.field_1724 != null && state.field_53528 == mc.field_1724.method_5628() && !state.field_53333) {
          try {

@@ -14,7 +14,7 @@ public class CapeSkinMixin {
    @Inject(method = "method_52814", at = @At("RETURN"), cancellable = true)
    private void baulooStyles$capeInSkin(CallbackInfoReturnable<class_8685> cir) {
       class_8685 old = (class_8685)cir.getReturnValue();
-      class_8685 swapped = Cosmetics.withCape((class_11890)this, old);
+      class_8685 swapped = Cosmetics.withCape((class_11890)(Object)this, old);
       if (swapped != old) {
          cir.setReturnValue(swapped);
       }

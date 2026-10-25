@@ -523,7 +523,7 @@ public final class StylesUploadServer {
             case "/api/keys/list":
             case "/api/keys/create":
             case "/api/keys/revoke":
-               JsonObject body = readJson(in, length);
+               JsonObject keysBody = readJson(in, length);
                if (!"admin".equals(role(false))) {
                   json(out, 403, message(false, "Only bauloo can manage keys"));
                   return;
@@ -533,7 +533,7 @@ public final class StylesUploadServer {
                   case "/api/keys/create" -> "POST";
                   default -> "DELETE";
                };
-               relay(out, workerMethod, "/admin/keys", "GET".equals(workerMethod) ? null : body);
+               relay(out, workerMethod, "/admin/keys", "GET".equals(workerMethod) ? null : keysBody);
                break;
             case "/api/cloud/list":
                cloudList(out);
@@ -542,8 +542,8 @@ public final class StylesUploadServer {
                cloudRemove(readJson(in, length), out);
                break;
             case "/api/delete": {
-               JsonObject body = readJson(in, length);
-               boolean ok = body != null && StylesUploadManager.delete(str(body, "category"), str(body, "file"));
+               JsonObject delBody = readJson(in, length);
+               boolean ok = delBody != null && StylesUploadManager.delete(str(delBody, "category"), str(delBody, "file"));
                json(out, ok ? 200 : 400, message(ok, ok ? "Removed" : "Could not remove that upload"));
                break;
             }
