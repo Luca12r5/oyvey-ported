@@ -20,7 +20,7 @@ public final class Modules {
    public static String theme = "nacht";
    public static String hudTheme = "standard";
    public static int hudAccent = 0;
-   public static int accent = 7;
+   public static int accent = 3;
    private static volatile long saveAt = 0L;
    private static final Map<String, Modules.Persist> EXTRA = new LinkedHashMap<>();
 
@@ -130,7 +130,7 @@ public final class Modules {
       try {
          Map<String, Object> root = new LinkedHashMap<>();
          root.put("theme", theme);
-         root.put("designVersion", 5L);
+         root.put("designVersion", 6L);
          root.put("hudTheme", hudTheme);
          root.put("hudAccent", (long)hudAccent);
          root.put("accent", (long)accent);
@@ -223,6 +223,13 @@ public final class Modules {
             accent = 3;
          }
 
+         // Round 24: no Halloween look any more; the orange accent becomes the calm blue.
+         if (designVer < 6L) {
+            if ("halloween".equals(theme)) theme = "nacht";
+            if (accent == 7) accent = 3;
+            if ("halloween".equals(hudTheme)) hudTheme = "nacht";
+         }
+
          if (root instanceof Map) {
             for (Entry<String, Modules.Persist> e : EXTRA.entrySet()) {
                Object v = ((Map)root).get(e.getKey());
@@ -234,6 +241,11 @@ public final class Modules {
                   }
                }
             }
+         }
+
+         if (designVer < 6L) {
+            dev.lego.ui.UiSettings.halloween = false;
+            dev.lego.ui.UiSettings.xmas = false;
          }
 
          Map<String, Object> mods = Json.obj(root, "modules");

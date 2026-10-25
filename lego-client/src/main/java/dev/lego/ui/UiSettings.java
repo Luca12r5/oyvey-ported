@@ -19,10 +19,10 @@ public final class UiSettings {
    public static double uiScale = 0.75;
    public static double animSpeed = 2.0;
    public static boolean animations = true;
-   public static boolean xmas = true;
+   public static boolean xmas = false;
    /** Corner rounding of the whole UI (1 = as designed). */
    public static double roundness = 1.4;
-   public static boolean halloween = true;
+   public static boolean halloween = false;
    public static int bgStyle = 1;
    public static double bgIntensity = 0.75;
    public static double glass = 0.55;

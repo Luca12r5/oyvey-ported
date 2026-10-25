@@ -151,7 +151,7 @@ public final class BenchView extends View {
       int y0 = (this.H - h) / 2;
       Gx.pushAlpha(t);
       Gx.push();
-      Gx.translate(0.0F, this.pf(26.0) * (1.0F - t));
+      Gx.translate(0.0F, this.pf(14.0) * (1.0F - t));
       this.bench(x0, y0, w, h);
       int top = this.p(64.0);
       int bottom = this.p(52.0);
@@ -172,8 +172,8 @@ public final class BenchView extends View {
          }
          if (this.subError != null) {
             Gx.icon("warning", x0 + w / 2.0F, bodyY + bodyH / 2.0F - this.p(14.0), this.pf(24.0), Style.danger);
-            Gx.textCenter("Diese Seite hatte einen Fehler", x0 + w / 2.0F, bodyY + bodyH / 2.0F + this.p(12.0), this.pf(9.0), 2, Style.text);
-            Gx.textCenter(Fonts.ellipsize(this.subError, 1, this.pf(7.0), w - this.p(80.0)), x0 + w / 2.0F, bodyY + bodyH / 2.0F + this.p(28.0), this.pf(7.0), 1, Style.muted);
+            Gx.textCenter("Diese Seite hatte einen Fehler", x0 + w / 2.0F, bodyY + bodyH / 2.0F + this.p(12.0), this.pf(9.0), 2, TEXT);
+            Gx.textCenter(Fonts.ellipsize(this.subError, 1, this.pf(7.0), w - this.p(80.0)), x0 + w / 2.0F, bodyY + bodyH / 2.0F + this.p(28.0), this.pf(7.0), 1, MUTED);
          }
       } else {
          float ins = Ease.to("bench:ins", this.inspect != null ? 1.0F : 0.0F, 14.0F);
@@ -184,11 +184,6 @@ public final class BenchView extends View {
          }
       }
       this.planBar(x0, y0 + h - bottom, w, bottom);
-      if (Halloween.on()) {
-         Halloween.cobweb(x0, y0, w, this.P);
-      } else {
-         Xmas.snowCap(x0, y0, w, this.P);
-      }
       if (this.askClose) {
          this.closeDialog(x0, y0, w, h);
       }
@@ -196,80 +191,83 @@ public final class BenchView extends View {
       Gx.popAlpha();
    }
 
-   /** The work bench: dark plate with a stud pattern and a wooden frame. */
+   // Clean dark palette: calm grey surfaces, one accent colour (Style.accent) for what is on.
+   static final int PANEL = 0xF5141519;
+   static final int CARD = 0xFF1C1E23;
+   static final int CARD_HI = 0xFF24272D;
+   static final int LINE = 0x14FFFFFF;
+   static final int TEXT = 0xFFECEEF2;
+   static final int SUB = 0xFF9BA1AB;
+   static final int MUTED = 0xFF6B717C;
+
+   /** The panel: one calm dark surface with a thin edge. */
    private void bench(int x, int y, int w, int h) {
-      int r = this.p(10.0);
-      Gx.shadow(x, y, w, h, r, this.p(22.0), 0.6F);
-      Gx.rect(x - this.p(5.0), y - this.p(5.0), w + this.p(10.0), h + this.p(10.0), r + this.p(4.0), Gx.mix(0xFF2A1D14, Style.bg, 0.35F));
-      Gx.rectV(x, y, w, h, r, Gx.mix(0xFF1D1E24, Style.bg, 0.4F), Gx.mix(0xFF111216, Style.bg, 0.3F));
-      int step = Math.max(6, this.p(16.0));
-      Gx.image(Gx.painted("bench:studs:" + step, w, h, g -> {
-         for (int sy = step / 2; sy < h; sy += step) {
-            for (int sx = step / 2; sx < w; sx += step) {
-               double d = step * 0.42;
-               g.setColor(new Color(255, 255, 255, 9));
-               g.fill(new Ellipse2D.Double(sx - d / 2, sy - d / 2, d, d));
-               g.setColor(new Color(0, 0, 0, 30));
-               g.setStroke(new BasicStroke(Math.max(1.0F, step / 16.0F)));
-               g.draw(new Ellipse2D.Double(sx - d / 2, sy - d / 2 + 1, d, d));
-            }
-         }
-      }), x, y, w, h, -1);
-      Gx.outline(x, y, w, h, r, Math.max(1, this.p(0.8)), Gx.withAlpha(-1, 0.10F));
+      int r = this.p(12.0);
+      Gx.shadow(x, y, w, h, r, this.p(24.0), 0.55F);
+      Gx.rect(x, y, w, h, r, PANEL);
+      Gx.outline(x, y, w, h, r, Math.max(1, this.p(0.7)), LINE);
    }
 
-   /** Top: logo, the categories as bricks, search and close. */
+   /** Top: name, the categories as flat tabs, search and close. */
    private void bricks(int x0, int y0, int w, int top, float t) {
-      int logo = this.p(30.0);
-      Gx.image(Art.brickImg(logo, Halloween.on() ? -38118 : (Xmas.on() ? -1890757 : Style.accent)), x0 + this.p(16.0), y0 + (top - logo) / 2, logo, logo, -1);
-      Gx.text("LEGO", x0 + this.p(52.0), y0 + this.p(16.0), this.pf(11.0), 3, Style.text);
-      Gx.text("WERKBANK", x0 + this.p(52.0), y0 + this.p(31.0), this.pf(7.0), 2, Style.accent);
-      Kit.hit(x0 + this.p(10.0), y0, this.p(110.0), top).click(() -> this.leave(() -> this.host.open(new MenuView())));
+      int logo = this.p(22.0);
+      int lx = x0 + this.p(18.0);
+      int ly = y0 + (top - logo) / 2;
+      Gx.rect(lx, ly, logo, logo, this.p(6.0), Style.accent);
+      Gx.icon("brick", lx + logo / 2.0F, ly + logo / 2.0F, this.pf(13.0), Style.accentText);
+      Gx.text("LEGO", lx + logo + this.p(8.0), y0 + top / 2.0F - this.p(9.0), this.pf(9.5F), 3, TEXT);
+      Gx.text("Werkbank", lx + logo + this.p(8.0), y0 + top / 2.0F + this.p(1.5), this.pf(6.8F), 1, SUB);
+      Kit.hit(x0 + this.p(10.0), y0, this.p(100.0), top).click(() -> this.leave(() -> this.host.open(new MenuView())));
       List<Category> cats = categories();
-      int bx = x0 + this.p(128.0);
-      int bh = this.p(34.0);
-      int by = y0 + (top - bh) / 2 + this.p(3.0);
+      int bx = x0 + this.p(118.0);
+      int bh = this.p(28.0);
+      int by = y0 + (top - bh) / 2;
+      float fs = this.pf(7.6F);
       for (int i = 0; i < cats.size(); i++) {
          Category c = cats.get(i);
-         String label = c.displayTitle().toUpperCase(Locale.ROOT);
-         float fs = this.pf(7.2F);
-         int bw = Math.round(Gx.width(label, fs, 3)) + this.p(44.0);
-         boolean act = this.sub == null && this.search.isBlank() && c == category;
-         boolean hv = this.hover(bx, by - this.p(6.0), bw, bh + this.p(6.0));
-         float lift = Ease.to("bench:lift" + i, act ? 1.0F : (hv ? 0.45F : 0.0F), 16.0F);
-         float drop = Ease.outBack(Ease.stagger(t, i, 0.06F, 0.5F));
-         int yy = Math.round(by - this.pf(5.0) * lift - this.pf(30.0) * (1.0F - drop));
-         int col = act ? Style.accent : Gx.mix(0xFF3A3D47, Style.surface2, 0.3F);
-         this.brick(bx, yy, bw, bh, col, lift);
-         int fg = act ? Style.accentText : Gx.mix(Style.sub, Style.text, lift);
-         Gx.icon(c.icon, bx + this.p(15.0), yy + bh / 2.0F + this.p(1.0), this.pf(11.0), fg);
-         Gx.textMid(label, bx + this.p(26.0), yy + bh / 2.0F + this.p(1.0), fs, 3, fg);
+         String label = c.displayTitle();
          String n = String.valueOf(count(c));
-         Gx.textRight(n, bx + bw - this.p(8.0), yy + bh / 2.0F + this.p(1.0), this.pf(6.4F), 2, Gx.withAlpha(fg, 0.7F));
-         Kit.hit(bx, by - this.p(6.0), bw, bh + this.p(6.0)).click(() -> {
+         int bw = Math.round(Gx.width(label, fs, 2) + Gx.width(n, this.pf(6.4F), 2)) + this.p(42.0);
+         boolean act = this.sub == null && this.search.isBlank() && c == category;
+         boolean hv = this.hover(bx, by, bw, bh);
+         float f = Ease.to("bench:tab" + i, act ? 1.0F : 0.0F, 16.0F);
+         float hf = Ease.to("bench:tabh" + i, hv ? 1.0F : 0.0F, 16.0F);
+         if (f > 0.01F) {
+            Gx.rect(bx, by, bw, bh, bh / 2, Gx.withAlpha(Style.accent, f));
+         } else if (hf > 0.01F) {
+            Gx.rect(bx, by, bw, bh, bh / 2, Gx.withAlpha(-1, 0.06F * hf));
+         }
+         int fg = Gx.mix(Gx.mix(SUB, TEXT, hf), Style.accentText, f);
+         Gx.icon(c.icon, bx + this.p(15.0), by + bh / 2.0F, this.pf(10.5), fg);
+         float tw = Gx.textMid(label, bx + this.p(26.0), by + bh / 2.0F, fs, 2, fg);
+         Gx.textMid(n, bx + this.p(31.0) + tw, by + bh / 2.0F, this.pf(6.4F), 2, Gx.withAlpha(fg, 0.55F));
+         Kit.hit(bx, by, bw, bh).click(() -> {
             category = c;
             page = null;
             this.sub = null;
             this.search = "";
             this.inspect = null;
             this.gridTarget = 0.0F;
+            this.openCategory(c);
          });
-         bx += bw + this.p(6.0);
+         bx += bw + this.p(4.0);
       }
       // search (right)
-      int sw = this.p(132.0);
-      int sh = this.p(26.0);
-      int sx = x0 + w - sw - this.p(48.0);
+      int sw = this.p(140.0);
+      int sh = this.p(28.0);
+      int sx = x0 + w - sw - this.p(52.0);
       int sy = y0 + (top - sh) / 2;
       boolean shv = this.hover(sx, sy, sw, sh);
       float sf = Ease.to("bench:sf", this.searchFocus ? 1.0F : (shv ? 0.4F : 0.0F), 14.0F);
-      Gx.rect(sx, sy, sw, sh, this.p(5.0), Gx.mix(0xFF16171C, Style.surface, 0.3F));
-      Gx.outline(sx, sy, sw, sh, this.p(5.0), Math.max(1, this.p(0.7)), Gx.mix(Style.stroke, Style.accent, sf));
-      Gx.icon("search", sx + this.p(13.0), sy + sh / 2.0F, this.pf(10.0), Gx.mix(Style.muted, Style.accent, sf));
-      String shown = this.search.isEmpty() ? (this.searchFocus ? "" : Lang.get("ui.search", "Suchen…")) : Fonts.ellipsize(this.search, 2, this.pf(7.6F), sw - this.p(34.0));
-      float tw = Gx.textMid(shown, sx + this.p(24.0), sy + sh / 2.0F, this.pf(7.6F), 2, this.search.isEmpty() ? Style.muted : Style.text);
+      Gx.rect(sx, sy, sw, sh, sh / 2, Gx.mix(CARD, CARD_HI, sf));
+      if (this.searchFocus) {
+         Gx.outline(sx, sy, sw, sh, sh / 2, Math.max(1, this.p(0.8)), Gx.withAlpha(Style.accent, 0.8F));
+      }
+      Gx.icon("search", sx + this.p(14.0), sy + sh / 2.0F, this.pf(10.0), Gx.mix(MUTED, Style.accent, sf));
+      String shown = this.search.isEmpty() ? (this.searchFocus ? "" : Lang.get("ui.search", "Suchen…")) : Fonts.ellipsize(this.search, 2, this.pf(7.6F), sw - this.p(36.0));
+      float tw = Gx.textMid(shown, sx + this.p(26.0), sy + sh / 2.0F, this.pf(7.6F), 2, this.search.isEmpty() ? MUTED : TEXT);
       if (this.searchFocus && System.currentTimeMillis() / 500L % 2L == 0L) {
-         Gx.fill(Math.round(sx + this.p(25.0) + (this.search.isEmpty() ? 0 : tw)), sy + this.p(7.0), Math.max(1, this.p(0.9)), sh - this.p(14.0), Style.accent);
+         Gx.fill(Math.round(sx + this.p(27.0) + (this.search.isEmpty() ? 0 : tw)), sy + this.p(8.0), Math.max(1, this.p(0.9)), sh - this.p(16.0), Style.accent);
       }
       Kit.hit(sx, sy, sw, sh).click(() -> {
          this.searchFocus = true;
@@ -277,29 +275,18 @@ public final class BenchView extends View {
       }).right(() -> this.search = "");
       // close
       int cs = this.p(28.0);
-      int cx = x0 + w - cs - this.p(12.0);
+      int cx = x0 + w - cs - this.p(14.0);
       int cy = y0 + (top - cs) / 2;
       boolean chv = this.hover(cx, cy, cs, cs);
       float cf = Ease.to("bench:close", chv ? 1.0F : 0.0F, 16.0F);
-      Gx.rect(cx, cy, cs, cs, this.p(6.0), Gx.withAlpha(Style.danger, 0.15F + 0.3F * cf));
-      Gx.icon("x", cx + cs / 2.0F, cy + cs / 2.0F, this.pf(12.0), Gx.mix(Style.sub, -1, cf));
+      Gx.rect(cx, cy, cs, cs, cs / 2, Gx.mix(CARD, Style.danger, 0.85F * cf));
+      Gx.icon("x", cx + cs / 2.0F, cy + cs / 2.0F, this.pf(11.0), Gx.mix(SUB, -1, cf));
       Kit.hit(cx, cy, cs, cs).click(this::onEscape);
-      Gx.fill(x0 + this.p(12.0), y0 + top - this.p(2.0), w - this.p(24.0), Math.max(1, this.p(0.6)), Gx.withAlpha(-1, 0.07F));
+      Gx.fill(x0 + this.p(16.0), y0 + top - 1, w - this.p(32.0), Math.max(1, this.p(0.6)), LINE);
    }
 
-   /** A LEGO brick seen from the front: body, top edge and two studs. */
-   private void brick(int x, int y, int w, int h, int col, float lift) {
-      int stud = this.p(9.0);
-      int sh = this.p(4.0);
-      Gx.shadow(x, y + sh, w, h, this.p(3.0), this.p(3.0 + 4.0 * lift), 0.35F + 0.2F * lift);
-      for (int k = 0; k < 2; k++) {
-         int sx = x + this.p(10.0) + k * (w - this.p(20.0) - stud);
-         Gx.rect(sx, y - sh, stud, sh + this.p(2.0), this.p(2.0), Gx.mix(col, -1, 0.10F));
-         Gx.fill(sx + this.p(1.0), y - sh, stud - this.p(2.0), Math.max(1, this.p(1.0)), Gx.withAlpha(-1, 0.25F));
-      }
-      Gx.rectV(x, y, w, h, this.p(3.0), Gx.mix(col, -1, 0.10F), Gx.mix(col, 0xFF000000, 0.22F));
-      Gx.fill(x + this.p(2.0), y + this.p(1.0), w - this.p(4.0), Math.max(1, this.p(1.0)), Gx.withAlpha(-1, 0.22F));
-      Gx.fill(x + this.p(2.0), y + h - Math.max(1, this.p(2.0)), w - this.p(4.0), Math.max(1, this.p(2.0)), Gx.withAlpha(0xFF000000, 0.25F));
+   /** Categories with a menu of their own (Custom TxT) open it instead of the module wall. */
+   private void openCategory(Category c) {
    }
 
    /** The module wall. */
@@ -315,12 +302,12 @@ public final class BenchView extends View {
       this.gridTarget = Math.max(0.0F, Math.min(this.gridMax, this.gridTarget));
       this.gridScroll = Ease.lerp(this.gridScroll, this.gridTarget, 0.35F);
       if (!this.search.isBlank()) {
-         Gx.text(mods.size() + " Treffer für \"" + this.search + "\"", x, y - this.p(2.0), this.pf(7.0), 2, Style.sub);
+         Gx.text(mods.size() + " Treffer für \"" + this.search + "\"", x, y - this.p(2.0), this.pf(7.0), 2, SUB);
       }
       Kit.hit(x, y, w, h).scroll(a -> this.gridTarget -= (float)(a * this.p(60.0)));
       if (mods.isEmpty()) {
-         Gx.icon("search", x + w / 2.0F, y + h / 2.0F - this.p(12.0), this.pf(26.0), Style.muted);
-         Gx.textCenter("Nichts gefunden", x + w / 2.0F, y + h / 2.0F + this.p(14.0), this.pf(9.0), 2, Style.sub);
+         Gx.icon("search", x + w / 2.0F, y + h / 2.0F - this.p(12.0), this.pf(26.0), MUTED);
+         Gx.textCenter("Nichts gefunden", x + w / 2.0F, y + h / 2.0F + this.p(14.0), this.pf(9.0), 2, SUB);
          return;
       }
       Gx.clip(x - this.p(6.0), y, w + this.p(12.0), h);
@@ -354,58 +341,50 @@ public final class BenchView extends View {
       float hf = Ease.to(id, hv ? 1.0F : 0.0F, 16.0F);
       float of = Ease.to(id + ":on", on ? 1.0F : 0.0F, 14.0F);
       float sel = Ease.to(id + ":sel", this.inspect == m ? 1.0F : 0.0F, 14.0F);
-      int lift = Math.round(this.pf(3.0) * hf - this.pf(4.0) * snap);
-      int yy = y - lift;
-      Gx.shadow(x, yy + this.p(3.0), w, h, this.p(6.0), this.p(4.0 + 4.0 * hf), 0.35F + 0.15F * hf);
-      int base = Gx.mix(Gx.mix(0xFF262830, Style.surface, 0.25F), Gx.mix(0xFF262830, Style.accent, 0.22F), of);
-      Gx.rectV(x, yy, w, h, this.p(6.0), Gx.mix(base, -1, 0.06F + 0.04F * hf), Gx.mix(base, 0xFF000000, 0.18F));
-      Gx.fill(x + this.p(3.0), yy + this.p(1.0), w - this.p(6.0), Math.max(1, this.p(1.0)), Gx.withAlpha(-1, 0.14F + 0.1F * hf));
-      if (sel > 0.01F || planned) {
-         Gx.outline(x, yy, w, h, this.p(6.0), Math.max(1, this.p(1.2)), Gx.withAlpha(planned ? 0xFFFFC23D : Style.accent, Math.max(sel, planned ? 0.85F : 0.0F)));
+      int yy = y - Math.round(this.pf(2.0) * hf + this.pf(3.0) * snap);
+      int r = this.p(10.0);
+      Gx.rect(x, yy, w, h, r, Gx.mix(CARD, CARD_HI, Math.max(hf, sel)));
+      if (of > 0.01F) {
+         Gx.rectV(x, yy, w, Math.round(h * 0.6F), r, Gx.withAlpha(Style.accent, 0.10F * of), 0x00000000);
       }
-      // lamp
-      int lr = this.p(4.5);
-      int lx = x + w - this.p(13.0);
-      int ly = yy + this.p(13.0);
-      boolean was = m.enabled;
-      int lamp;
-      if (planned && on != was) {
-         float pulse = (float)(0.55 + 0.45 * Math.sin(System.currentTimeMillis() / 160.0));
-         lamp = Gx.withAlpha(on ? Style.ok : Style.danger, pulse);
-      } else {
-         lamp = on ? Style.ok : 0xFF4A4D57;
-      }
-      if (on) {
-         Gx.glow(lx, ly, this.p(12.0), Gx.withAlpha(lamp, 0.35F));
-      }
-      if (m.isToggleable()) {
-         Gx.circle(lx, ly, lr, lamp);
-      }
+      int edge = planned ? Gx.withAlpha(Style.accent, 0.95F) : (sel > 0.01F ? Gx.withAlpha(Style.accent, 0.6F * sel) : LINE);
+      Gx.outline(x, yy, w, h, r, Math.max(1, this.p(planned ? 1.2 : 0.7)), edge);
       // icon
       String icon = m.icon != null ? m.icon : m.category.icon;
-      int ic = this.p(34.0);
+      int ic = this.p(32.0);
       int icx = x + this.p(14.0);
       int icy = yy + this.p(14.0);
-      Gx.rect(icx, icy, ic, ic, this.p(8.0), Gx.withAlpha(on ? Style.accent : -1, on ? 0.9F : 0.07F));
-      Gx.icon(icon, icx + ic / 2.0F, icy + ic / 2.0F, this.pf(18.0), on ? Style.accentText : Style.sub);
-      // text
-      float nfs = this.pf(8.6F);
-      Gx.text(Fonts.ellipsize(m.displayName(), 3, nfs, w - this.p(24.0)), x + this.p(14.0), yy + this.p(56.0), nfs, 3, Style.text);
-      List<String> lines = Fonts.wrap(m.displayDesc(), 1, this.pf(6.6F), w - this.p(26.0), 2);
-      for (int k = 0; k < lines.size(); k++) {
-         Gx.text(lines.get(k), x + this.p(14.0), yy + this.p(72.0) + k * this.p(10.0), this.pf(6.6F), 1, Style.muted);
+      Gx.rect(icx, icy, ic, ic, this.p(9.0), Gx.mix(Gx.withAlpha(-1, 0.06F), Style.accent, of));
+      Gx.icon(icon, icx + ic / 2.0F, icy + ic / 2.0F, this.pf(16.0), Gx.mix(SUB, Style.accentText, of));
+      // switch (top right)
+      if (m.isToggleable()) {
+         int tw = this.p(26.0);
+         int th = this.p(14.0);
+         Kit.toggle("bench:" + m.id, x + w - tw - this.p(12.0), yy + this.p(14.0), tw, th, on, this.P);
       }
-      // footer: state word + tool button
-      String state = !m.isToggleable() ? "WERKZEUG" : planned && on != was ? (on ? "WIRD AN" : "WIRD AUS") : (on ? "AN" : "AUS");
-      int stateCol = planned && on != was ? 0xFFFFC23D : (on ? Style.ok : Style.muted);
-      Gx.text(state, x + this.p(14.0), yy + h - this.p(15.0), this.pf(6.2F), 3, stateCol);
+      // text
+      float nfs = this.pf(9.0F);
+      Gx.text(Fonts.ellipsize(m.displayName(), 2, nfs, w - this.p(28.0)), x + this.p(14.0), yy + this.p(56.0), nfs, 2, TEXT);
+      List<String> lines = Fonts.wrap(m.displayDesc(), 1, this.pf(6.9F), w - this.p(28.0), 2);
+      for (int k = 0; k < lines.size(); k++) {
+         Gx.text(lines.get(k), x + this.p(14.0), yy + this.p(72.0) + k * this.p(10.5), this.pf(6.9F), 1, MUTED);
+      }
+      // footer: planned marker + settings button
+      boolean was = m.enabled;
+      if (planned) {
+         String state = on != was ? (on ? "Wird eingeschaltet" : "Wird ausgeschaltet") : "Geändert";
+         Gx.circle(x + this.p(17.0), yy + h - this.p(14.0), this.p(2.5), Style.accent);
+         Gx.textMid(state, x + this.p(24.0), yy + h - this.p(14.0), this.pf(6.4F), 2, Style.accent);
+      }
       int gs = this.p(20.0);
-      int gx = x + w - gs - this.p(8.0);
-      int gy = yy + h - gs - this.p(7.0);
+      int gx = x + w - gs - this.p(9.0);
+      int gy = yy + h - gs - this.p(5.0);
       boolean ghv = this.hover(gx, gy, gs, gs);
-      if (!m.settings.isEmpty() || m.isToggleable()) {
-         Gx.rect(gx, gy, gs, gs, this.p(5.0), Gx.withAlpha(-1, ghv ? 0.16F : 0.06F));
-         Gx.icon("gear", gx + gs / 2.0F, gy + gs / 2.0F, this.pf(10.0), ghv ? Style.text : Style.sub);
+      if (!m.settings.isEmpty()) {
+         if (ghv) {
+            Gx.rect(gx, gy, gs, gs, gs / 2, Gx.withAlpha(-1, 0.08F));
+         }
+         Gx.icon("dots", gx + gs / 2.0F, gy + gs / 2.0F, this.pf(10.0), ghv ? TEXT : MUTED);
       }
       Kit.hit(x, yy, w, h).click(() -> {
          if (m.isToggleable()) {
@@ -438,20 +417,18 @@ public final class BenchView extends View {
          return;
       }
       Gx.pushAlpha(ins);
-      Gx.shadow(x, y, w, h, this.p(8.0), this.p(10.0), 0.45F);
-      Gx.rectV(x, y, w, h, this.p(8.0), Gx.mix(0xFF2B2E37, Style.surface2, 0.3F), Gx.mix(0xFF1B1D23, Style.surface, 0.3F));
-      // yellow-black edge like a tool box lid
-      Gx.rect(x, y, w, this.p(6.0), this.p(3.0), Gx.mix(0xFFFFC23D, Style.accent, 0.35F));
+      Gx.rect(x, y, w, h, this.p(10.0), CARD);
+      Gx.outline(x, y, w, h, this.p(10.0), Math.max(1, this.p(0.7)), LINE);
       int pad = this.p(14.0);
       int cx = x + pad;
       int cw = w - pad * 2;
       int cy = y + this.p(18.0);
       Gx.icon(m.icon != null ? m.icon : m.category.icon, cx + this.p(9.0), cy + this.p(9.0), this.pf(15.0), Style.accent);
-      Gx.text(Fonts.ellipsize(m.displayName(), 3, this.pf(10.0), cw - this.p(52.0)), cx + this.p(24.0), cy, this.pf(10.0), 3, Style.text);
-      Gx.text(m.category.displayTitle(), cx + this.p(24.0), cy + this.p(13.0), this.pf(6.6F), 1, Style.muted);
+      Gx.text(Fonts.ellipsize(m.displayName(), 3, this.pf(10.0), cw - this.p(52.0)), cx + this.p(24.0), cy, this.pf(10.0), 3, TEXT);
+      Gx.text(m.category.displayTitle(), cx + this.p(24.0), cy + this.p(13.0), this.pf(6.6F), 1, MUTED);
       int xs = this.p(20.0);
       Kit.hit(x + w - xs - this.p(8.0), cy - this.p(2.0), xs, xs).click(() -> this.inspect = null);
-      Gx.icon("x", x + w - xs / 2.0F - this.p(8.0), cy + xs / 2.0F - this.p(2.0), this.pf(10.0), Style.sub);
+      Gx.icon("x", x + w - xs / 2.0F - this.p(8.0), cy + xs / 2.0F - this.p(2.0), this.pf(10.0), SUB);
       cy += this.p(32.0);
       int listTop = cy;
       int listH = y + h - this.p(10.0) - listTop;
@@ -470,7 +447,7 @@ public final class BenchView extends View {
          Setting s = DRAFT.edit(m, real);
          boolean changed = s != real && !java.util.Objects.equals(real.save(), s.save());
          if (changed) {
-            Gx.rect(cx - this.p(6.0), ry + this.p(3.0), this.p(2.5), this.p(14.0), this.p(1.0), 0xFFFFC23D);
+            Gx.rect(cx - this.p(6.0), ry + this.p(3.0), this.p(2.5), this.p(14.0), this.p(1.0), Style.accent);
          }
          if (s instanceof Setting.Bool b) {
             ry = this.rowBool(s.displayName(), b.value, m.id + ":" + s.name, cx, ry, cw, () -> b.value = !b.value);
@@ -487,7 +464,7 @@ public final class BenchView extends View {
          }
       }
       if (m.settings.isEmpty() && !m.isToggleable()) {
-         Gx.text("Keine Einstellungen", cx, ry + this.p(4.0), this.pf(7.4F), 1, Style.muted);
+         Gx.text("Keine Einstellungen", cx, ry + this.p(4.0), this.pf(7.4F), 1, MUTED);
          ry += this.p(20.0);
       }
       this.toolMax = Math.max(0, ry - start - listH + this.p(8.0));
@@ -497,7 +474,7 @@ public final class BenchView extends View {
    }
 
    private int label(String text, int x, int y, int w, String value) {
-      Gx.text(Fonts.ellipsize(text, 2, this.pf(7.8F), w - this.p(60.0)), x, y + this.p(4.0), this.pf(7.8F), 2, Style.text);
+      Gx.text(Fonts.ellipsize(text, 2, this.pf(7.8F), w - this.p(60.0)), x, y + this.p(4.0), this.pf(7.8F), 2, TEXT);
       if (value != null) {
          Gx.textRight(value, x + w, y + this.p(9.0), this.pf(7.4F), 3, Style.accent);
       }
@@ -538,7 +515,7 @@ public final class BenchView extends View {
          boolean act = md.index == i;
          boolean hv = this.hover(px, py, ow, ph);
          Gx.rect(px, py, ow, ph, this.p(4.0), act ? Style.accent : Gx.withAlpha(-1, hv ? 0.14F : 0.06F));
-         Gx.textCenter(Fonts.ellipsize(o, 2, fs, ow - this.p(8.0)), px + ow / 2.0F, py + ph / 2.0F, fs, 2, act ? Style.accentText : Style.sub);
+         Gx.textCenter(Fonts.ellipsize(o, 2, fs, ow - this.p(8.0)), px + ow / 2.0F, py + ph / 2.0F, fs, 2, act ? Style.accentText : SUB);
          int idx = i;
          Kit.hit(px, py, ow, ph).click(() -> md.index = idx);
          px += ow + this.p(5.0);
@@ -603,10 +580,10 @@ public final class BenchView extends View {
       int fy = y + this.p(17.0);
       int fh = this.p(20.0);
       boolean focus = this.editing == tx;
-      Gx.rect(x, fy, w, fh, this.p(4.0), 0xFF15161B);
-      Gx.outline(x, fy, w, fh, this.p(4.0), Math.max(1, this.p(0.7)), focus ? Style.accent : Style.stroke);
+      Gx.rect(x, fy, w, fh, this.p(4.0), CARD_HI);
+      Gx.outline(x, fy, w, fh, this.p(4.0), Math.max(1, this.p(0.7)), focus ? Style.accent : LINE);
       String v = tx.value.isEmpty() && !focus ? (tx.hint == null ? "" : tx.hint) : tx.value;
-      float tw = Gx.textMid(Fonts.ellipsize(v, 2, this.pf(7.4F), w - this.p(14.0)), x + this.p(7.0), fy + fh / 2.0F, this.pf(7.4F), 2, tx.value.isEmpty() ? Style.muted : Style.text);
+      float tw = Gx.textMid(Fonts.ellipsize(v, 2, this.pf(7.4F), w - this.p(14.0)), x + this.p(7.0), fy + fh / 2.0F, this.pf(7.4F), 2, tx.value.isEmpty() ? MUTED : TEXT);
       if (focus && System.currentTimeMillis() / 500L % 2L == 0L) {
          Gx.fill(Math.round(x + this.p(8.0) + (tx.value.isEmpty() ? 0 : tw)), fy + this.p(5.0), Math.max(1, this.p(0.9)), fh - this.p(10.0), Style.accent);
       }
@@ -636,7 +613,7 @@ public final class BenchView extends View {
       int bh = this.p(17.0);
       int bx = x + w - bw;
       Gx.rect(bx, y + this.p(1.0), bw, bh, this.p(4.0), this.binding == m ? Gx.withAlpha(Style.accent, 0.3F) : Gx.withAlpha(-1, 0.07F));
-      Gx.textCenter(v, bx + bw / 2.0F, y + this.p(1.0) + bh / 2.0F, this.pf(6.8F), 2, this.binding == m ? Style.accent : Style.sub);
+      Gx.textCenter(v, bx + bw / 2.0F, y + this.p(1.0) + bh / 2.0F, this.pf(6.8F), 2, this.binding == m ? Style.accent : SUB);
       Kit.hit(bx, y, bw, bh + this.p(2.0)).click(() -> this.binding = this.binding == m ? null : m).right(() -> {
          DRAFT.setKey(m, -1);
          this.binding = null;
@@ -660,11 +637,11 @@ public final class BenchView extends View {
       if (shown > 0.01F && !changes.isEmpty()) {
          Gx.pushAlpha(shown);
          int yy = by + Math.round(this.pf(12.0) * (1.0F - shown));
-         Gx.rect(bx, yy, bw, bh, this.p(6.0), Gx.mix(0xFF2B2416, Style.surface2, 0.2F));
-         Gx.outline(bx, yy, bw, bh, this.p(6.0), Math.max(1, this.p(0.8)), Gx.withAlpha(0xFFFFC23D, 0.55F));
-         Gx.icon("list", bx + this.p(14.0), yy + bh / 2.0F, this.pf(12.0), 0xFFFFC23D);
-         Gx.text("BAUPLAN", bx + this.p(26.0), yy + this.p(6.0), this.pf(6.6F), 3, 0xFFFFC23D);
-         Gx.text(changes.size() + (changes.size() == 1 ? " Änderung" : " Änderungen"), bx + this.p(26.0), yy + this.p(18.0), this.pf(6.2F), 1, Style.sub);
+         Gx.rect(bx, yy, bw, bh, bh / 2, CARD_HI);
+         Gx.outline(bx, yy, bw, bh, bh / 2, Math.max(1, this.p(0.8)), Gx.withAlpha(Style.accent, 0.5F));
+         Gx.icon("list", bx + this.p(16.0), yy + bh / 2.0F, this.pf(11.0), Style.accent);
+         Gx.text("Bauplan", bx + this.p(28.0), yy + this.p(6.0), this.pf(7.0F), 2, TEXT);
+         Gx.text(changes.size() + (changes.size() == 1 ? " Änderung" : " Änderungen"), bx + this.p(26.0), yy + this.p(18.0), this.pf(6.2F), 1, SUB);
          String applyLabel = "ANWENDEN (" + changes.size() + ")";
          int aw = Math.round(Gx.width(applyLabel, this.pf(8.0F), 3)) + this.p(26.0);
          int ax = bx + bw - aw - this.p(6.0);
@@ -673,16 +650,16 @@ public final class BenchView extends View {
          boolean ahv = this.hover(ax, ay, aw, ah);
          float af = Ease.to("bench:apply", ahv ? 1.0F : 0.0F, 16.0F);
          float pulse = (float)(0.5 + 0.5 * Math.sin(System.currentTimeMillis() / 300.0));
-         Gx.glow(ax + aw / 2, ay + ah / 2, this.p(40.0), Gx.withAlpha(0xFFFFC23D, 0.12F + 0.1F * pulse));
-         Gx.rect(ax, ay, aw, ah, this.p(5.0), Gx.mix(0xFFFFC23D, -1, 0.15F * af));
-         Gx.textCenter(applyLabel, ax + aw / 2.0F, ay + ah / 2.0F, this.pf(8.0F), 3, 0xFF1A1408);
+         Gx.glow(ax + aw / 2, ay + ah / 2, this.p(34.0), Gx.withAlpha(Style.accent, 0.08F + 0.06F * pulse));
+         Gx.rect(ax, ay, aw, ah, ah / 2, Gx.mix(Style.accent, -1, 0.12F * af));
+         Gx.textCenter(applyLabel, ax + aw / 2.0F, ay + ah / 2.0F, this.pf(8.0F), 3, Style.accentText);
          Kit.hit(ax, ay, aw, ah).click(this::apply);
          String dropLabel = "Verwerfen";
          int dw = Math.round(Gx.width(dropLabel, this.pf(7.4F), 2)) + this.p(20.0);
          int dx = ax - dw - this.p(6.0);
          boolean dhv = this.hover(dx, ay, dw, ah);
-         Gx.rect(dx, ay, dw, ah, this.p(5.0), Gx.withAlpha(-1, dhv ? 0.14F : 0.06F));
-         Gx.textCenter(dropLabel, dx + dw / 2.0F, ay + ah / 2.0F, this.pf(7.4F), 2, Style.sub);
+         Gx.rect(dx, ay, dw, ah, ah / 2, Gx.withAlpha(-1, dhv ? 0.12F : 0.05F));
+         Gx.textCenter(dropLabel, dx + dw / 2.0F, ay + ah / 2.0F, this.pf(7.4F), 2, SUB);
          Kit.hit(dx, ay, dw, ah).click(DRAFT::clear);
          // chips
          int cx0 = bx + this.p(92.0);
@@ -699,9 +676,9 @@ public final class BenchView extends View {
             int col = c.direction() > 0 ? Style.ok : (c.direction() < 0 ? Style.danger : Style.accent);
             Gx.rect(cx, cy, cw, ch, ch / 2, Gx.withAlpha(col, 0.18F));
             Gx.outline(cx, cy, cw, ch, ch / 2, Math.max(1, this.p(0.6)), Gx.withAlpha(col, 0.6F));
-            Gx.textMid(c.label(), cx + this.p(8.0), cy + ch / 2.0F, fs, 2, Style.text);
+            Gx.textMid(c.label(), cx + this.p(8.0), cy + ch / 2.0F, fs, 2, TEXT);
             boolean xh = this.hover(cx + cw - this.p(16.0), cy, this.p(16.0), ch);
-            Gx.icon("x", cx + cw - this.p(9.0), cy + ch / 2.0F, this.pf(7.0), xh ? Style.text : Style.muted);
+            Gx.icon("x", cx + cw - this.p(9.0), cy + ch / 2.0F, this.pf(7.0), xh ? TEXT : MUTED);
             Kit.hit(cx + cw - this.p(16.0), cy, this.p(16.0), ch).click(() -> DRAFT.drop(c));
             cx += cw + this.p(5.0);
             total += cw + this.p(5.0);
@@ -729,8 +706,8 @@ public final class BenchView extends View {
          boolean act = it[2] == null ? this.sub == null : it[2].equals(page) && this.sub != null;
          boolean hv = this.hover(bx, y, bw, bh);
          float f = Ease.to("bench:dock" + it[0], act ? 1.0F : (hv ? 0.5F : 0.0F), 16.0F);
-         Gx.rect(bx, y, bw, bh, this.p(6.0), act ? Gx.withAlpha(Style.accent, 0.9F) : Gx.withAlpha(-1, 0.05F + 0.08F * f));
-         int fg = act ? Style.accentText : Gx.mix(Style.sub, Style.text, f);
+         Gx.rect(bx, y, bw, bh, bh / 2, act ? Style.accent : Gx.withAlpha(-1, 0.04F + 0.07F * f));
+         int fg = act ? Style.accentText : Gx.mix(SUB, TEXT, f);
          Gx.icon(it[1], bx + this.p(13.0), y + bh / 2.0F, this.pf(11.0), fg);
          Gx.textMid(it[0], bx + this.p(23.0), y + bh / 2.0F, fs, 3, fg);
          String target = it[2];
@@ -740,7 +717,7 @@ public final class BenchView extends View {
       String hint = "Klick = auswählen · Rechtsklick = Werkzeug · ANWENDEN lädt alles gleichzeitig";
       float hfs = this.pf(6.2F);
       String fit = Fonts.ellipsize(hint, 1, hfs, x + w - bx - this.p(8.0));
-      Gx.textRight(fit, x + w - this.p(4.0), y + bh / 2.0F, hfs, 1, Style.muted);
+      Gx.textRight(fit, x + w - this.p(4.0), y + bh / 2.0F, hfs, 1, MUTED);
    }
 
    private void openPage(String target) {
@@ -769,11 +746,11 @@ public final class BenchView extends View {
       int dy = y0 + (h - dh) / 2;
       Kit.hit(x0, y0, w, h).click(() -> {});
       Gx.shadow(dx, dy, dw, dh, this.p(8.0), this.p(16.0), 0.6F);
-      Gx.rect(dx, dy, dw, dh, this.p(8.0), Gx.mix(0xFF23252C, Style.surface2, 0.3F));
-      Gx.rect(dx, dy, dw, this.p(5.0), this.p(3.0), 0xFFFFC23D);
+      Gx.rect(dx, dy, dw, dh, this.p(12.0), CARD);
+      Gx.outline(dx, dy, dw, dh, this.p(12.0), Math.max(1, this.p(0.7)), LINE);
       int n = DRAFT.count();
-      Gx.textCenter(n + (n == 1 ? " Änderung" : " Änderungen") + " noch nicht angewendet", dx + dw / 2.0F, dy + this.p(30.0), this.pf(9.0), 3, Style.text);
-      Gx.textCenter("Jetzt alles gleichzeitig laden?", dx + dw / 2.0F, dy + this.p(48.0), this.pf(7.4F), 1, Style.sub);
+      Gx.textCenter(n + (n == 1 ? " Änderung" : " Änderungen") + " noch nicht angewendet", dx + dw / 2.0F, dy + this.p(30.0), this.pf(9.0), 3, TEXT);
+      Gx.textCenter("Jetzt alles gleichzeitig laden?", dx + dw / 2.0F, dy + this.p(48.0), this.pf(7.4F), 1, SUB);
       int bw = (dw - this.p(40.0)) / 3;
       int bh = this.p(26.0);
       int by = dy + dh - bh - this.p(16.0);
