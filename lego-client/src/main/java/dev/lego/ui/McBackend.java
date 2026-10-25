@@ -67,6 +67,11 @@ public final class McBackend implements Gx.Backend {
       this.ctx.blit(RenderPipelines.GUI_TEXTURED, (Identifier)t.handle, x, y, u, v, w, h, rw, rh, t.w, t.h, argb);
    }
 
+   /** Part (u, v, rw, rh) of a texture measured as texW x texH, stretched over x, y, w, h. */
+   public void textureRegion(Identifier id, int x, int y, int w, int h, float u, float v, int rw, int rh, int texW, int texH, int argb) {
+      this.ctx.blit(RenderPipelines.GUI_TEXTURED, id, x, y, u, v, w, h, rw, rh, texW, texH, argb);
+   }
+
    public void texture(Identifier id, int x, int y, int w, int h, int texW, int texH, int argb) {
       this.ctx.blit(RenderPipelines.GUI_TEXTURED, id, x, y, 0.0F, 0.0F, w, h, texW, texH, texW, texH, argb);
    }

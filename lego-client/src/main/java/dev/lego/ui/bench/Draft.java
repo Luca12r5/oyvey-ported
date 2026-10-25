@@ -24,6 +24,51 @@ public final class Draft {
    /** Scratch copy per setting, edited by the inspector; changed while its value differs. */
    private final Map<Setting, Setting> copies = new IdentityHashMap<>();
    private final Map<Setting, Module> owner = new IdentityHashMap<>();
+   /** Custom TxT: wanted style per group (folder, mypack:/vippack: id or StylesBatch.VANILLA). */
+   private final Map<de.bauloo.styles.BaulooStylesClient.Tab, String> styles = new LinkedHashMap<>();
+   private final Map<de.bauloo.styles.BaulooStylesClient.Tab, String> styleNames = new LinkedHashMap<>();
+   /** Custom TxT cosmetics: wanted key per slot. */
+   private final Map<de.bauloo.styles.Cosmetics.Slot, String> cosmetics = new LinkedHashMap<>();
+
+   /** The style a group shows in the studio: planned, else the one that is on. */
+   public String style(de.bauloo.styles.BaulooStylesClient.Tab tab, String current) {
+      String s = this.styles.get(tab);
+      return s != null ? s : current;
+   }
+
+   public boolean stylePlanned(de.bauloo.styles.BaulooStylesClient.Tab tab) {
+      return this.styles.containsKey(tab);
+   }
+
+   /** Plans a style for a group; picking the one that is on already drops the plan. */
+   public void pickStyle(de.bauloo.styles.BaulooStylesClient.Tab tab, String folder, String name, String current) {
+      String want = folder == null ? dev.lego.txt.StylesBatch.VANILLA : folder;
+      String now = current == null ? dev.lego.txt.StylesBatch.VANILLA : current;
+      if (want.equals(now)) {
+         this.styles.remove(tab);
+         this.styleNames.remove(tab);
+      } else {
+         this.styles.put(tab, want);
+         this.styleNames.put(tab, name);
+      }
+   }
+
+   public String cosmetic(de.bauloo.styles.Cosmetics.Slot slot) {
+      String s = this.cosmetics.get(slot);
+      return s != null ? s : de.bauloo.styles.Cosmetics.saved(slot);
+   }
+
+   public boolean cosmeticPlanned(de.bauloo.styles.Cosmetics.Slot slot) {
+      return this.cosmetics.containsKey(slot);
+   }
+
+   public void pickCosmetic(de.bauloo.styles.Cosmetics.Slot slot, String key) {
+      if (key.equals(de.bauloo.styles.Cosmetics.saved(slot))) {
+         this.cosmetics.remove(slot);
+      } else {
+         this.cosmetics.put(slot, key);
+      }
+   }
 
    public boolean on(Module m) {
       Boolean b = this.enabled.get(m);
@@ -107,18 +152,25 @@ public final class Draft {
       List<Change> out = new ArrayList<>();
       for (Map.Entry<Module, Boolean> e : this.enabled.entrySet()) {
          Module m = e.getKey();
-         out.add(new Change(m, null, (e.getValue() ? "+ " : "− ") + m.displayName(), e.getValue() ? 1 : -1));
+         out.add(new Change(m, null, (e.getValue() ? "+ " : "− ") + m.displayName(), e.getValue() ? 1 : -1, null, null));
       }
       for (Map.Entry<Module, Integer> e : this.keys.entrySet()) {
-         out.add(new Change(e.getKey(), null, e.getKey().displayName() + ": Taste " + dev.lego.ui.Keys.name(e.getValue()), 0));
+         out.add(new Change(e.getKey(), null, e.getKey().displayName() + ": Taste " + dev.lego.ui.Keys.name(e.getValue()), 0, null, null));
       }
-      for (Module m : Modules.ALL) {
-         for (Setting s : m.settings) {
-            Setting c = this.copies.get(s);
-            if (c != null && changed(s, c)) {
-               out.add(new Change(m, s, m.displayName() + ": " + s.displayName() + " " + shown(s) + " → " + shown(c), 0));
-            }
+      for (Map.Entry<Setting, Module> e : this.owner.entrySet()) {
+         Setting s = e.getKey();
+         Setting c = this.copies.get(s);
+         if (c != null && changed(s, c)) {
+            Module m = e.getValue();
+            out.add(new Change(m, s, m.displayName() + ": " + s.displayName() + " " + shown(s) + " → " + shown(c), 0, null, null));
          }
+      }
+      for (Map.Entry<de.bauloo.styles.BaulooStylesClient.Tab, String> e : this.styles.entrySet()) {
+         String name = this.styleNames.getOrDefault(e.getKey(), "");
+         out.add(new Change(null, null, e.getKey().title + ": " + (dev.lego.txt.StylesBatch.VANILLA.equals(e.getValue()) ? "Vanilla" : name), 2, e.getKey(), null));
+      }
+      for (Map.Entry<de.bauloo.styles.Cosmetics.Slot, String> e : this.cosmetics.entrySet()) {
+         out.add(new Change(null, null, de.bauloo.styles.Cosmetics.label(e.getKey(), e.getValue()), 3, null, e.getKey()));
       }
       return out;
    }
@@ -128,7 +180,7 @@ public final class Draft {
    }
 
    public boolean empty() {
-      if (!this.enabled.isEmpty() || !this.keys.isEmpty()) {
+      if (!this.enabled.isEmpty() || !this.keys.isEmpty() || !this.styles.isEmpty() || !this.cosmetics.isEmpty()) {
          return false;
       }
       for (Map.Entry<Setting, Setting> e : this.copies.entrySet()) {
@@ -141,7 +193,12 @@ public final class Draft {
 
    /** Drops one change (the x on a chip). */
    public void drop(Change c) {
-      if (c.setting() != null) {
+      if (c.tab() != null) {
+         this.styles.remove(c.tab());
+         this.styleNames.remove(c.tab());
+      } else if (c.slot() != null) {
+         this.cosmetics.remove(c.slot());
+      } else if (c.setting() != null) {
          this.undo(c.module(), c.setting());
       } else if (c.direction() != 0) {
          this.enabled.remove(c.module());
@@ -151,6 +208,9 @@ public final class Draft {
    }
 
    public void clear() {
+      this.styles.clear();
+      this.styleNames.clear();
+      this.cosmetics.clear();
       this.enabled.clear();
       this.keys.clear();
       this.copies.clear();
@@ -164,15 +224,30 @@ public final class Draft {
     */
    public int apply() {
       int n = 0;
+      java.util.Set<Module> touched = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
       for (Map.Entry<Setting, Setting> e : new ArrayList<>(this.copies.entrySet())) {
          if (changed(e.getKey(), e.getValue())) {
             try {
                e.getKey().load(e.getValue().save());
+               touched.add(this.owner.get(e.getKey()));
                n++;
             } catch (Throwable t) {
                LegoClient.LOG("Werkbank: " + e.getKey().name + ": " + t);
             }
          }
+      }
+      for (Module m : touched) {
+         if (m instanceof dev.lego.txt.TxtExtras.Extra x) {
+            x.push();
+         }
+      }
+      if (!this.styles.isEmpty()) {
+         dev.lego.txt.StylesBatch.apply(new LinkedHashMap<>(this.styles));
+         n += this.styles.size();
+      }
+      for (Map.Entry<de.bauloo.styles.Cosmetics.Slot, String> e : this.cosmetics.entrySet()) {
+         de.bauloo.styles.Cosmetics.save(e.getKey(), e.getValue());
+         n++;
       }
       for (Map.Entry<Module, Integer> e : this.keys.entrySet()) {
          e.getKey().key = e.getValue();
@@ -224,6 +299,7 @@ public final class Draft {
       return c;
    }
 
-   public record Change(Module module, Setting setting, String label, int direction) {
+   /** direction: 1 on, -1 off, 0 value/key, 2 Custom TxT style, 3 Custom TxT cosmetic. */
+   public record Change(Module module, Setting setting, String label, int direction, de.bauloo.styles.BaulooStylesClient.Tab tab, de.bauloo.styles.Cosmetics.Slot slot) {
    }
 }

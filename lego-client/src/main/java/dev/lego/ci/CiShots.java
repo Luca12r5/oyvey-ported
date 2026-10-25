@@ -263,20 +263,43 @@ public final class CiShots {
             LegoClient.LOG("CI custom txt packs: " + mc.getResourcePackRepository().getSelectedIds());
             shot(mc, "txt-crystal");
          }
-         case 29 -> { if (t < 94F) return; dev.lego.txt.TxtModules.openMenu(); }
+         // The own Custom TxT studio: capes with the live preview, then the extras.
+         case 29 -> {
+            if (t < 94F) return;
+            bench = dev.lego.ui.bench.BenchView.txt("CAPES");
+            LegoScreen.show(bench);
+         }
          case 30 -> {
             if (t < 98F) return;
-            LegoClient.LOG("CI bauloo menu: " + (mc.screen == null ? "none" : mc.screen.getClass().getSimpleName()));
-            shot(mc, "bauloo-menu");
+            java.util.List<de.bauloo.styles.MyPacks.Style> mine = de.bauloo.styles.MyPacks.styles();
+            LegoClient.LOG("CI txt studio: groups=" + de.bauloo.styles.BaulooStylesConfigScreen.shownTabs().length + " mypacks=" + mine.size()
+               + (mine.isEmpty() ? "" : " " + mine.stream().map(st -> st.category() + ":" + st.name()).toList()));
+            shot(mc, "txt-capes");
+            dev.lego.ui.bench.BenchView.txt("EXTRAS");
+            bench = dev.lego.ui.bench.BenchView.txt("EXTRAS");
+            LegoScreen.show(bench);
+            // a part of the CI's own resource pack (its totem), planned like a player would
+            for (de.bauloo.styles.MyPacks.Style st : mine) {
+               if (st.category().equals("totem")) {
+                  dev.lego.ui.bench.BenchView.draft().pickStyle(de.bauloo.styles.BaulooStylesClient.Tab.TOTEM, "mypack:" + st.id(), st.name(), null);
+               }
+            }
          }
          case 31 -> {
-            if (t < 99F) return;
+            if (t < 100F) return;
+            shot(mc, "txt-extras");
+            bench.ciApply();
+            LegoClient.LOG("CI txt studio applied, left: " + dev.lego.ui.bench.BenchView.draft().count());
             mc.setScreen(null);
+         }
+         case 32 -> {
+            if (t < 104F || mc.getOverlay() != null) return;
+            LegoClient.LOG("CI custom txt packs after studio: " + mc.getResourcePackRepository().getSelectedIds());
             dev.lego.txt.TxtModules.ciReset();
          }
          // Every cosmetic once, worn while the cosmetics page of the work bench shows the player.
-         case 32 -> {
-            if (t < 103F || mc.getOverlay() != null) return;
+         case 33 -> {
+            if (t < 108F || mc.getOverlay() != null) return;
             if (sweep < 0) {
                sweep = 0;
                Cos.unequipAll();
@@ -304,8 +327,8 @@ public final class CiShots {
             Cos.unequipAll();
             mc.setScreen(null);
          }
-         case 33 -> {
-            if (t < 103F || mc.getOverlay() != null) return;
+         case 34 -> {
+            if (t < 108F || mc.getOverlay() != null) return;
             LegoClient.LOG("CI shots done");
             mc.stop();
          }

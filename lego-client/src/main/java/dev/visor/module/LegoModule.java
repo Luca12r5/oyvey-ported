@@ -49,7 +49,7 @@ public final class LegoModule extends Module {
 	public static List<Module> all() {
 		List<Module> list = new ArrayList<>();
 		for (dev.lego.core.Module m : dev.lego.core.Modules.ALL) {
-			Category c = m.category.listed ? categoryOf(m.category) : null;
+			Category c = m.category.listed && m.category != dev.lego.core.Category.CUSTOM_TXT ? categoryOf(m.category) : null;
 			if (c != null && !m.hidden) {
 				list.add(new LegoModule(m, c));
 			}

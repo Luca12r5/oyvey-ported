@@ -119,6 +119,21 @@ if (shots || vrNull) {
     // Bindings like the ones old 26.3 builds saved: the client has to put its keys back once.
     ...(shots ? ['key_key.visor.toggle:key.keyboard.unknown', 'key_key.legoclient.gui:key.keyboard.f24'] : []), ''].join('\n'));
   cpSync(join(srvDir, 'world'), join(gameDir, 'saves', 'ci'), { recursive: true });
+  // A resource pack of our own with an end crystal and a totem texture: Custom TxT must split
+  // it into its parts and show each one in its group.
+  mkdirSync(join(gameDir, 'resourcepacks'), { recursive: true });
+  execFileSync('python3', ['-c', [
+    'import sys, zipfile, zlib, struct',
+    'def png(w, h, rgb):',
+    '    raw = b"".join(b"\\x00" + bytes(rgb) * w for _ in range(h))',
+    '    c = lambda t, d: struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xffffffff)',
+    '    return b"\\x89PNG\\r\\n\\x1a\\n" + c(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)) + c(b"IDAT", zlib.compress(raw)) + c(b"IEND", b"")',
+    'z = zipfile.ZipFile(sys.argv[1], "w")',
+    'z.writestr("pack.mcmeta", \'{"pack":{"pack_format":75,"description":"LEGO CI pack"}}\')',
+    'z.writestr("assets/minecraft/textures/entity/end_crystal/end_crystal.png", png(64, 32, (40, 220, 120)))',
+    'z.writestr("assets/minecraft/textures/item/totem_of_undying.png", png(16, 16, (230, 60, 200)))',
+    'z.close()',
+  ].join('\n'), join(gameDir, 'resourcepacks', 'LEGO CI Pack.zip')]);
   step('flat world ready');
 }
 

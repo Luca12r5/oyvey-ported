@@ -21,6 +21,7 @@ import dev.lego.ui.UiSettings;
 import dev.lego.ui.View;
 import dev.lego.ui.Xmas;
 import dev.lego.ui.hub.HubView;
+import de.bauloo.styles.BaulooStylesConfigScreen;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.GradientPaint;
@@ -43,7 +44,7 @@ public final class BenchView extends View {
    private static Category category = Category.HUD;
    private static String page;
 
-   private Module inspect;
+   Module inspect;
    private float gridScroll;
    private float gridTarget;
    private float gridMax;
@@ -59,6 +60,7 @@ public final class BenchView extends View {
    private long appliedAt;
    private final Set<Module> applied = new HashSet<>();
    private HubView sub;
+   private final TxtStudio studio = new TxtStudio(this);
    private String subError;
 
    public BenchView() {
@@ -80,6 +82,12 @@ public final class BenchView extends View {
       return new BenchView();
    }
 
+   /** Opens Custom TxT on a tab of its studio (STYLES, CAPES, EXTRAS, PRESETS). */
+   public static BenchView txt(String studioTab) {
+      TxtStudio.tab = studioTab;
+      return on(Category.CUSTOM_TXT);
+   }
+
    /** The planned changes (CI and tests). */
    public static Draft draft() {
       return DRAFT;
@@ -99,7 +107,8 @@ public final class BenchView extends View {
       List<Module> out = new ArrayList<>();
       String q = this.search.toLowerCase(Locale.ROOT).trim();
       for (Module m : Modules.ALL) {
-         if (m.hidden) {
+         // Custom TxT has its own studio, its group modules only keep the packs in step.
+         if (m.hidden || m.category == Category.CUSTOM_TXT) {
             continue;
          }
          if (q.isEmpty()) {
@@ -114,6 +123,13 @@ public final class BenchView extends View {
    }
 
    private static int count(Category c) {
+      if (c == Category.CUSTOM_TXT) {
+         try {
+            return BaulooStylesConfigScreen.shownTabs().length;
+         } catch (Throwable e) {
+            return 0;
+         }
+      }
       int n = 0;
       for (Module m : Modules.ALL) {
          if (m.category == c && !m.hidden) {
@@ -175,10 +191,12 @@ public final class BenchView extends View {
             Gx.textCenter("Diese Seite hatte einen Fehler", x0 + w / 2.0F, bodyY + bodyH / 2.0F + this.p(12.0), this.pf(9.0), 2, TEXT);
             Gx.textCenter(Fonts.ellipsize(this.subError, 1, this.pf(7.0), w - this.p(80.0)), x0 + w / 2.0F, bodyY + bodyH / 2.0F + this.p(28.0), this.pf(7.0), 1, MUTED);
          }
+      } else if (this.search.isBlank() && category == Category.CUSTOM_TXT) {
+         this.studio.draw(x0 + this.p(14.0), bodyY + this.p(6.0), w - this.p(22.0), bodyH - this.p(10.0));
       } else {
          float ins = Ease.to("bench:ins", this.inspect != null ? 1.0F : 0.0F, 14.0F);
          int toolW = Math.round(this.p(270.0) * ins);
-         this.wall(x0 + this.p(14.0), bodyY + this.p(6.0), w - this.p(28.0) - toolW, bodyH - this.p(12.0));
+         this.wall(this.modules(), x0 + this.p(14.0), bodyY + this.p(6.0), w - this.p(28.0) - toolW, bodyH - this.p(12.0));
          if (toolW > this.p(4.0)) {
             this.toolbox(x0 + w - toolW - this.p(8.0), bodyY + this.p(2.0), toolW, bodyH - this.p(4.0), ins);
          }
@@ -290,8 +308,7 @@ public final class BenchView extends View {
    }
 
    /** The module wall. */
-   private void wall(int x, int y, int w, int h) {
-      List<Module> mods = this.modules();
+   void wall(List<Module> mods, int x, int y, int w, int h) {
       int gap = this.p(10.0);
       int cols = Math.max(2, (w + gap) / (this.p(140.0) + gap));
       int tw = (w - gap * (cols - 1)) / cols;
@@ -397,7 +414,7 @@ public final class BenchView extends View {
       Kit.hit(gx, gy, gs, gs).click(() -> this.openTools(m));
    }
 
-   private void openTools(Module m) {
+   void openTools(Module m) {
       if (this.inspect == m) {
          this.inspect = null;
          return;
@@ -411,7 +428,7 @@ public final class BenchView extends View {
    }
 
    /** Right: the tool box with every setting of the chosen module. */
-   private void toolbox(int x, int y, int w, int h, float ins) {
+   void toolbox(int x, int y, int w, int h, float ins) {
       Module m = this.inspect;
       if (m == null) {
          return;
@@ -673,7 +690,7 @@ public final class BenchView extends View {
          int total = 0;
          for (Draft.Change c : changes) {
             int cw = Math.round(Gx.width(c.label(), fs, 2)) + this.p(26.0);
-            int col = c.direction() > 0 ? Style.ok : (c.direction() < 0 ? Style.danger : Style.accent);
+            int col = c.direction() == 1 ? Style.ok : (c.direction() == -1 ? Style.danger : Style.accent);
             Gx.rect(cx, cy, cw, ch, ch / 2, Gx.withAlpha(col, 0.18F));
             Gx.outline(cx, cy, cw, ch, ch / 2, Math.max(1, this.p(0.6)), Gx.withAlpha(col, 0.6F));
             Gx.textMid(c.label(), cx + this.p(8.0), cy + ch / 2.0F, fs, 2, TEXT);

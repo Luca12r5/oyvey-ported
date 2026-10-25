@@ -428,7 +428,7 @@ public class BaulooStylesConfigScreen extends Screen {
       }
    }
 
-   private static String packId(String folder) {
+   public static String packId(String folder) {
       if (folder.startsWith("bauloo_upload_")) {
          return folder.endsWith("_folder") ? "file/" + folder : "file/" + folder + ".zip";
       } else {
@@ -436,13 +436,13 @@ public class BaulooStylesConfigScreen extends Screen {
       }
    }
 
-   private static boolean isPackOf(BaulooStylesClient.Tab value, String id) {
+   public static boolean isPackOf(BaulooStylesClient.Tab value, String id) {
       return id.startsWith("bauloo_styles:" + value.prefix + "_")
          || id.startsWith("file/bauloo_upload_" + value.prefix + "_")
          || id.startsWith("file/bauloo_cloud_" + value.prefix + "_");
    }
 
-   private static Map<BaulooStylesClient.Tab, String> activeFolders() {
+   public static Map<BaulooStylesClient.Tab, String> activeFolders() {
       Map<BaulooStylesClient.Tab, String> map = new EnumMap<>(BaulooStylesClient.Tab.class);
 
       for (String id : Minecraft.getInstance().getResourcePackRepository().getSelectedIds()) {
@@ -468,7 +468,7 @@ public class BaulooStylesConfigScreen extends Screen {
       return e.length > 3 && e[3] != null ? BaulooStylesClient.Tab.valueOf(e[3]) : this.tab;
    }
 
-   private static BaulooStylesClient.Tab[] shownTabs() {
+   public static BaulooStylesClient.Tab[] shownTabs() {
       return Arrays.stream(BaulooStylesClient.Tab.values())
          .filter(
             t -> t != BaulooStylesClient.Tab.PICKAXE
@@ -480,7 +480,7 @@ public class BaulooStylesConfigScreen extends Screen {
          .toArray(BaulooStylesClient.Tab[]::new);
    }
 
-   private static BaulooStylesClient.Tab[] groupOf(BaulooStylesClient.Tab value) {
+   public static BaulooStylesClient.Tab[] groupOf(BaulooStylesClient.Tab value) {
       return switch (value) {
          case SWORD -> new BaulooStylesClient.Tab[]{BaulooStylesClient.Tab.SWORD, BaulooStylesClient.Tab.PICKAXE, BaulooStylesClient.Tab.AXE};
          case GAP -> new BaulooStylesClient.Tab[]{BaulooStylesClient.Tab.GAP, BaulooStylesClient.Tab.PEARL};
@@ -757,7 +757,7 @@ public class BaulooStylesConfigScreen extends Screen {
       }
    }
 
-   private static Identifier preview(String folder) {
+   public static Identifier preview(String folder) {
       StylesCloud.Style cloud = StylesCloud.byFolder(folder);
       if (cloud != null) {
          return StylesCloud.preview(cloud);
