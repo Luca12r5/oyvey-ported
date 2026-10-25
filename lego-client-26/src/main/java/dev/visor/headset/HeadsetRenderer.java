@@ -3,7 +3,11 @@ package dev.visor.headset;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
+import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.CompareOp;
+import com.mojang.renderpearl.api.pipeline.DepthStencilState;
 import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.pipeline.UniformType;
@@ -20,6 +24,9 @@ public final class HeadsetRenderer {
 		.withVertexShader(VisorClient.id("core/headset"))
 		.withFragmentShader(VisorClient.id("core/headset"))
 		.withBindGroupLayout(BindGroupLayout.builder().withUniform("Sampler2", UniformType.COMBINED_IMAGE_SAMPLER).build())
+		// The snippet brings no attachments; 26.3 checks them against the pass (one colour target, depth).
+		.withColorTargetState(new ColorTargetState(java.util.Optional.empty(), GpuFormat.RGBA8_UNORM, ColorTargetState.WRITE_ALL))
+		.withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true))
 		.withVertexBinding(0, DefaultVertexFormat.ENTITY)
 		.withPrimitiveTopology(PrimitiveTopology.QUADS)
 		.withCull(false)
