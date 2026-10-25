@@ -108,6 +108,14 @@ public final class McCompat {
       new ProcessBuilder(cmd).start();
    }
 
+   /** {@link #openUri} for callers that never handled a failure (1.21.11's openUri does not throw). */
+   public static void openLink(String uri) {
+      try {
+         openUri(uri);
+      } catch (Exception ignored) {
+      }
+   }
+
    /**
     * Native "open image" dialog; null when cancelled. 26.3 ships no tinyfd, so this asks the
     * system dialog (Windows Forms via PowerShell, zenity on Linux, AppleScript on macOS).
