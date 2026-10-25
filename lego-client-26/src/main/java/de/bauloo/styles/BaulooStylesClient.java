@@ -18,7 +18,6 @@ import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.renderer.entity.player.AvatarRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.MixinEnvironment;
@@ -273,9 +272,9 @@ public class BaulooStylesClient implements ClientModInitializer {
             Key key = StylesHotkey.get();
             boolean down;
             if (key.getType() == Type.MOUSE) {
-               down = GLFW.glfwGetMouseButton(client.getWindow().handle(), key.getValue()) == 1;
+               down = dev.lego.core.Mc.mouseDown(dev.lego.compat.McCompat.mouseButton(key.getValue()));
             } else {
-               down = InputConstants.isKeyDown(client.getWindow(), key.getValue());
+               down = InputConstants.isKeyDown(key.getValue());
             }
 
             if (down && !this.hotkeyDown && client.gui.screen() == null && client.player != null) {

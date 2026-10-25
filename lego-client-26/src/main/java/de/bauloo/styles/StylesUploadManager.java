@@ -45,7 +45,7 @@ public final class StylesUploadManager {
       } catch (IOException var1) {
       }
 
-      Util.getPlatform().openPath(ROOT);
+      dev.lego.compat.McCompat.openFolder(ROOT);
    }
 
    public static void open() {

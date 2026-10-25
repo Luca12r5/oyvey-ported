@@ -842,7 +842,7 @@ public class BaulooStylesConfigScreen extends Screen {
                      if (resource.isEmpty()) {
                         return Optional.empty();
                      } else {
-                        Optional var7;
+                        Optional<BaulooStylesConfigScreen.Clip> var7;
                         try (BufferedReader reader = resource.get().openAsReader()) {
                            JsonObject o = JsonParser.parseReader(reader).getAsJsonObject();
                            BaulooStylesConfigScreen.Clip clip = new BaulooStylesConfigScreen.Clip(
@@ -1429,16 +1429,16 @@ public class BaulooStylesConfigScreen extends Screen {
          cosmeticsView = false;
       });
       String label = "EXTRAS";
-      hover = (boolean)this.textWidth(label);
-      int lx = x + w - 10 - hover;
+      int railLabelW = this.textWidth(label);
+      int lx = x + w - 10 - railLabelW;
       if (lx > x + 12 + this.textWidth("COLLECTIONS") + 6) {
-         boolean hoverx = inside(mx, my, lx - 3, y + 8, hover + 6, 16);
+         boolean hoverx = inside(mx, my, lx - 3, y + 8, railLabelW + 6, 16);
          this.text(ctx, label, lx, y + 12, extrasView ? this.c.accent : (hoverx ? this.c.text : this.c.textSoft));
          if (extrasView) {
-            soft(ctx, lx, y + 23, hover, 2, this.c.accent);
+            soft(ctx, lx, y + 23, railLabelW, 2, this.c.accent);
          }
 
-         this.hit(lx - 3, y + 8, hover + 6, 16, (b, px, py) -> {
+         this.hit(lx - 3, y + 8, railLabelW + 6, 16, (b, px, py) -> {
             extrasView = !extrasView;
             publicView = false;
             cosmeticsView = false;
@@ -1447,9 +1447,9 @@ public class BaulooStylesConfigScreen extends Screen {
       }
 
       cw = y + 30;
-      hover = (boolean)(shownTabs().length + 2 + (MyPacks.shown() ? 1 : 0) + (VipPacks.shown() ? 1 : 0));
-      lx = (l.footerY - cw - 26) / hover < 17 ? 1 : 4;
-      int rowH = Math.max(12, Math.min(30, (l.footerY - cw - 26) / hover - lx));
+      int rows = (shownTabs().length + 2 + (MyPacks.shown() ? 1 : 0) + (VipPacks.shown() ? 1 : 0));
+      lx = (l.footerY - cw - 26) / rows < 17 ? 1 : 4;
+      int rowH = Math.max(12, Math.min(30, (l.footerY - cw - 26) / rows - lx));
 
       for (BaulooStylesClient.Tab t : shownTabs()) {
          int rx = x + 7;
@@ -1645,9 +1645,9 @@ public class BaulooStylesConfigScreen extends Screen {
          soft(ctx, rxx, cw, rwx, rowH, this.c.surface);
       }
 
-      hoverxx = (boolean)(rowH < 30 ? rowH - 6 : 20);
-      soft(ctx, rxx + 7, cw + (rowH - hoverxx) / 2, hoverxx, hoverxx, this.c.accentDark);
-      ctx.item(stackOf(Items.WRITABLE_BOOK), rxx + 7 + (hoverxx - 16) / 2, cw + (rowH - 16) / 2);
+      int thumbD = rowH < 30 ? rowH - 6 : 20;
+      soft(ctx, rxx + 7, cw + (rowH - thumbD) / 2, thumbD, thumbD, this.c.accentDark);
+      ctx.item(stackOf(Items.WRITABLE_BOOK), rxx + 7 + (thumbD - 16) / 2, cw + (rowH - 16) / 2);
       String countx = String.valueOf(DrawScreen.count());
       this.textRight(ctx, countx, rxx + rwx - 7, cw + (rowH - 8) / 2, this.c.textDim);
       this.text(
@@ -1663,14 +1663,14 @@ public class BaulooStylesConfigScreen extends Screen {
             soft(ctx, x + 7, rxx + 6, w - 14, 28, this.c.surface);
          }
 
-         selectedx = (boolean)0;
+         int uploads = 0;
 
          for (int n : this.uploadCounts.values()) {
-            selectedx += n;
+            uploads += n;
          }
 
          this.text(ctx, "PRIVATE UPLOADS", x + 12, rxx + 10, hoverxxx ? this.c.textSoft : this.c.textDim);
-         String line = hoverxxx ? "Upload a texture pack" : selectedx + (selectedx == 1 ? " pack on this PC" : " packs on this PC");
+         String line = hoverxxx ? "Upload a texture pack" : uploads + (uploads == 1 ? " pack on this PC" : " packs on this PC");
          this.text(ctx, this.fitText(line, w - 24), x + 12, rxx + 22, hoverxxx ? this.c.accent : this.c.textDim);
          this.hit(x + 7, rxx + 6, w - 14, 28, (b, px, py) -> StylesUploadServer.open());
       }
@@ -2704,8 +2704,9 @@ public class BaulooStylesConfigScreen extends Screen {
             soft(ctx, chipX, chipY, cw, 14, on ? this.c.text : (hover ? this.c.surfaceHover : this.c.surface));
             ctx.text(this.font, group, chipX + 7, chipY + 3, on ? this.c.base : (hover ? this.c.text : this.c.textSoft), false);
             ctx.text(this.font, count, chipX + 11 + this.textWidth(group), chipY + 3, on ? this.c.textDim : this.c.textDim, false);
+            int groupIndex = i;
             this.hit(chipX, chipY, cw, 14, (b, px, py) -> {
-               extraGroup = i;
+               extraGroup = groupIndex;
                this.tileScroll = 0.0;
             });
             chipX += cw + 5;
@@ -2895,12 +2896,14 @@ public class BaulooStylesConfigScreen extends Screen {
             ctx.fill(knobX - 1, y - 1, knobX + 1, y + hueH + 1, -1);
          }
 
+         int hpx = px;
+         int hpw = pw;
          this.hit(px, y - 4, pw, hueH + 8, (b, x2, y2) -> {
             this.drag = BaulooStylesConfigScreen.Drag.OUTLINE_HUE;
             this.dragW = Math.min(260, this.width - 80);
             this.dragX = (this.width - this.dragW) / 2;
             this.dragY = this.height - 90;
-            float start = (float)((x2 - px) / Math.max(1, pw - 1));
+            float start = (float)((x2 - hpx) / Math.max(1, hpw - 1));
             StylesUiConfig.outlineColor = PlayerOutline.sliderColor(Math.max(0.0F, Math.min(1.0F, start)));
             StylesUiConfig.outlineRainbow = false;
             this.dragStartMouse = this.dragX + start * (this.dragW - 1);
@@ -3928,11 +3931,12 @@ public class BaulooStylesConfigScreen extends Screen {
       soft(ctx, px, y + 1, pw, 4, this.c.base);
       soft(ctx, px, y + 1, Math.max(3, fill - px), 4, this.c.accentDark);
       soft(ctx, fill - 2, y - 2, 5, 10, this.c.accent);
+      int rowY = y;
       this.hit(px, y - 4, pw, 14, (b, x2, y2) -> {
          this.drag = kind;
          this.dragX = px;
          this.dragW = pw;
-         this.dragY = y;
+         this.dragY = rowY;
          this.dragStartMouse = x2;
          this.dragStartT = clamped;
          if (!this.liveDrag()) {
@@ -4452,7 +4456,7 @@ public class BaulooStylesConfigScreen extends Screen {
                StylesPublicPresets.say(msg);
                Path folder = PresetExport.lastFolder;
                if (folder != null) {
-                  Minecraft.getInstance().execute(() -> Util.getPlatform().openPath(folder));
+                  Minecraft.getInstance().execute(() -> dev.lego.compat.McCompat.openFolder(folder));
                }
             });
          }
@@ -5171,7 +5175,7 @@ public class BaulooStylesConfigScreen extends Screen {
       StylesUiConfig.updateSeen = version;
       StylesUiConfig.save();
       if (choice == 1 && this.minecraft != null) {
-         ConfirmLinkScreen.confirmLinkNow(this, "https://baulooprac.xyz", true);
+         ConfirmLinkScreen.confirmLinkNow(this, java.net.URI.create("https://baulooprac.xyz"), true);
       }
    }
 
@@ -5452,7 +5456,7 @@ public class BaulooStylesConfigScreen extends Screen {
          boolean dcHover = inside(mx, my, dcX, by, dcW, bh);
          soft(ctx, dcX, by, dcW, bh, dcHover ? -9734155 : -10983950);
          ctx.text(this.font, dc, dcX + 8, by + (bh - 8) / 2, -1, true);
-         this.hit(dcX, by, dcW, bh, (b, px, py) -> ConfirmLinkScreen.confirmLinkNow(this, "https://discord.gg/bauloo", true));
+         this.hit(dcX, by, dcW, bh, (b, px, py) -> ConfirmLinkScreen.confirmLinkNow(this, java.net.URI.create("https://discord.gg/bauloo"), true));
       }
 
       int edge = dcShown ? dcX : this.hotkeyX;
@@ -5853,7 +5857,7 @@ public class BaulooStylesConfigScreen extends Screen {
    public boolean keyPressed(KeyEvent input) {
       int key = input.key();
       if (this.bindingKey) {
-         StylesHotkey.set(key == 256 ? InputConstants.UNKNOWN : Type.KEYSYM.getOrCreate(key));
+         StylesHotkey.set(dev.lego.compat.Keys.toGlfw(key) == 256 ? InputConstants.UNKNOWN : Type.KEYBOARD.getOrCreate(key));
          this.bindingKey = false;
          return true;
       } else if (this.zoomFolder != null) {

@@ -51,7 +51,7 @@ public class CosmeticsFeature extends RenderLayer<AvatarRenderState, PlayerModel
          case "halo":
             float bob = (float)Math.sin(state.ageInTicks * 0.08F) * 0.5F;
             matrices.translate(0.0F, (-11.5F + bob) * 0.0625F, 0.0F);
-            matrices.mulPose(Axis.YP.rotationDegrees(state.ageInTicks * 2.0F));
+            matrices.rotate(Axis.YP.rotationDegrees(state.ageInTicks * 2.0F));
             int c = 0xFF000000 | Cosmetics.color();
             queue.submitCustomGeometry(matrices, RenderTypes.entityTranslucentEmissive(Cosmetics.WHITE), (entry, vc) -> {
                ring(entry, vc, 0.2125F, 0.2875F, 0.0F, c, 15728880);
@@ -310,7 +310,7 @@ public class CosmeticsFeature extends RenderLayer<AvatarRenderState, PlayerModel
                float tip = (float)Math.sin(age * 0.9 + i * 1.3) * 1.4F;
                matrices.pushPose();
                matrices.translate(x * 0.0625F, y * 0.0625F, z * 0.0625F);
-               matrices.mulPose(Axis.YP.rotation((float)(-a)));
+               matrices.rotate(Axis.YP.rotation((float)(-a)));
                queue.submitCustomGeometry(matrices, RenderTypes.entityCutout(Cosmetics.WHITE), (entry, vc) -> {
                   int body = -15070177;
                   box(entry, vc, -0.6F, -0.6F, -0.9F, 0.6F, 0.6F, 0.9F, body, 15728880);

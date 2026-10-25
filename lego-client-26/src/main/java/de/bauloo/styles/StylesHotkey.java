@@ -73,7 +73,7 @@ public final class StylesHotkey {
       if (s != null && !s.equals("NONE")) {
          try {
             String[] parts = s.split(":");
-            Type type = "MOUSE".equals(parts[0]) ? Type.MOUSE : Type.KEYSYM;
+            Type type = "MOUSE".equals(parts[0]) ? Type.MOUSE : Type.KEYBOARD;
             return type.getOrCreate(Integer.parseInt(parts[1]));
          } catch (Exception var3) {
             return InputConstants.UNKNOWN;

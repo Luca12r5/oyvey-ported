@@ -78,7 +78,7 @@ public final class StylesUploadServer {
          }
 
          lastUse = System.currentTimeMillis();
-         Util.getPlatform().openUri(URI.create("http://127.0.0.1:" + server.getLocalPort() + "/?t=" + token));
+         dev.lego.compat.McCompat.openLink("http://127.0.0.1:" + server.getLocalPort() + "/?t=" + token);
       } catch (IOException var1) {
          BaulooStylesClient.LOGGER.warn("Upload page could not start: {}", var1.toString());
       }
@@ -557,9 +557,9 @@ public final class StylesUploadServer {
 
                GitHubPublisher.Result check = GitHubPublisher.check(gh);
                if (check.ok()) {
-                  Path filex = GitHubPublisher.tokenFile(keyFile());
-                  Files.createDirectories(filex.getParent());
-                  Files.writeString(filex, gh);
+                  Path tokenFilex = GitHubPublisher.tokenFile(keyFile());
+                  Files.createDirectories(tokenFilex.getParent());
+                  Files.writeString(tokenFilex, gh);
                }
 
                json(out, check.ok() ? 200 : 400, message(check.ok(), check.message()));
@@ -596,7 +596,7 @@ public final class StylesUploadServer {
             case "/api/keys/list":
             case "/api/keys/create":
             case "/api/keys/revoke":
-               JsonObject body = readJson(in, length);
+               JsonObject keysBody = readJson(in, length);
                if (!"admin".equals(role(false))) {
                   json(out, 403, message(false, "Only bauloo can manage keys"));
                   return;
@@ -606,7 +606,7 @@ public final class StylesUploadServer {
                   case "/api/keys/create" -> "POST";
                   default -> "DELETE";
                };
-               relay(out, workerMethod, "/admin/keys", "GET".equals(workerMethod) ? null : body);
+               relay(out, workerMethod, "/admin/keys", "GET".equals(workerMethod) ? null : keysBody);
                break;
             case "/api/cloud/list":
                cloudList(out);

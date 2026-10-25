@@ -48,7 +48,7 @@ public final class StylesReview {
          Thread thread = new Thread(() -> {
             try {
                String token = verify();
-               Minecraft.getInstance().execute(() -> Util.getPlatform().openUri(URI.create("https://baulooprac.xyz/review.html#t=" + token)));
+               Minecraft.getInstance().execute(() -> dev.lego.compat.McCompat.openLink("https://baulooprac.xyz/review.html#t=" + token));
                say("Opened in your browser", 6000L);
             } catch (StylesReview.Failure var5) {
                say(var5.getMessage(), 8000L);

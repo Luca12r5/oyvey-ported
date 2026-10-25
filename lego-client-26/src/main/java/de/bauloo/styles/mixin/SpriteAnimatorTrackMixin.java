@@ -1,6 +1,6 @@
 package de.bauloo.styles.mixin;
 
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import de.bauloo.styles.LiveRecolor;
 import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.SpriteContents.AnimationState;

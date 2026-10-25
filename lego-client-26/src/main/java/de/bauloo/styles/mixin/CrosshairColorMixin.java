@@ -2,7 +2,7 @@ package de.bauloo.styles.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import de.bauloo.styles.StylesCrosshair;
 import de.bauloo.styles.StylesUiConfig;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

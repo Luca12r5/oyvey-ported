@@ -108,6 +108,17 @@ public final class McCompat {
       new ProcessBuilder(cmd).start();
    }
 
+   /** Opens a local folder in the system file manager (26.3's Util.OS has no openPath). */
+   public static void openFolder(java.nio.file.Path folder) {
+      try {
+         String os = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT);
+         String path = folder.toAbsolutePath().toString();
+         String[] cmd = os.contains("win") ? new String[]{"explorer", path} : os.contains("mac") ? new String[]{"open", path} : new String[]{"xdg-open", path};
+         new ProcessBuilder(cmd).start();
+      } catch (Exception ignored) {
+      }
+   }
+
    /** {@link #openUri} for callers that never handled a failure (1.21.11's openUri does not throw). */
    public static void openLink(String uri) {
       try {

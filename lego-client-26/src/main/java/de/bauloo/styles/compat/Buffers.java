@@ -62,6 +62,10 @@ public final class Buffers {
                vc.setUv2(v.u2, v.v2);
             }
 
+            if (v.hasUv3) {
+               vc.setUv3(v.u3, v.v3);
+            }
+
             if (v.hasNormal) {
                vc.setNormal(v.nx, v.ny, v.nz);
             }
@@ -112,6 +116,14 @@ public final class Buffers {
          return this;
       }
 
+      // 26.3 added a fourth texture coordinate set.
+      public VertexConsumer setUv3(float u, float v) {
+         this.cur.u3 = u;
+         this.cur.v3 = v;
+         this.cur.hasUv3 = true;
+         return this;
+      }
+
       public VertexConsumer setNormal(float x, float y, float z) {
          this.cur.nx = x;
          this.cur.ny = y;
@@ -128,6 +140,9 @@ public final class Buffers {
    }
 
    private static final class V {
+      float u3;
+      float v3;
+      boolean hasUv3;
       float x;
       float y;
       float z;

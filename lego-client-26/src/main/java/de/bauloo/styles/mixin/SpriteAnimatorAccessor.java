@@ -1,6 +1,6 @@
 package de.bauloo.styles.mixin;
 
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.client.renderer.texture.SpriteContents.AnimationState;
 import org.spongepowered.asm.mixin.Mixin;

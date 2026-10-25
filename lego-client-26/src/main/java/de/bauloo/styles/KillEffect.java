@@ -516,7 +516,7 @@ public final class KillEffect {
       fade *= fade;
       float thin = 1.0F - 0.6F * t;
       matrices.pushPose();
-      matrices.mulPose(Axis.YP.rotationDegrees(t * 240.0F));
+      matrices.rotate(Axis.YP.rotationDegrees(t * 240.0F));
       m = matrices.last().pose();
       tube(glow, m, 0.9F * thin, height, argb(fade * 0.25F, fx.color), argb(0.0F, fx.color));
       tube(glow, m, 0.45F * thin, height, argb(fade * 0.7F, fx.color), argb(0.0F, fx.color));
@@ -539,7 +539,7 @@ public final class KillEffect {
       float rise = 2.3F + 0.9F * easeOut(t);
       matrices.pushPose();
       matrices.translate(0.0F, rise, 0.0F);
-      matrices.mulPose(look);
+      matrices.rotate(look);
       float s = 0.045F * pop;
       matrices.scale(s, -s, s);
       Component big = Component.literal(fx.streak > 0 ? "+1 KILL" : "KILL").withStyle(ChatFormatting.BOLD);
@@ -584,8 +584,8 @@ public final class KillEffect {
             int rgb = b[7] < 0.25F ? 16777215 : (b[7] < 0.6F ? fx.color : darken(fx.color));
             matrices.pushPose();
             matrices.translate(px, py + size / 2.0F, pz);
-            matrices.mulPose(Axis.YP.rotationDegrees(b[8] * ft));
-            matrices.mulPose(Axis.XP.rotationDegrees(b[8] * 0.7F * ft));
+            matrices.rotate(Axis.YP.rotationDegrees(b[8] * ft));
+            matrices.rotate(Axis.XP.rotationDegrees(b[8] * 0.7F * ft));
             Matrix4f m = matrices.last().pose();
             cube(solid, m, size / 2.0F, argb(fade, rgb));
             if (sec < land) {
@@ -612,7 +612,7 @@ public final class KillEffect {
       float yaw = (float)Math.toDegrees(Math.atan2(forward.x, forward.z));
       matrices.pushPose();
       matrices.translate(0.0F, rise, 0.0F);
-      matrices.mulPose(Axis.YP.rotationDegrees(yaw + 180.0F + sway));
+      matrices.rotate(Axis.YP.rotationDegrees(yaw + 180.0F + sway));
       float px = 0.05875F;
       int body = argb(0.55F * fade, fx.color);
       int shell = argb(0.18F * fade, lighten(fx.color, 0.4F));
@@ -625,7 +625,7 @@ public final class KillEffect {
       for (int side = -1; side <= 1; side += 2) {
          matrices.pushPose();
          matrices.translate(side * 6 * px, 23.0F * px, 0.0F);
-         matrices.mulPose(Axis.ZP.rotationDegrees(side * arms));
+         matrices.rotate(Axis.ZP.rotationDegrees(side * arms));
          part(matrices, glow, 0.0F, -5.0F, 0.0F, 2.0F, 6.0F, 2.0F, px, body, shell);
          matrices.popPose();
       }

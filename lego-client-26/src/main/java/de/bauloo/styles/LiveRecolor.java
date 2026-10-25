@@ -1,10 +1,10 @@
 package de.bauloo.styles;
 
 import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.systems.CommandEncoder;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTexture;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuTexture;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import de.bauloo.styles.mixin.SpriteAnimatorAccessor;
 import de.bauloo.styles.mixin.SpriteContentsAccessor;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
