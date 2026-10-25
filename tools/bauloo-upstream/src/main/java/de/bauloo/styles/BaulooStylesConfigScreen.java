@@ -1387,16 +1387,16 @@ public class BaulooStylesConfigScreen extends class_437 {
          cosmeticsView = false;
       });
       String label = "EXTRAS";
-      int labelW = this.textWidth(label);
-      int lx = x + w - 10 - labelW;
+      int railLabelW = this.textWidth(label);
+      int lx = x + w - 10 - railLabelW;
       if (lx > x + 12 + this.textWidth("COLLECTIONS") + 6) {
-         boolean hoverx = inside(mx, my, lx - 3, y + 8, labelW + 6, 16);
+         boolean hoverx = inside(mx, my, lx - 3, y + 8, railLabelW + 6, 16);
          this.text(ctx, label, lx, y + 12, extrasView ? this.c.accent : (hoverx ? this.c.text : this.c.textSoft));
          if (extrasView) {
-            soft(ctx, lx, y + 23, labelW, 2, this.c.accent);
+            soft(ctx, lx, y + 23, railLabelW, 2, this.c.accent);
          }
 
-         this.hit(lx - 3, y + 8, labelW + 6, 16, (b, px, py) -> {
+         this.hit(lx - 3, y + 8, railLabelW + 6, 16, (b, px, py) -> {
             extrasView = !extrasView;
             publicView = false;
             cosmeticsView = false;
