@@ -310,8 +310,9 @@ public final class StylesCloud {
       try {
          Files.createDirectories(dir().resolve("packs"));
          temp = Files.createTempFile("bauloo-cloud-", ".zip");
+         Path download = temp;
          HttpResponse<Path> response = getFile(
-            "packs/" + s.id() + ".zip", BodyHandlers.ofFile(temp), Duration.ofMinutes(3L), r -> r.statusCode() == 200 && matches(temp, s)
+            "packs/" + s.id() + ".zip", BodyHandlers.ofFile(download), Duration.ofMinutes(3L), r -> r.statusCode() == 200 && matches(download, s)
          );
          if (response == null || response.statusCode() != 200 || Files.size(temp) != s.size()) {
             BaulooStylesClient.LOGGER
