@@ -14,7 +14,7 @@ public final class VisorBridge {
       }
    }
 
-   /** Whether the Visor can be used in this build (always on 1.21.11). */
+   /** Whether the Visor can be used in this build (1.21.11 and 26.3). */
    public static boolean available() {
       return true;
    }

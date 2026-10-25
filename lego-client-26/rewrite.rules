@@ -41,3 +41,13 @@ if package dev\.visor :: \bcom\.mojang\.blaze3d\.vertex\.(VertexFormat|VertexFor
 if package dev\.visor :: net\.fabricmc\.fabric\.api\.client\.keybinding\.v1\.KeyBindingHelper ==> net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
 if package dev\.visor :: \bKeyBindingHelper\.registerKeyBinding\( ==> KeyMappingHelper.registerKeyMapping(
 if package dev\.visor :: \bLivingEntityFeatureRendererRegistrationCallback\b ==> LivingEntityRenderLayerRegistrationCallback
+# Visor input: GLFW constants come from a 26.3 stand-in; key codes are translated to GLFW at the mixins.
+if package dev\.visor :: import org\.lwjgl\.glfw\.GLFW; ==> import dev.visor.compat.GLFW;
+if package dev\.visor :: InputConstants\.isKeyDown\(minecraft\.getWindow\(\), key\.get\(\)\) ==> InputConstants.isKeyDown(dev.lego.compat.Keys.toGame(key.get()))
+if package dev\.visor :: InputConstants\.Type\.KEYSYM\.getOrCreate\(this\.value\) ==> dev.lego.compat.Keys.key(this.value)
+if package dev\.visor :: \bLightTexture\.block\( ==> net.minecraft.util.LightCoordsUtil.block(
+if package dev\.visor :: \bLightTexture\.sky\( ==> net.minecraft.util.LightCoordsUtil.sky(
+if package dev\.visor :: import net\.minecraft\.client\.renderer\.LightTexture; ==> // LightTexture: net.minecraft.util.LightCoordsUtil on 26.3
+if package dev\.visor :: \.mulPose\( ==> .rotate(
+if package dev\.visor :: Math\.max\(1, Math\.min\(8, device\.getMaxSupportedAnisotropy\(\)\)\) ==> 1
+if package dev\.visor :: minecraft\.getEntityRenderDispatcher\(\)\.getPlayerRenderer\(player\) ==> (AvatarRenderer<AbstractClientPlayer>) (Object) minecraft.getEntityRenderDispatcher().getRenderer(player)

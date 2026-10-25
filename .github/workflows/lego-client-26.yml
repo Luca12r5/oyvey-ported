@@ -34,7 +34,7 @@ jobs:
             echo "::endgroup::"
             echo "==== ERROR LIST"
             # file:line: message | source line (each error once)
-            awk '/\.java:[0-9]+: error:/ { sub(/.*\/merged\/java\//, ""); e=$0; getline src; gsub(/^[ \t]+/, "", src); if (!(e in seen)) { seen[e]=1; print e " | " src } }' build.log | head -900
+            awk '/\.java:[0-9]+: error:/ { sub(/.*\/merged\/java\//, ""); e=$0; getline src; gsub(/^[ \t]+/, "", src); if (!(e in seen)) { seen[e]=1; print e " | " src } }' build.log | head -1500
             echo "ERRORS: $(grep -cE '\.java:[0-9]+: error:' build.log)"
             exit 1
           }
@@ -44,31 +44,6 @@ jobs:
           path: lego-client-26/build/libs/
           if-no-files-found: error
           retention-days: 30
-
-  # Port probe: the shared Visor sources compiled for 26.3 (not shipped yet); lists every error.
-  visor-probe:
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          java-version: '25'
-          distribution: 'temurin'
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '9.7.1'
-      - name: Compile with Visor
-        run: |
-          set -o pipefail
-          gradle -p lego-client-26 compileJava -Pvisor --no-daemon --console=plain 2>&1 | tee build.log || {
-            echo "==== ERROR LIST"
-            awk '/\.java:[0-9]+: error:/ { sub(/.*\/merged\/java\//, ""); e=$0; getline src; gsub(/^[ \t]+/, "", src); if (!(e in seen)) { seen[e]=1; print e " | " src } }' build.log | head -1500
-            echo "ERRORS: $(grep -cE '\.java:[0-9]+: error:' build.log)"
-            exit 1
-          }
 
   # Really starts 26.3 with the jar from this build (software GL under xvfb) and waits for the title screen.
   launch:

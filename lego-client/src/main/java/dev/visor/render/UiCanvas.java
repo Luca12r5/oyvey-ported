@@ -1,19 +1,13 @@
 package dev.visor.render;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.systems.RenderPass;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.textures.GpuTextureView;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import dev.visor.render.text.FontAtlas;
 import dev.visor.render.text.SdfFont;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
 import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 
@@ -35,7 +29,7 @@ public final class UiCanvas implements AutoCloseable {
 	private static final float INF = Float.POSITIVE_INFINITY;
 
 	private final UiMesh mesh = new UiMesh(8192);
-	private final List<Batch> batches = new ArrayList<>();
+	private final List<VisorGpu.UiBatch> batches = new ArrayList<>();
 	private final Vector3f scratch = new Vector3f();
 	private Surface surface = ScreenSurface.INSTANCE;
 
@@ -290,7 +284,7 @@ public final class UiCanvas implements AutoCloseable {
 	private void closeBatch() {
 		int end = this.mesh.vertexCount();
 		if (end > this.batchStart) {
-			this.batches.add(new Batch(this.batchStart, end - this.batchStart, this.batchImage, this.batchSampler));
+			this.batches.add(new VisorGpu.UiBatch(this.batchStart, end - this.batchStart, this.batchImage, this.batchSampler));
 		}
 		this.batchStart = end;
 		this.batchImage = null;
@@ -499,30 +493,8 @@ public final class UiCanvas implements AutoCloseable {
 				textGamma, backfaces ? 1.0F : 0.0F, 0.0F, 0.0F
 			}));
 			GpuBufferSlice transforms = gpu.transforms(modelView);
-			GpuBuffer vertices = VisorPipelines.UI_FORMAT.uploadImmediateVertexBuffer(this.mesh.data());
-			RenderSystem.AutoStorageIndexBuffer indices = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
-			GpuBuffer indexBuffer = indices.getBuffer(vertexCount / 4 * 6);
-			UiTexture white = UiResources.white();
-			UiTexture font = UiResources.atlasTexture();
-			try (RenderPass pass = RenderSystem.getDevice()
-					.createCommandEncoder()
-					.createRenderPass(() -> "Visor UI", target, OptionalInt.empty(), depth, OptionalDouble.empty())) {
-				pass.setPipeline(pipeline);
-				pass.setUniform("Projection", projection);
-				pass.setUniform("DynamicTransforms", transforms);
-				pass.setUniform("VisorUi", uniforms);
-				pass.setVertexBuffer(0, vertices);
-				pass.setIndexBuffer(indexBuffer, indices.type());
-				pass.bindTexture("Sampler0", font.view(), font.sampler());
-				for (Batch batch : this.batches) {
-					if (batch.image != null) {
-						pass.bindTexture("Sampler1", batch.image, batch.sampler);
-					} else {
-						pass.bindTexture("Sampler1", white.view(), white.sampler());
-					}
-					pass.drawIndexed(0, batch.firstVertex / 4 * 6, batch.vertexCount / 4 * 6, 1);
-				}
-			}
+			gpu.drawUi(pipeline, target, depth, projection, transforms, uniforms, this.mesh.data(), vertexCount,
+				UiResources.atlasTexture(), UiResources.white(), this.batches);
 		}
 		this.mesh.reset();
 		this.batches.clear();
@@ -534,6 +506,4 @@ public final class UiCanvas implements AutoCloseable {
 		this.mesh.close();
 	}
 
-	private record Batch(int firstVertex, int vertexCount, GpuTextureView image, GpuSampler sampler) {
-	}
 }

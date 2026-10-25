@@ -1,0 +1,21 @@
+{
+	"required": false,
+	"package": "dev.visor.mixin",
+	"plugin": "dev.lego.compat.VrMixinPlugin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"ChannelAccessor",
+		"GameRendererMixin",
+		"GuiMixin",
+		"ItemInHandRendererMixin",
+		"KeyboardHandlerMixin",
+		"KeyboardInputMixin",
+		"MinecraftMixin",
+		"MouseHandlerMixin",
+		"SoundEngineAccessor",
+		"SoundManagerAccessor"
+	],
+	"injectors": {
+		"defaultRequire": 0
+	}
+}

@@ -121,6 +121,39 @@ public final class VisorGpu {
 		}
 	}
 
+	/** A run of UI quads that share one image (or the white texture when {@code image} is null). */
+	public record UiBatch(int firstVertex, int vertexCount, GpuTextureView image, GpuSampler sampler) {
+	}
+
+	/** Submits recorded UI quads: one pass, the font atlas in Sampler0 and each batch's image in Sampler1. */
+	void drawUi(
+		RenderPipeline pipeline, GpuTextureView target, @Nullable GpuTextureView depth, GpuBufferSlice projection, GpuBufferSlice transforms,
+		GpuBufferSlice uniforms, ByteBuffer mesh, int vertexCount, UiTexture font, UiTexture white, java.util.List<UiBatch> batches
+	) {
+		GpuBuffer vertices = VisorPipelines.UI_FORMAT.uploadImmediateVertexBuffer(mesh);
+		RenderSystem.AutoStorageIndexBuffer indices = RenderSystem.getSequentialBuffer(VertexFormat.Mode.QUADS);
+		GpuBuffer indexBuffer = indices.getBuffer(vertexCount / 4 * 6);
+		try (RenderPass pass = RenderSystem.getDevice()
+				.createCommandEncoder()
+				.createRenderPass(() -> "Visor UI", target, OptionalInt.empty(), depth, java.util.OptionalDouble.empty())) {
+			pass.setPipeline(pipeline);
+			pass.setUniform("Projection", projection);
+			pass.setUniform("DynamicTransforms", transforms);
+			pass.setUniform("VisorUi", uniforms);
+			pass.setVertexBuffer(0, vertices);
+			pass.setIndexBuffer(indexBuffer, indices.type());
+			pass.bindTexture("Sampler0", font.view(), font.sampler());
+			for (UiBatch batch : batches) {
+				if (batch.image() != null) {
+					pass.bindTexture("Sampler1", batch.image(), batch.sampler());
+				} else {
+					pass.bindTexture("Sampler1", white.view(), white.sampler());
+				}
+				pass.drawIndexed(0, batch.firstVertex() / 4 * 6, batch.vertexCount() / 4 * 6, 1);
+			}
+		}
+	}
+
 	/** A uniform block written from a flat list of vec4s. */
 	public record RawUniform(float[] vec4s) implements DynamicUniformStorage.DynamicUniform {
 		@Override

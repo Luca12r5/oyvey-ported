@@ -39,8 +39,6 @@ def mergeSources = tasks.register('mergeSources', Sync) {
         from(new File(shared, kind)) {
             into kind
             exclude { FileTreeElement e -> !e.directory && new File(overlay, "$kind/${e.relativePath.pathString}").exists() }
-            // The Visor headset is being ported to 26.3: only with -Pvisor (CI probe job) for now.
-            if (!project.hasProperty('visor')) exclude 'dev/visor/**', 'visor.mixins.json', 'assets/visor/**'
             // Written against the 1.21.11 blaze3d/item renderer API; HandEffect has a 26.3 stand-in in the overlay.
             exclude 'dev/lego/visual/shader/**', 'dev/lego/mixin/GlintMixin.java', 'dev/lego/mixin/HeldItemRendererMixin.java'
         }
@@ -62,15 +60,19 @@ def mergeSources = tasks.register('mergeSources', Sync) {
         // 26.3 compiles post shaders with separate shader objects (also for Vulkan): inputs and
         // outputs need explicit locations.
         def shaders = 0
-        def shaderDir = new File(merged, 'resources/assets/legoclient/shaders')
-        if (shaderDir.exists()) shaderDir.eachFileRecurse(groovy.io.FileType.FILES) { f ->
-            if (!(f.name.endsWith('.fsh') || f.name.endsWith('.vsh'))) return
-            def t = f.getText('UTF-8')
-            if (t.contains('GL_ARB_separate_shader_objects')) return
-            def n = t.replaceFirst(/(#version \d+[^\n]*\n)/, '$1#extension GL_ARB_separate_shader_objects : require\n')
-            def loc = ['in': 0, 'out': 0]
-            n = n.replaceAll(/(?m)^(in|out)\s+(\w+\s+\w+\s*;)/) { all, dir, rest -> "layout(location = ${loc[dir]++}) ${dir} ${rest}" }
-            if (n != t) { f.setText(n, 'UTF-8'); shaders++ }
+        // The Visor shaders also include the vanilla blocks the 26.3 way (#include instead of #moj_import).
+        ['legoclient', 'visor'].each { ns ->
+            def shaderDir = new File(merged, "resources/assets/${ns}/shaders")
+            if (shaderDir.exists()) shaderDir.eachFileRecurse(groovy.io.FileType.FILES) { f ->
+                if (!(f.name.endsWith('.fsh') || f.name.endsWith('.vsh'))) return
+                def t = f.getText('UTF-8')
+                if (t.contains('GL_ARB_separate_shader_objects')) return
+                def n = t.replaceFirst(/(#version \d+[^\n]*\n)/, '$1#extension GL_ARB_separate_shader_objects : require\n')
+                def loc = ['in': 0, 'out': 0]
+                n = n.replaceAll(/(?m)^((?:flat\s+)?)(in|out)\s+(\w+\s+\w+\s*;)/) { all, q, dir, rest -> "layout(location = ${loc[dir]++}) ${q}${dir} ${rest}" }
+                if (ns == 'visor') n = n.replaceAll(/(?m)^#moj_import\s+/, '#include ')
+                if (n != t) { f.setText(n, 'UTF-8'); shaders++ }
+            }
         }
         println "shaders adapted for 26.3: ${shaders}"
     }
