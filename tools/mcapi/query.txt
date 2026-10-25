@@ -1,25 +1,16 @@
 # API explorer for the 26.3 port (see mc-api.yml).
-# Visor port, round 3: vertex format builder, ortho projection, GUI pipelines, GameRenderer.render order
-codex com.mojang.blaze3d.vertex.DefaultVertexFormat static {}
-codex net.minecraft.client.renderer.GameRenderer public void render()
-codex net.minecraft.client.renderer.GameRenderer public void renderLevel()
-codex net.minecraft.client.renderer.GameRenderer private void renderItemInHand(
-codex net.minecraft.client.renderer.ProjectionMatrixBuffer public com.mojang.renderpearl.api.buffers.GpuBufferSlice getBuffer(org.joml.Matrix4f)
-codex net.minecraft.client.renderer.DynamicGpuData public com.mojang.renderpearl.api.buffers.GpuBufferSlice writeTransform(net.minecraft.client.renderer.DynamicGpuData$Transform)
-codex net.minecraft.client.renderer.Projection public void setupOrtho(
-classgrep net.minecraft.client.renderer.RenderPipelines (?i)GUI
-classgrep net.minecraft.client.gui.render.GuiRenderer (?i)projection|ortho|Projection
-code net.minecraft.client.gui.render.GuiRenderer <init>
-classgrep com.mojang.renderpearl.api.device.DeviceInfo (?i)public
-class net.minecraft.client.renderer.texture.AbstractTexture
-class net.minecraft.client.renderer.texture.DynamicTexture
-classgrep net.minecraft.client.renderer.texture.TextureManager (?i)register|getTexture|release
-class net.fabricmc.fabric.api.resource.v1.ResourceLoader
-class net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext
-class net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
-classgrep com.mojang.blaze3d.vertex.PoseStack (?i)public
-classgrep net.minecraft.client.renderer.entity.player.AvatarRenderer (?i)public
-class net.minecraft.client.renderer.rendertype.RenderSetup
-classgrep net.minecraft.client.renderer.rendertype.RenderType (?i)static|create
-class net.minecraft.client.renderer.rendertype.RenderSetup$RenderSetupBuilder
-mcfile ^assets/minecraft/shaders/include/(fog|light)\.glsl$
+# Bauloo Styles (26.2 build) on 26.3: hand renderer, submitModel, item activation, bind groups, Util, keys
+class net.minecraft.client.renderer.FirstPersonHandsAndItemsRenderer
+classgrep net.minecraft.client.renderer.SubmitNodeCollector (?i)submitModel
+classgrep net.minecraft.client.renderer.OrderedSubmitNodeCollector (?i)submitModel
+classgrep net.minecraft.client.renderer.GameRenderer (?i)activation|totem|floating
+classgrep net.minecraft.client.gui.Gui (?i)activation|totem|floating
+classgrep net.minecraft.client.gui.Hud (?i)activation|totem|floating
+class net.minecraft.client.renderer.BindGroupLayouts
+classgrep net.minecraft.util.Util$OS (?i)open
+classgrep net.minecraft.util.Util (?i)platform|open
+consts com.mojang.blaze3d.platform.InputConstants
+classgrep com.mojang.blaze3d.vertex.VertexConsumer (?i)public
+classgrep net.minecraft.client.renderer.special.ShieldSpecialRenderer (?i)submit
+classgrep net.minecraft.client.renderer.entity.EndCrystalRenderer (?i)submit
+classgrep net.minecraft.client.gui.screens.ConfirmLinkScreen (?i)confirmLinkNow
