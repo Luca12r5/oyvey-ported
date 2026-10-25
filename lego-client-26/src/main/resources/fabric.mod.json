@@ -13,12 +13,14 @@
   "entrypoints": {
     "client": [
       "dev.lego.LegoClient",
-      "dev.visor.VisorClient"
+      "dev.visor.VisorClient",
+      "de.bauloo.styles.BaulooStylesClient"
     ]
   },
   "mixins": [
     "legoclient.mixins.json",
-    "visor.mixins.json"
+    "visor.mixins.json",
+    "bauloo_styles.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.19.5",
