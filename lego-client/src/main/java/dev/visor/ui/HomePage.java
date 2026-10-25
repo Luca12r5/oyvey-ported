@@ -269,6 +269,7 @@ public final class HomePage {
 			case PLAYER -> 5;
 			case WORLD -> 0;
 			case MISC -> 4;
+			case CUSTOM_TXT -> 1;
 		};
 		c.aurora(x, y, w, thumbH + 12, 10, (module.id().hashCode() & 0xFFFF) / 6553.6F, palette, Theme.mix(0xFF8C8C8C, 0xFFFFFFFF, 0.55F + on * 0.45F));
 		c.popClip();

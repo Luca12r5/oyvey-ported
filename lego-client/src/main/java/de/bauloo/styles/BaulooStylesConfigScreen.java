@@ -813,7 +813,7 @@ public class BaulooStylesConfigScreen extends Screen {
                      if (resource.isEmpty()) {
                         return Optional.empty();
                      } else {
-                        Optional var7;
+                        Optional<BaulooStylesConfigScreen.Clip> var7;
                         try (BufferedReader reader = resource.get().openAsReader()) {
                            JsonObject o = JsonParser.parseReader(reader).getAsJsonObject();
                            BaulooStylesConfigScreen.Clip clip = new BaulooStylesConfigScreen.Clip(
