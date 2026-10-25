@@ -1,16 +1,4 @@
 # API explorer for the 26.3 port (see mc-api.yml).
-# Bauloo Styles (26.2 build) on 26.3: hand renderer, submitModel, item activation, bind groups, Util, keys
-class net.minecraft.client.renderer.FirstPersonHandsAndItemsRenderer
-classgrep net.minecraft.client.renderer.SubmitNodeCollector (?i)submitModel
-classgrep net.minecraft.client.renderer.OrderedSubmitNodeCollector (?i)submitModel
-classgrep net.minecraft.client.renderer.GameRenderer (?i)activation|totem|floating
-classgrep net.minecraft.client.gui.Gui (?i)activation|totem|floating
-classgrep net.minecraft.client.gui.Hud (?i)activation|totem|floating
-class net.minecraft.client.renderer.BindGroupLayouts
-classgrep net.minecraft.util.Util$OS (?i)open
-classgrep net.minecraft.util.Util (?i)platform|open
-consts com.mojang.blaze3d.platform.InputConstants
-classgrep com.mojang.blaze3d.vertex.VertexConsumer (?i)public
-classgrep net.minecraft.client.renderer.special.ShieldSpecialRenderer (?i)submit
-classgrep net.minecraft.client.renderer.entity.EndCrystalRenderer (?i)submit
-classgrep net.minecraft.client.gui.screens.ConfirmLinkScreen (?i)confirmLinkNow
+# Bauloo Styles on 26.3: sky hook and totem pop size
+classgrep net.minecraft.client.renderer.SkyRenderer (?i)sun|moon|star|extract|submit|render|void
+classgrep net.minecraft.client.renderer.ScreenEffectRenderer (?i)activation|submit|item|void
