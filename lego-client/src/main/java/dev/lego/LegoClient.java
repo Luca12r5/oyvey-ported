@@ -392,6 +392,7 @@ public final class LegoClient implements ClientModInitializer {
          }
 
          dev.lego.compat.KeyReset.once(client);
+         dev.lego.cosmetic.CosRender.uploadPending();
          spotify.sync();
 
          try {

@@ -86,7 +86,7 @@ public final class StylesBatch {
          if (VANILLA.equals(folder)) {
             id = null;
          } else if (ready.containsKey(tab)) {
-            id = ready.get(tab);
+            id = ready.get(tab) == null ? null : BaulooStylesConfigScreen.packId(ready.get(tab));
          } else {
             id = BaulooStylesConfigScreen.packId(folder);
          }

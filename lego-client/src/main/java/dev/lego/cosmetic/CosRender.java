@@ -101,6 +101,33 @@ public final class CosRender {
       }
    }
 
+   private static final java.util.Set<String> UPLOAD = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+   /** Client tick (outside any render pass): puts the textures painted meanwhile on the GPU. */
+   public static void uploadPending() {
+      if (UPLOAD.isEmpty()) {
+         return;
+      }
+      for (String name : new java.util.ArrayList<>(UPLOAD)) {
+         UPLOAD.remove(name);
+         if (TEX.containsKey(name)) {
+            continue;
+         }
+         CTex.T t = CTex.peek(name);
+         if (t == null) {
+            continue;
+         }
+         QUEUED.remove(name);
+         Identifier id = Identifier.fromNamespaceAndPath("legoclient", "cosmetic/" + idName(name));
+         try {
+            Tx.register(id, t.argb, t.w, t.h, true);
+            TEX.put(name, id);
+         } catch (Throwable e) {
+            LegoClient.LOG("Kosmetik-Textur " + name + ": " + e);
+         }
+      }
+   }
+
    public static Identifier texture(String name) {
       if (name.equals("@skin")) {
          return skin;
@@ -123,17 +150,10 @@ public final class CosRender {
 
                return null;
             } else {
-               QUEUED.remove(name);
-               id = Identifier.fromNamespaceAndPath("legoclient", "cosmetic/" + idName(name));
-
-               try {
-                  Tx.register(id, t.argb, t.w, t.h, true);
-               } catch (Throwable var4) {
-                  LegoClient.LOG("Kosmetik-Textur " + name + ": " + var4);
-               }
-
-               TEX.put(name, id);
-               return id;
+               // Painted, but not on the GPU yet: uploading here would happen inside a render pass
+               // (26.3 throws "Close the existing render pass"); the next client tick does it.
+               UPLOAD.add(name);
+               return null;
             }
          }
       }
@@ -535,8 +555,19 @@ public final class CosRender {
       if (p != null && Gx.B instanceof McBackend) {
          try {
             if (stateOf == null) {
-               stateOf = InventoryScreen.class.getDeclaredMethod(dev.lego.util.Remap.method("net.minecraft.class_490", "method_48472", "(Lnet/minecraft/class_1309;)Lnet/minecraft/class_10017;"), LivingEntity.class);
-               stateOf.setAccessible(true);
+               // InventoryScreen's static "render state of this entity" helper, found by its shape:
+               // 26.x has no intermediary names to map, so a name lookup misses there.
+               for (java.lang.reflect.Method m : InventoryScreen.class.getDeclaredMethods()) {
+                  if (java.lang.reflect.Modifier.isStatic(m.getModifiers()) && m.getParameterCount() == 1
+                     && m.getParameterTypes()[0] == LivingEntity.class && EntityRenderState.class.isAssignableFrom(m.getReturnType())) {
+                     stateOf = m;
+                     stateOf.setAccessible(true);
+                     break;
+                  }
+               }
+               if (stateOf == null) {
+                  return false;
+               }
             }
 
             EntityRenderState st = (EntityRenderState)stateOf.invoke(null, p);
