@@ -115,7 +115,9 @@ if (shots || vrNull) {
   mkdirSync(join(gameDir, 'saves'), { recursive: true });
   // A fresh game dir shows the accessibility onboarding on first start, which keeps quick play from
   // opening the world. Skip it (and the other first-start hints) like a returning player.
-  writeFileSync(join(gameDir, 'options.txt'), ['onboardAccessibility:false', 'skipMultiplayerWarning:true', 'joinedFirstServer:true', 'tutorialStep:none', 'pauseOnLostFocus:false', 'narrator:0', ''].join('\n'));
+  writeFileSync(join(gameDir, 'options.txt'), ['onboardAccessibility:false', 'skipMultiplayerWarning:true', 'joinedFirstServer:true', 'tutorialStep:none', 'pauseOnLostFocus:false', 'narrator:0',
+    // Bindings like the ones old 26.3 builds saved: the client has to put its keys back once.
+    ...(shots ? ['key_key.visor.toggle:key.keyboard.unknown', 'key_key.legoclient.gui:key.keyboard.f24'] : []), ''].join('\n'));
   cpSync(join(srvDir, 'world'), join(gameDir, 'saves', 'ci'), { recursive: true });
   step('flat world ready');
 }
@@ -180,7 +182,7 @@ const game = await startGame(javaPath, args, gameDir, join(root, 'logs'), (raw) 
   if (/\[LegoClient\] CI shots done/.test(line)) shotsDone = true;
   if (/\[LegoClient\] CI VR/.test(line)) step(line.trim());
   if (/\[LegoClient\] CI filter/.test(line)) step(line.trim());
-  if (/\[LegoClient\] (CI (visor|bauloo|custom txt|bench)|Custom TxT|Visor:|Werkbank)/.test(line)) step(line.trim().slice(0, 400));
+  if (/\[LegoClient\] (CI (visor|bauloo|custom txt|bench|cosmetic|txt)|Custom TxT|Visor|Werkbank|Tasten)/.test(line)) step(line.trim().slice(0, 400));
   if (/Bauloo Styles/.test(line) && /error|warn|fail/i.test(line)) console.log(`  ! bauloo: ${line.slice(0, 300)}`);
   if (filterTest && /post|shader|PostChain/i.test(line) && /error|fail|exception/i.test(line)) console.log(`  ! filter: ${line.slice(0, 300)}`);
   if (/\[LegoClient\] CI VR running/.test(line)) vrRunning = true;

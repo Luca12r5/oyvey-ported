@@ -59,6 +59,7 @@ public final class BenchView extends View {
    private long appliedAt;
    private final Set<Module> applied = new HashSet<>();
    private HubView sub;
+   private String subError;
 
    public BenchView() {
       if (page != null) {
@@ -159,11 +160,21 @@ public final class BenchView extends View {
       int bodyH = h - top - bottom;
       if (this.sub != null) {
          this.sub.embed(this);
-         Gx.clip(x0 + this.p(10.0), bodyY, w - this.p(20.0), bodyH);
-         Kit.clip(x0 + this.p(10.0), bodyY, w - this.p(20.0), bodyH);
-         this.sub.drawPart(x0 + this.p(10.0), bodyY, w - this.p(20.0), bodyH);
-         Kit.unclip();
-         Gx.unclip();
+         // No clip around the page: the cosmetics page draws the player as a picture-in-picture
+         // entity, which must not sit inside a scissor of ours (the old hub had none either).
+         try {
+            if (this.subError == null) {
+               this.sub.drawPart(x0 + this.p(10.0), bodyY, w - this.p(20.0), bodyH);
+            }
+         } catch (Throwable e) {
+            this.subError = e.toString();
+            dev.lego.LegoClient.LOG("Werkbank: Seite " + page + ": " + e);
+         }
+         if (this.subError != null) {
+            Gx.icon("warning", x0 + w / 2.0F, bodyY + bodyH / 2.0F - this.p(14.0), this.pf(24.0), Style.danger);
+            Gx.textCenter("Diese Seite hatte einen Fehler", x0 + w / 2.0F, bodyY + bodyH / 2.0F + this.p(12.0), this.pf(9.0), 2, Style.text);
+            Gx.textCenter(Fonts.ellipsize(this.subError, 1, this.pf(7.0), w - this.p(80.0)), x0 + w / 2.0F, bodyY + bodyH / 2.0F + this.p(28.0), this.pf(7.0), 1, Style.muted);
+         }
       } else {
          float ins = Ease.to("bench:ins", this.inspect != null ? 1.0F : 0.0F, 14.0F);
          int toolW = Math.round(this.p(270.0) * ins);
@@ -744,6 +755,7 @@ public final class BenchView extends View {
          default -> {
             page = target;
             this.inspect = null;
+            this.subError = null;
             this.sub = new HubView(HubView.Section.valueOf(target));
          }
       }

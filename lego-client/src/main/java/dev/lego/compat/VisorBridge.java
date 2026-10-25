@@ -46,6 +46,19 @@ public final class VisorBridge {
       return ui;
    }
 
+   private static long whyAt;
+
+   /** Says on screen why the headset does not come (at most every 2 s), and logs it. */
+   public static void why(String reason) {
+      long now = System.currentTimeMillis();
+      if (now - whyAt < 2000L) {
+         return;
+      }
+      whyAt = now;
+      dev.lego.LegoClient.LOG("Visor: " + reason);
+      dev.lego.ui.Toasts.show("glasses", "Visor", reason);
+   }
+
    /** Shown once when the headset cannot be drawn; the classic menu opens instead. */
    public static void warnUnusable() {
       if (!warned) {
@@ -60,6 +73,10 @@ public final class VisorBridge {
     * the key never does nothing.
     */
    public static void openMenu() {
+      if (!available()) {
+         why("Aus, weil Vivecraft (VR) in diesem Profil ist");
+         return;
+      }
       try {
          dev.visor.VisorController v = dev.visor.VisorController.get();
          if (v.state() == dev.visor.VisorController.State.ON) {

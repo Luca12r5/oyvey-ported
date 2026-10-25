@@ -23,6 +23,8 @@ public final class CiShots {
    private static int visorSub;
    private static int keySub;
    private static long pressedAt;
+   private static int sweep = -1;
+   private static int sweepTicks;
    private static dev.lego.ui.bench.BenchView bench;
    /** Cape texture the Bauloo cape mixin last put on the local player (CI check). */
    public static volatile String baulooCape;
@@ -268,7 +270,37 @@ public final class CiShots {
             mc.setScreen(null);
             dev.lego.txt.TxtModules.ciReset();
          }
+         // Every cosmetic once, worn while the cosmetics page of the work bench shows the player.
          case 32 -> {
+            if (t < 103F || mc.getOverlay() != null) return;
+            if (sweep < 0) {
+               sweep = 0;
+               Cos.unequipAll();
+               LegoScreen.show(dev.lego.ui.bench.BenchView.at("COSMETICS"));
+               LegoClient.LOG("CI cosmetic sweep: " + Cos.ALL.size() + " items");
+               return;
+            }
+            if (++sweepTicks % 3 != 0) return;
+            if (sweep > 0) {
+               Cos.Item prev = Cos.ALL.get(sweep - 1);
+               if (Cos.isEquipped(prev)) Cos.toggle(prev);
+            }
+            if (sweep < Cos.ALL.size()) {
+               Cos.Item it = Cos.ALL.get(sweep++);
+               LegoClient.LOG("CI cosmetic " + sweep + " " + it.id);
+               try {
+                  Cos.toggle(it);
+               } catch (Throwable e) {
+                  LegoClient.LOG("CI cosmetic " + it.id + ": " + e);
+               }
+               if (sweep == 40) shot(mc, "bench-cosmetics");
+               return;
+            }
+            LegoClient.LOG("CI cosmetic sweep done");
+            Cos.unequipAll();
+            mc.setScreen(null);
+         }
+         case 33 -> {
             if (t < 103F || mc.getOverlay() != null) return;
             LegoClient.LOG("CI shots done");
             mc.stop();

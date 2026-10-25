@@ -285,14 +285,21 @@ public final class VisorController {
 
 	public void toggle() {
 		// Real VR (Vivecraft) renders the world itself: the Visor glasses would fight it.
-		if (dev.lego.core.Compat.vivecraft) return;
+		if (dev.lego.core.Compat.vivecraft) {
+			dev.lego.compat.VisorBridge.why("Aus, weil Vivecraft (VR) in diesem Profil ist");
+			return;
+		}
 		switch (this.state) {
 			case OFF -> {
 				// Never put on an invisible headset: without its pipelines nothing would be drawn.
-				if (dev.lego.compat.VisorBridge.usable()) {
-					this.equip();
+				if (!dev.lego.compat.VisorBridge.usable()) {
+					dev.lego.compat.VisorBridge.why("Geht mit dieser Grafik nicht (" + dev.lego.compat.McCompat.gpuInfo() + ")");
+				} else if (Minecraft.getInstance().player == null) {
+					dev.lego.compat.VisorBridge.why("Erst in einer Welt");
+				} else if (Minecraft.getInstance().screen != null) {
+					dev.lego.compat.VisorBridge.why("Erst das offene Menü schließen");
 				} else {
-					dev.lego.compat.VisorBridge.warnUnusable();
+					this.equip();
 				}
 			}
 			case ON -> this.remove();

@@ -391,6 +391,7 @@ public final class LegoClient implements ClientModInitializer {
             joinedAt = 0L;
          }
 
+         dev.lego.compat.KeyReset.once(client);
          spotify.sync();
 
          try {
