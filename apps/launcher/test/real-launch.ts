@@ -116,8 +116,9 @@ if (shots || vrNull) {
   // A fresh game dir shows the accessibility onboarding on first start, which keeps quick play from
   // opening the world. Skip it (and the other first-start hints) like a returning player.
   writeFileSync(join(gameDir, 'options.txt'), ['onboardAccessibility:false', 'skipMultiplayerWarning:true', 'joinedFirstServer:true', 'tutorialStep:none', 'pauseOnLostFocus:false', 'narrator:0',
-    // Bindings like the ones old 26.3 builds saved: the client has to put its keys back once.
-    ...(shots ? ['key_key.visor.toggle:key.keyboard.unknown', 'key_key.legoclient.gui:key.keyboard.k'] : []), ''].join('\n'));
+    // Wrong saved bindings: the client has to put its keys back once (1.x key names only; 26.x saves numbers
+    // and drops the whole file on a name).
+    ...(shots && gameVersion.startsWith('1.') ? ['key_key.visor.toggle:key.keyboard.unknown', 'key_key.legoclient.gui:key.keyboard.k'] : []), ''].join('\n'));
   cpSync(join(srvDir, 'world'), join(gameDir, 'saves', 'ci'), { recursive: true });
   // A resource pack of our own with an end crystal and a totem texture: Custom TxT must split
   // it into its parts and show each one in its group.
