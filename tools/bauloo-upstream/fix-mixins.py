@@ -17,11 +17,13 @@ for path in tinies:
         ii, ni = ns.index('intermediary'), ns.index('named')
         for line in f:
             p = line.rstrip('\n').split('\t')
+            # Some tiny files map intermediary to itself; never let those hide the Mojang name.
             if p[0] == 'c':
-                classes[p[1 + ii]] = p[1 + ni]
+                if p[1 + ni] != p[1 + ii]:
+                    classes[p[1 + ii]] = p[1 + ni]
             elif len(p) > 2 and p[1] in ('m', 'f'):
                 inter, named = p[3 + ii], p[3 + ni]
-                if re.fullmatch(r'(method|field)_\d+', inter):
+                if re.fullmatch(r'(method|field)_\d+', inter) and named != inter:
                     members[inter] = named
 print(f'MAPPINGS: {len(classes)} classes, {len(members)} members from {len(tinies)} tiny file(s)')
 
