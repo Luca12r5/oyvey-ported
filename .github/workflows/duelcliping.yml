@@ -57,10 +57,10 @@ jobs:
           Add-Type -AssemblyName System.Drawing
           $codec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq 'image/jpeg' }
           $params = New-Object System.Drawing.Imaging.EncoderParameters 1
-          $params.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter ([System.Drawing.Imaging.Encoder]::Quality), 72L
-          Get-ChildItem screenshots -Filter "Dark-*.png" | ForEach-Object {
+          $params.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter ([System.Drawing.Imaging.Encoder]::Quality), 55L
+          Get-ChildItem screenshots -Filter "Dark-Dashboard.png" | ForEach-Object {
             $img = [System.Drawing.Image]::FromFile($_.FullName)
-            $w = 1000; $h = [int]($img.Height * $w / $img.Width)
+            $w = 720; $h = [int]($img.Height * $w / $img.Width)
             $bmp = New-Object System.Drawing.Bitmap $w, $h
             $g = [System.Drawing.Graphics]::FromImage($bmp)
             $g.InterpolationMode = 'HighQualityBicubic'
