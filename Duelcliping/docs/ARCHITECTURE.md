@@ -4,7 +4,7 @@
 
 | Concern | Choice | Why |
 |---|---|---|
-| UI | **WPF on .NET 8** (C#) | Native Windows desktop, hardware-composited, mature, no browser engine (Electron would cost 150–300 MB RAM and a Chromium GPU process while you play). The window is created only when opened and destroyed when closed to the tray. |
+| UI | **WPF on .NET 8** (C#), translucent acrylic/blur window | Native Windows desktop, hardware-composited, mature, no browser engine (Electron would cost 150–300 MB RAM and a Chromium GPU process while you play). The window is created only when opened and destroyed when closed to the tray. |
 | Screen capture | **DXGI Desktop Duplication** via ffmpeg `ddagrab` | The OS hands over the composed desktop as a GPU texture. No hooks or DLL injection into games (anti-cheat safe), works for borderless and most fullscreen games, and frames never leave GPU memory. |
 | Encoding | **ffmpeg** with **NVENC / AMF / Quick Sync** | One battle-tested implementation of all three vendor SDKs, H.264/HEVC/AV1, rate control and muxing. It runs as a separate process: if a driver crashes the encoder, Duelcliping survives and restarts it. |
 | Audio | **WASAPI** (NAudio) shared-mode loopback + capture | The native Windows audio API; event driven, no polling. |
@@ -59,9 +59,8 @@ The engine knows nothing about the UI. The app talks to it only through `AppCont
 * **Zero copy**: with a hardware encoder the captured texture is mapped straight into the encoder
   (`hwmap` to CUDA / QSV, or D3D11 input for AMF). Scaling to 1080p etc. happens on the GPU. No
   frame is ever copied into system memory or touched by the CPU.
-* **Fallback chain** (`RecordingEngine.BuildPlan`): if a path fails to deliver video it steps to the
-  next one and tells the user: zero-copy → GPU capture + CPU conversion → GDI capture → CPU encoder
-  (only if no hardware path works at all).
+* **Fallback chain** (`RecordingEngine.BuildPlan`): zero-copy → GPU capture + CPU conversion (with a
+  visible notice). The CPU encoder is used only if selected or if no hardware encoder exists.
 * **Watchdog**: no keyframe within 20 s, or no data for 10 s, kills and restarts the process.
   Display mode changes (games switching resolution) and resume from sleep trigger a clean restart.
 
@@ -118,7 +117,16 @@ cap, 1 s GOP. Performance mode picks the fastest preset (NVENC `p1`, AMF `speed`
 ## 8. Minimising performance impact
 
 * GPU: capture and encode stay on the GPU; NVENC/AMF/QSV run on dedicated encoder silicon, not the
-  3D engine the game uses. Scaling uses the vendor's video processor.
+  3D engine the game uses. Scaling uses the vendor's video processor. In performance mode ffmpeg's
+  GPU scheduling priority is set to *below normal* (`D3DKMTSetProcessSchedulingPriorityClass`), so
+  the GPU scheduler always prefers the game's work. NVENC runs `p1` + `ull` without AQ or multipass.
+* Presentation: nothing is kept on top of the game by default. Any always-on-top window over a
+  windowed/borderless game stops Windows' direct-flip (independent flip) presentation and forces
+  desktop composition every frame, which costs a lot at high frame rates. The overlay therefore only
+  shows a 2.5 s "Saved" badge; the permanent REC/REPLAY indicator is opt-in, and notification
+  popups are suppressed while a fullscreen game has focus (errors are shown afterwards).
+* No expensive fallbacks: GDI capture was removed and the CPU encoder is never used silently; if
+  no GPU path works the app reports the error instead of eating FPS.
 * CPU: no per-frame CPU work in Duelcliping; the TS reader handles ~2–6 MB/s. ffmpeg and the app run
   at *below normal* priority in performance mode, so the game wins every scheduling decision.
 * Memory: pooled buffers, workstation GC with conserve-memory mode, main window destroyed when
@@ -126,7 +134,8 @@ cap, 1 s GOP. Performance mode picks the fastest preset (NVENC `p1`, AMF `speed`
 * Disk: zero writes until you save; clip saves are sequential 1 MB writes.
 * Network: none. Duelcliping makes no network connections at all.
 * Idle work: no polling loops except a 3 s foreground-window check (three Win32 calls); the
-  performance monitor samples only while its page or the dashboard is visible; the overlay redraws
+  performance monitor samples only while the window is open, GPU counters only on the Stats page,
+  and nothing is re-rendered while a fullscreen game has focus; the overlay redraws
   at most once per second; thumbnails, scans and retention are deferred while a game is fullscreen.
 
 ## 9. Measuring overhead

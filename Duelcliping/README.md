@@ -11,7 +11,8 @@ built-in video cutter, designed to cost your game as little performance as possi
 * **Hardware encoding** with NVIDIA NVENC, AMD AMF or Intel Quick Sync – detected and tested automatically.
 * Game audio and microphone on **separate tracks** with independent volume and device selection.
 * Clip library with thumbnails, hover previews, search, sort, rename, delete, pin, export.
-* Optional click-through recording overlay, tray icon, start with Windows, dark and light theme.
+* Translucent blue glass design (acrylic blur on Windows 11, blur-behind on Windows 10), dark and light.
+* Short click-through “Saved” badge, tray icon, start with Windows.
 * Live performance monitor and an on/off **benchmark** (with PresentMon: game FPS and 1 % lows).
 
 ## Install
@@ -58,6 +59,16 @@ pwsh scripts/build.ps1 -SkipInstaller
 ```bash
 dotnet test tests/Duelcliping.Core.Tests
 ```
+
+## Getting the most FPS
+
+* Keep *Settings → Overlay → Always show REC/REPLAY indicator* **off** (default). Any window on top of
+  a borderless game forces Windows to compose every frame.
+* Keep *Performance mode* on (default): encoder and Duelcliping run below the game in CPU and GPU priority.
+* Use a hardware encoder (the dashboard shows “GPU zero-copy” when everything runs on the GPU). If it
+  shows “CPU conversion”, update your graphics driver.
+* Lower recording FPS (e.g. 60) or resolution (1080p) reduces encoder load further.
+* Run the benchmark on the *Stats* page to see the real difference on your PC.
 
 ## Notes and limits
 
