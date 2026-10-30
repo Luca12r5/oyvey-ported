@@ -102,6 +102,8 @@ internal sealed class CapturePipeline : IDisposable
             throw new FileNotFoundException("ffmpeg.exe could not be started. Reinstall Duelcliping to restore it.", FfmpegLocator.Ffmpeg, ex);
         }
         FfmpegRunner.TrySetPriority(_process, _config.PerformanceMode ? ProcessPriorityClass.BelowNormal : ProcessPriorityClass.Normal);
+        // The game must win every GPU scheduling decision against capture/encode work.
+        if (_config.PerformanceMode) GpuPriority.TrySetBelowNormal(_process);
         Progress.StartedUtc = DateTime.UtcNow;
         Progress.LastDataUtc = DateTime.UtcNow;
 

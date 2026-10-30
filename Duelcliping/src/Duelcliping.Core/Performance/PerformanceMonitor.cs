@@ -90,6 +90,8 @@ public sealed class PerformanceMonitor : IDisposable
     }
 
     public TimeSpan Interval { get; set; } = TimeSpan.FromSeconds(2);
+    /// <summary>GPU engine counters are comparatively expensive to read; only the Performance page and benchmark enable them.</summary>
+    public bool IncludeGpu { get; set; }
     public PerformanceSnapshot? Latest { get; private set; }
     public double? LastDiskWriteMBps { get; set; }
     public event Action<PerformanceSnapshot>? Sampled;
@@ -122,9 +124,9 @@ public sealed class PerformanceMonitor : IDisposable
         var snapshot = new PerformanceSnapshot(
             DateTime.UtcNow, cpu, ws, priv,
             _system.SystemCpuPercent(),
-            _system.GpuPercent(null),
-            _system.GpuPercent(pids),
-            status.FfmpegProcessId is int f ? _system.GpuEncoderPercent(new[] { f }) : null,
+            IncludeGpu ? _system.GpuPercent(null) : null,
+            IncludeGpu ? _system.GpuPercent(pids) : null,
+            IncludeGpu && status.FfmpegProcessId is int f ? _system.GpuEncoderPercent(new[] { f }) : null,
             status,
             LastDiskWriteMBps);
         Latest = snapshot;

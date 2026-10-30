@@ -103,6 +103,30 @@ internal static partial class NativeMethods
     [LibraryImport("dwmapi.dll")]
     public static partial int DwmExtendFrameIntoClientArea(IntPtr hwnd, ref MARGINS margins);
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct AccentPolicy { public int State; public int Flags; public uint GradientColor; public int AnimationId; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct WindowCompositionData { public int Attribute; public IntPtr Data; public int Size; }
+
+    [DllImport("user32.dll")]
+    private static extern int SetWindowCompositionAttribute(IntPtr hwnd, ref WindowCompositionData data);
+
+    /// <summary>Windows 10 blur-behind (composited by DWM on the GPU). Returns false if unsupported.</summary>
+    public static bool EnableBlurBehind(IntPtr hwnd)
+    {
+        var accent = new AccentPolicy { State = 3 }; // ACCENT_ENABLE_BLURBEHIND
+        int size = Marshal.SizeOf<AccentPolicy>();
+        var ptr = Marshal.AllocHGlobal(size);
+        try
+        {
+            Marshal.StructureToPtr(accent, ptr, false);
+            var data = new WindowCompositionData { Attribute = 19, Data = ptr, Size = size }; // WCA_ACCENT_POLICY
+            return SetWindowCompositionAttribute(hwnd, ref data) != 0;
+        }
+        finally { Marshal.FreeHGlobal(ptr); }
+    }
+
     public static void MakeClickThroughOverlay(IntPtr hwnd)
     {
         var style = GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64();

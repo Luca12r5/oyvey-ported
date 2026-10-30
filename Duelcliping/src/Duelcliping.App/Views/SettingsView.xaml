@@ -25,7 +25,7 @@
         </Style>
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="32,8,32,40" MaxWidth="860" HorizontalAlignment="Left">
+        <StackPanel Margin="28,12,28,40" MaxWidth="900" HorizontalAlignment="Left">
             <TextBlock Text="Settings" Style="{StaticResource TitleText}" />
             <TextBlock Text="Changes are saved instantly." Style="{StaticResource SecondaryText}" Margin="0,4,0,22" />
 
@@ -200,14 +200,26 @@
                 <StackPanel>
                     <TextBlock Text="Overlay &amp; notifications" Style="{StaticResource SectionText}" Margin="0,0,0,16" />
                     <Grid Style="{StaticResource Row}">
-                        <TextBlock Text="Show recording overlay" Style="{StaticResource RowLabel}" />
+                        <TextBlock Text="Show a short “Saved” badge" Style="{StaticResource RowLabel}" Width="320" />
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding OverlayEnabled}" HorizontalAlignment="Right" />
                     </Grid>
-                    <Grid Style="{StaticResource Row}" IsEnabled="{Binding OverlayEnabled}">
+                    <Grid Style="{StaticResource Row}">
+                        <StackPanel>
+                            <TextBlock Text="Always show REC / REPLAY indicator" Style="{StaticResource TextBase}" />
+                            <TextBlock Text="Off is fastest: any window kept on top of a windowed or borderless game stops Windows' direct-flip presentation and can cost FPS."
+                                       Style="{StaticResource SecondaryText}" FontSize="12" Margin="0,0,80,0" />
+                        </StackPanel>
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding OverlayAlways}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="No popups while a game is fullscreen" Style="{StaticResource RowLabel}" Width="320" />
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding QuietWhileGaming}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
                         <TextBlock Text="Overlay position" Style="{StaticResource RowLabel}" />
                         <ComboBox ItemsSource="{Binding OverlayCorners}" SelectedValue="{Binding OverlayPosition}" />
                     </Grid>
-                    <Grid Style="{StaticResource Row}" IsEnabled="{Binding OverlayEnabled}">
+                    <Grid Style="{StaticResource Row}">
                         <TextBlock Text="{Binding OverlayOpacity, StringFormat='Overlay opacity: {0:0}%'}" Style="{StaticResource RowLabel}" />
                         <Slider Width="320" HorizontalAlignment="Right" Minimum="30" Maximum="100" Value="{Binding OverlayOpacity, Delay=300}" />
                     </Grid>

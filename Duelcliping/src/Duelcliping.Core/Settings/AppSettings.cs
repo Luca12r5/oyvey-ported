@@ -113,7 +113,15 @@ public sealed class AppSettings
     public bool CloseToTray { get; set; } = true;
 
     // Overlay
+    /// <summary>Short "Saved" badge for 2.5 s after saving a clip.</summary>
     public bool OverlayEnabled { get; set; } = true;
+    /// <summary>
+    /// Permanent REC/REPLAY indicator. Off by default: any always-on-top window over a windowed or
+    /// borderless game prevents Windows' direct-flip presentation and can cost a lot of FPS.
+    /// </summary>
+    public bool OverlayAlways { get; set; }
+    /// <summary>No notification popups while a fullscreen game is focused (sound only).</summary>
+    public bool QuietWhileGaming { get; set; } = true;
     public OverlayCorner OverlayPosition { get; set; } = OverlayCorner.TopRight;
     public double OverlayOpacity { get; set; } = 0.85;
 

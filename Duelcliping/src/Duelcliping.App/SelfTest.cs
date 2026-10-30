@@ -39,7 +39,7 @@ internal static class SelfTest
             {
                 App.ApplyTheme(theme);
                 var vm = new MainViewModel(controller);
-                var window = new MainWindow(vm) { Left = -4000, Top = -4000, ShowActivated = false };
+                var window = new MainWindow(vm) { Left = -4000, Top = -4000, Width = 1280, Height = 820, ShowActivated = false };
                 window.Show();
                 foreach (Page page in Enum.GetValues(typeof(Page)))
                 {
@@ -47,6 +47,7 @@ internal static class SelfTest
                     await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
                     window.UpdateLayout();
                     Ok($"rendered {page} ({theme})");
+                    Screenshot(window, Path.Combine(Path.GetDirectoryName(Path.GetFullPath(report))!, "screenshots", $"{theme}-{page}.png"));
                 }
                 window.Close();
             }
@@ -100,6 +101,34 @@ internal static class SelfTest
         lines.Add(failures == 0 ? "SELFTEST OK" : $"SELFTEST FAILED ({failures})");
         await File.WriteAllLinesAsync(report, lines);
         return failures == 0 ? 0 : 1;
+    }
+
+    /// <summary>Renders the window content (over its solid fallback background) to a PNG for visual review.</summary>
+    private static void Screenshot(Window window, string path)
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            var content = (FrameworkElement)window.Content;
+            int w = (int)Math.Ceiling(content.ActualWidth), h = (int)Math.Ceiling(content.ActualHeight);
+            var visual = new System.Windows.Media.DrawingVisual();
+            using (var dc = visual.RenderOpen())
+            {
+                var bg = (System.Windows.Media.Brush)Application.Current.FindResource("WindowBackgroundBrush");
+                dc.DrawRectangle(bg, null, new Rect(0, 0, w, h));
+                dc.DrawRectangle(new System.Windows.Media.VisualBrush(content), null, new Rect(0, 0, w, h));
+            }
+            var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            bitmap.Render(visual);
+            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+            using var fs = File.Create(path);
+            encoder.Save(fs);
+        }
+        catch (Exception ex)
+        {
+            Core.Logging.Log.Warn("SelfTest", "Screenshot failed: " + ex.Message);
+        }
     }
 
     private sealed class BindingErrorListener : System.Diagnostics.TraceListener

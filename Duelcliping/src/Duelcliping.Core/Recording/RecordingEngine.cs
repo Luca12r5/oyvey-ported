@@ -176,22 +176,16 @@ public sealed class RecordingEngine : IAsyncDisposable
             plan.Add((CaptureSource.TestPattern, PipelinePath.SystemMemory, encoder));
             return plan;
         }
-        bool canGdi = OperatingSystem.IsWindows();
+        // GDI capture and CPU frame copies cost a lot of game FPS, so they are never used silently:
+        // only GPU paths are tried, and the CPU encoder only when the user selected it or no
+        // hardware encoder exists at all.
         if (encoder.IsHardware)
         {
-            if (r.Source == CaptureSource.DesktopDuplication)
-            {
-                plan.Add((CaptureSource.DesktopDuplication, PipelinePath.ZeroCopy, encoder));
-                plan.Add((CaptureSource.DesktopDuplication, PipelinePath.SystemMemory, encoder));
-            }
-            if (canGdi) plan.Add((CaptureSource.Gdi, PipelinePath.SystemMemory, encoder));
+            plan.Add((CaptureSource.DesktopDuplication, PipelinePath.ZeroCopy, encoder));
+            plan.Add((CaptureSource.DesktopDuplication, PipelinePath.SystemMemory, encoder));
         }
         var software = encoder.IsHardware ? r.SoftwareFallback : encoder;
-        if (software != null)
-        {
-            plan.Add((CaptureSource.DesktopDuplication, PipelinePath.SystemMemory, software));
-            if (canGdi) plan.Add((CaptureSource.Gdi, PipelinePath.SystemMemory, software));
-        }
+        if (software != null) plan.Add((CaptureSource.DesktopDuplication, PipelinePath.SystemMemory, software));
         return plan;
     }
 
@@ -214,7 +208,7 @@ public sealed class RecordingEngine : IAsyncDisposable
         $"{c.Encoder.DisplayName} · " + (c.Source, c.Path) switch
         {
             (CaptureSource.DesktopDuplication, PipelinePath.ZeroCopy) => "GPU zero-copy",
-            (CaptureSource.DesktopDuplication, _) => "GPU capture, CPU conversion",
+            (CaptureSource.DesktopDuplication, _) => "GPU capture, CPU conversion (slower)",
             (CaptureSource.Gdi, _) => "GDI capture (compatibility)",
             _ => "test pattern",
         };

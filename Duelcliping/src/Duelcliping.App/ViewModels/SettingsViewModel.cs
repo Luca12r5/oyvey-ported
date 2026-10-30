@@ -248,6 +248,8 @@ public sealed class SettingsViewModel : ObservableObject
     public bool StartMinimized { get => S.StartMinimized; set => Update(s => s.StartMinimized = value); }
     public bool CloseToTray { get => S.CloseToTray; set => Update(s => s.CloseToTray = value); }
     public bool OverlayEnabled { get => S.OverlayEnabled; set => Update(s => s.OverlayEnabled = value); }
+    public bool OverlayAlways { get => S.OverlayAlways; set => Update(s => s.OverlayAlways = value); }
+    public bool QuietWhileGaming { get => S.QuietWhileGaming; set => Update(s => s.QuietWhileGaming = value); }
     public OverlayCorner OverlayPosition { get => S.OverlayPosition; set => Update(s => s.OverlayPosition = value); }
     public double OverlayOpacity { get => S.OverlayOpacity * 100; set => Update(s => s.OverlayOpacity = value / 100); }
     public bool PlaySound { get => S.PlaySoundOnSave; set => Update(s => s.PlaySoundOnSave = value); }

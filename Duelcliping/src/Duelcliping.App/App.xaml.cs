@@ -66,6 +66,11 @@ public partial class App : Application
         _controller.Settings.Changed += (old, now) => Dispatcher.InvokeAsync(() => OnSettingsChanged(old, now));
         _controller.ClipCreated += path => Dispatcher.InvokeAsync(() => _overlay?.Flash("Saved"));
 
+        _controller.GameDetector.Changed += active => Dispatcher.InvokeAsync(() =>
+        {
+            if (active) return;
+            while (_deferredToasts.Count > 0) ShowToast(_deferredToasts.Dequeue());
+        });
         CreateTray();
         _overlay = new RecordingOverlay(_controller);
         StartActivationListener();
@@ -174,8 +179,17 @@ public partial class App : Application
         OnStatusChanged();
     }
 
+    private readonly Queue<Toast> _deferredToasts = new();
+
     private void ShowToast(Toast toast)
     {
+        // A popup over a fullscreen game forces desktop composition and costs FPS: stay silent
+        // while playing and show only problems once the game is no longer in focus.
+        if (_controller!.Settings.Current.QuietWhileGaming && _controller.GameDetector.IsGameActive)
+        {
+            if (toast.Kind is ToastKind.Error or ToastKind.Warning && _deferredToasts.Count < 5) _deferredToasts.Enqueue(toast);
+            return;
+        }
         try
         {
             new ToastWindow(toast, path =>

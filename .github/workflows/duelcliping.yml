@@ -51,6 +51,12 @@ jobs:
           $p = Start-Process -FilePath "artifacts\publish\Duelcliping.exe" -ArgumentList "--selftest","$PWD\selftest.txt" -PassThru -Wait
           Get-Content selftest.txt
           if ($p.ExitCode -ne 0) { throw "Self-test failed with exit code $($p.ExitCode)" }
+      - name: Upload UI screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Duelcliping-Screenshots
+          path: Duelcliping/screenshots/
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:

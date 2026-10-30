@@ -146,7 +146,8 @@ public sealed class AppController : IAsyncDisposable
             Source = CaptureSource.DesktopDuplication,
             Monitor = display.ToTarget(),
             Encoder = selection,
-            SoftwareFallback = Encoders.Available.FirstOrDefault(e => e.Vendor == EncoderVendor.Software),
+            // No silent CPU encoding: it costs game FPS. Used only when chosen in the settings.
+            SoftwareFallback = null,
             Resolution = s.Resolution,
             FrameRate = s.FrameRate,
             Quality = s.Quality,

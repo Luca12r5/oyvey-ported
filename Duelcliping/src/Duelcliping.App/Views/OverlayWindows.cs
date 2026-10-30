@@ -53,7 +53,7 @@ public sealed class RecordingOverlay : Window
         row.Children.Add(_detail);
         Content = new Border
         {
-            Background = new SolidColorBrush(Color.FromArgb(0xD9, 0x16, 0x15, 0x14)),
+            Background = new SolidColorBrush(Color.FromArgb(0xE0, 0x0A, 0x14, 0x28)),
             BorderBrush = new SolidColorBrush(Color.FromArgb(0x26, 0xFF, 0xFF, 0xFF)),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(14),
@@ -76,7 +76,10 @@ public sealed class RecordingOverlay : Window
         var s = _app.Settings.Current;
         var status = _app.Engine.GetStatus();
         bool active = status.State == EngineState.Running || status.IsManualRecording;
-        bool show = s.OverlayEnabled && (active || DateTime.UtcNow < _flashUntil);
+        bool flashing = DateTime.UtcNow < _flashUntil;
+        // Default: only a short badge after saving. A permanent topmost window over a game blocks
+        // direct-flip presentation, so the always-on indicator is opt-in.
+        bool show = (s.OverlayEnabled && flashing) || (s.OverlayAlways && active);
         Opacity = s.OverlayOpacity;
         if (show)
         {
@@ -130,7 +133,8 @@ public sealed class RecordingOverlay : Window
         if (_detail.Text != detail) _detail.Text = detail;
         if (!ReferenceEquals(_dot.Fill, dot)) _dot.Fill = dot;
         // Fullscreen games may push other topmost windows down; re-assert every few seconds.
-        if (_hwnd != IntPtr.Zero && ++_topmostCounter % 5 == 0) NativeMethods.KeepTopmost(_hwnd);
+        if (_hwnd != IntPtr.Zero && _app.Settings.Current.OverlayAlways && ++_topmostCounter % 5 == 0) NativeMethods.KeepTopmost(_hwnd);
+        if (!_app.Settings.Current.OverlayAlways && DateTime.UtcNow >= _flashUntil) Sync();
     }
 
     public void PlaceOnMonitor()

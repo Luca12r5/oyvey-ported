@@ -57,6 +57,8 @@ public sealed class BenchmarkRunner
     public async Task<BenchmarkReport> RunAsync(BenchmarkOptions options, string reportDirectory, IProgress<string>? progress, CancellationToken ct)
     {
         var started = DateTime.UtcNow;
+        bool gpu = _monitor.IncludeGpu;
+        _monitor.IncludeGpu = true;
         bool wasRecording = _engine.State is EngineState.Running or EngineState.Starting or EngineState.Restarting;
         try
         {
@@ -82,6 +84,7 @@ public sealed class BenchmarkRunner
         }
         finally
         {
+            _monitor.IncludeGpu = gpu;
             await _setRecording(wasRecording).ConfigureAwait(false);
         }
     }

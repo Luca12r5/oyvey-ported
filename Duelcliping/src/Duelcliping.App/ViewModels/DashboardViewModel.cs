@@ -85,7 +85,16 @@ public sealed class DashboardViewModel : ObservableObject
         _ => "TextTertiaryBrush",
     });
 
-    public string RecordButtonText => _status?.IsManualRecording == true ? "Stop recording" : "Start recording";
+    public string RailStateText => _status switch
+    {
+        { IsManualRecording: true } => "REC",
+        { State: EngineState.Running } => "LIVE",
+        { State: EngineState.Faulted } => "ERROR",
+        { State: EngineState.Starting or EngineState.Restarting } => "…",
+        _ => "OFF",
+    };
+
+    public string RecordButtonText => _status?.IsManualRecording == true ? "Stop" : "Record";
     public bool IsManualRecording => _status?.IsManualRecording == true;
 
     public string ModeText => (_status?.IsManualRecording, S.ReplayBufferEnabled) switch
@@ -125,7 +134,7 @@ public sealed class DashboardViewModel : ObservableObject
     {
         _status = _app.Engine.GetStatus();
         _perf = _app.Performance.Latest;
-        OnPropertiesChanged(nameof(StateTitle), nameof(StateDetail), nameof(StateBrush), nameof(RecordButtonText), nameof(IsManualRecording),
+        OnPropertiesChanged(nameof(StateTitle), nameof(StateDetail), nameof(StateBrush), nameof(RecordButtonText), nameof(RailStateText), nameof(IsManualRecording),
             nameof(ModeText), nameof(ResolutionText), nameof(FpsText), nameof(EncoderText), nameof(PipelineText), nameof(BitrateText),
             nameof(CpuText), nameof(RamText), nameof(GpuText), nameof(BufferMemoryText), nameof(DroppedText), nameof(PerformanceModeText),
             nameof(ReplayEnabled), nameof(CustomSaveLabel), nameof(ShortcutHint));

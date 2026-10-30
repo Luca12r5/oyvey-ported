@@ -127,7 +127,9 @@ public static class FfmpegCommandBuilder
         switch (c.Encoder.Vendor)
         {
             case EncoderVendor.Nvidia:
-                args.AddRange(new[] { "-preset", fast ? "p1" : "p3", "-tune", "ll", "-rc", "vbr", "-rc-lookahead", "0", "-bf", "0" });
+                // p1 + ultra-low-latency: the least encoder work per frame, no look-ahead, no B-frames.
+                args.AddRange(new[] { "-preset", fast ? "p1" : "p3", "-tune", fast ? "ull" : "ll", "-rc", "vbr", "-rc-lookahead", "0", "-bf", "0",
+                    "-multipass", "disabled", "-spatial-aq", "0", "-temporal-aq", "0" });
                 break;
             case EncoderVendor.Amd:
                 args.AddRange(new[] { "-usage", "lowlatency", "-quality", fast ? "speed" : "balanced", "-rc", "vbr_peak", "-bf", "0" });

@@ -8,7 +8,7 @@
         </Style>
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="32,8,32,32">
+        <StackPanel Margin="28,12,28,32">
             <TextBlock Text="Performance" Style="{StaticResource TitleText}" />
             <TextBlock Text="Live, measured values for Duelcliping (app + encoder process). Updated every 2 seconds while this window is open."
                        Style="{StaticResource SecondaryText}" Margin="0,4,0,18" />
