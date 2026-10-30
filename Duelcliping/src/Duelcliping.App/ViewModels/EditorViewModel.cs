@@ -250,7 +250,7 @@ public sealed class EditorViewModel : ObservableObject
         _exportCts = new CancellationTokenSource();
         try
         {
-            await ClipEditor.RunAsync(request, new Progress<double>(p => Progress = p), _exportCts.Token);
+            var result = await ClipEditor.RunAsync(request, new Progress<double>(p => Progress = p), _exportCts.Token);
             if (ReplaceOriginal)
             {
                 ReleaseMediaRequested?.Invoke();
@@ -261,7 +261,7 @@ public sealed class EditorViewModel : ObservableObject
                 output = final;
             }
             _lastOutput = output;
-            Status = $"Saved {Path.GetFileName(output)}";
+            Status = $"Saved {Path.GetFileName(output)}" + (result.Notice != null ? " · " + result.Notice : "");
             _app.NotifyClipCreated(output);
             _app.RaiseToast(new Toast(ToastKind.Success, "Video saved", Path.GetFileName(output), output));
             if (ReplaceOriginal) await LoadAsync(output);

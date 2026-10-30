@@ -30,6 +30,9 @@ public sealed record EditRequest
     public int BitrateKbps { get; init; } = 12000;
 }
 
+/// <summary>Result of a cut: the file, and whether the job had to re-encode to stay accurate.</summary>
+public sealed record EditResult(string Output, bool ReEncoded, string? Notice);
+
 /// <summary>
 /// The built-in video cutter. Keeps any number of segments of a clip or recording and joins them
 /// into a new file. Lossless mode cuts with stream copy; exact mode re-encodes with the detected
@@ -64,11 +67,29 @@ public static class ClipEditor
         t < TimeSpan.Zero ? TimeSpan.Zero : duration > TimeSpan.Zero && t > duration ? duration : t;
 
     /// <summary>Runs the job. <paramref name="progress"/> receives 0..1.</summary>
-    public static async Task<string> RunAsync(EditRequest request, IProgress<double>? progress, CancellationToken ct)
+    /// <summary>Lossless cuts may start this much before the requested point; beyond that the cut is re-encoded.</summary>
+    public static readonly TimeSpan MaxKeyframeSnap = TimeSpan.FromSeconds(1.05);
+
+    public static async Task<EditResult> RunAsync(EditRequest request, IProgress<double>? progress, CancellationToken ct)
     {
         var info = await MediaProbe.ProbeAsync(request.Input, ct).ConfigureAwait(false)
                    ?? throw new InvalidOperationException("The video could not be read.");
         var segments = Normalize(request.Segments, TimeSpan.FromSeconds(info.DurationSeconds));
+        string? notice = null;
+        if (!request.ReEncode && segments.Any(s => s.Start > TimeSpan.Zero))
+        {
+            // Stream copy can only start at keyframes. Our own clips have one per second, but other
+            // videos may have several seconds between keyframes, which would make cuts visibly wrong.
+            var keyframes = await KeyframesAsync(request.Input, ct).ConfigureAwait(false);
+            var worst = segments.Where(s => s.Start > TimeSpan.Zero)
+                .Select(s => s.Start - (keyframes.LastOrDefault(k => k <= s.Start + TimeSpan.FromMilliseconds(1)))).Max();
+            if (keyframes.Count == 0 || worst > MaxKeyframeSnap)
+            {
+                notice = $"This video has few keyframes (a lossless cut would start up to {worst.TotalSeconds:0.#} s early), so it was cut frame-exact instead.";
+                Log.Info("Editor", notice);
+                request = request with { ReEncode = true };
+            }
+        }
         double total = segments.Sum(s => s.Duration.TotalSeconds);
         var tempOutput = request.Output + ".partial";
         Log.Info("Editor", $"{(request.ReEncode ? "Exact" : "Lossless")} cut of {request.Input}: " +
@@ -96,7 +117,27 @@ public static class ClipEditor
             throw;
         }
         progress?.Report(1);
-        return request.Output;
+        return new EditResult(request.Output, request.ReEncode, notice);
+    }
+
+    /// <summary>Timestamps of all video keyframes (reads only packet headers, fast even for long files).</summary>
+    public static async Task<List<TimeSpan>> KeyframesAsync(string input, CancellationToken ct)
+    {
+        var result = await FfmpegRunner.RunFfprobeAsync(new[]
+        {
+            "-v", "error", "-select_streams", "v:0", "-show_entries", "packet=pts_time,flags", "-of", "csv=p=0", input,
+        }, ct, TimeSpan.FromMinutes(5)).ConfigureAwait(false);
+        var list = new List<TimeSpan>();
+        if (!result.Success) return list;
+        foreach (var line in result.StdOut.Split('\n'))
+        {
+            var parts = line.Trim().Split(',');
+            if (parts.Length >= 2 && parts[1].StartsWith('K') &&
+                double.TryParse(parts[0], NumberStyles.Float, Inv, out var t))
+                list.Add(TimeSpan.FromSeconds(t));
+        }
+        list.Sort();
+        return list;
     }
 
     private static string OutputFormat(string output) =>

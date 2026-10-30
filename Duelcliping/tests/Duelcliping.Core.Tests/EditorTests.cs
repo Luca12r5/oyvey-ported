@@ -6,14 +6,14 @@ namespace Duelcliping.Core.Tests;
 
 public class EditorTests
 {
-    private static async Task<string> MakeVideoAsync(TempDir dir, string name = "src.mp4", int seconds = 10)
+    private static async Task<string> MakeVideoAsync(TempDir dir, string name = "src.mp4", int seconds = 10, int gop = 30)
     {
         var path = Path.Combine(dir.Path, name);
         var r = await FfmpegRunner.RunFfmpegAsync(new[]
         {
             "-v", "error", "-f", "lavfi", "-i", $"testsrc2=s=320x240:r=30:d={seconds}",
             "-f", "lavfi", "-i", $"sine=f=440:d={seconds}", "-f", "lavfi", "-i", $"sine=f=880:d={seconds}",
-            "-map", "0", "-map", "1", "-map", "2", "-c:v", "libx264", "-g", "30", "-pix_fmt", "yuv420p", "-c:a", "aac", path,
+            "-map", "0", "-map", "1", "-map", "2", "-c:v", "libx264", "-g", gop.ToString(), "-pix_fmt", "yuv420p", "-c:a", "aac", path,
         });
         Assert.True(r.Success, r.StdErr);
         return path;
@@ -72,5 +72,34 @@ public class EditorTests
         Assert.Equal(120, info.Height);
         Assert.Contains("matroska", info.FormatName);
         Assert.InRange(info.Duration, 2.9, 3.15);
+    }
+
+    [Fact]
+    public async Task Lossless_cut_switches_to_exact_when_keyframes_are_far_apart()
+    {
+        using var dir = new TempDir();
+        var src = await MakeVideoAsync(dir, gop: 300); // a single keyframe, like many downloaded videos
+        var output = Path.Combine(dir.Path, "out.mp4");
+        var result = await ClipEditor.RunAsync(new EditRequest
+        {
+            Input = src, Output = output,
+            Segments = new[] { new CutSegment(S(0), S(2)), new CutSegment(S(6), S(8)) },
+        }, null, CancellationToken.None);
+        Assert.True(result.ReEncoded);
+        Assert.NotNull(result.Notice);
+        Assert.InRange((await Probe.RunAsync(output)).Duration, 3.9, 4.15);
+    }
+
+    [Fact]
+    public async Task Lossless_cut_stays_lossless_for_one_second_gop()
+    {
+        using var dir = new TempDir();
+        var src = await MakeVideoAsync(dir);
+        var result = await ClipEditor.RunAsync(new EditRequest
+        {
+            Input = src, Output = Path.Combine(dir.Path, "out.mp4"),
+            Segments = new[] { new CutSegment(S(2.5), S(7)) },
+        }, null, CancellationToken.None);
+        Assert.False(result.ReEncoded);
     }
 }
