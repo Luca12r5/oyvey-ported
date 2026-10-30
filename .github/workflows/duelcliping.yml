@@ -38,6 +38,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./scripts/fetch-ffmpeg.ps1
+      - name: Show capture filter options of the bundled ffmpeg
+        run: |
+          third_party\ffmpeg\ffmpeg.exe -hide_banner -h filter=scale_d3d11
+          third_party\ffmpeg\ffmpeg.exe -hide_banner -h filter=ddagrab
+          third_party\ffmpeg\ffmpeg.exe -hide_banner -h encoder=h264_nvenc | Select-String -Pattern "Supported pixel formats|d3d11"
+          third_party\ffmpeg\ffmpeg.exe -hide_banner -h encoder=h264_amf | Select-String -Pattern "Supported pixel formats|d3d11"
+          third_party\ffmpeg\ffmpeg.exe -hide_banner -h encoder=h264_qsv | Select-String -Pattern "Supported pixel formats|d3d11"
       - name: Test core on Windows (named pipes, WASAPI-format audio pump, remux)
         run: |
           $env:PATH = "$PWD\third_party\ffmpeg;$env:PATH"
