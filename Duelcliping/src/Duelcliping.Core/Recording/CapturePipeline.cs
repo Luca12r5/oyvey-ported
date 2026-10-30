@@ -205,9 +205,10 @@ internal sealed class CapturePipeline : IDisposable
             while ((line = reader.ReadLine()) != null)
             {
                 int eq = line.IndexOf('=');
-                if (eq > 0 && !line.Contains(' '))
+                if (eq > 0 && !line.AsSpan(0, eq).Contains(' ') && !line.StartsWith('['))
                 {
-                    ParseProgress(line.AsSpan(0, eq), line.AsSpan(eq + 1));
+                    // -progress output: "key=value" (values may be padded, e.g. "speed=   1x")
+                    ParseProgress(line.AsSpan(0, eq), line.AsSpan(eq + 1).Trim());
                     continue;
                 }
                 if (string.IsNullOrWhiteSpace(line)) continue;

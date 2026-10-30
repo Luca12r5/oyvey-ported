@@ -136,11 +136,14 @@ public class AudioPumpTests
     {
         using var output = new MemoryStream();
         using var pump = new AudioPump("test", output, 1.0);
+        var clock = System.Diagnostics.Stopwatch.StartNew();
         pump.Start();
         await Task.Delay(1000);
         pump.Dispose();
+        double elapsed = clock.Elapsed.TotalSeconds;
         double seconds = output.Length / 8.0 / AudioPump.OutputRate;
-        Assert.InRange(seconds, 0.85, 1.05);
+        // The track must follow the real-time clock: never ahead of it, at most ~60 ms (pad threshold) + one tick behind.
+        Assert.InRange(seconds, elapsed - 0.12, elapsed + 0.001);
         Assert.True(pump.SilenceFramesInserted > 0);
     }
 
@@ -150,16 +153,18 @@ public class AudioPumpTests
         using var output = new MemoryStream();
         using var pump = new AudioPump("test", output, 0.5);
         using var tone = new ToneSource(44100);
+        var clock = System.Diagnostics.Stopwatch.StartNew();
         pump.Start();
         tone.Start(pump);
         await Task.Delay(1500);
         tone.Stop();
         pump.Dispose();
+        double elapsed = clock.Elapsed.TotalSeconds;
         var bytes = output.ToArray();
         var samples = new float[bytes.Length / 4];
         Buffer.BlockCopy(bytes, 0, samples, 0, samples.Length * 4);
         double seconds = samples.Length / 2.0 / AudioPump.OutputRate;
-        Assert.InRange(seconds, 1.3, 1.55);
+        Assert.InRange(seconds, elapsed - 0.15, elapsed + 0.001);
         float peak = samples[^24000..].Max(Math.Abs);
         // tone amplitude 8000/32768 = 0.244, half volume ≈ 0.122
         Assert.InRange(peak, 0.10, 0.14);
