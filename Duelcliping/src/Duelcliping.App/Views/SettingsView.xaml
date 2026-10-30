@@ -154,7 +154,7 @@
                                 CommandParameter="{x:Static services:HotkeyAction.ToggleRecording}" />
                     </Grid>
                     <Grid Style="{StaticResource Row}">
-                        <TextBlock Text="Open Duelcliping" Style="{StaticResource RowLabel}" />
+                        <TextBlock Text="Open Moments" Style="{StaticResource RowLabel}" />
                         <Button Style="{StaticResource HotkeyButton}" Content="{Binding HotkeyOpenApp}" Command="{Binding CaptureHotkeyCommand}"
                                 CommandParameter="{x:Static services:HotkeyAction.OpenApp}" />
                     </Grid>
@@ -226,6 +226,14 @@
                     <Grid Style="{StaticResource Row}">
                         <TextBlock Text="Sound when a clip is saved" Style="{StaticResource RowLabel}" />
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding PlaySound}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <StackPanel>
+                            <TextBlock Text="Replay buffer sounds" Style="{StaticResource TextBase}" />
+                            <TextBlock Text="A sound when the replay buffer is ready, is switched off or stops working, and when a clip could not be saved."
+                                       Style="{StaticResource SecondaryText}" FontSize="12" Margin="0,0,80,0" />
+                        </StackPanel>
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ReplayStatusSounds}" HorizontalAlignment="Right" VerticalAlignment="Center" />
                     </Grid>
                     <Grid>
                         <TextBlock Text="Notification when a clip is saved" Style="{StaticResource RowLabel}" />

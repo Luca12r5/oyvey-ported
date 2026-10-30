@@ -70,7 +70,7 @@ public sealed record PerformanceSnapshot(
     double? LastDiskWriteMBps);
 
 /// <summary>
-/// Samples Duelcliping's own footprint (UI process + ffmpeg) plus system counters. Sampling only
+/// Samples Moments's own footprint (UI process + ffmpeg) plus system counters. Sampling only
 /// runs while somebody holds a lease (dashboard visible, benchmark running), so the monitor itself
 /// costs nothing while you play.
 /// </summary>

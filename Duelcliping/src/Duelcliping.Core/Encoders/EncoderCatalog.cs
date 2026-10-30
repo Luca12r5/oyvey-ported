@@ -65,28 +65,51 @@ public sealed class EncoderCatalog
         var listed = await FfmpegRunner.RunFfmpegAsync(new[] { "-hide_banner", "-encoders" }, ct, TimeSpan.FromSeconds(20)).ConfigureAwait(false);
         if (!listed.Success) throw new InvalidOperationException("ffmpeg could not be started to list encoders: " + listed.ErrorSummary);
 
-        var probes = Candidates
-            .Where(c => listed.StdOut.Contains(" " + c.Name + " ", StringComparison.Ordinal))
-            .Select(async c => (c, ok: await ProbeAsync(c.Name, c.Codec, ct).ConfigureAwait(false)))
-            .ToList();
-        var results = await Task.WhenAll(probes).ConfigureAwait(false);
+        // Probe one encoder at a time: consumer GPUs allow only a few concurrent NVENC/AMF sessions,
+        // and other apps (Discord, Steam, browsers) may already hold some. Parallel probes made
+        // working encoders look broken. A failing hardware encoder gets one more try.
+        var found = new List<EncoderInfo>();
+        foreach (var c in Candidates.Where(c => listed.StdOut.Contains(" " + c.Name + " ", StringComparison.Ordinal)))
+        {
+            // Skip further codecs of a vendor whose H.264 encoder does not work at all.
+            if (c.Codec != VideoCodec.H264 && c.Vendor != EncoderVendor.Software &&
+                !found.Any(e => e.Vendor == c.Vendor)) continue;
+            bool ok = await ProbeAsync(c.Name, c.Codec, ct).ConfigureAwait(false);
+            if (!ok && c.Vendor != EncoderVendor.Software && c.Codec == VideoCodec.H264)
+            {
+                await Task.Delay(1000, ct).ConfigureAwait(false);
+                ok = await ProbeAsync(c.Name, c.Codec, ct).ConfigureAwait(false);
+            }
+            if (ok) found.Add(new EncoderInfo(c.Vendor, c.Codec, c.Name));
+        }
 
-        _available = results.Where(r => r.ok).Select(r => new EncoderInfo(r.c.Vendor, r.c.Codec, r.c.Name)).ToList();
+        _available = found;
         IsDetected = true;
         Log.Info("Encoders", "Working encoders: " + (_available.Count == 0 ? "none" : string.Join(", ", _available.Select(e => e.FfmpegName))));
-        SaveCache();
+        // Never remember a result without a hardware encoder: a temporary driver/GPU problem must not
+        // leave recording stuck on the CPU. The next start probes again.
+        if (HasHardware) SaveCache();
+        else TryDeleteCache();
+    }
+
+    public bool HasHardware => _available.Any(e => e.IsHardware);
+
+    private void TryDeleteCache()
+    {
+        try { if (File.Exists(_cachePath)) File.Delete(_cachePath); }
+        catch (IOException) { }
     }
 
     private static async Task<bool> ProbeAsync(string encoder, VideoCodec codec, CancellationToken ct)
     {
         // AV1 is buffered as MPEG-TS like everything else; older ffmpeg builds can mux but not demux
         // AV1 in TS, so for AV1 the probe writes a real TS file and reads it back.
-        string? tsFile = codec == VideoCodec.Av1 ? Path.Combine(Path.GetTempPath(), $"duelcliping-probe-{Guid.NewGuid():N}.ts") : null;
+        string? tsFile = codec == VideoCodec.Av1 ? Path.Combine(Path.GetTempPath(), $"moments-probe-{Guid.NewGuid():N}.ts") : null;
         var args = new List<string>
         {
             "-hide_banner", "-loglevel", "error",
             "-f", "lavfi", "-i", "color=c=black:s=1280x720:r=30",
-            "-frames:v", "5", "-pix_fmt", "nv12", "-c:v", encoder,
+            "-frames:v", "5", "-pix_fmt", "nv12", "-c:v", encoder, "-b:v", "2M",
         };
         args.AddRange(tsFile == null ? new[] { "-f", "null", "-" } : new[] { "-y", "-f", "mpegts", tsFile });
         try
@@ -128,7 +151,7 @@ public sealed class EncoderCatalog
     public EncoderSelection Select(VideoCodec codec, EncoderPreference preference)
     {
         if (_available.Count == 0)
-            throw new InvalidOperationException("No working video encoder was found. Reinstall Duelcliping or update your graphics driver.");
+            throw new InvalidOperationException("No working video encoder was found. Reinstall Moments or update your graphics driver.");
 
         var vendorOrder = new List<EncoderVendor> { EncoderVendor.Nvidia, EncoderVendor.Amd, EncoderVendor.Intel };
         EncoderVendor? preferred = preference switch
@@ -190,7 +213,7 @@ public sealed class EncoderCatalog
             if (!File.Exists(_cachePath)) return false;
             var cache = JsonSerializer.Deserialize<CacheFile>(File.ReadAllText(_cachePath));
             if (cache == null || cache.FfmpegPath != FfmpegLocator.Ffmpeg || cache.FfmpegSize != FfmpegSize()) return false;
-            if (DateTime.UtcNow - cache.WrittenUtc > TimeSpan.FromDays(7) || cache.Encoders.Count == 0) return false;
+            if (DateTime.UtcNow - cache.WrittenUtc > TimeSpan.FromDays(7) || !cache.Encoders.Any(e => e.IsHardware)) return false;
             _available = cache.Encoders;
             Log.Info("Encoders", "Using cached encoder detection: " + string.Join(", ", _available.Select(e => e.FfmpegName)));
             return true;

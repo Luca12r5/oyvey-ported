@@ -32,7 +32,7 @@ public sealed record FrameTimeStats(int Frames, double AverageFps, double OnePer
 
 /// <summary>
 /// Measures a game's frame times with Intel PresentMon (an external, free tool that reads the
-/// Windows ETW present events). Duelcliping does not inject into games, so this is the only honest
+/// Windows ETW present events). Moments does not inject into games, so this is the only honest
 /// way to measure in-game FPS. PresentMon needs administrator rights or the
 /// "Performance Log Users" group.
 /// </summary>
@@ -41,7 +41,7 @@ public static class PresentMonCapture
     public static async Task<FrameTimeStats?> CaptureAsync(string presentMonExe, string processName, TimeSpan duration, CancellationToken ct)
     {
         if (!File.Exists(presentMonExe)) throw new FileNotFoundException("PresentMon was not found.", presentMonExe);
-        var csv = Path.Combine(Path.GetTempPath(), $"duelcliping-presentmon-{Guid.NewGuid():N}.csv");
+        var csv = Path.Combine(Path.GetTempPath(), $"moments-presentmon-{Guid.NewGuid():N}.csv");
         var args = new[]
         {
             "--process_name", processName,
@@ -57,7 +57,7 @@ public static class PresentMonCapture
                 System.Diagnostics.ProcessPriorityClass.BelowNormal, null).ConfigureAwait(false);
             if (!File.Exists(csv))
                 throw new InvalidOperationException("PresentMon produced no data: " + result.ErrorSummary +
-                                                    " (run Duelcliping as administrator or join the 'Performance Log Users' group)");
+                                                    " (run Moments as administrator or join the 'Performance Log Users' group)");
             return From(await File.ReadAllLinesAsync(csv, ct).ConfigureAwait(false));
         }
         finally

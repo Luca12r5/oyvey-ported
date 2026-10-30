@@ -22,8 +22,8 @@
     </Style>
     <Style x:Key="TitleText" TargetType="TextBlock" BasedOn="{StaticResource TextBase}">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
-        <Setter Property="FontSize" Value="26" />
-        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="FontWeight" Value="Bold" />
     </Style>
     <Style x:Key="SectionText" TargetType="TextBlock" BasedOn="{StaticResource TextBase}">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
@@ -662,9 +662,37 @@
         <Setter Property="Cursor" Value="Hand" />
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-                <Setter Property="Background" Value="{DynamicResource GlassStrongBrush}" />
+                <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
             </Trigger>
         </Style.Triggers>
+    </Style>
+    <!-- Selectable pill (clip length) -->
+    <Style x:Key="ChipRadio" TargetType="RadioButton">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="Bd" Background="{DynamicResource GlassStrongBrush}" BorderBrush="{DynamicResource GlassBorderBrush}"
+                            BorderThickness="1" CornerRadius="18" Padding="18,8" MinWidth="64">
+                        <ContentPresenter HorizontalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentGradientBrush}" />
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="Transparent" />
+                            <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 </ResourceDictionary>

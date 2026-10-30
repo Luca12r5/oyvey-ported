@@ -1,4 +1,4 @@
-# Duelcliping – Architecture
+# Moments – Architecture
 
 ## 1. Technology choice
 
@@ -6,7 +6,7 @@
 |---|---|---|
 | UI | **WPF on .NET 8** (C#), translucent acrylic/blur window | Native Windows desktop, hardware-composited, mature, no browser engine (Electron would cost 150–300 MB RAM and a Chromium GPU process while you play). The window is created only when opened and destroyed when closed to the tray. |
 | Screen capture | **DXGI Desktop Duplication** via ffmpeg `ddagrab` | The OS hands over the composed desktop as a GPU texture. No hooks or DLL injection into games (anti-cheat safe), works for borderless and most fullscreen games, and frames never leave GPU memory. |
-| Encoding | **ffmpeg** with **NVENC / AMF / Quick Sync** | One battle-tested implementation of all three vendor SDKs, H.264/HEVC/AV1, rate control and muxing. It runs as a separate process: if a driver crashes the encoder, Duelcliping survives and restarts it. |
+| Encoding | **ffmpeg** with **NVENC / AMF / Quick Sync** | One battle-tested implementation of all three vendor SDKs, H.264/HEVC/AV1, rate control and muxing. It runs as a separate process: if a driver crashes the encoder, Moments survives and restarts it. |
 | Audio | **WASAPI** (NAudio) shared-mode loopback + capture | The native Windows audio API; event driven, no polling. |
 | Hotkeys | `RegisterHotKey` | Handled by the OS, no keyboard hook, no added input latency, works while a game has focus. |
 | Installer | **Inno Setup**, self-contained .NET publish | One `.exe` installer, no .NET runtime prerequisite, per-user install without admin rights. |
@@ -45,7 +45,7 @@ The engine knows nothing about the UI. The app talks to it only through `AppCont
 ## 3. Recording pipeline
 
 ```
- GPU                                        ffmpeg process                       Duelcliping process
+ GPU                                        ffmpeg process                       Moments process
 ┌──────────────┐  D3D11 texture   ┌──────────────────────────────┐  MPEG-TS   ┌─────────────────────┐
 │ Desktop Dup. │ ───────────────▶ │ ddagrab → (scale_cuda |      │ ─stdout──▶ │ ReplayBuffer (RAM)  │
 │ (ddagrab)    │                  │ vpp_amf | vpp_qsv) → NVENC/  │            │  GOP chunks, ring   │
@@ -127,12 +127,12 @@ cap, 1 s GOP. Performance mode picks the fastest preset (NVENC `p1`, AMF `speed`
   popups are suppressed while a fullscreen game has focus (errors are shown afterwards).
 * No expensive fallbacks: GDI capture was removed and the CPU encoder is never used silently; if
   no GPU path works the app reports the error instead of eating FPS.
-* CPU: no per-frame CPU work in Duelcliping; the TS reader handles ~2–6 MB/s. ffmpeg and the app run
+* CPU: no per-frame CPU work in Moments; the TS reader handles ~2–6 MB/s. ffmpeg and the app run
   at *below normal* priority in performance mode, so the game wins every scheduling decision.
 * Memory: pooled buffers, workstation GC with conserve-memory mode, main window destroyed when
   closed, working set trimmed when a fullscreen game takes focus.
 * Disk: zero writes until you save; clip saves are sequential 1 MB writes.
-* Network: none. Duelcliping makes no network connections at all.
+* Network: none. Moments makes no network connections at all.
 * Idle work: no polling loops except a 3 s foreground-window check (three Win32 calls); the
   performance monitor samples only while the window is open, GPU counters only on the Stats page,
   and nothing is re-rendered while a fullscreen game has focus; the overlay redraws
@@ -140,13 +140,13 @@ cap, 1 s GOP. Performance mode picks the fastest preset (NVENC `p1`, AMF `speed`
 
 ## 9. Measuring overhead
 
-The Performance page shows live, measured CPU/GPU/encoder/memory values for Duelcliping and ffmpeg
+The Performance page shows live, measured CPU/GPU/encoder/memory values for Moments and ffmpeg
 (GetSystemTimes, process CPU time, the "GPU Engine" counters used by Task Manager), the capture
 frame rate, dropped/repeated frames, encoder speed and backlog, and the last clip's disk write speed.
 
 The benchmark runs the same scene twice – recording **off**, then **on** – and reports the
 differences. With PresentMon configured it also measures the game's average FPS, 1 % lows and
-frame-time standard deviation from ETW present events. Reports are saved as JSON. Duelcliping does
+frame-time standard deviation from ETW present events. Reports are saved as JSON. Moments does
 not claim zero overhead; it shows you the measured numbers for your system.
 
 ## 10. Error handling

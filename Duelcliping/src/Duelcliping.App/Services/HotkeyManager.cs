@@ -20,7 +20,7 @@ public sealed class HotkeyManager : IDisposable
 
     public HotkeyManager()
     {
-        var parameters = new HwndSourceParameters("Duelcliping.Hotkeys") { ParentWindow = new IntPtr(-3), WindowStyle = 0 }; // HWND_MESSAGE
+        var parameters = new HwndSourceParameters("Moments.Hotkeys") { ParentWindow = new IntPtr(-3), WindowStyle = 0 }; // HWND_MESSAGE
         _window = new HwndSource(parameters);
         _window.AddHook(WndProc);
     }

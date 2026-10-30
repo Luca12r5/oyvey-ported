@@ -135,6 +135,105 @@ public sealed class EditorViewModel : ObservableObject
     public ImageSource? FilmStrip { get => _filmStrip; private set => Set(ref _filmStrip, value); }
     public bool HasOutput => _lastOutput != null;
 
+    // ------------------------------------------------------------------ effects
+    private string? _musicPath;
+    private double _musicVolume = 80, _originalVolume = 100, _transitionSeconds = 0.5;
+    private TransitionStyle _transition = TransitionStyle.None;
+    private ColorLook _look = ColorLook.None;
+    private double _speed = 1.0;
+    private bool _fadeIn, _fadeOut;
+    private string _title = "";
+    private TitlePlacement _titlePosition = TitlePlacement.Bottom;
+
+    public IReadOnlyList<Option<TransitionStyle>> Transitions { get; } = new[]
+    {
+        new Option<TransitionStyle>(TransitionStyle.None, "None (hard cut)"), new Option<TransitionStyle>(TransitionStyle.Fade, "Fade"),
+        new Option<TransitionStyle>(TransitionStyle.Dissolve, "Dissolve"), new Option<TransitionStyle>(TransitionStyle.Wipe, "Wipe"),
+        new Option<TransitionStyle>(TransitionStyle.Slide, "Slide"), new Option<TransitionStyle>(TransitionStyle.Circle, "Circle"),
+        new Option<TransitionStyle>(TransitionStyle.Flash, "Flash"),
+    };
+    public IReadOnlyList<Option<ColorLook>> Looks { get; } = new[]
+    {
+        new Option<ColorLook>(ColorLook.None, "Original"), new Option<ColorLook>(ColorLook.Vivid, "Vivid"),
+        new Option<ColorLook>(ColorLook.Cinematic, "Cinematic"), new Option<ColorLook>(ColorLook.BlackWhite, "Black & white"),
+        new Option<ColorLook>(ColorLook.Warm, "Warm"), new Option<ColorLook>(ColorLook.Cool, "Cool"),
+        new Option<ColorLook>(ColorLook.Retro, "Retro"), new Option<ColorLook>(ColorLook.Vignette, "Vignette"),
+    };
+    public IReadOnlyList<Option<double>> Speeds { get; } = new[]
+    {
+        new Option<double>(0.5, "0.5× slow motion"), new Option<double>(0.75, "0.75×"), new Option<double>(1.0, "1× normal"),
+        new Option<double>(1.25, "1.25×"), new Option<double>(1.5, "1.5×"), new Option<double>(2.0, "2× fast"),
+    };
+    public IReadOnlyList<Option<TitlePlacement>> TitlePositions { get; } = new[]
+    {
+        new Option<TitlePlacement>(TitlePlacement.Top, "Top"), new Option<TitlePlacement>(TitlePlacement.Center, "Center"),
+        new Option<TitlePlacement>(TitlePlacement.Bottom, "Bottom"),
+    };
+
+    public string MusicName => _musicPath == null ? "No music" : Path.GetFileName(_musicPath);
+    public bool HasMusic => _musicPath != null;
+    public double MusicVolume { get => _musicVolume; set { if (Set(ref _musicVolume, value)) EffectsChanged(); } }
+    public double OriginalVolume { get => _originalVolume; set { if (Set(ref _originalVolume, value)) EffectsChanged(); } }
+    public TransitionStyle Transition { get => _transition; set { if (Set(ref _transition, value)) EffectsChanged(); } }
+    public double TransitionSeconds { get => _transitionSeconds; set { if (Set(ref _transitionSeconds, value)) EffectsChanged(); } }
+    public ColorLook Look { get => _look; set { if (Set(ref _look, value)) EffectsChanged(); } }
+    public double Speed { get => _speed; set { if (Set(ref _speed, value)) EffectsChanged(); } }
+    public bool FadeIn { get => _fadeIn; set { if (Set(ref _fadeIn, value)) EffectsChanged(); } }
+    public bool FadeOut { get => _fadeOut; set { if (Set(ref _fadeOut, value)) EffectsChanged(); } }
+    public string Title2 { get => _title; set { if (Set(ref _title, value ?? "")) EffectsChanged(); } }
+    public TitlePlacement TitlePosition { get => _titlePosition; set { if (Set(ref _titlePosition, value)) EffectsChanged(); } }
+    public bool HasEffects => BuildEffects() is { HasAny: true };
+    public string EffectsHint => HasEffects
+        ? "Effects are on: the video is rendered frame-exact with your " + (_app.ActiveEncoder?.Encoder.IsHardware == true ? "GPU" : "CPU") + " encoder."
+        : "Add music, transitions, a look or a title – everything is rendered when you save.";
+
+    public ICommand PickMusicCommand => _pickMusic ??= new RelayCommand(PickMusic);
+    public ICommand ClearMusicCommand => _clearMusic ??= new RelayCommand(() => { _musicPath = null; EffectsChanged(); }, () => _musicPath != null);
+    public ICommand ResetEffectsCommand => _resetFx ??= new RelayCommand(ResetEffects);
+    private ICommand? _pickMusic, _clearMusic, _resetFx;
+
+    private void PickMusic()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Choose background music",
+            Filter = "Audio|*.mp3;*.wav;*.m4a;*.aac;*.flac;*.ogg;*.opus;*.wma|All files|*.*",
+        };
+        if (dialog.ShowDialog() != true) return;
+        _musicPath = dialog.FileName;
+        EffectsChanged();
+    }
+
+    private void ResetEffects()
+    {
+        _musicPath = null; _musicVolume = 80; _originalVolume = 100; _transition = TransitionStyle.None; _transitionSeconds = 0.5;
+        _look = ColorLook.None; _speed = 1.0; _fadeIn = _fadeOut = false; _title = ""; _titlePosition = TitlePlacement.Bottom;
+        OnPropertiesChanged(nameof(MusicVolume), nameof(OriginalVolume), nameof(Transition), nameof(TransitionSeconds), nameof(Look),
+            nameof(Speed), nameof(FadeIn), nameof(FadeOut), nameof(Title2), nameof(TitlePosition));
+        EffectsChanged();
+    }
+
+    private void EffectsChanged()
+    {
+        OnPropertiesChanged(nameof(MusicName), nameof(HasMusic), nameof(HasEffects), nameof(EffectsHint), nameof(ModeHint));
+        CommandManager.InvalidateRequerySuggested();
+    }
+
+    private EditEffects BuildEffects() => new()
+    {
+        MusicPath = _musicPath,
+        MusicVolume = _musicVolume / 100,
+        OriginalVolume = _originalVolume / 100,
+        Transition = _transition,
+        TransitionSeconds = _transitionSeconds,
+        Look = _look,
+        Speed = _speed,
+        FadeIn = _fadeIn,
+        FadeOut = _fadeOut,
+        Title = string.IsNullOrWhiteSpace(_title) ? null : _title,
+        TitlePosition = _titlePosition,
+    };
+
     public async Task LoadAsync(string path)
     {
         ReleaseMediaRequested?.Invoke();
@@ -162,7 +261,7 @@ public sealed class EditorViewModel : ObservableObject
             nameof(PositionText), nameof(HasOutput), nameof(ModeHint));
         CommandManager.InvalidateRequerySuggested();
 
-        var strip = Path.Combine(Path.GetTempPath(), "duelcliping-strip-" + Guid.NewGuid().ToString("N") + ".jpg");
+        var strip = Path.Combine(Path.GetTempPath(), "moments-strip-" + Guid.NewGuid().ToString("N") + ".jpg");
         var created = await Duelcliping.Core.Library.FilmStrip.CreateAsync(path, info.DurationSeconds, strip);
         if (created != null && FilePath == path)
         {
@@ -242,7 +341,10 @@ public sealed class EditorViewModel : ObservableObject
             Encoder = encoder,
             MaxHeight = maxHeight,
             BitrateKbps = Duelcliping.Core.Encoders.PipelineConfig.ComputeBitrateKbps(QualityPreset.High, 0, outWidth, outHeight, Math.Min(fps, 144), VideoCodec.H264),
+            Effects = BuildEffects(),
         };
+        if (request.Effects is { HasAny: true } && request.Encoder == null && _app.Encoders.Available.Count > 0)
+            request = request with { Encoder = _app.Encoders.Select(VideoCodec.H264, _app.Settings.Current.Encoder).Encoder };
 
         IsExporting = true;
         Progress = 0;

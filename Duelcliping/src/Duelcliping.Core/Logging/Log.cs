@@ -34,9 +34,9 @@ public static class Log
         _directory = directory;
         System.IO.Directory.CreateDirectory(directory);
         Rotate();
-        _writer = new Thread(WriterLoop) { IsBackground = true, Name = "Duelcliping.Log", Priority = ThreadPriority.BelowNormal };
+        _writer = new Thread(WriterLoop) { IsBackground = true, Name = "Moments.Log", Priority = ThreadPriority.BelowNormal };
         _writer.Start();
-        Info("Log", $"Duelcliping log started ({Environment.OSVersion}, .NET {Environment.Version}, {Environment.ProcessorCount} logical CPUs)");
+        Info("Log", $"Moments log started ({Environment.OSVersion}, .NET {Environment.Version}, {Environment.ProcessorCount} logical CPUs)");
     }
 
     public static void Debug(string source, string message) => Write(LogLevel.Debug, source, message);
@@ -102,12 +102,12 @@ public static class Log
         {
             _stream?.Dispose();
             var dir = _directory!;
-            var files = new DirectoryInfo(dir).GetFiles("duelcliping-*.log").OrderByDescending(f => f.CreationTimeUtc).ToList();
+            var files = new DirectoryInfo(dir).GetFiles("moments-*.log").OrderByDescending(f => f.CreationTimeUtc).ToList();
             foreach (var old in files.Skip(KeptFiles - 1))
             {
                 try { old.Delete(); } catch { /* in use or locked; ignore */ }
             }
-            CurrentFile = Path.Combine(dir, $"duelcliping-{DateTime.Now:yyyyMMdd-HHmmss}.log");
+            CurrentFile = Path.Combine(dir, $"moments-{DateTime.Now:yyyyMMdd-HHmmss}.log");
             _stream = new StreamWriter(new FileStream(CurrentFile, FileMode.Append, FileAccess.Write, FileShare.ReadWrite), new UTF8Encoding(false));
             _written = 0;
         }

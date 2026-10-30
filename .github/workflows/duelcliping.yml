@@ -48,7 +48,7 @@ jobs:
         run: ./scripts/build.ps1 -SkipTests -Version "1.0.${{ github.run_number }}"
       - name: UI self-test (renders every page, opens the cutter, detects encoders)
         run: |
-          $p = Start-Process -FilePath "artifacts\publish\Duelcliping.exe" -ArgumentList "--selftest","$PWD\selftest.txt" -PassThru -Wait
+          $p = Start-Process -FilePath "artifacts\publish\Moments.exe" -ArgumentList "--selftest","$PWD\selftest.txt" -PassThru -Wait
           Get-Content selftest.txt
           if ($p.ExitCode -ne 0) { throw "Self-test failed with exit code $($p.ExitCode)" }
       - name: Print UI screenshot luminance maps (layout review without artifact access)
@@ -76,15 +76,15 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Duelcliping-Screenshots
+          name: Moments-Screenshots
           path: Duelcliping/screenshots/
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: Duelcliping-Setup
-          path: Duelcliping/artifacts/Duelcliping-Setup-*.exe
+          name: Moments-Setup
+          path: Duelcliping/artifacts/Moments-Setup-*.exe
       - name: Upload portable build
         uses: actions/upload-artifact@v4
         with:
-          name: Duelcliping-Portable
+          name: Moments-Portable
           path: Duelcliping/artifacts/publish/

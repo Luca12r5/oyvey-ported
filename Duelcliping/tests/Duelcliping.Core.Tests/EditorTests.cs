@@ -103,3 +103,68 @@ public class EditorTests
         Assert.False(result.ReEncoded);
     }
 }
+
+public class EffectsTests
+{
+    private static TimeSpan S(double s) => TimeSpan.FromSeconds(s);
+
+    private static async Task<(string Video, string Music)> MakeMediaAsync(TempDir dir)
+    {
+        var video = Path.Combine(dir.Path, "src.mp4");
+        var r = await FfmpegRunner.RunFfmpegAsync(new[]
+        {
+            "-v", "error", "-f", "lavfi", "-i", "testsrc2=s=320x240:r=30:d=10",
+            "-f", "lavfi", "-i", "sine=f=440:d=10", "-f", "lavfi", "-i", "sine=f=880:d=10",
+            "-map", "0", "-map", "1", "-map", "2", "-c:v", "libx264", "-g", "30", "-pix_fmt", "yuv420p", "-c:a", "aac", video,
+        });
+        Assert.True(r.Success, r.StdErr);
+        var music = Path.Combine(dir.Path, "music.mp3");
+        r = await FfmpegRunner.RunFfmpegAsync(new[] { "-v", "error", "-f", "lavfi", "-i", "sine=f=330:d=3", "-c:a", "libmp3lame", music });
+        if (!r.Success) // ffmpeg without mp3 encoder: use wav
+        {
+            music = Path.ChangeExtension(music, ".wav");
+            r = await FfmpegRunner.RunFfmpegAsync(new[] { "-v", "error", "-f", "lavfi", "-i", "sine=f=330:d=3", music });
+        }
+        Assert.True(r.Success, r.StdErr);
+        return (video, music);
+    }
+
+    [Theory]
+    [InlineData(TransitionStyle.Fade, ColorLook.Cinematic, 1.0, 6.5)]
+    [InlineData(TransitionStyle.Slide, ColorLook.BlackWhite, 2.0, 3.25)]
+    [InlineData(TransitionStyle.None, ColorLook.Retro, 0.5, 14.0)]
+    public async Task Renders_transitions_looks_speed_music_fades_and_title(TransitionStyle transition, ColorLook look, double speed, double expected)
+    {
+        using var dir = new TempDir();
+        var (video, music) = await MakeMediaAsync(dir);
+        var output = Path.Combine(dir.Path, "edit.mp4");
+        var result = await ClipEditor.RunAsync(new EditRequest
+        {
+            Input = video,
+            Output = output,
+            Segments = new[] { new CutSegment(S(0), S(3)), new CutSegment(S(6), S(10)) },
+            Effects = new EditEffects
+            {
+                Transition = transition, TransitionSeconds = 0.5, Look = look, Speed = speed,
+                MusicPath = music, MusicVolume = 0.5, OriginalVolume = 0.8, FadeIn = true, FadeOut = true,
+                Title = "GG – what a moment!", TitlePosition = TitlePlacement.Bottom,
+            },
+        }, null, CancellationToken.None);
+
+        Assert.True(result.ReEncoded);
+        var info = await Probe.RunAsync(output);
+        Assert.Equal(1, info.AudioStreams); // all tracks + music mixed
+        Assert.InRange(info.Duration, expected - 0.15, expected + 0.15);
+        var errors = await Probe.DecodeErrorsAsync(output);
+        Assert.True(errors == "", errors);
+    }
+
+    [Fact]
+    public void No_effects_means_no_reencode_flag()
+    {
+        Assert.False(new EditEffects().HasAny);
+        Assert.True(new EditEffects { Speed = 1.5 }.HasAny);
+        Assert.Equal(6.5, EffectsRenderer.OutputSeconds(new[] { new CutSegment(S(0), S(3)), new CutSegment(S(6), S(10)) },
+            new EditEffects { Transition = TransitionStyle.Fade, TransitionSeconds = 0.5 }), 3);
+    }
+}

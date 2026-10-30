@@ -75,7 +75,7 @@ internal sealed class CapturePipeline : IDisposable
         var connectTasks = new List<(Task Task, NamedPipeServerStream Pipe, AudioSourceSpec Spec)>();
         foreach (var spec in _audioSpecs)
         {
-            string name = $"duelcliping_{Environment.ProcessId}_{Guid.NewGuid():N}";
+            string name = $"moments_{Environment.ProcessId}_{Guid.NewGuid():N}";
             var pipe = new NamedPipeServerStream(name, PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous, 0, 1 << 20);
             _pipes.Add(pipe);
             string path = OperatingSystem.IsWindows()
@@ -99,7 +99,7 @@ internal sealed class CapturePipeline : IDisposable
         }
         catch (System.ComponentModel.Win32Exception ex)
         {
-            throw new FileNotFoundException("ffmpeg.exe could not be started. Reinstall Duelcliping to restore it.", FfmpegLocator.Ffmpeg, ex);
+            throw new FileNotFoundException("ffmpeg.exe could not be started. Reinstall Moments to restore it.", FfmpegLocator.Ffmpeg, ex);
         }
         FfmpegRunner.TrySetPriority(_process, _config.PerformanceMode ? ProcessPriorityClass.BelowNormal : ProcessPriorityClass.Normal);
         // The game must win every GPU scheduling decision against capture/encode work.
@@ -107,8 +107,8 @@ internal sealed class CapturePipeline : IDisposable
         Progress.StartedUtc = DateTime.UtcNow;
         Progress.LastDataUtc = DateTime.UtcNow;
 
-        _stdoutThread = new Thread(ReadStdout) { IsBackground = true, Name = "Duelcliping.Stream", Priority = ThreadPriority.AboveNormal };
-        _stderrThread = new Thread(ReadStderr) { IsBackground = true, Name = "Duelcliping.FfmpegLog", Priority = ThreadPriority.BelowNormal };
+        _stdoutThread = new Thread(ReadStdout) { IsBackground = true, Name = "Moments.Stream", Priority = ThreadPriority.AboveNormal };
+        _stderrThread = new Thread(ReadStderr) { IsBackground = true, Name = "Moments.FfmpegLog", Priority = ThreadPriority.BelowNormal };
         _stdoutThread.Start();
         _stderrThread.Start();
 

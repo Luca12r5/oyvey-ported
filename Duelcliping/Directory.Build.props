@@ -5,9 +5,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <Version>1.0.0</Version>
-    <Company>Duelcliping</Company>
-    <Product>Duelcliping</Product>
-    <Copyright>Copyright © 2026 Duelcliping</Copyright>
+    <Company>Moments</Company>
+    <Product>Moments</Product>
+    <Copyright>Copyright © 2026 Moments</Copyright>
     <InvariantGlobalization>false</InvariantGlobalization>
   </PropertyGroup>
 </Project>

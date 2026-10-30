@@ -54,7 +54,7 @@ public sealed class ClipLibrary
     }
 
     public string Directory => _directory;
-    public string DataDirectory => Path.Combine(_directory, ".duelcliping");
+    public string DataDirectory => Path.Combine(_directory, ".moments");
     public string ThumbnailDirectory => Path.Combine(DataDirectory, "thumbs");
     private string IndexPath => Path.Combine(DataDirectory, "index.json");
 

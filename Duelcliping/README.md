@@ -1,4 +1,4 @@
-# Duelcliping
+# Moments
 
 **Gaming clip recorder for Windows** – background replay buffer, full-session recording and a
 built-in video cutter, designed to cost your game as little performance as possible.
@@ -10,6 +10,10 @@ built-in video cutter, designed to cost your game as little performance as possi
 * Up to **4K** and **144 FPS**, **H.264 / HEVC / AV1**, **MP4 / MKV**, Low → Ultra or custom bitrate.
 * **Hardware encoding** with NVIDIA NVENC, AMD AMF or Intel Quick Sync – detected and tested automatically.
 * Game audio and microphone on **separate tracks** with independent volume and device selection.
+* **Editor effects**: background music from your own files, transitions (fade, dissolve, wipe, slide,
+  circle, flash), colour looks, speed 0.5×–2×, fade in/out and a title – rendered on the GPU.
+* **Replay guard**: checks every 5 s that the replay buffer records, restarts it if needed and plays a
+  sound when it is ready, switched off or stops – and an error sound if a clip could not be saved.
 * Clip library with thumbnails, hover previews, search, sort, rename, delete, pin, export.
 * Translucent blue glass design (acrylic blur on Windows 11, blur-behind on Windows 10), dark and light.
 * Short click-through “Saved” badge, tray icon, start with Windows.
@@ -17,11 +21,11 @@ built-in video cutter, designed to cost your game as little performance as possi
 
 ## Install
 
-1. Download `Duelcliping-Setup-x.y.z.exe` (GitHub → Actions → latest *Duelcliping* run → artifact
-   **Duelcliping-Setup**, or build it yourself, see below).
+1. Download `Moments-Setup-x.y.z.exe` (GitHub → Actions → latest *Moments* run → artifact
+   **Moments-Setup**, or build it yourself, see below).
 2. Run it. No admin rights or .NET installation are needed; ffmpeg is included.
-3. Duelcliping starts in the tray and the replay buffer is on. Press **F8** in a game to save the
-   last 30 seconds. Clips go to `Videos\Duelcliping`.
+3. Moments starts in the tray and the replay buffer is on. Press **F8** in a game to save the
+   last 30 seconds. Clips go to `Videos\Moments`.
 
 Requirements: Windows 10 1809 or newer (Windows 11 recommended), 64-bit. A GPU with a hardware
 encoder (NVIDIA GTX 600+, AMD GCN+, Intel 6th gen+) is strongly recommended.
@@ -33,7 +37,7 @@ encoder (NVIDIA GTX 600+, AMD GCN+, Intel 6th gen+) is strongly recommended.
 | Save last 30 seconds | F8 |
 | Save last 60 seconds | F9 |
 | Start / stop recording | F10 |
-| Open Duelcliping | F11 |
+| Open Moments | F11 |
 
 All are configurable in *Settings → Hotkeys*. Letters, digits, Space, Shift, Ctrl etc. without a
 modifier are rejected because games use them.
@@ -64,7 +68,7 @@ dotnet test tests/Duelcliping.Core.Tests
 
 * Keep *Settings → Overlay → Always show REC/REPLAY indicator* **off** (default). Any window on top of
   a borderless game forces Windows to compose every frame.
-* Keep *Performance mode* on (default): encoder and Duelcliping run below the game in CPU and GPU priority.
+* Keep *Performance mode* on (default): encoder and Moments run below the game in CPU and GPU priority.
 * Use a hardware encoder (the dashboard shows “GPU zero-copy” when everything runs on the GPU). If it
   shows “CPU conversion”, update your graphics driver.
 * Lower recording FPS (e.g. 60) or resolution (1080p) reduces encoder load further.
@@ -74,13 +78,13 @@ dotnet test tests/Duelcliping.Core.Tests
 
 * The overlay and notifications are excluded from recordings and never take focus. Windows cannot
   show any overlay above *exclusive* fullscreen games – use borderless mode if you want to see it.
-* Duelcliping records the selected monitor (Desktop Duplication); it does not inject into games, so
+* Moments records the selected monitor (Desktop Duplication); it does not inject into games, so
   it is safe with anti-cheat systems.
 * In-game FPS in the benchmark requires [PresentMon](https://github.com/GameTechDev/PresentMon) and
   administrator rights (or membership in *Performance Log Users*).
 * Previewing HEVC/AV1 clips in the app needs the matching Windows video extensions; recording and
   cutting work without them.
-* Duelcliping makes no network connections.
+* Moments makes no network connections.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how it works. ffmpeg is licensed under the GPL
 (`ffmpeg/FFMPEG-LICENSE.txt` in the install folder).

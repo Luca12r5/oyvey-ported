@@ -117,7 +117,7 @@ public static class FfmpegRunner
         }
         catch (System.ComponentModel.Win32Exception ex)
         {
-            throw new FileNotFoundException($"Could not start {Path.GetFileName(exe)}. Is ffmpeg installed next to Duelcliping? ({ex.Message})", exe, ex);
+            throw new FileNotFoundException($"Could not start {Path.GetFileName(exe)}. Is ffmpeg installed next to Moments? ({ex.Message})", exe, ex);
         }
 
         TrySetPriority(process, priority);

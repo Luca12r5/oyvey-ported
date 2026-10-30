@@ -137,10 +137,10 @@ public sealed class PerformanceViewModel : ObservableObject
         }
         rows.Add(new("System CPU", V(off.SystemCpuPercent, unit: "%"), V(on.SystemCpuPercent, unit: "%"), D(off.SystemCpuPercent, on.SystemCpuPercent, " pt")));
         rows.Add(new("System GPU", V(off.SystemGpuPercent, unit: "%"), V(on.SystemGpuPercent, unit: "%"), D(off.SystemGpuPercent, on.SystemGpuPercent, " pt")));
-        rows.Add(new("Duelcliping CPU", V(off.AppCpuPercent, unit: "%"), V(on.AppCpuPercent, unit: "%"), D(off.AppCpuPercent, on.AppCpuPercent, " pt")));
-        rows.Add(new("Duelcliping GPU", V(off.AppGpuPercent, unit: "%"), V(on.AppGpuPercent, unit: "%"), D(off.AppGpuPercent, on.AppGpuPercent, " pt")));
+        rows.Add(new("Moments CPU", V(off.AppCpuPercent, unit: "%"), V(on.AppCpuPercent, unit: "%"), D(off.AppCpuPercent, on.AppCpuPercent, " pt")));
+        rows.Add(new("Moments GPU", V(off.AppGpuPercent, unit: "%"), V(on.AppGpuPercent, unit: "%"), D(off.AppGpuPercent, on.AppGpuPercent, " pt")));
         rows.Add(new("Video encoder engine", V(off.EncoderEnginePercent, unit: "%"), V(on.EncoderEnginePercent, unit: "%"), "—"));
-        rows.Add(new("Duelcliping memory", Format.Bytes(off.PeakAppMemoryBytes), Format.Bytes(on.PeakAppMemoryBytes),
+        rows.Add(new("Moments memory", Format.Bytes(off.PeakAppMemoryBytes), Format.Bytes(on.PeakAppMemoryBytes),
             Format.Bytes(Math.Max(0, on.PeakAppMemoryBytes - off.PeakAppMemoryBytes))));
         rows.Add(new("Recording FPS", "—", $"{on.CaptureFps:0.0}", ""));
         rows.Add(new("Dropped frames", "—", on.DroppedFrames.ToString(), ""));

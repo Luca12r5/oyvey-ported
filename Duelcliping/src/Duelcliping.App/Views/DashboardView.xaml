@@ -8,9 +8,9 @@
             <Border CornerRadius="18" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Padding="28,24" ClipToBounds="True">
                 <Border.Background>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Offset="0" Color="#663D8BFF" />
-                        <GradientStop Offset="0.55" Color="#26182A4D" />
-                        <GradientStop Offset="1" Color="#3322C3EE" />
+                        <GradientStop Offset="0" Color="#B32563EB" />
+                        <GradientStop Offset="0.6" Color="#40121A2E" />
+                        <GradientStop Offset="1" Color="#14FFFFFF" />
                     </LinearGradientBrush>
                 </Border.Background>
                 <Grid>
@@ -24,22 +24,19 @@
                                 <Ellipse Fill="{Binding StateBrush}" Opacity="0.3" />
                                 <Ellipse Fill="{Binding StateBrush}" Width="8" Height="8" />
                             </Grid>
-                            <TextBlock Text="{Binding StateTitle}" Style="{StaticResource TitleText}" FontSize="24" Margin="12,0,0,0" />
+                            <TextBlock Text="{Binding StateTitle}" Style="{StaticResource TitleText}" FontSize="30" Margin="12,0,0,0" />
                         </StackPanel>
                         <TextBlock Text="{Binding StateDetail}" Style="{StaticResource SecondaryText}" Margin="28,4,0,0" MaxWidth="620" HorizontalAlignment="Left" />
 
-                        <TextBlock Text="SAVE THE LAST" Style="{StaticResource LabelText}" Margin="28,22,0,10" />
+                        <TextBlock Text="CLIP LENGTH" Style="{StaticResource LabelText}" Margin="28,22,0,10" />
                         <WrapPanel Margin="28,0,0,0">
-                            <Button Style="{StaticResource ChipButton}" Command="{Binding SaveCommand}" CommandParameter="15" Content="15 s" Margin="0,0,8,8" />
-                            <Button Style="{StaticResource ChipButton}" Command="{Binding SaveCommand}" CommandParameter="30" Content="30 s" Margin="0,0,8,8" />
-                            <Button Style="{StaticResource ChipButton}" Command="{Binding SaveCommand}" CommandParameter="60" Content="1 min" Margin="0,0,8,8" />
-                            <Button Style="{StaticResource ChipButton}" Command="{Binding SaveCommand}" CommandParameter="120" Content="2 min" Margin="0,0,8,8" />
-                            <Button Style="{StaticResource ChipButton}" Command="{Binding SaveCommand}" CommandParameter="300" Content="5 min" Margin="0,0,8,8" />
-                            <Button Style="{StaticResource ChipButton}" Command="{Binding SaveCustomCommand}" Margin="0,0,8,8" ToolTip="Custom length (Settings)">
-                                <TextBlock Text="{Binding CustomSaveLabel}" />
-                            </Button>
+                            <RadioButton Style="{StaticResource ChipRadio}" GroupName="cliplen" Content="15 s" IsChecked="{Binding Len15}" Margin="0,0,8,8" />
+                            <RadioButton Style="{StaticResource ChipRadio}" GroupName="cliplen" Content="30 s" IsChecked="{Binding Len30}" Margin="0,0,8,8" />
+                            <RadioButton Style="{StaticResource ChipRadio}" GroupName="cliplen" Content="1 min" IsChecked="{Binding Len60}" Margin="0,0,8,8" />
+                            <RadioButton Style="{StaticResource ChipRadio}" GroupName="cliplen" Content="2 min" IsChecked="{Binding Len120}" Margin="0,0,8,8" />
+                            <RadioButton Style="{StaticResource ChipRadio}" GroupName="cliplen" Content="5 min" IsChecked="{Binding Len300}" Margin="0,0,8,8" />
                         </WrapPanel>
-                        <TextBlock Text="{Binding ShortcutHint}" Style="{StaticResource SecondaryText}" FontSize="12" Margin="28,6,0,0" />
+                        <TextBlock Text="{Binding ClipLengthHint}" Style="{StaticResource SecondaryText}" FontSize="12" Margin="28,6,0,0" />
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" MinWidth="230" Margin="24,0,0,0">
@@ -75,7 +72,7 @@
 
             <!-- Recent clips -->
             <Grid Margin="2,28,0,14">
-                <TextBlock Text="Recent clips" Style="{StaticResource SectionText}" FontSize="18" />
+                <TextBlock Text="Your moments" Style="{StaticResource TitleText}" FontSize="22" />
                 <Button Style="{StaticResource GhostButton}" Content="View all" Command="{Binding OpenLibraryCommand}" HorizontalAlignment="Right" />
             </Grid>
             <Border Style="{StaticResource Card}" Padding="28" Visibility="{Binding HasClips, Converter={StaticResource InverseBoolToVis}}">

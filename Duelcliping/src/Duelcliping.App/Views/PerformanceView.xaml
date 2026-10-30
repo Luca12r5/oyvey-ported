@@ -10,7 +10,7 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="28,12,28,32">
             <TextBlock Text="Performance" Style="{StaticResource TitleText}" />
-            <TextBlock Text="Live, measured values for Duelcliping (app + encoder process). Updated every 2 seconds while this window is open."
+            <TextBlock Text="Live, measured values for Moments (app + encoder process). Updated every 2 seconds while this window is open."
                        Style="{StaticResource SecondaryText}" Margin="0,4,0,18" />
 
             <UniformGrid Columns="4" Margin="-6,0">
@@ -37,7 +37,7 @@
                 <StackPanel>
                     <TextBlock Text="Benchmark: recording off vs. on" Style="{StaticResource SectionText}" />
                     <TextBlock Style="{StaticResource SecondaryText}" Margin="0,6,0,14"
-                               Text="Start a game, click Run, and switch to the game within 10 seconds. Duelcliping measures the same scene with recording disabled, then enabled, and shows the real difference." />
+                               Text="Start a game, click Run, and switch to the game within 10 seconds. Moments measures the same scene with recording disabled, then enabled, and shows the real difference." />
                     <TextBlock Text="{Binding PresentMonState}" Style="{StaticResource SecondaryText}" FontSize="12" Margin="0,0,0,14" />
                     <StackPanel Orientation="Horizontal">
                         <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="10" Padding="2" Margin="0,0,12,0">

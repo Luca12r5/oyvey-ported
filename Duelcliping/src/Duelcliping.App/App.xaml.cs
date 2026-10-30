@@ -13,7 +13,7 @@ namespace Duelcliping.App;
 
 public partial class App : Application
 {
-    private const string InstanceName = "Duelcliping.SingleInstance.v1";
+    private const string InstanceName = "Moments.SingleInstance.v1";
     private Mutex? _instanceMutex;
     private EventWaitHandle? _activateSignal;
     private AppController? _controller;
@@ -21,8 +21,7 @@ public partial class App : Application
     private MainWindow? _window;
     private RecordingOverlay? _overlay;
     private Forms.NotifyIcon? _tray;
-    private Forms.ToolStripMenuItem? _trayRecord;
-    private Forms.ToolStripMenuItem? _trayReplay;
+    private TrayMenu? _trayMenu;
     private bool _exiting;
 
     protected override async void OnStartup(StartupEventArgs e)
@@ -52,7 +51,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            MessageBox.Show("Duelcliping could not start: " + ex.Message, "Duelcliping", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show("Moments could not start: " + ex.Message, "Moments", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);
             return;
         }
@@ -90,7 +89,7 @@ public partial class App : Application
             {
                 if (_activateSignal!.WaitOne(1000) && !_exiting) Dispatcher.InvokeAsync(ShowMainWindow);
             }
-        }) { IsBackground = true, Name = "Duelcliping.Activation", Priority = ThreadPriority.Lowest };
+        }) { IsBackground = true, Name = "Moments.Activation", Priority = ThreadPriority.Lowest };
         thread.Start();
     }
 
@@ -136,7 +135,7 @@ public partial class App : Application
             return;
         }
         if (_controller.Engine.IsManualRecording || _controller.Settings.Current.ReplayBufferEnabled)
-            _tray?.ShowBalloonTip(2500, "Duelcliping keeps running", "Clips can still be saved with your hotkeys. Right-click the tray icon to exit.", Forms.ToolTipIcon.None);
+            _tray?.ShowBalloonTip(2500, "Moments keeps running", "Clips can still be saved with your hotkeys. Right-click the tray icon to exit.", Forms.ToolTipIcon.None);
     }
 
     private void OnStatusChanged()
@@ -144,11 +143,9 @@ public partial class App : Application
         if (_controller == null) return;
         _overlay?.Sync();
         var status = _controller.Engine.GetStatus();
-        if (_trayRecord != null) _trayRecord.Text = status.IsManualRecording ? "Stop recording" : "Start recording";
-        if (_trayReplay != null) _trayReplay.Checked = _controller.Settings.Current.ReplayBufferEnabled;
         if (_tray != null)
         {
-            var text = "Duelcliping · " + (status.IsManualRecording ? "Recording" : status.State switch
+            var text = "Moments · " + (status.IsManualRecording ? "Recording" : status.State switch
             {
                 EngineState.Running => "Replay buffer on",
                 EngineState.Faulted => "Problem – open for details",
@@ -206,37 +203,64 @@ public partial class App : Application
 
     private void CreateTray()
     {
-        var menu = new Forms.ContextMenuStrip();
-        menu.Items.Add("Open Duelcliping", null, (_, _) => ShowMainWindow());
-        menu.Items.Add(new Forms.ToolStripSeparator());
-        menu.Items.Add("Save last 30 seconds", null, (_, _) => _ = _controller!.SaveClipAsync(30));
-        menu.Items.Add("Save last 60 seconds", null, (_, _) => _ = _controller!.SaveClipAsync(60));
-        _trayRecord = new Forms.ToolStripMenuItem("Start recording", null, (_, _) => _ = _controller!.ToggleManualRecordingAsync());
-        menu.Items.Add(_trayRecord);
-        _trayReplay = new Forms.ToolStripMenuItem("Replay buffer", null, (_, _) => _controller!.SetReplayEnabled(!_controller.Settings.Current.ReplayBufferEnabled));
-        menu.Items.Add(_trayReplay);
-        menu.Items.Add(new Forms.ToolStripSeparator());
-        menu.Items.Add("Open clips folder", null, (_, _) => ShellHelpers.RevealInExplorer(_controller!.Settings.Current.ClipsDirectory));
-        menu.Items.Add("Exit", null, (_, _) => _ = ExitAsync());
-
         System.Drawing.Icon icon;
         try
         {
-            var stream = GetResourceStream(new Uri("pack://application:,,,/Assets/duelcliping.ico"))!.Stream;
+            var stream = GetResourceStream(new Uri("pack://application:,,,/Assets/moments.ico"))!.Stream;
             icon = new System.Drawing.Icon(stream);
         }
         catch
         {
             icon = System.Drawing.SystemIcons.Application;
         }
-        _tray = new Forms.NotifyIcon { Icon = icon, Text = "Duelcliping", Visible = true, ContextMenuStrip = menu };
-        _tray.MouseClick += (_, args) => { if (args.Button == Forms.MouseButtons.Left) ShowMainWindow(); };
+        _tray = new Forms.NotifyIcon { Icon = icon, Text = "Moments", Visible = true };
+        _tray.MouseUp += (_, args) =>
+        {
+            if (args.Button == Forms.MouseButtons.Left) ShowMainWindow();
+            else if (args.Button == Forms.MouseButtons.Right) ShowTrayMenu();
+        };
+    }
+
+    /// <summary>Opens the Moments-styled tray menu at the mouse cursor.</summary>
+    private void ShowTrayMenu()
+    {
+        if (_controller == null) return;
+        _trayMenu?.Close();
+        var s = _controller.Settings.Current;
+        var status = _controller.Engine.GetStatus();
+        string state = status.IsManualRecording ? "Recording" : status.State switch
+        {
+            EngineState.Running => "Replay buffer ready",
+            EngineState.Faulted => "Not recording – open for details",
+            EngineState.Starting or EngineState.Restarting => "Starting…",
+            _ => s.ReplayBufferEnabled ? "Starting…" : "Replay buffer off",
+        };
+        var stateBrush = (System.Windows.Media.Brush)FindResource(status.IsManualRecording ? "RecordingBrush"
+            : status.State == EngineState.Running ? "SuccessBrush"
+            : status.State == EngineState.Faulted ? "DangerBrush" : "TextTertiaryBrush");
+        string length = s.ShortClipSeconds < 60 ? $"{s.ShortClipSeconds} s" : $"{s.ShortClipSeconds / 60} min";
+        var items = new List<TrayMenuItem?>
+        {
+            new("\uE8A7", "Open Moments", ShowMainWindow),
+            null,
+            new("\uE714", $"Clip the last {length}", () => _ = _controller.SaveClipAsync(s.ShortClipSeconds)),
+            new("\uE7C8", status.IsManualRecording ? "Stop recording" : "Start recording", () => _ = _controller.ToggleManualRecordingAsync()),
+            new("\uE916", "Replay buffer", () => _controller.SetReplayEnabled(!_controller.Settings.Current.ReplayBufferEnabled), IsChecked: s.ReplayBufferEnabled),
+            null,
+            new("\uE838", "Open clips folder", () => ShellHelpers.RevealInExplorer(_controller.Settings.Current.ClipsDirectory)),
+            new("\uE7E8", "Exit", () => _ = ExitAsync(), IsDanger: true),
+        };
+        var cursor = Forms.Cursor.Position;
+        _trayMenu = new TrayMenu("Moments", state, stateBrush, items, cursor.X, cursor.Y);
+        _trayMenu.Closed += (_, _) => _trayMenu = null;
+        _trayMenu.Show();
     }
 
     private async Task ExitAsync()
     {
         if (_exiting) return;
         _exiting = true;
+        _trayMenu?.Close();
         _window?.Close();
         _overlay?.Close();
         if (_tray != null)

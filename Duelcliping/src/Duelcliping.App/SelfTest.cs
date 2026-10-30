@@ -19,7 +19,7 @@ internal static class SelfTest
 {
     public static async Task<int> RunAsync(string[] args)
     {
-        var report = args.SkipWhile(a => a != "--selftest").Skip(1).FirstOrDefault() ?? Path.Combine(Path.GetTempPath(), "duelcliping-selftest.txt");
+        var report = args.SkipWhile(a => a != "--selftest").Skip(1).FirstOrDefault() ?? Path.Combine(Path.GetTempPath(), "moments-selftest.txt");
         var lines = new List<string>();
         int failures = 0;
         void Ok(string m) => lines.Add("PASS " + m);
@@ -60,7 +60,7 @@ internal static class SelfTest
             else Fail("no encoder detected");
 
             // Cutter: generate a video, open it in the editor, cut the middle out, verify the result.
-            var dir = Path.Combine(Path.GetTempPath(), "duelcliping-selftest");
+            var dir = Path.Combine(Path.GetTempPath(), "moments-selftest");
             Directory.CreateDirectory(dir);
             var src = Path.Combine(dir, "source.mp4");
             var gen = await FfmpegRunner.RunFfmpegAsync(new[] { "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc2=s=640x360:r=30:d=6",

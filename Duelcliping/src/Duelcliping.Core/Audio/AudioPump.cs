@@ -57,7 +57,7 @@ public sealed class AudioPump : IDisposable
         _output = output;
         Volume = volume;
         _ring = new float[OutputRate * OutputChannels * 2]; // 2 seconds
-        _thread = new Thread(Run) { IsBackground = true, Name = "Duelcliping.Audio." + name, Priority = ThreadPriority.AboveNormal };
+        _thread = new Thread(Run) { IsBackground = true, Name = "Moments.Audio." + name, Priority = ThreadPriority.AboveNormal };
     }
 
     public string Name { get; }

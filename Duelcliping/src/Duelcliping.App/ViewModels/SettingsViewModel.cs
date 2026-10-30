@@ -176,7 +176,7 @@ public sealed class SettingsViewModel : ObservableObject
     {
         using var dialog = new System.Windows.Forms.FolderBrowserDialog
         {
-            Description = "Choose where Duelcliping saves clips and recordings",
+            Description = "Choose where Moments saves clips and recordings",
             UseDescriptionForTitle = true,
             SelectedPath = S.ClipsDirectory,
         };
@@ -184,14 +184,14 @@ public sealed class SettingsViewModel : ObservableObject
         try
         {
             System.IO.Directory.CreateDirectory(dialog.SelectedPath);
-            var probe = System.IO.Path.Combine(dialog.SelectedPath, ".duelcliping-write-test");
+            var probe = System.IO.Path.Combine(dialog.SelectedPath, ".moments-write-test");
             System.IO.File.WriteAllText(probe, "");
             System.IO.File.Delete(probe);
             Update(s => s.ClipsDirectory = dialog.SelectedPath, nameof(ClipsDirectory));
         }
         catch (Exception ex)
         {
-            _app.RaiseToast(new Toast(ToastKind.Error, "Folder not usable", "Duelcliping cannot write to that folder: " + ex.Message));
+            _app.RaiseToast(new Toast(ToastKind.Error, "Folder not usable", "Moments cannot write to that folder: " + ex.Message));
         }
     }
 
@@ -222,7 +222,7 @@ public sealed class SettingsViewModel : ObservableObject
             (HotkeyAction.ToggleRecording, s.HotkeyToggleRecording), (HotkeyAction.OpenApp, s.HotkeyOpenApp) };
         if (!binding.IsEmpty && others.Any(o => o.Item1 != action && o.Item2.Equals(binding)))
         {
-            HotkeyMessage = $"{binding} is already used by another Duelcliping action.";
+            HotkeyMessage = $"{binding} is already used by another Moments action.";
             RefreshHotkeys();
             return;
         }
@@ -253,6 +253,7 @@ public sealed class SettingsViewModel : ObservableObject
     public OverlayCorner OverlayPosition { get => S.OverlayPosition; set => Update(s => s.OverlayPosition = value); }
     public double OverlayOpacity { get => S.OverlayOpacity * 100; set => Update(s => s.OverlayOpacity = value / 100); }
     public bool PlaySound { get => S.PlaySoundOnSave; set => Update(s => s.PlaySoundOnSave = value); }
+    public bool ReplayStatusSounds { get => S.ReplayStatusSounds; set => Update(s => s.ReplayStatusSounds = value); }
     public bool Notify { get => S.NotifyOnSave; set => Update(s => s.NotifyOnSave = value); }
     public bool PerformanceMode { get => S.PerformanceMode; set => Update(s => s.PerformanceMode = value); }
     public AppTheme Theme { get => S.Theme; set => Update(s => s.Theme = value); }

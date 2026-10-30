@@ -9,7 +9,7 @@ using Duelcliping.Core.Settings;
 namespace Duelcliping.App.Views;
 
 /// <summary>
-/// The main window. It is created only when the user opens Duelcliping and destroyed when closed to
+/// The main window. It is created only when the user opens Moments and destroyed when closed to
 /// the tray, so no visual tree, bitmaps or render work exist while you are playing.
 /// </summary>
 public partial class MainWindow : Window
@@ -57,7 +57,7 @@ public partial class MainWindow : Window
         NativeMethods.DwmSetWindowAttribute(hwnd, 20, ref dark, sizeof(int)); // DWMWA_USE_IMMERSIVE_DARK_MODE
         int round = 2;
         NativeMethods.DwmSetWindowAttribute(hwnd, 33, ref round, sizeof(int)); // DWMWA_WINDOW_CORNER_PREFERENCE: round (Win11)
-        // Translucent, blurred backdrop composited by DWM on the GPU (no per-frame work in Duelcliping):
+        // Translucent, blurred backdrop composited by DWM on the GPU (no per-frame work in Moments):
         // Acrylic on Windows 11 22H2+, blur-behind on Windows 10 / early Windows 11.
         bool blurred = false;
         if (Environment.OSVersion.Version.Build >= 22621)

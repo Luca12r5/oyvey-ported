@@ -32,23 +32,85 @@
         </Grid>
 
         <!-- Player -->
-        <Border Grid.Row="1" CornerRadius="{StaticResource RadiusLarge}" Background="#FF0B0A0A" ClipToBounds="True" MinHeight="200">
-            <Grid>
-                <MediaElement x:Name="Player" LoadedBehavior="Manual" UnloadedBehavior="Close" ScrubbingEnabled="True"
-                              Stretch="Uniform" MediaOpened="OnMediaOpened" MediaEnded="OnMediaEnded" MediaFailed="OnMediaFailed" />
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
-                            Visibility="{Binding HasVideo, Converter={StaticResource InverseBoolToVis}}">
-                    <TextBlock Text="&#xE8C6;" FontFamily="{StaticResource IconFont}" FontSize="40" HorizontalAlignment="Center"
-                               Foreground="{DynamicResource AccentBrush}" />
-                    <TextBlock Text="Cut your videos" Style="{StaticResource SectionText}" HorizontalAlignment="Center" Margin="0,14,0,4"
-                               Foreground="#FFF3EFEA" />
-                    <TextBlock Text="Open a clip or recording from the library, drop any video file here, or use “Open video…”."
-                               Style="{StaticResource SecondaryText}" TextAlignment="Center" MaxWidth="360" Foreground="#FFADA69D" />
-                </StackPanel>
-                <Border x:Name="PlayOverlay" Background="Transparent" Cursor="Hand" MouseLeftButtonDown="OnPlayerClick"
-                        Visibility="{Binding HasVideo, Converter={StaticResource BoolToVis}}" />
-            </Grid>
-        </Border>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="300" />
+            </Grid.ColumnDefinitions>
+            <Border CornerRadius="{StaticResource RadiusLarge}" Background="#FF0B0A0A" ClipToBounds="True" MinHeight="200">
+                <Grid>
+                    <MediaElement x:Name="Player" LoadedBehavior="Manual" UnloadedBehavior="Close" ScrubbingEnabled="True"
+                                  Stretch="Uniform" MediaOpened="OnMediaOpened" MediaEnded="OnMediaEnded" MediaFailed="OnMediaFailed" />
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Visibility="{Binding HasVideo, Converter={StaticResource InverseBoolToVis}}">
+                        <TextBlock Text="&#xE8C6;" FontFamily="{StaticResource IconFont}" FontSize="40" HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource AccentBrush}" />
+                        <TextBlock Text="Cut your videos" Style="{StaticResource SectionText}" HorizontalAlignment="Center" Margin="0,14,0,4"
+                                   Foreground="#FFF3EFEA" />
+                        <TextBlock Text="Open a clip or recording from the library, drop any video file here, or use “Open video…”."
+                                   Style="{StaticResource SecondaryText}" TextAlignment="Center" MaxWidth="360" Foreground="#FFADA69D" />
+                    </StackPanel>
+                    <Border x:Name="PlayOverlay" Background="Transparent" Cursor="Hand" MouseLeftButtonDown="OnPlayerClick"
+                            Visibility="{Binding HasVideo, Converter={StaticResource BoolToVis}}" />
+                </Grid>
+            </Border>
+
+            <!-- Effects panel -->
+            <Border Grid.Column="1" Margin="14,0,0,0" Style="{StaticResource Card}" Padding="16,14" IsEnabled="{Binding HasVideo}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,10">
+                            <TextBlock Text="Effects" Style="{StaticResource SectionText}" />
+                            <Button Style="{StaticResource GhostButton}" Content="Reset" Command="{Binding ResetEffectsCommand}" HorizontalAlignment="Right" Margin="0,-6,-8,0" />
+                        </Grid>
+
+                        <TextBlock Text="MUSIC" Style="{StaticResource LabelText}" Margin="0,4,0,6" />
+                        <Grid>
+                            <TextBlock Text="{Binding MusicName}" Style="{StaticResource SecondaryText}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"
+                                       VerticalAlignment="Center" Margin="0,0,96,0" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Content="Add…" Command="{Binding PickMusicCommand}" Padding="10,5" />
+                                <Button Style="{StaticResource IconButton}" Content="&#xE711;" Command="{Binding ClearMusicCommand}" ToolTip="Remove music" Width="28" Height="28" />
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock Text="{Binding MusicVolume, StringFormat='Music volume {0:0}%'}" Style="{StaticResource SecondaryText}" FontSize="12" Margin="0,8,0,0" />
+                        <Slider Minimum="0" Maximum="150" Value="{Binding MusicVolume}" IsEnabled="{Binding HasMusic}" />
+                        <TextBlock Text="{Binding OriginalVolume, StringFormat='Clip sound {0:0}%'}" Style="{StaticResource SecondaryText}" FontSize="12" Margin="0,4,0,0" />
+                        <Slider Minimum="0" Maximum="150" Value="{Binding OriginalVolume}" />
+
+                        <TextBlock Text="TRANSITION" Style="{StaticResource LabelText}" Margin="0,14,0,6" />
+                        <ComboBox ItemsSource="{Binding Transitions}" SelectedValue="{Binding Transition}" DisplayMemberPath="Label" SelectedValuePath="Value" MinWidth="0" />
+                        <TextBlock Text="{Binding TransitionSeconds, StringFormat='Length {0:0.0} s'}" Style="{StaticResource SecondaryText}" FontSize="12" Margin="0,6,0,0" />
+                        <Slider Minimum="0.2" Maximum="1.5" Value="{Binding TransitionSeconds}" />
+                        <TextBlock Text="Plays between the parts you keep." Style="{StaticResource SecondaryText}" FontSize="11" />
+
+                        <TextBlock Text="LOOK" Style="{StaticResource LabelText}" Margin="0,14,0,6" />
+                        <ComboBox ItemsSource="{Binding Looks}" SelectedValue="{Binding Look}" DisplayMemberPath="Label" SelectedValuePath="Value" MinWidth="0" />
+
+                        <TextBlock Text="SPEED" Style="{StaticResource LabelText}" Margin="0,14,0,6" />
+                        <ComboBox ItemsSource="{Binding Speeds}" SelectedValue="{Binding Speed}" DisplayMemberPath="Label" SelectedValuePath="Value" MinWidth="0" />
+
+                        <TextBlock Text="FADES" Style="{StaticResource LabelText}" Margin="0,14,0,6" />
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding FadeIn}" Margin="0,0,0,8">
+                            <TextBlock Text="Fade in from black" Style="{StaticResource SecondaryText}" />
+                        </CheckBox>
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding FadeOut}">
+                            <TextBlock Text="Fade out to black" Style="{StaticResource SecondaryText}" />
+                        </CheckBox>
+
+                        <TextBlock Text="TITLE" Style="{StaticResource LabelText}" Margin="0,14,0,6" />
+                        <TextBox Text="{Binding Title2, UpdateSourceTrigger=PropertyChanged, Delay=300}" />
+                        <ComboBox ItemsSource="{Binding TitlePositions}" SelectedValue="{Binding TitlePosition}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  MinWidth="0" Margin="0,8,0,0" />
+                        <TextBlock Text="Shown for the first 4 seconds." Style="{StaticResource SecondaryText}" FontSize="11" Margin="0,4,0,0" />
+
+                        <Border Background="{DynamicResource AccentSoftBrush}" CornerRadius="8" Padding="10,8" Margin="0,16,0,0">
+                            <TextBlock Text="{Binding EffectsHint}" Style="{StaticResource SecondaryText}" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}" />
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
 
         <!-- Transport -->
         <Grid Grid.Row="2" Margin="0,14,0,8" IsEnabled="{Binding HasVideo}">

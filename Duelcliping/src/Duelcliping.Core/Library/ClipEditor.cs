@@ -28,6 +28,8 @@ public sealed record EditRequest
     public int? MaxHeight { get; init; }
     public int? FrameRate { get; init; }
     public int BitrateKbps { get; init; } = 12000;
+    /// <summary>Music, transitions, colour, speed, fades and title. Any effect means a re-encode.</summary>
+    public EditEffects? Effects { get; init; }
 }
 
 /// <summary>Result of a cut: the file, and whether the job had to re-encode to stay accurate.</summary>
@@ -76,6 +78,8 @@ public static class ClipEditor
                    ?? throw new InvalidOperationException("The video could not be read.");
         var segments = Normalize(request.Segments, TimeSpan.FromSeconds(info.DurationSeconds));
         string? notice = null;
+        if (request.Effects is { HasAny: true })
+            return await RunEffectsAsync(request, segments, info, progress, ct).ConfigureAwait(false);
         if (!request.ReEncode && segments.Any(s => s.Start > TimeSpan.Zero))
         {
             // Stream copy can only start at keyframes. Our own clips have one per second, but other
@@ -120,6 +124,36 @@ public static class ClipEditor
         return new EditResult(request.Output, request.ReEncode, notice);
     }
 
+    private static async Task<EditResult> RunEffectsAsync(EditRequest request, IReadOnlyList<CutSegment> segments, MediaInfo info,
+        IProgress<double>? progress, CancellationToken ct)
+    {
+        var fx = request.Effects!;
+        if (!string.IsNullOrWhiteSpace(fx.MusicPath) && !File.Exists(fx.MusicPath))
+            throw new FileNotFoundException("The music file was not found.", fx.MusicPath);
+        var tempOutput = request.Output + ".partial";
+        var titleFile = EffectsRenderer.WriteTitleFile(fx);
+        string? notice = titleFile != null && EffectsRenderer.FindFont() == null ? "No font was found, so the title was left out." : null;
+        Log.Info("Editor", $"Rendering {request.Input} with effects -> {request.Output}");
+        try
+        {
+            var args = EffectsRenderer.BuildArgs(request, segments, info, tempOutput, titleFile);
+            await RunFfmpegAsync(args, EffectsRenderer.OutputSeconds(segments, fx), 0, 1, progress, ct).ConfigureAwait(false);
+            if (!File.Exists(tempOutput)) throw new InvalidOperationException("ffmpeg produced no output.");
+            File.Move(tempOutput, request.Output, overwrite: true);
+        }
+        catch
+        {
+            try { File.Delete(tempOutput); } catch { /* best effort */ }
+            throw;
+        }
+        finally
+        {
+            if (titleFile != null) try { File.Delete(titleFile); } catch { /* temp */ }
+        }
+        progress?.Report(1);
+        return new EditResult(request.Output, true, notice);
+    }
+
     /// <summary>Timestamps of all video keyframes (reads only packet headers, fast even for long files).</summary>
     public static async Task<List<TimeSpan>> KeyframesAsync(string input, CancellationToken ct)
     {
@@ -160,7 +194,7 @@ public static class ClipEditor
     private static async Task CopyConcatAsync(EditRequest request, IReadOnlyList<CutSegment> segments, double total, string output,
         IProgress<double>? progress, CancellationToken ct)
     {
-        var workDir = Path.Combine(Path.GetTempPath(), "duelcliping-cut-" + Guid.NewGuid().ToString("N"));
+        var workDir = Path.Combine(Path.GetTempPath(), "moments-cut-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(workDir);
         try
         {

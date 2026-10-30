@@ -43,7 +43,7 @@ public sealed class SettingsManager
     public event Action<AppSettings, AppSettings>? Changed;
 
     public static string DefaultPath() => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Duelcliping", "settings.json");
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Moments", "settings.json");
 
     public void Load()
     {

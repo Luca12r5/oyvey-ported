@@ -33,6 +33,27 @@ public sealed class DashboardViewModel : ObservableObject
     }
 
     public ICommand SaveCommand { get; }
+    /// <summary>Saves a clip of the selected clip length (the same as the clip hotkey).</summary>
+    public ICommand SaveClipCommand => _saveClip ??= new AsyncCommand(() => _app.SaveClipAsync(S.ShortClipSeconds), () => S.ReplayBufferEnabled);
+    private ICommand? _saveClip;
+
+    /// <summary>How long a clip is when you press the clip hotkey.</summary>
+    public int ClipLength
+    {
+        get => S.ShortClipSeconds;
+        set
+        {
+            _app.Settings.Update(s => s.ShortClipSeconds = value);
+            OnPropertiesChanged(nameof(Len15), nameof(Len30), nameof(Len60), nameof(Len120), nameof(Len300), nameof(ShortcutHint), nameof(ClipLengthHint));
+        }
+    }
+    public bool Len15 { get => ClipLength == 15; set { if (value) ClipLength = 15; } }
+    public bool Len30 { get => ClipLength == 30; set { if (value) ClipLength = 30; } }
+    public bool Len60 { get => ClipLength == 60; set { if (value) ClipLength = 60; } }
+    public bool Len120 { get => ClipLength == 120; set { if (value) ClipLength = 120; } }
+    public bool Len300 { get => ClipLength == 300; set { if (value) ClipLength = 300; } }
+    public string ClipLengthHint => $"Press {S.HotkeySaveShort} in any game or app – even fullscreen – to clip the last {FormatLength(S.ShortClipSeconds)}.";
+    private static string FormatLength(int seconds) => seconds < 60 ? $"{seconds} seconds" : seconds % 60 == 0 ? $"{seconds / 60} minute{(seconds >= 120 ? "s" : "")}" : $"{seconds} seconds";
     public ICommand SaveCustomCommand { get; }
     public ICommand ToggleRecordingCommand { get; }
     public ICommand OpenSettingsCommand { get; }
@@ -137,7 +158,8 @@ public sealed class DashboardViewModel : ObservableObject
         OnPropertiesChanged(nameof(StateTitle), nameof(StateDetail), nameof(StateBrush), nameof(RecordButtonText), nameof(RailStateText), nameof(IsManualRecording),
             nameof(ModeText), nameof(ResolutionText), nameof(FpsText), nameof(EncoderText), nameof(PipelineText), nameof(BitrateText),
             nameof(CpuText), nameof(RamText), nameof(GpuText), nameof(BufferMemoryText), nameof(DroppedText), nameof(PerformanceModeText),
-            nameof(ReplayEnabled), nameof(CustomSaveLabel), nameof(ShortcutHint));
+            nameof(ReplayEnabled), nameof(CustomSaveLabel), nameof(ShortcutHint), nameof(ClipLengthHint),
+            nameof(Len15), nameof(Len30), nameof(Len60), nameof(Len120), nameof(Len300));
     }
 
     public async Task RefreshClipsAsync()

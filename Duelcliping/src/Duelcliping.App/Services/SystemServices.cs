@@ -11,7 +11,7 @@ namespace Duelcliping.App.Services;
 public static class StartupManager
 {
     private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    private const string ValueName = "Duelcliping";
+    private const string ValueName = "Moments";
 
     public static bool IsEnabled()
     {
@@ -26,7 +26,7 @@ public static class StartupManager
             using var key = Registry.CurrentUser.OpenSubKey(RunKey, writable: true) ?? Registry.CurrentUser.CreateSubKey(RunKey);
             if (enabled)
             {
-                var exe = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "Duelcliping.exe");
+                var exe = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "Moments.exe");
                 key.SetValue(ValueName, $"\"{exe}\" --background");
             }
             else if (key.GetValue(ValueName) != null)
@@ -187,18 +187,33 @@ public sealed class GameActivityDetector : IDisposable
     public void Dispose() => _timer.Dispose();
 }
 
-/// <summary>Short, soft confirmation sound synthesised in memory (no asset file, no audio library).</summary>
+/// <summary>
+/// Confirmation sounds synthesised in memory (no asset files, no audio library). They play through
+/// the normal Windows audio output, so they are heard in fullscreen games too.
+/// </summary>
 public static class SoundEffects
 {
-    private static byte[]? _saved;
+    private static byte[]? _clip, _recStart, _recStop, _ready, _off, _fail;
 
-    public static void PlayClipSaved()
+    /// <summary>Replay buffer is recording: three quick rising notes.</summary>
+    public static void PlayReplayReady() => Play(ref _ready, () => Synthesize(new[] { (659.3, 659.3, 0.07), (880.0, 880.0, 0.07), (1318.5, 1318.5, 0.14) }, 0.32));
+    /// <summary>Replay buffer switched off or stopped: two falling, lower notes.</summary>
+    public static void PlayReplayOff() => Play(ref _off, () => Synthesize(new[] { (587.3, 587.3, 0.10), (392.0, 349.2, 0.20) }, 0.36));
+    /// <summary>A clip could not be saved (buffer not running): low double buzz.</summary>
+    public static void PlayClipFailed() => Play(ref _fail, () => Synthesize(new[] { (220.0, 220.0, 0.09), (0.0, 0.0, 0.05), (196.0, 196.0, 0.14) }, 0.45));
+
+    /// <summary>Bright rising "blip-bloop" played the moment a clip hotkey is pressed.</summary>
+    public static void PlayClipSaved() => Play(ref _clip, () => Synthesize(new[] { (740.0, 1108.7, 0.07), (1108.7, 1661.2, 0.16) }, 0.42));
+    public static void PlayRecordingStarted() => Play(ref _recStart, () => Synthesize(new[] { (523.3, 523.3, 0.08), (784.0, 784.0, 0.12) }, 0.35));
+    public static void PlayRecordingStopped() => Play(ref _recStop, () => Synthesize(new[] { (784.0, 784.0, 0.08), (523.3, 523.3, 0.14) }, 0.35));
+
+    private static void Play(ref byte[]? cache, Func<byte[]> create)
     {
         try
         {
-            _saved ??= Synthesize(new[] { (880.0, 0.06), (1318.5, 0.09) });
-            using var player = new System.Media.SoundPlayer(new MemoryStream(_saved));
-            player.Play();
+            cache ??= create();
+            var player = new System.Media.SoundPlayer(new MemoryStream(cache));
+            player.Play(); // asynchronous; never blocks the hotkey thread
         }
         catch (Exception ex)
         {
@@ -206,26 +221,33 @@ public static class SoundEffects
         }
     }
 
-    private static byte[] Synthesize((double Freq, double Seconds)[] notes)
+    /// <summary>Notes with a pitch glide, a soft attack, exponential decay and a touch of second harmonic.</summary>
+    private static byte[] Synthesize((double From, double To, double Seconds)[] notes, double gain)
     {
         const int rate = 44100;
         var samples = new List<short>();
-        foreach (var (freq, seconds) in notes)
+        double phase = 0;
+        foreach (var (from, to, seconds) in notes)
         {
             int n = (int)(rate * seconds);
             for (int i = 0; i < n; i++)
             {
-                double env = Math.Min(1, i / (rate * 0.005)) * Math.Exp(-4.0 * i / n);
-                samples.Add((short)(Math.Sin(2 * Math.PI * freq * i / rate) * env * 7000));
+                double t = (double)i / n;
+                double freq = from + (to - from) * Math.Min(1, t * 3);
+                phase += 2 * Math.PI * freq / rate;
+                double env = Math.Min(1, i / (rate * 0.004)) * Math.Exp(-3.2 * t);
+                double v = Math.Sin(phase) + 0.25 * Math.Sin(2 * phase) + 0.08 * Math.Sin(3 * phase);
+                samples.Add((short)(v / 1.33 * env * gain * 32767));
             }
         }
+        for (int i = 0; i < rate * 0.02; i++) samples.Add(0);
         using var ms = new MemoryStream();
         using var w = new BinaryWriter(ms);
         int dataBytes = samples.Count * 2;
         w.Write("RIFF"u8.ToArray()); w.Write(36 + dataBytes); w.Write("WAVE"u8.ToArray());
         w.Write("fmt "u8.ToArray()); w.Write(16); w.Write((short)1); w.Write((short)1); w.Write(rate); w.Write(rate * 2); w.Write((short)2); w.Write((short)16);
         w.Write("data"u8.ToArray()); w.Write(dataBytes);
-        foreach (var s in samples) w.Write(s);
+        foreach (var smp in samples) w.Write(smp);
         return ms.ToArray();
     }
 }

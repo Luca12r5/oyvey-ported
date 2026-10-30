@@ -29,10 +29,11 @@ public sealed class AppController : IAsyncDisposable
     private readonly WindowsSystemMetrics _metrics = new();
     private CancellationTokenSource? _displayDebounce;
     private bool _clipSaveInProgress;
+    private bool _cpuWarningShown;
 
     public AppController()
     {
-        var dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Duelcliping");
+        var dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Moments");
         DataDirectory = dataDir;
         Log.Initialize(Path.Combine(dataDir, "logs"));
         Settings = new SettingsManager(SettingsManager.DefaultPath());
@@ -50,6 +51,7 @@ public sealed class AppController : IAsyncDisposable
         Engine.Notice += message => RaiseToast(new Toast(ToastKind.Warning, "Recording", message));
         Engine.StateChanged += (state, error) =>
         {
+            if (state == EngineState.Running) OnReplayRunning();
             if (state == EngineState.Faulted && error != null) RaiseToast(new Toast(ToastKind.Error, "Recording problem", error));
             StatusChanged?.Invoke();
         };
@@ -80,6 +82,70 @@ public sealed class AppController : IAsyncDisposable
     public event Action<string>? ClipCreated;
     public event Action? OpenRequested;
 
+    // ------------------------------------------------------------------ replay guard
+    // Checks every 5 s that the replay buffer really records whenever it is switched on. If it is
+    // not running it is restarted; if it stays down, a warning sound plays so a missed moment
+    // never goes unnoticed. A confirmation sound plays when it (re)starts recording.
+    private Timer? _guardTimer;
+    private DateTime? _downSince;
+    private DateTime _lastAlarm = DateTime.MinValue;
+    private bool _confirmedRunning;
+    private int _guardRestarting;
+
+    private void StartReplayGuard() => _guardTimer ??= new Timer(_ => GuardTick(), null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+
+    private void OnReplayRunning()
+    {
+        _downSince = null;
+        if (_confirmedRunning || !Settings.Current.ReplayBufferEnabled) return;
+        _confirmedRunning = true;
+        Log.Info("Guard", "Replay buffer confirmed recording");
+        if (Settings.Current.ReplayStatusSounds) SoundEffects.PlayReplayReady();
+    }
+
+    private void GuardTick()
+    {
+        try
+        {
+            var s = Settings.Current;
+            if (!s.ReplayBufferEnabled || Encoders.Available.Count == 0)
+            {
+                _downSince = null;
+                return;
+            }
+            var status = Engine.GetStatus();
+            if (status.State == EngineState.Running)
+            {
+                OnReplayRunning();
+                return;
+            }
+
+            _downSince ??= DateTime.UtcNow;
+            var down = DateTime.UtcNow - _downSince.Value;
+
+            // Switched on but not running at all (e.g. a settings change failed half-way): start it again.
+            if (status.State == EngineState.Stopped && down > TimeSpan.FromSeconds(4) && Interlocked.Exchange(ref _guardRestarting, 1) == 0)
+            {
+                Log.Warn("Guard", "Replay buffer is on but not running; restarting it");
+                _ = ApplyCaptureAsync().ContinueWith(_ => Interlocked.Exchange(ref _guardRestarting, 0));
+            }
+
+            if (down > TimeSpan.FromSeconds(12) && DateTime.UtcNow - _lastAlarm > TimeSpan.FromMinutes(1))
+            {
+                _lastAlarm = DateTime.UtcNow;
+                _confirmedRunning = false; // play the ready sound again once it recovers
+                Log.Error("Guard", $"Replay buffer not recording for {down.TotalSeconds:0} s (state {status.State}): {status.Error}");
+                if (s.ReplayStatusSounds) SoundEffects.PlayReplayOff();
+                RaiseToast(new Toast(ToastKind.Error, "Replay buffer is not recording",
+                    (status.Error ?? "The capture did not start.") + " Moments keeps retrying automatically."));
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Guard", ex.Message);
+        }
+    }
+
     public async Task StartAsync()
     {
         var s = Settings.Current;
@@ -99,7 +165,7 @@ public sealed class AppController : IAsyncDisposable
         {
             StartupError = "No video encoder could be started: " + ex.Message;
             Log.Error("Startup", StartupError, ex);
-            RaiseToast(new Toast(ToastKind.Error, "Duelcliping cannot record", StartupError));
+            RaiseToast(new Toast(ToastKind.Error, "Moments cannot record", StartupError));
         }
 
         // Finish recordings interrupted by a crash or power loss before anything else touches the folder.
@@ -118,6 +184,7 @@ public sealed class AppController : IAsyncDisposable
         });
 
         if (Encoders.IsDetected && Encoders.Available.Count > 0) await ApplyCaptureAsync().ConfigureAwait(false);
+        StartReplayGuard();
         _ = RunRetentionAsync();
         StatusChanged?.Invoke();
     }
@@ -134,6 +201,13 @@ public sealed class AppController : IAsyncDisposable
         var display = DisplayEnumerator.Find(Displays, s.MonitorDeviceName)
                       ?? throw new InvalidOperationException("No monitor was found to record.");
         var selection = Encoders.Select(s.Codec, s.Encoder);
+        bool cpu = !selection.Encoder.IsHardware;
+        if (cpu && s.Encoder != EncoderPreference.Software && !_cpuWarningShown)
+        {
+            _cpuWarningShown = true;
+            RaiseToast(new Toast(ToastKind.Warning, "No GPU encoder found",
+                "Recording uses the CPU at 720p30 to protect your FPS. Update your graphics driver, close apps that record (OBS, Discord streaming) and press “Detect encoders again” in Settings."));
+        }
         ActiveEncoder = selection;
         var audio = new List<AudioSourceSpec>();
         if (s.CaptureSystemAudio)
@@ -148,9 +222,10 @@ public sealed class AppController : IAsyncDisposable
             Encoder = selection,
             // No silent CPU encoding: it costs game FPS. Used only when chosen in the settings.
             SoftwareFallback = null,
-            Resolution = s.Resolution,
-            FrameRate = s.FrameRate,
-            Quality = s.Quality,
+            // CPU encoding steals frame time from the game: keep it as light as possible.
+            Resolution = cpu ? CaptureResolution.P720 : s.Resolution,
+            FrameRate = cpu ? Math.Min(30, s.FrameRate) : s.FrameRate,
+            Quality = cpu ? QualityPreset.Low : s.Quality,
             CustomBitrateKbps = s.CustomBitrateKbps,
             CaptureCursor = s.CaptureCursor,
             PerformanceMode = s.PerformanceMode,
@@ -208,6 +283,12 @@ public sealed class AppController : IAsyncDisposable
         if (Math.Abs(old.SystemAudioVolume - now.SystemAudioVolume) > 0.001) Engine.SetVolume("game", now.SystemAudioVolume);
         if (Math.Abs(old.MicrophoneVolume - now.MicrophoneVolume) > 0.001) Engine.SetVolume("mic", now.MicrophoneVolume);
 
+        if (old.ReplayBufferEnabled && !now.ReplayBufferEnabled)
+        {
+            _confirmedRunning = false;
+            _downSince = null;
+            if (now.ReplayStatusSounds) SoundEffects.PlayReplayOff();
+        }
         if (CaptureChanged(old, now) && Encoders.Available.Count > 0) _ = ApplyCaptureAsync();
         if (old.MaxStorageGb != now.MaxStorageGb || old.AutoDeleteOldClips != now.AutoDeleteOldClips || old.AutoDeleteAfterDays != now.AutoDeleteAfterDays)
             _ = RunRetentionAsync();
@@ -258,9 +339,14 @@ public sealed class AppController : IAsyncDisposable
         try
         {
             var s = Settings.Current;
+            // Instant feedback, like pressing a camera shutter: the sound plays on the key press.
+            if (s.PlaySoundOnSave)
+            {
+                if (Engine.State == EngineState.Running) SoundEffects.PlayClipSaved();
+                else SoundEffects.PlayClipFailed(); // you hear right away that nothing was clipped
+            }
             var result = await Engine.SaveClipAsync(seconds, s.ClipsDirectory, s.Container).ConfigureAwait(false);
             Performance.LastDiskWriteMBps = result.DiskWriteMBps;
-            if (s.PlaySoundOnSave) SoundEffects.PlayClipSaved();
             if (s.NotifyOnSave || result.Warning != null)
                 RaiseToast(new Toast(result.Warning == null ? ToastKind.Success : ToastKind.Warning,
                     $"Clip saved · {FormatDuration(result.DurationSeconds)}", result.Warning ?? Path.GetFileName(result.FilePath), result.FilePath));
@@ -291,12 +377,13 @@ public sealed class AppController : IAsyncDisposable
                         $"Recording saved · {FormatDuration(r.DurationSeconds)}", r.Warning ?? Path.GetFileName(r.FilePath), r.FilePath));
                     ClipCreated?.Invoke(r.FilePath);
                 }
-                if (s.PlaySoundOnSave) SoundEffects.PlayClipSaved();
+                if (s.PlaySoundOnSave) SoundEffects.PlayRecordingStopped();
             }
             else
             {
                 if (Engine.Request == null) throw new InvalidOperationException(StartupError ?? "Recording is not configured yet.");
                 await Engine.StartManualRecordingAsync(s.ClipsDirectory, s.Container).ConfigureAwait(false);
+                if (s.PlaySoundOnSave) SoundEffects.PlayRecordingStarted();
                 RaiseToast(new Toast(ToastKind.Info, "Recording started", $"Press {s.HotkeyToggleRecording} again to stop."));
             }
         }
@@ -369,6 +456,7 @@ public sealed class AppController : IAsyncDisposable
     {
         SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
         SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+        _guardTimer?.Dispose();
         Hotkeys.Dispose();
         GameDetector.Dispose();
         Performance.Dispose();
@@ -379,7 +467,7 @@ public sealed class AppController : IAsyncDisposable
         }
         catch (Exception ex) { Log.Error("Controller", "Shutdown error", ex); }
         _metrics.Dispose();
-        Log.Info("Controller", "Duelcliping stopped");
+        Log.Info("Controller", "Moments stopped");
         Log.Flush(TimeSpan.FromSeconds(1));
     }
 }

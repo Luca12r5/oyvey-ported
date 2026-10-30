@@ -7,8 +7,8 @@
     <UseWindowsForms>true</UseWindowsForms>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <RootNamespace>Duelcliping.App</RootNamespace>
-    <AssemblyName>Duelcliping</AssemblyName>
-    <ApplicationIcon>Assets\duelcliping.ico</ApplicationIcon>
+    <AssemblyName>Moments</AssemblyName>
+    <ApplicationIcon>Assets\moments.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <TieredPGO>true</TieredPGO>
@@ -32,6 +32,6 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assets\logo.png" />
-    <Resource Include="Assets\duelcliping.ico" />
+    <Resource Include="Assets\moments.ico" />
   </ItemGroup>
 </Project>

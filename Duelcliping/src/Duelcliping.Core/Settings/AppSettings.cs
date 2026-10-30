@@ -127,6 +127,8 @@ public sealed class AppSettings
 
     // Notifications
     public bool PlaySoundOnSave { get; set; } = true;
+    /// <summary>Sounds when the replay buffer becomes ready, is switched off or stops working.</summary>
+    public bool ReplayStatusSounds { get; set; } = true;
     public bool NotifyOnSave { get; set; } = true;
 
     // Performance
@@ -137,7 +139,7 @@ public sealed class AppSettings
     public AppTheme Theme { get; set; } = AppTheme.Dark;
 
     public static string DefaultClipsDirectory() =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "Duelcliping");
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "Moments");
 
     public void Normalize()
     {

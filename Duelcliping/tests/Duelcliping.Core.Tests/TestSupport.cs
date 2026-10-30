@@ -50,7 +50,7 @@ public sealed class ToneSource : IAudioCaptureSource
 
 public sealed class TempDir : IDisposable
 {
-    public TempDir() { Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "duelcliping-test-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(Path); }
+    public TempDir() { Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "moments-test-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(Path); }
     public string Path { get; }
     public void Dispose() { try { Directory.Delete(Path, true); } catch { } }
 }
