@@ -51,27 +51,26 @@ jobs:
           $p = Start-Process -FilePath "artifacts\publish\Duelcliping.exe" -ArgumentList "--selftest","$PWD\selftest.txt" -PassThru -Wait
           Get-Content selftest.txt
           if ($p.ExitCode -ne 0) { throw "Self-test failed with exit code $($p.ExitCode)" }
-      - name: Print UI screenshots (base64 JPEG, for review without artifact access)
+      - name: Print UI screenshot luminance maps (layout review without artifact access)
         if: always()
         run: |
           Add-Type -AssemblyName System.Drawing
-          $codec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq 'image/jpeg' }
-          $params = New-Object System.Drawing.Imaging.EncoderParameters 1
-          $params.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter ([System.Drawing.Imaging.Encoder]::Quality), 55L
-          Get-ChildItem screenshots -Filter "Dark-Dashboard.png" | ForEach-Object {
-            $img = [System.Drawing.Image]::FromFile($_.FullName)
-            $w = 720; $h = [int]($img.Height * $w / $img.Width)
-            $bmp = New-Object System.Drawing.Bitmap $w, $h
-            $g = [System.Drawing.Graphics]::FromImage($bmp)
-            $g.InterpolationMode = 'HighQualityBicubic'
-            $g.DrawImage($img, 0, 0, $w, $h)
-            $ms = New-Object System.IO.MemoryStream
-            $bmp.Save($ms, $codec, $params)
-            $b64 = [Convert]::ToBase64String($ms.ToArray())
-            Write-Output "SHOT-BEGIN $($_.BaseName)"
-            for ($i = 0; $i -lt $b64.Length; $i += 4000) { Write-Output ("SHOT|" + $b64.Substring($i, [Math]::Min(4000, $b64.Length - $i))) }
-            Write-Output "SHOT-END $($_.BaseName)"
-            $g.Dispose(); $bmp.Dispose(); $img.Dispose()
+          $ramp = " .:-=+*#%@"
+          Get-ChildItem screenshots -Filter "Dark-*.png" | Where-Object { $_.BaseName -in @('Dark-Dashboard','Dark-Library','Dark-Editor') } | ForEach-Object {
+            $img = New-Object System.Drawing.Bitmap $_.FullName
+            Write-Output "MAP $($_.BaseName) $($img.Width)x$($img.Height)"
+            $cols = 110; $rows = 40
+            for ($r = 0; $r -lt $rows; $r++) {
+              $line = ""
+              for ($c = 0; $c -lt $cols; $c++) {
+                $x = [int](($c + 0.5) * $img.Width / $cols); $y = [int](($r + 0.5) * $img.Height / $rows)
+                $p = $img.GetPixel($x, $y)
+                $l = (0.2126 * $p.R + 0.7152 * $p.G + 0.0722 * $p.B) / 255
+                $line += $ramp[[Math]::Min(9, [int]($l * 12))]
+              }
+              Write-Output ("|" + $line + "|")
+            }
+            $img.Dispose()
           }
       - name: Upload UI screenshots
         if: always()
