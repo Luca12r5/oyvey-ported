@@ -1,0 +1,270 @@
+<UserControl x:Class="Duelcliping.App.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:services="clr-namespace:Duelcliping.App.Services"
+             Focusable="True">
+    <UserControl.Resources>
+        <Style x:Key="Row" TargetType="Grid">
+            <Setter Property="Margin" Value="0,0,0,16" />
+        </Style>
+        <Style x:Key="RowLabel" TargetType="TextBlock" BasedOn="{StaticResource TextBase}">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Width" Value="230" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+        </Style>
+        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="Width" Value="320" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="DisplayMemberPath" Value="Label" />
+            <Setter Property="SelectedValuePath" Value="Value" />
+        </Style>
+        <Style x:Key="HotkeyButton" TargetType="Button" BasedOn="{StaticResource ButtonBase}">
+            <Setter Property="MinWidth" Value="160" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
+        </Style>
+    </UserControl.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,8,32,40" MaxWidth="860" HorizontalAlignment="Left">
+            <TextBlock Text="Settings" Style="{StaticResource TitleText}" />
+            <TextBlock Text="Changes are saved instantly." Style="{StaticResource SecondaryText}" Margin="0,4,0,22" />
+
+            <!-- Recording -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Recording" Style="{StaticResource SectionText}" Margin="0,0,0,16" />
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Replay buffer" Style="{StaticResource RowLabel}" />
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ReplayEnabled}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Buffer length" Style="{StaticResource RowLabel}" />
+                        <ComboBox ItemsSource="{Binding BufferLengths}" SelectedValue="{Binding BufferSeconds}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Monitor" Style="{StaticResource RowLabel}" />
+                        <ComboBox ItemsSource="{Binding Monitors}" SelectedValue="{Binding Monitor}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Resolution" Style="{StaticResource RowLabel}" />
+                        <ComboBox ItemsSource="{Binding Resolutions}" SelectedValue="{Binding Resolution}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Frame rate" Style="{StaticResource RowLabel}" />
+                        <ComboBox ItemsSource="{Binding FrameRates}" SelectedValue="{Binding FrameRate}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Quality" Style="{StaticResource RowLabel}" />
+                        <ComboBox ItemsSource="{Binding Qualities}" SelectedValue="{Binding Quality}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}" Visibility="{Binding IsCustomBitrate, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{Binding CustomBitrateMbps, StringFormat='Bitrate: {0:0} Mbps'}" Style="{StaticResource RowLabel}" />
+                        <Slider Width="320" HorizontalAlignment="Right" Minimum="2" Maximum="150" SmallChange="1" LargeChange="5" IsSnapToTickEnabled="True" TickFrequency="1"
+                                Value="{Binding CustomBitrateMbps, Delay=400}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Codec" Style="{StaticResource RowLabel}" />
+                        <ComboBox ItemsSource="{Binding Codecs}" SelectedValue="{Binding Codec}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Encoder" Style="{StaticResource RowLabel}" />
+                        <ComboBox ItemsSource="{Binding EncoderChoices}" SelectedValue="{Binding Encoder}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="File format" Style="{StaticResource RowLabel}" />
+                        <ComboBox ItemsSource="{Binding Containers}" SelectedValue="{Binding Container}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Record mouse cursor" Style="{StaticResource RowLabel}" />
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding CaptureCursor}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Clip lengths (short / long / custom)" Style="{StaticResource RowLabel}" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <TextBox Width="70" Text="{Binding ShortClipSeconds, UpdateSourceTrigger=LostFocus}" ToolTip="Seconds saved by the first hotkey" />
+                            <TextBox Width="70" Margin="8,0" Text="{Binding LongClipSeconds, UpdateSourceTrigger=LostFocus}" ToolTip="Seconds saved by the second hotkey" />
+                            <TextBox Width="70" Text="{Binding CustomClipSeconds, UpdateSourceTrigger=LostFocus}" ToolTip="Seconds of the custom dashboard button" />
+                            <TextBlock Text="s" Style="{StaticResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Text="{Binding MemoryEstimate}" Style="{StaticResource SecondaryText}" FontSize="12" />
+                    <Grid Margin="0,10,0,0">
+                        <TextBlock Text="{Binding EncoderStatus}" Style="{StaticResource SecondaryText}" FontSize="12" Margin="0,0,180,0" />
+                        <Button Content="Detect encoders again" Command="{Binding RedetectCommand}" HorizontalAlignment="Right" VerticalAlignment="Top" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Audio -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <Grid Margin="0,0,0,16">
+                        <TextBlock Text="Audio" Style="{StaticResource SectionText}" />
+                        <Button Style="{StaticResource GhostButton}" Content="Refresh devices" Command="{Binding RefreshDevicesCommand}" HorizontalAlignment="Right" Margin="0,-6,-8,0" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Record game / system audio" Style="{StaticResource RowLabel}" />
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding CaptureSystemAudio}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}" IsEnabled="{Binding CaptureSystemAudio}">
+                        <TextBlock Text="Output device" Style="{StaticResource RowLabel}" />
+                        <ComboBox ItemsSource="{Binding OutputDevices}" SelectedValue="{Binding SystemAudioDevice}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}" IsEnabled="{Binding CaptureSystemAudio}">
+                        <TextBlock Text="{Binding SystemAudioVolume, StringFormat='Game volume: {0:0}%'}" Style="{StaticResource RowLabel}" />
+                        <Slider Width="320" HorizontalAlignment="Right" Minimum="0" Maximum="200" Value="{Binding SystemAudioVolume, Delay=300}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Record microphone" Style="{StaticResource RowLabel}" />
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding CaptureMicrophone}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}" IsEnabled="{Binding CaptureMicrophone}">
+                        <TextBlock Text="Microphone" Style="{StaticResource RowLabel}" />
+                        <ComboBox ItemsSource="{Binding InputDevices}" SelectedValue="{Binding MicrophoneDevice}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}" IsEnabled="{Binding CaptureMicrophone}">
+                        <TextBlock Text="{Binding MicrophoneVolume, StringFormat='Microphone volume: {0:0}%'}" Style="{StaticResource RowLabel}" />
+                        <Slider Width="320" HorizontalAlignment="Right" Minimum="0" Maximum="200" Value="{Binding MicrophoneVolume, Delay=300}" />
+                    </Grid>
+                    <Grid>
+                        <TextBlock Text="Separate audio tracks (game and mic)" Style="{StaticResource RowLabel}" Width="320" />
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding SeparateAudioTracks}" HorizontalAlignment="Right" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Hotkeys -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Hotkeys" Style="{StaticResource SectionText}" Margin="0,0,0,6" />
+                    <TextBlock Text="Work everywhere, including inside games. Click a shortcut and press the new keys." Style="{StaticResource SecondaryText}" Margin="0,0,0,16" />
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Save short clip" Style="{StaticResource RowLabel}" />
+                        <Button Style="{StaticResource HotkeyButton}" Content="{Binding HotkeySaveShort}" Command="{Binding CaptureHotkeyCommand}"
+                                CommandParameter="{x:Static services:HotkeyAction.SaveShort}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Save long clip" Style="{StaticResource RowLabel}" />
+                        <Button Style="{StaticResource HotkeyButton}" Content="{Binding HotkeySaveLong}" Command="{Binding CaptureHotkeyCommand}"
+                                CommandParameter="{x:Static services:HotkeyAction.SaveLong}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Start / stop recording" Style="{StaticResource RowLabel}" />
+                        <Button Style="{StaticResource HotkeyButton}" Content="{Binding HotkeyToggleRecording}" Command="{Binding CaptureHotkeyCommand}"
+                                CommandParameter="{x:Static services:HotkeyAction.ToggleRecording}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Open Duelcliping" Style="{StaticResource RowLabel}" />
+                        <Button Style="{StaticResource HotkeyButton}" Content="{Binding HotkeyOpenApp}" Command="{Binding CaptureHotkeyCommand}"
+                                CommandParameter="{x:Static services:HotkeyAction.OpenApp}" />
+                    </Grid>
+                    <TextBlock Text="{Binding HotkeyMessage}" Foreground="{DynamicResource WarningBrush}" Style="{StaticResource TextBase}" TextWrapping="Wrap"
+                               Visibility="{Binding HotkeyMessage, Converter={StaticResource NullToVis}}" />
+                </StackPanel>
+            </Border>
+
+            <!-- Storage -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Storage" Style="{StaticResource SectionText}" Margin="0,0,0,16" />
+                    <Grid Style="{StaticResource Row}">
+                        <StackPanel>
+                            <TextBlock Text="Save location" Style="{StaticResource TextBase}" />
+                            <TextBlock Text="{Binding ClipsDirectory}" Style="{StaticResource SecondaryText}" FontSize="12" Margin="0,0,220,0" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <Button Content="Open" Command="{Binding OpenFolderCommand}" Margin="0,0,8,0" />
+                            <Button Content="Change…" Command="{Binding BrowseFolderCommand}" />
+                        </StackPanel>
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="{Binding MaxStorageGb, StringFormat='Maximum storage: {0:0} GB'}" Style="{StaticResource RowLabel}" />
+                        <Slider Width="320" HorizontalAlignment="Right" Minimum="5" Maximum="1000" SmallChange="5" LargeChange="25"
+                                Value="{Binding MaxStorageGb, Delay=400}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Automatically delete old clips" Style="{StaticResource RowLabel}" />
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding AutoDelete}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <Grid IsEnabled="{Binding AutoDelete}">
+                        <TextBlock Text="Delete clips older than (days)" Style="{StaticResource RowLabel}" />
+                        <TextBox Width="90" HorizontalAlignment="Right" Text="{Binding AutoDeleteDays, UpdateSourceTrigger=LostFocus}" />
+                    </Grid>
+                    <TextBlock Text="When the limit is reached, the oldest clips go to the Recycle Bin. Pinned clips are never deleted."
+                               Style="{StaticResource SecondaryText}" FontSize="12" Margin="0,10,0,0" />
+                </StackPanel>
+            </Border>
+
+            <!-- Overlay & notifications -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Overlay &amp; notifications" Style="{StaticResource SectionText}" Margin="0,0,0,16" />
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Show recording overlay" Style="{StaticResource RowLabel}" />
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding OverlayEnabled}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}" IsEnabled="{Binding OverlayEnabled}">
+                        <TextBlock Text="Overlay position" Style="{StaticResource RowLabel}" />
+                        <ComboBox ItemsSource="{Binding OverlayCorners}" SelectedValue="{Binding OverlayPosition}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}" IsEnabled="{Binding OverlayEnabled}">
+                        <TextBlock Text="{Binding OverlayOpacity, StringFormat='Overlay opacity: {0:0}%'}" Style="{StaticResource RowLabel}" />
+                        <Slider Width="320" HorizontalAlignment="Right" Minimum="30" Maximum="100" Value="{Binding OverlayOpacity, Delay=300}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Sound when a clip is saved" Style="{StaticResource RowLabel}" />
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding PlaySound}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <Grid>
+                        <TextBlock Text="Notification when a clip is saved" Style="{StaticResource RowLabel}" />
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Notify}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <TextBlock Text="The overlay and notifications never take focus, ignore the mouse and are excluded from your recordings. Windows cannot draw them over exclusive-fullscreen games; use borderless mode to see them."
+                               Style="{StaticResource SecondaryText}" FontSize="12" Margin="0,12,0,0" />
+                </StackPanel>
+            </Border>
+
+            <!-- General -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="General" Style="{StaticResource SectionText}" Margin="0,0,0,16" />
+                    <Grid Style="{StaticResource Row}">
+                        <StackPanel>
+                            <TextBlock Text="Performance mode" Style="{StaticResource TextBase}" />
+                            <TextBlock Text="Fastest encoder presets, lower process priority, no background work while a fullscreen game is focused."
+                                       Style="{StaticResource SecondaryText}" FontSize="12" Margin="0,0,80,0" />
+                        </StackPanel>
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding PerformanceMode}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Appearance" Style="{StaticResource RowLabel}" />
+                        <ComboBox ItemsSource="{Binding Themes}" SelectedValue="{Binding Theme}" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Start with Windows" Style="{StaticResource RowLabel}" />
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding StartWithWindows}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Start minimized to the tray" Style="{StaticResource RowLabel}" />
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding StartMinimized}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <TextBlock Text="Closing the window keeps recording in the tray" Style="{StaticResource RowLabel}" Width="340" />
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding CloseToTray}" HorizontalAlignment="Right" />
+                    </Grid>
+                    <Grid Style="{StaticResource Row}">
+                        <StackPanel>
+                            <TextBlock Text="PresentMon (for in-game FPS benchmarks)" Style="{StaticResource TextBase}" />
+                            <TextBlock Text="{Binding PresentMonPath}" Style="{StaticResource SecondaryText}" FontSize="12" Margin="0,0,140,0" />
+                        </StackPanel>
+                        <Button Content="Select…" Command="{Binding BrowsePresentMonCommand}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                    </Grid>
+                    <Grid>
+                        <TextBlock Text="Logs (for troubleshooting)" Style="{StaticResource RowLabel}" />
+                        <Button Content="Open log folder" Command="{Binding OpenLogsCommand}" HorizontalAlignment="Right" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

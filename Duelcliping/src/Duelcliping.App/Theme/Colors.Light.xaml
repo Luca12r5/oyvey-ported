@@ -1,0 +1,60 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Duelcliping Light palette. Brushes are referenced with DynamicResource so the theme can switch live. -->
+    <Color x:Key="WindowBackgroundColor">#FFF6F4F0</Color>
+    <Color x:Key="WindowTintColor">#E6F6F4F0</Color>
+    <Color x:Key="SidebarColor">#B3EFEBE5</Color>
+    <Color x:Key="SurfaceColor">#FFFFFFFF</Color>
+    <Color x:Key="SurfaceElevatedColor">#FFFBFAF8</Color>
+    <Color x:Key="SurfaceHoverColor">#FFF1EEE9</Color>
+    <Color x:Key="SurfacePressedColor">#FFE8E4DE</Color>
+    <Color x:Key="GlassColor">#CCFFFFFF</Color>
+    <Color x:Key="GlassBorderColor">#14000000</Color>
+    <Color x:Key="BorderColor">#FFE4DFD8</Color>
+    <Color x:Key="BorderStrongColor">#FFCFC8BF</Color>
+    <Color x:Key="TextPrimaryColor">#FF1E1C19</Color>
+    <Color x:Key="TextSecondaryColor">#FF625C54</Color>
+    <Color x:Key="TextTertiaryColor">#FF948D84</Color>
+    <Color x:Key="AccentColor">#FFC9663D</Color>
+    <Color x:Key="AccentHoverColor">#FFB85A33</Color>
+    <Color x:Key="AccentPressedColor">#FFA14E2C</Color>
+    <Color x:Key="AccentSoftColor">#1FC9663D</Color>
+    <Color x:Key="AccentTextColor">#FFFFFFFF</Color>
+    <Color x:Key="SuccessColor">#FF3E8A45</Color>
+    <Color x:Key="WarningColor">#FFAD7A12</Color>
+    <Color x:Key="DangerColor">#FFC24434</Color>
+    <Color x:Key="DangerSoftColor">#1FC24434</Color>
+    <Color x:Key="RecordingColor">#FFE0483B</Color>
+    <Color x:Key="ShadowColor">#FF6B5A48</Color>
+    <Color x:Key="ScrimColor">#66000000</Color>
+    <Color x:Key="TimelineKeptColor">#FFC9663D</Color>
+    <Color x:Key="TimelineRemovedColor">#FFE3DED7</Color>
+    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="{StaticResource WindowBackgroundColor}" />
+    <SolidColorBrush x:Key="WindowTintBrush" Color="{StaticResource WindowTintColor}" />
+    <SolidColorBrush x:Key="SidebarBrush" Color="{StaticResource SidebarColor}" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="SurfaceElevatedBrush" Color="{StaticResource SurfaceElevatedColor}" />
+    <SolidColorBrush x:Key="SurfaceHoverBrush" Color="{StaticResource SurfaceHoverColor}" />
+    <SolidColorBrush x:Key="SurfacePressedBrush" Color="{StaticResource SurfacePressedColor}" />
+    <SolidColorBrush x:Key="GlassBrush" Color="{StaticResource GlassColor}" />
+    <SolidColorBrush x:Key="GlassBorderBrush" Color="{StaticResource GlassBorderColor}" />
+    <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}" />
+    <SolidColorBrush x:Key="BorderStrongBrush" Color="{StaticResource BorderStrongColor}" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
+    <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource TextTertiaryColor}" />
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="{StaticResource AccentHoverColor}" />
+    <SolidColorBrush x:Key="AccentPressedBrush" Color="{StaticResource AccentPressedColor}" />
+    <SolidColorBrush x:Key="AccentSoftBrush" Color="{StaticResource AccentSoftColor}" />
+    <SolidColorBrush x:Key="AccentTextBrush" Color="{StaticResource AccentTextColor}" />
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}" />
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}" />
+    <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}" />
+    <SolidColorBrush x:Key="DangerSoftBrush" Color="{StaticResource DangerSoftColor}" />
+    <SolidColorBrush x:Key="RecordingBrush" Color="{StaticResource RecordingColor}" />
+    <SolidColorBrush x:Key="ShadowBrush" Color="{StaticResource ShadowColor}" />
+    <SolidColorBrush x:Key="ScrimBrush" Color="{StaticResource ScrimColor}" />
+    <SolidColorBrush x:Key="TimelineKeptBrush" Color="{StaticResource TimelineKeptColor}" />
+    <SolidColorBrush x:Key="TimelineRemovedBrush" Color="{StaticResource TimelineRemovedColor}" />
+</ResourceDictionary>

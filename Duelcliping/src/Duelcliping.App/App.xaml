@@ -1,0 +1,18 @@
+<Application x:Class="Duelcliping.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Duelcliping.App.Controls"
+             ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Index 0 is the palette; it is swapped at runtime for the light theme. -->
+                <ResourceDictionary Source="Theme/Colors.Dark.xaml" />
+                <ResourceDictionary Source="Theme/Controls.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVis" />
+            <controls:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis" />
+            <controls:NullToVisibilityConverter x:Key="NullToVis" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

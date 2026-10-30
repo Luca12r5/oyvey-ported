@@ -1,0 +1,171 @@
+<UserControl x:Class="Duelcliping.App.Views.EditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Duelcliping.App.Controls"
+             AllowDrop="True" Focusable="True" FocusVisualStyle="{x:Null}">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
+    <Grid Margin="32,24,32,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="Cut" Style="{StaticResource LabelText}" />
+                <TextBlock Text="{Binding Title}" Style="{StaticResource TitleText}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{Binding SourceDetails}" Style="{StaticResource SecondaryText}" Margin="0,2,0,0" />
+            </StackPanel>
+            <Button HorizontalAlignment="Right" VerticalAlignment="Top" Click="OnOpenFile">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE8E5;" Style="{StaticResource IconText}" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,8,0" />
+                    <TextBlock Text="Open video…" />
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!-- Player -->
+        <Border Grid.Row="1" CornerRadius="{StaticResource RadiusLarge}" Background="#FF0B0A0A" ClipToBounds="True" MinHeight="200">
+            <Grid>
+                <MediaElement x:Name="Player" LoadedBehavior="Manual" UnloadedBehavior="Close" ScrubbingEnabled="True"
+                              Stretch="Uniform" MediaOpened="OnMediaOpened" MediaEnded="OnMediaEnded" MediaFailed="OnMediaFailed" />
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                            Visibility="{Binding HasVideo, Converter={StaticResource InverseBoolToVis}}">
+                    <TextBlock Text="&#xE8C6;" FontFamily="{StaticResource IconFont}" FontSize="40" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource AccentBrush}" />
+                    <TextBlock Text="Cut your videos" Style="{StaticResource SectionText}" HorizontalAlignment="Center" Margin="0,14,0,4"
+                               Foreground="#FFF3EFEA" />
+                    <TextBlock Text="Open a clip or recording from the library, drop any video file here, or use “Open video…”."
+                               Style="{StaticResource SecondaryText}" TextAlignment="Center" MaxWidth="360" Foreground="#FFADA69D" />
+                </StackPanel>
+                <Border x:Name="PlayOverlay" Background="Transparent" Cursor="Hand" MouseLeftButtonDown="OnPlayerClick"
+                        Visibility="{Binding HasVideo, Converter={StaticResource BoolToVis}}" />
+            </Grid>
+        </Border>
+
+        <!-- Transport -->
+        <Grid Grid.Row="2" Margin="0,14,0,8" IsEnabled="{Binding HasVideo}">
+            <StackPanel Orientation="Horizontal">
+                <Button Style="{StaticResource IconButton}" Content="&#xED3C;" ToolTip="Back 5 s (←)" Click="OnBack" />
+                <Button x:Name="PlayButton" Style="{StaticResource PrimaryButton}" Width="44" Height="36" Padding="0" Click="OnPlayPause" ToolTip="Play / pause (Space)">
+                    <TextBlock x:Name="PlayGlyph" Text="&#xE768;" FontFamily="{StaticResource IconFont}" FontSize="14" />
+                </Button>
+                <Button Style="{StaticResource IconButton}" Content="&#xED3D;" ToolTip="Forward 5 s (→)" Click="OnForward" />
+                <TextBlock Text="{Binding PositionText}" FontFamily="{StaticResource MonoFont}" Style="{StaticResource TextBase}"
+                           VerticalAlignment="Center" Margin="14,0,0,0" />
+            </StackPanel>
+            <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding PreviewCut}" HorizontalAlignment="Right"
+                      ToolTip="Skip removed parts while playing">
+                <TextBlock Text="Preview cut" Style="{StaticResource SecondaryText}" />
+            </CheckBox>
+        </Grid>
+
+        <!-- Timeline -->
+        <controls:CutTimeline x:Name="Timeline" Grid.Row="3" Margin="0,4,0,10"
+                              Pieces="{Binding Pieces}" Duration="{Binding Duration}" FilmStrip="{Binding FilmStrip}"
+                              Position="{Binding Position, Mode=TwoWay}" SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}"
+                              IsEnabled="{Binding HasVideo}" />
+
+        <!-- Tools -->
+        <Grid Grid.Row="4" Margin="0,0,0,14" IsEnabled="{Binding HasVideo}">
+            <WrapPanel>
+                <Button Command="{Binding SplitCommand}" Margin="0,0,6,6" ToolTip="Split at the playhead (S)">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE8C6;" Style="{StaticResource IconText}" Foreground="{DynamicResource AccentBrush}" Margin="0,0,8,0" />
+                        <TextBlock Text="Split" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding RemoveCommand}" Style="{StaticResource DangerButton}" Margin="0,0,6,6" ToolTip="Remove the selected part (Del)">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE74D;" Style="{StaticResource IconText}" Foreground="{DynamicResource DangerBrush}" Margin="0,0,8,0" />
+                        <TextBlock Text="Remove part" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding KeepCommand}" Content="Keep part" Margin="0,0,6,6" ToolTip="Bring the selected part back (K)" />
+                <Border Width="1" Height="22" Background="{DynamicResource BorderBrush}" Margin="6,0,12,6" />
+                <Button Command="{Binding MarkInCommand}" Content="Trim start  [I]" Margin="0,0,6,6" ToolTip="Remove everything before the playhead" />
+                <Button Command="{Binding MarkOutCommand}" Content="Trim end  [O]" Margin="0,0,6,6" ToolTip="Remove everything after the playhead" />
+                <Border Width="1" Height="22" Background="{DynamicResource BorderBrush}" Margin="6,0,12,6" />
+                <Button Command="{Binding UndoCommand}" Style="{StaticResource IconButton}" Content="&#xE7A7;" ToolTip="Undo (Ctrl+Z)" Margin="0,0,2,6" />
+                <Button Command="{Binding RedoCommand}" Style="{StaticResource IconButton}" Content="&#xE7A6;" ToolTip="Redo (Ctrl+Y)" Margin="0,0,2,6" />
+                <Button Command="{Binding ResetCommand}" Style="{StaticResource GhostButton}" Content="Reset" Margin="0,0,6,6" />
+            </WrapPanel>
+            <TextBlock Text="{Binding OutputText}" Style="{StaticResource SecondaryText}" HorizontalAlignment="Right" VerticalAlignment="Center"
+                       TextWrapping="NoWrap" Margin="0,0,0,6" />
+        </Grid>
+
+        <!-- Export -->
+        <Border Grid.Row="5" Style="{StaticResource Card}" Padding="18,14" IsEnabled="{Binding HasVideo}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <WrapPanel>
+                        <StackPanel Margin="0,0,24,6">
+                            <TextBlock Text="MODE" Style="{StaticResource LabelText}" Margin="2,0,0,4" />
+                            <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="10" Padding="2">
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton Style="{StaticResource SegmentButton}" GroupName="mode" Content="Lossless" IsChecked="{Binding ModeLossless}" />
+                                    <RadioButton Style="{StaticResource SegmentButton}" GroupName="mode" Content="Frame-exact" IsChecked="{Binding ModeExact}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,24,6">
+                            <TextBlock Text="RESOLUTION" Style="{StaticResource LabelText}" Margin="2,0,0,4" />
+                            <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="10" Padding="2">
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton Style="{StaticResource SegmentButton}" GroupName="res" Content="Original" IsChecked="{Binding ResOriginal}" />
+                                    <RadioButton Style="{StaticResource SegmentButton}" GroupName="res" Content="1080p" IsChecked="{Binding Res1080}" />
+                                    <RadioButton Style="{StaticResource SegmentButton}" GroupName="res" Content="720p" IsChecked="{Binding Res720}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,24,6">
+                            <TextBlock Text="FORMAT" Style="{StaticResource LabelText}" Margin="2,0,0,4" />
+                            <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="10" Padding="2">
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton Style="{StaticResource SegmentButton}" GroupName="fmt" Content="MP4" IsChecked="{Binding FormatMp4}" />
+                                    <RadioButton Style="{StaticResource SegmentButton}" GroupName="fmt" Content="MKV" IsChecked="{Binding FormatMkv}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ReplaceOriginal}" VerticalAlignment="Bottom" Margin="0,0,0,10"
+                                  ToolTip="The original goes to the Recycle Bin">
+                            <TextBlock Text="Replace original" Style="{StaticResource SecondaryText}" />
+                        </CheckBox>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding ModeHint}" Style="{StaticResource SecondaryText}" FontSize="12" Margin="2,2,0,0" />
+                    <ProgressBar Value="{Binding Progress}" Maximum="1" Margin="0,10,0,0"
+                                 Visibility="{Binding IsExporting, Converter={StaticResource BoolToVis}}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock Text="{Binding Status}" Style="{StaticResource SecondaryText}" FontSize="12" VerticalAlignment="Center" />
+                        <Button Style="{StaticResource GhostButton}" Content="Show in folder" Command="{Binding OpenOutputCommand}" Margin="10,0,0,0"
+                                Visibility="{Binding HasOutput, Converter={StaticResource BoolToVis}}" />
+                        <Button Style="{StaticResource GhostButton}" Content="Edit result" Command="{Binding EditOutputCommand}"
+                                Visibility="{Binding HasOutput, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0">
+                    <Button Style="{StaticResource PrimaryButton}" Command="{Binding ExportCommand}" Padding="22,11"
+                            Visibility="{Binding IsExporting, Converter={StaticResource InverseBoolToVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE74E;" FontFamily="{StaticResource IconFont}" Margin="0,0,10,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Save video" />
+                        </StackPanel>
+                    </Button>
+                    <Button Content="Cancel" Command="{Binding CancelExportCommand}" Padding="22,11"
+                            Visibility="{Binding IsExporting, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

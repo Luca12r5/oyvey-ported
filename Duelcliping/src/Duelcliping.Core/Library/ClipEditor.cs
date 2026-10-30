@@ -227,3 +227,21 @@ public static class ClipEditor
         return path;
     }
 }
+
+/// <summary>Film strip image for the cutter timeline (keyframes only, so it is quick even for long recordings).</summary>
+public static class FilmStrip
+{
+    public static async Task<string?> CreateAsync(string input, double durationSeconds, string outputJpg, int tiles = 14, CancellationToken ct = default)
+    {
+        if (durationSeconds <= 0) return null;
+        var rate = (tiles / durationSeconds).ToString("0.######", CultureInfo.InvariantCulture);
+        var result = await FfmpegRunner.RunFfmpegAsync(new[]
+        {
+            "-hide_banner", "-loglevel", "error", "-y", "-skip_frame", "nokey", "-i", input,
+            "-vf", $"fps={rate},scale=-2:72,tile={tiles}x1", "-frames:v", "1", "-q:v", "6", "-threads", "2", outputJpg,
+        }, ct, TimeSpan.FromMinutes(2), System.Diagnostics.ProcessPriorityClass.BelowNormal).ConfigureAwait(false);
+        if (result.Success && File.Exists(outputJpg)) return outputJpg;
+        Log.Warn("Editor", "Film strip failed: " + result.ErrorSummary);
+        return null;
+    }
+}

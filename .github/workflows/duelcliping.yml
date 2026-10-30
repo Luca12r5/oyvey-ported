@@ -1,0 +1,63 @@
+name: Duelcliping
+
+on:
+  push:
+    paths:
+      - 'Duelcliping/**'
+      - '.github/workflows/duelcliping.yml'
+  workflow_dispatch:
+
+jobs:
+  core-tests-linux:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Duelcliping
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Test core (real ffmpeg pipelines)
+        run: dotnet test tests/Duelcliping.Core.Tests -c Release --logger "console;verbosity=normal"
+
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: Duelcliping
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Fetch ffmpeg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/fetch-ffmpeg.ps1
+      - name: Test core on Windows (named pipes, WASAPI-format audio pump, remux)
+        run: |
+          $env:PATH = "$PWD\third_party\ffmpeg;$env:PATH"
+          dotnet test tests/Duelcliping.Core.Tests -c Release --logger "console;verbosity=normal"
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+      - name: Build, publish and create installer
+        run: ./scripts/build.ps1 -SkipTests -Version "1.0.${{ github.run_number }}"
+      - name: UI self-test (renders every page, opens the cutter, detects encoders)
+        run: |
+          $p = Start-Process -FilePath "artifacts\publish\Duelcliping.exe" -ArgumentList "--selftest","$PWD\selftest.txt" -PassThru -Wait
+          Get-Content selftest.txt
+          if ($p.ExitCode -ne 0) { throw "Self-test failed with exit code $($p.ExitCode)" }
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Duelcliping-Setup
+          path: Duelcliping/artifacts/Duelcliping-Setup-*.exe
+      - name: Upload portable build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Duelcliping-Portable
+          path: Duelcliping/artifacts/publish/

@@ -30,6 +30,9 @@ public sealed class SettingsManager
 
     public string FilePath { get; }
 
+    /// <summary>True when no settings file existed before <see cref="Load"/> (first start after install).</summary>
+    public bool IsFirstRun { get; private set; }
+
     /// <summary>A snapshot of the active settings. Treat as read-only; use <see cref="Update"/> to change.</summary>
     public AppSettings Current
     {
@@ -56,6 +59,7 @@ public sealed class SettingsManager
             else
             {
                 loaded = new AppSettings();
+                IsFirstRun = true;
                 Log.Info("Settings", "No settings file found; using defaults");
             }
         }
