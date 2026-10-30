@@ -101,9 +101,14 @@ internal sealed class CapturePipeline : IDisposable
         {
             throw new FileNotFoundException("ffmpeg.exe could not be started. Reinstall Moments to restore it.", FfmpegLocator.Ffmpeg, ex);
         }
-        FfmpegRunner.TrySetPriority(_process, _config.PerformanceMode ? ProcessPriorityClass.BelowNormal : ProcessPriorityClass.Normal);
-        // The game must win every GPU scheduling decision against capture/encode work.
-        if (_config.PerformanceMode) GpuPriority.TrySetBelowNormal(_process);
+        // With a hardware encoder ffmpeg needs almost no CPU, but its capture thread must react at
+        // once (a delayed frame release stalls the desktop compositor). Only a CPU encoder, which
+        // needs a lot of CPU time, runs below the game.
+        FfmpegRunner.TrySetPriority(_process, _config.Encoder.IsHardware ? ProcessPriorityClass.AboveNormal : ProcessPriorityClass.BelowNormal);
+        // Do NOT lower the GPU priority of the capture process: with Desktop Duplication the desktop
+        // compositor waits until the capturing process releases each frame. A starved capture
+        // process therefore stalls presentation for every application, including the game.
+        if (_config.Source == CaptureSource.DesktopDuplication) GpuPriority.TrySetHigh(_process);
         Progress.StartedUtc = DateTime.UtcNow;
         Progress.LastDataUtc = DateTime.UtcNow;
 

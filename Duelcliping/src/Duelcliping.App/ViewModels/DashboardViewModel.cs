@@ -47,6 +47,19 @@ public sealed class DashboardViewModel : ObservableObject
             OnPropertiesChanged(nameof(Len15), nameof(Len30), nameof(Len60), nameof(Len120), nameof(Len300), nameof(ShortcutHint), nameof(ClipLengthHint));
         }
     }
+    public string ClipKey => S.HotkeySaveShort.ToString();
+    public string ClipKeyLabel => "Clip " + (S.ShortClipSeconds < 60 ? $"{S.ShortClipSeconds}s" : $"{S.ShortClipSeconds / 60}m");
+    public string RecordKey => S.HotkeyToggleRecording.ToString();
+    public string RecordKeyLabel => _status?.IsManualRecording == true ? $"Stop · {AppController.FormatDuration(_status.ManualRecordingSeconds)}" : "Long Recording";
+    public string TopStatus => _status switch
+    {
+        { IsManualRecording: true } => "Recording",
+        { State: EngineState.Running } => _app.GameDetector.IsGameActive ? $"Clipping {_app.GameDetector.ActiveProcessName}" : "Ready to clip",
+        { State: EngineState.Faulted } => "Not recording",
+        { State: EngineState.Starting or EngineState.Restarting } => "Starting…",
+        _ => S.ReplayBufferEnabled ? "Starting…" : "Replay off",
+    };
+
     public bool ProfileMaxFps
     {
         get => S.Profile == RecordingProfile.MaxFps;
@@ -169,7 +182,8 @@ public sealed class DashboardViewModel : ObservableObject
     {
         _status = _app.Engine.GetStatus();
         _perf = _app.Performance.Latest;
-        OnPropertiesChanged(nameof(StateTitle), nameof(StateDetail), nameof(StateBrush), nameof(RecordButtonText), nameof(RailStateText), nameof(IsManualRecording),
+        OnPropertiesChanged(nameof(StateTitle), nameof(StateDetail), nameof(StateBrush), nameof(RecordButtonText), nameof(RailStateText),
+            nameof(ClipKey), nameof(ClipKeyLabel), nameof(RecordKey), nameof(RecordKeyLabel), nameof(TopStatus), nameof(IsManualRecording),
             nameof(ModeText), nameof(ResolutionText), nameof(FpsText), nameof(EncoderText), nameof(PipelineText), nameof(BitrateText),
             nameof(CpuText), nameof(RamText), nameof(GpuText), nameof(BufferMemoryText), nameof(DroppedText), nameof(PerformanceModeText),
             nameof(ReplayEnabled), nameof(CustomSaveLabel), nameof(ShortcutHint), nameof(ClipLengthHint),

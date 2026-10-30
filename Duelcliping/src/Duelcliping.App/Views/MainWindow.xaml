@@ -59,37 +59,35 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <Grid Width="380" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="28,0,0,0" WindowChrome.IsHitTestVisibleInChrome="True">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="22,0,0,0">
+                        <!-- Live state, like a game-detection indicator -->
+                        <Border CornerRadius="16" Padding="12,7" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"
+                                ToolTip="{Binding Dashboard.StateDetail}" WindowChrome.IsHitTestVisibleInChrome="True">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="8" Height="8" Fill="{Binding Dashboard.StateBrush}" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Dashboard.TopStatus}" FontSize="12.5" FontWeight="SemiBold" Margin="8,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                        <!-- Hotkey chips: the keys are the way to clip -->
+                        <StackPanel Orientation="Horizontal" Margin="14,0,0,0" VerticalAlignment="Center">
+                            <Border Background="{DynamicResource GlassStrongBrush}" CornerRadius="7" Padding="7,3">
+                                <TextBlock Text="{Binding Dashboard.ClipKey}" FontFamily="{StaticResource MonoFont}" FontSize="11.5" FontWeight="Bold" />
+                            </Border>
+                            <TextBlock Text="{Binding Dashboard.ClipKeyLabel}" FontSize="12.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="8,0,18,0" VerticalAlignment="Center" />
+                            <Border Background="{DynamicResource GlassStrongBrush}" CornerRadius="7" Padding="7,3">
+                                <TextBlock Text="{Binding Dashboard.RecordKey}" FontFamily="{StaticResource MonoFont}" FontSize="11.5" FontWeight="Bold" />
+                            </Border>
+                            <TextBlock Text="{Binding Dashboard.RecordKeyLabel}" FontSize="12.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Grid Grid.Column="1" Width="260" VerticalAlignment="Center" Margin="0,0,12,0" WindowChrome.IsHitTestVisibleInChrome="True">
                         <TextBox x:Name="SearchBox" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=200}"
                                  Padding="38,9,12,9" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" />
                         <TextBlock Text="&#xE721;" Style="{StaticResource IconText}" FontSize="13" Margin="14,0,0,0" HorizontalAlignment="Left" IsHitTestVisible="False" />
                         <TextBlock Text="Search clips" Style="{StaticResource SecondaryText}" Margin="38,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"
                                    Visibility="{Binding SearchPlaceholderVisible, Converter={StaticResource BoolToVis}}" />
                     </Grid>
-
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0" WindowChrome.IsHitTestVisibleInChrome="True">
-                        <Border CornerRadius="17" Padding="14,8" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"
-                                Margin="0,0,10,0" ToolTip="{Binding Dashboard.StateDetail}">
-                            <StackPanel Orientation="Horizontal">
-                                <Ellipse Width="8" Height="8" Fill="{Binding Dashboard.StateBrush}" VerticalAlignment="Center" />
-                                <TextBlock Text="{Binding Dashboard.StateTitle}" FontSize="12" FontWeight="SemiBold" Margin="8,0,0,0" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Border>
-                        <Button Style="{StaticResource PrimaryButton}" Command="{Binding Dashboard.SaveClipCommand}" Padding="18,9" Margin="0,0,8,0"
-                                ToolTip="Clip the selected length now">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE714;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                <TextBlock Text="Clip it" />
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding Dashboard.ToggleRecordingCommand}" Padding="14,9" Background="{DynamicResource GlassBrush}" BorderBrush="{DynamicResource GlassBorderBrush}"
-                                ToolTip="Record the full session like a video">
-                            <StackPanel Orientation="Horizontal">
-                                <Ellipse Width="9" Height="9" Fill="{DynamicResource RecordingBrush}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                <TextBlock Text="{Binding Dashboard.RecordButtonText}" />
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
 
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top" WindowChrome.IsHitTestVisibleInChrome="True">
                         <Button Style="{StaticResource ChromeButton}" Content="&#xE921;" Click="OnMinimize" ToolTip="Minimize" />

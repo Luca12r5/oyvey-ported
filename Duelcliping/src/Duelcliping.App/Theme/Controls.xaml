@@ -8,8 +8,8 @@
     <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas</FontFamily>
 
     <CornerRadius x:Key="RadiusSmall">6</CornerRadius>
-    <CornerRadius x:Key="RadiusMedium">10</CornerRadius>
-    <CornerRadius x:Key="RadiusLarge">14</CornerRadius>
+    <CornerRadius x:Key="RadiusMedium">12</CornerRadius>
+    <CornerRadius x:Key="RadiusLarge">18</CornerRadius>
 
     <DropShadowEffect x:Key="SoftShadow" BlurRadius="28" ShadowDepth="6" Direction="270" Opacity="0.28"
                       Color="#000000" RenderingBias="Performance" />
