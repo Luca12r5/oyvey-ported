@@ -37,6 +37,13 @@
                             <RadioButton Style="{StaticResource ChipRadio}" GroupName="cliplen" Content="5 min" IsChecked="{Binding Len300}" Margin="0,0,8,8" />
                         </WrapPanel>
                         <TextBlock Text="{Binding ClipLengthHint}" Style="{StaticResource SecondaryText}" FontSize="12" Margin="28,6,0,0" />
+
+                        <TextBlock Text="RECORDING MODE" Style="{StaticResource LabelText}" Margin="28,20,0,10" />
+                        <WrapPanel Margin="28,0,0,0">
+                            <RadioButton Style="{StaticResource ChipRadio}" GroupName="profile" Content="⚡ Max FPS" IsChecked="{Binding ProfileMaxFps}" Margin="0,0,8,8" />
+                            <RadioButton Style="{StaticResource ChipRadio}" GroupName="profile" Content="Custom quality" IsChecked="{Binding ProfileCustom}" Margin="0,0,8,8" />
+                        </WrapPanel>
+                        <TextBlock Text="{Binding ProfileHint}" Style="{StaticResource SecondaryText}" FontSize="12" Margin="28,2,0,0" />
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" MinWidth="230" Margin="24,0,0,0">

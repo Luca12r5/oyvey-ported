@@ -95,6 +95,13 @@ public static class FfmpegCommandBuilder
         if (c.Path == PipelinePath.SystemMemory || !c.Encoder.IsHardware)
             return ",hwdownload,format=bgra," + SystemMemoryChain(c, width, height);
 
+        if (c.Path == PipelinePath.VideoProcessor && c.NeedsScaling)
+        {
+            // D3D11 video processor scale; NVENC and AMF take the D3D11 texture directly, QSV maps it.
+            string vp = $",scale_d3d11=width={width}:height={height}";
+            return c.Encoder.Vendor == EncoderVendor.Intel ? vp + ",hwmap=derive_device=qsv,format=qsv" : vp;
+        }
+
         return c.Encoder.Vendor switch
         {
             EncoderVendor.Nvidia => c.NeedsScaling ? $",hwmap=derive_device=cuda,scale_cuda=w={width}:h={height}" : "",

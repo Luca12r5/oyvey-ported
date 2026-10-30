@@ -18,6 +18,11 @@ public enum CaptureSource
 /// </summary>
 public enum PipelinePath
 {
+    /// <summary>
+    /// Captured texture → GPU video processor (scale_d3d11, fixed-function hardware) → hardware encoder.
+    /// Scaling does not use the shader/CUDA cores the game renders with.
+    /// </summary>
+    VideoProcessor,
     /// <summary>Captured texture → (GPU scale) → hardware encoder. No copy through system memory.</summary>
     ZeroCopy,
     /// <summary>Captured texture → system memory → CPU scale/convert → encoder. Works everywhere.</summary>

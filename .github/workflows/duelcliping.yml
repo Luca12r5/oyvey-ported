@@ -38,13 +38,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./scripts/fetch-ffmpeg.ps1
-      - name: Show capture filter options of the bundled ffmpeg
+      - name: Verify the capture filters used by Moments exist in the bundled ffmpeg
         run: |
-          third_party\ffmpeg\ffmpeg.exe -hide_banner -h filter=scale_d3d11
-          third_party\ffmpeg\ffmpeg.exe -hide_banner -h filter=ddagrab
-          third_party\ffmpeg\ffmpeg.exe -hide_banner -h encoder=h264_nvenc | Select-String -Pattern "Supported pixel formats|d3d11"
-          third_party\ffmpeg\ffmpeg.exe -hide_banner -h encoder=h264_amf | Select-String -Pattern "Supported pixel formats|d3d11"
-          third_party\ffmpeg\ffmpeg.exe -hide_banner -h encoder=h264_qsv | Select-String -Pattern "Supported pixel formats|d3d11"
+          $help = (third_party\ffmpeg\ffmpeg.exe -hide_banner -h filter=scale_d3d11) -join "`n"
+          if ($help -notmatch '\bwidth\b' -or $help -notmatch '\bheight\b') { Write-Output $help; throw "scale_d3d11 options width/height not found" }
+          $dda = (third_party\ffmpeg\ffmpeg.exe -hide_banner -h filter=ddagrab) -join "`n"
+          foreach ($o in 'output_idx','framerate','draw_mouse','dup_frames') { if ($dda -notmatch "\b$o\b") { throw "ddagrab option $o not found" } }
+          Write-Output "scale_d3d11 and ddagrab options verified"
       - name: Test core on Windows (named pipes, WASAPI-format audio pump, remux)
         run: |
           $env:PATH = "$PWD\third_party\ffmpeg;$env:PATH"

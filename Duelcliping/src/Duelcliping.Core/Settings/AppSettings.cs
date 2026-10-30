@@ -6,6 +6,15 @@ public enum VideoCodec { H264, Hevc, Av1 }
 public enum QualityPreset { Low, Medium, High, Ultra, Custom }
 public enum EncoderPreference { Auto, Nvidia, Amd, Intel, Software }
 public enum AppTheme { Dark, Light }
+/// <summary>One-click trade-off between game FPS and clip quality.</summary>
+public enum RecordingProfile
+{
+    /// <summary>Least FPS impact: 30 FPS, at most 1080p, no cursor, medium bitrate.</summary>
+    MaxFps,
+    /// <summary>Uses the resolution, frame rate and quality chosen in the settings.</summary>
+    Custom,
+}
+
 public enum OverlayCorner { TopLeft, TopRight, BottomLeft, BottomRight }
 
 [Flags]
@@ -133,6 +142,7 @@ public sealed class AppSettings
 
     // Performance
     public bool PerformanceMode { get; set; } = true;
+    public RecordingProfile Profile { get; set; } = RecordingProfile.MaxFps;
     public string PresentMonPath { get; set; } = "";
 
     // Appearance

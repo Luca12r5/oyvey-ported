@@ -202,6 +202,9 @@ public sealed class AppController : IAsyncDisposable
                       ?? throw new InvalidOperationException("No monitor was found to record.");
         var selection = Encoders.Select(s.Codec, s.Encoder);
         bool cpu = !selection.Encoder.IsHardware;
+        // "Max FPS" profile: half the frames to capture and encode, no scaling on ≤1080p monitors,
+        // no cursor compositing – the lightest possible recording.
+        bool maxFps = s.Profile == RecordingProfile.MaxFps;
         if (cpu && s.Encoder != EncoderPreference.Software && !_cpuWarningShown)
         {
             _cpuWarningShown = true;
@@ -223,11 +226,11 @@ public sealed class AppController : IAsyncDisposable
             // No silent CPU encoding: it costs game FPS. Used only when chosen in the settings.
             SoftwareFallback = null,
             // CPU encoding steals frame time from the game: keep it as light as possible.
-            Resolution = cpu ? CaptureResolution.P720 : s.Resolution,
-            FrameRate = cpu ? Math.Min(30, s.FrameRate) : s.FrameRate,
-            Quality = cpu ? QualityPreset.Low : s.Quality,
+            Resolution = cpu ? CaptureResolution.P720 : maxFps ? (display.Height > 1080 ? CaptureResolution.P1080 : CaptureResolution.Native) : s.Resolution,
+            FrameRate = cpu || maxFps ? Math.Min(30, s.FrameRate) : s.FrameRate,
+            Quality = cpu ? QualityPreset.Low : maxFps ? QualityPreset.Medium : s.Quality,
             CustomBitrateKbps = s.CustomBitrateKbps,
-            CaptureCursor = s.CaptureCursor,
+            CaptureCursor = !maxFps && s.CaptureCursor,
             PerformanceMode = s.PerformanceMode,
             SeparateAudioTracks = s.SeparateAudioTracks,
             Audio = audio,
@@ -263,7 +266,7 @@ public sealed class AppController : IAsyncDisposable
         a.Codec != b.Codec || a.Quality != b.Quality || a.CustomBitrateKbps != b.CustomBitrateKbps || a.Encoder != b.Encoder ||
         a.CaptureCursor != b.CaptureCursor || a.CaptureSystemAudio != b.CaptureSystemAudio || a.SystemAudioDeviceId != b.SystemAudioDeviceId ||
         a.CaptureMicrophone != b.CaptureMicrophone || a.MicrophoneDeviceId != b.MicrophoneDeviceId ||
-        a.SeparateAudioTracks != b.SeparateAudioTracks || a.PerformanceMode != b.PerformanceMode;
+        a.SeparateAudioTracks != b.SeparateAudioTracks || a.PerformanceMode != b.PerformanceMode || a.Profile != b.Profile;
 
     private void OnSettingsChanged(AppSettings old, AppSettings now)
     {
@@ -303,6 +306,9 @@ public sealed class AppController : IAsyncDisposable
             self.PriorityClass = Settings.Current.PerformanceMode ? ProcessPriorityClass.BelowNormal : ProcessPriorityClass.Normal;
         }
         catch (Exception ex) { Log.Warn("Controller", "Could not change process priority: " + ex.Message); }
+        // EcoQoS: Windows runs the Moments UI process on efficiency cores at low clocks, leaving the
+        // fast cores to the game. The encoder process (ffmpeg) is not throttled.
+        NativeMethods.SetEcoQoS(Settings.Current.PerformanceMode);
     }
 
     private void OnGameActivityChanged(bool active)

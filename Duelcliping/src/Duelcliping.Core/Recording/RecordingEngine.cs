@@ -181,6 +181,8 @@ public sealed class RecordingEngine : IAsyncDisposable
         // hardware encoder exists at all.
         if (encoder.IsHardware)
         {
+            var probe = ToPipelineConfig(r, CaptureSource.DesktopDuplication, PipelinePath.VideoProcessor, encoder);
+            if (probe.NeedsScaling) plan.Add((CaptureSource.DesktopDuplication, PipelinePath.VideoProcessor, encoder));
             plan.Add((CaptureSource.DesktopDuplication, PipelinePath.ZeroCopy, encoder));
             plan.Add((CaptureSource.DesktopDuplication, PipelinePath.SystemMemory, encoder));
         }
@@ -207,6 +209,7 @@ public sealed class RecordingEngine : IAsyncDisposable
     private static string Describe(PipelineConfig c) =>
         $"{c.Encoder.DisplayName} · " + (c.Source, c.Path) switch
         {
+            (CaptureSource.DesktopDuplication, PipelinePath.VideoProcessor) => "GPU zero-copy (video processor)",
             (CaptureSource.DesktopDuplication, PipelinePath.ZeroCopy) => "GPU zero-copy",
             (CaptureSource.DesktopDuplication, _) => "GPU capture, CPU conversion (slower)",
             (CaptureSource.Gdi, _) => "GDI capture (compatibility)",

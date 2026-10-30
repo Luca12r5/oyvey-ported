@@ -127,6 +127,31 @@ internal static partial class NativeMethods
         finally { Marshal.FreeHGlobal(ptr); }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct ProcessPowerThrottlingState { public uint Version; public uint ControlMask; public uint StateMask; }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool SetProcessInformation(IntPtr process, int infoClass, ref ProcessPowerThrottlingState info, int size);
+
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr GetCurrentProcess();
+
+    /// <summary>Turns Windows "efficiency mode" (EcoQoS, Windows 11 / 10 21H2+) on or off for this process.</summary>
+    public static void SetEcoQoS(bool enabled)
+    {
+        try
+        {
+            var state = new ProcessPowerThrottlingState
+            {
+                Version = 1,
+                ControlMask = 0x1, // PROCESS_POWER_THROTTLING_EXECUTION_SPEED
+                StateMask = enabled ? 0x1u : 0u,
+            };
+            SetProcessInformation(GetCurrentProcess(), 4 /* ProcessPowerThrottling */, ref state, Marshal.SizeOf<ProcessPowerThrottlingState>());
+        }
+        catch (Exception ex) when (ex is EntryPointNotFoundException or DllNotFoundException) { }
+    }
+
     public static void MakeClickThroughOverlay(IntPtr hwnd)
     {
         var style = GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64();

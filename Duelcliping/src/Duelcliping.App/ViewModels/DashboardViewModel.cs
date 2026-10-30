@@ -47,6 +47,20 @@ public sealed class DashboardViewModel : ObservableObject
             OnPropertiesChanged(nameof(Len15), nameof(Len30), nameof(Len60), nameof(Len120), nameof(Len300), nameof(ShortcutHint), nameof(ClipLengthHint));
         }
     }
+    public bool ProfileMaxFps
+    {
+        get => S.Profile == RecordingProfile.MaxFps;
+        set { if (value) { _app.Settings.Update(s => s.Profile = RecordingProfile.MaxFps); OnPropertiesChanged(nameof(ProfileMaxFps), nameof(ProfileCustom), nameof(ProfileHint)); } }
+    }
+    public bool ProfileCustom
+    {
+        get => S.Profile == RecordingProfile.Custom;
+        set { if (value) { _app.Settings.Update(s => s.Profile = RecordingProfile.Custom); OnPropertiesChanged(nameof(ProfileMaxFps), nameof(ProfileCustom), nameof(ProfileHint)); } }
+    }
+    public string ProfileHint => S.Profile == RecordingProfile.MaxFps
+        ? "Max FPS: 30 FPS clips, at most 1080p – the least load on your game."
+        : "Custom: your resolution, frame rate and quality from Settings.";
+
     public bool Len15 { get => ClipLength == 15; set { if (value) ClipLength = 15; } }
     public bool Len30 { get => ClipLength == 30; set { if (value) ClipLength = 30; } }
     public bool Len60 { get => ClipLength == 60; set { if (value) ClipLength = 60; } }
